@@ -139,7 +139,7 @@ pub fn get_os_info() -> OsInfo {
   let mut network_infos: HashMap<String, NetworkInfo> = HashMap::new();
   let mut networks = Networks::new_with_refreshed_list();
   sleep(Duration::from_secs(1));
-  networks.refresh();
+  networks.refresh(false); // false = don't remove unlisted interfaces
   for (interface_name, data) in &networks {
     network_infos.insert(
       interface_name.to_string(),
@@ -196,7 +196,7 @@ pub fn get_os_info() -> OsInfo {
     os_version: System::os_version(),
     long_os_version: System::long_os_version(),
     host_name: System::host_name(),
-    arch: System::cpu_arch(),
+    arch: Some(System::cpu_arch()),
     boot_time: System::boot_time(),
     load_average: System::load_average().to_tuple(),
     memory: MemoryInfo {

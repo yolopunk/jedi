@@ -15,7 +15,7 @@ pub fn load_tray_config(app: &App) {
   let _ = TrayIconBuilder::new()
     .menu(&menu)
     .icon(Image::from_bytes(include_bytes!("../../icons/icon.png")).unwrap())
-    .menu_on_left_click(true)
+    .show_menu_on_left_click(true)
     .on_menu_event(move |app, event| match event.id.as_ref() {
       "show" => {
         if let Some(window) = app.get_webview_window("main") {

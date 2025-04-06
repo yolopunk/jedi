@@ -25,6 +25,8 @@ tracing = { version = "0.1.40" }
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "ansi", "time"] }
 tracing-appender = "0.2.3"
 tracing-error = "0.2.0"
+reqwest = { version = "0.12", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

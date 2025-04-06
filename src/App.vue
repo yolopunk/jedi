@@ -4,7 +4,7 @@
       <v-container class="py-10">
         <v-img src="/icon.png"></v-img>
         <v-list nav>
-          <v-list-item :active="true"  color="indigo" rounded="xl" title="平台服务">
+          <v-list-item :active="true"  color="indigo" rounded="xl" title="Hosts 管理">
           </v-list-item>
         </v-list>
       </v-container>

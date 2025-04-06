@@ -1,0 +1,32 @@
+[package]
+name = "jedi"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["yolo"]
+license = ""
+repository = ""
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "2.0.0-rc", features = [] }
+
+[dependencies]
+tauri = { version = "2.0.0-rc", features = ["tray-icon", "image-png", "image-ico", "tracing", "devtools"] }
+tauri-plugin-fs = "2.0.0-rc"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sysinfo = "0.31.4"
+log = "0.4.20"
+nvml-wrapper = "0.10.0"
+time = { version = "0.3.36", features = ["macros"] }
+tracing = { version = "0.1.40" }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "ansi", "time"] }
+tracing-appender = "0.2.3"
+tracing-error = "0.2.0"
+
+[features]
+# this feature is used for production builds or when `devPath` points to the filesystem
+# DO NOT REMOVE!!
+custom-protocol = ["tauri/custom-protocol"]

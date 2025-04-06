@@ -1,0 +1,18 @@
+{
+  "rancher.dtc.io": "10.50.128.32",
+  "gitlab.dtc.io": "10.50.128.32",
+  "consul.dtc.io": "10.50.128.32",
+  "minio.dtc.io": "10.50.128.32",
+  "traefik.dtc.io": "10.50.128.32",
+  "portainer.dtc.io": "10.50.128.32",
+  "dasv.dtc.io": "10.50.128.32",
+  "dasv-runtime.dtc.io": "10.50.128.32",
+  "dm.dtc.io": "10.50.128.32",
+  "dm-runtime.dtc.io": "10.50.128.32",
+  "nas.dtc.io": "10.50.128.32",
+  "ldap.dtc.io": "10.50.128.32",
+  "sso.dtc.io": "10.50.128.32",
+  "oss.dtc.io": "10.50.128.32",
+  "rabbitmq.dtc.io": "10.50.128.32",
+  "zentao.dtc.io": "10.50.128.32"
+}

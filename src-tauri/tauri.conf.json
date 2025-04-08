@@ -4,7 +4,7 @@
   "identifier": "aaron.che",
   "build": {
     "beforeDevCommand": "pnpm dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:31420",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
@@ -14,7 +14,7 @@
         "decorations": true,
         "resizable": true,
         "title": "Jedi",
-        "width": 1200,
+        "width": 900,
         "height": 600
       }
     ],

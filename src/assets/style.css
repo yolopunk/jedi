@@ -1,0 +1,146 @@
+/* 全局样式 - 绝地武士主题配色 */
+:root {
+  /* 主色调 */
+  --jedi-blue: #2c5aa0;         /* 主色调蓝色 */
+  --jedi-blue-light: #d0e3ff;   /* 浅蓝色，更高对比度 */
+  --jedi-blue-dark: #1a3a6a;     /* 深蓝色 */
+
+  /* 功能色 */
+  --jedi-green: #4CAF50;         /* 成功/启用色 */
+  --jedi-green-light: #c8e6c9;   /* 浅绿色，更高对比度 */
+  --jedi-red: #F44336;           /* 错误/删除色 */
+  --jedi-red-light: #ffcdd2;     /* 浅红色 */
+  --jedi-amber: #FFC107;         /* 警告色 */
+
+  /* 中性色 */
+  --jedi-grey-dark: #424242;     /* 深灰色，文字 */
+  --jedi-grey-medium: #757575;   /* 中灰色，次要文字 */
+  --jedi-grey-light: #bdbdbd;    /* 浅灰色，边框 */
+  --jedi-grey-bg: #f5f5f5;       /* 背景灰 */
+
+  /* 文字色 */
+  --jedi-text-dark: #212121;     /* 主要文字，更深 */
+  --jedi-text-medium: #424242;   /* 次要文字 */
+  --jedi-text-light: #ffffff;    /* 浅色背景上的文字 */
+}
+
+/* 开关样式优化 */
+.v-switch.lightsaber-switch .v-switch__track {
+  opacity: 1 !important;
+  background-color: #f5f5f5 !important;
+  border: 1px solid #e0e0e0 !important;
+}
+
+.v-switch.lightsaber-switch .v-switch__thumb {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* 表格状态列开关样式 */
+.hosts-table .v-switch {
+  background-color: transparent !important;
+}
+
+.hosts-table .v-switch .v-switch__track {
+  background-color: #f5f5f5 !important;
+  border: 1px solid #e0e0e0 !important;
+  opacity: 1 !important;
+}
+
+.hosts-table .v-switch .v-switch__thumb {
+  background-color: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+.hosts-table .v-switch--active .v-switch__track {
+  background-color: #4CAF50 !important;
+  border-color: #4CAF50 !important;
+  opacity: 0.8 !important;
+}
+
+/* 表格状态列样式 */
+.status-column {
+  background-color: transparent !important;
+}
+
+/* 分组标签样式 */
+.group-tab-chip {
+  transition: all 0.2s ease !important;
+}
+
+.group-tab-chip:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 状态芯片样式 */
+.status-chip {
+  min-width: 50px !important;
+  justify-content: center !important;
+}
+
+/* 表格样式 */
+.jedi-table {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.jedi-table .v-data-table__tr:hover {
+  background-color: var(--jedi-blue-light) !important;
+}
+
+.jedi-table .v-data-table__thead th {
+  background-color: #f5f7fa !important;
+  color: var(--jedi-text-medium) !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+/* 标题区域样式 */
+.app-header {
+  background: linear-gradient(135deg, #2c5aa0 0%, #1a3a6a 100%);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.jedi-title .jedi-text,
+.jedi-title .hosts-text {
+  color: white;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.8);
+  letter-spacing: 1px;
+}
+
+/* 全局开关样式 */
+.force-chip {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.app-header .v-switch .v-switch__track {
+  opacity: 0.9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.app-header .v-switch .v-switch__thumb {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+  background-color: white !important;
+}
+
+.global-switch.v-switch--active .v-switch__track {
+  opacity: 1 !important;
+  background-color: var(--jedi-green-light) !important;
+  border-color: var(--jedi-green) !important;
+}
+
+/* 新增条目按钮样式 */
+.add-host-btn {
+  box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3) !important;
+  transition: all 0.3s ease !important;
+  border: 1px solid rgba(76, 175, 80, 0.2) !important;
+}
+
+.add-host-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4) !important;
+}

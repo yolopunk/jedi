@@ -1,44 +1,45 @@
 <template>
   <!-- 应用标题区域 - 绝地武士主题 -->
-  <div class="app-header mb-6 pa-4 rounded-lg" style="background: linear-gradient(135deg, #4a90e2 0%, #2c5282 100%);">
+  <div class="app-header mb-4 pa-4 jedi-hover-bright lightsaber-glow" style="background: linear-gradient(135deg, #1565C0 0%, #1976D2 100%); border-radius: 12px; box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);">
     <div class="d-flex justify-space-between align-center">
       <div class="d-flex align-center">
         <div class="jedi-logo mr-4">
-          <v-icon :icon="mdiSwordCross" size="x-large" color="white" class="lightsaber-icon"></v-icon>
+          <v-icon :icon="mdiSwordCross" size="x-large" color="white" class="lightsaber-icon jedi-hover-scale" style="filter: drop-shadow(0 0 8px rgba(255,255,255,0.5));"></v-icon>
         </div>
         <div>
           <h1 class="text-h4 font-weight-bold mb-1 jedi-title">
-            <span class="jedi-text" style="color: white; text-shadow: 0 0 10px rgba(255,255,255,0.8);">JEDI</span>
-            <span class="hosts-text" style="color: white; text-shadow: 0 0 10px rgba(255,255,255,0.8);">HOSTS</span>
+            <span class="jedi-text" style="letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">JEDI</span>
+            <span class="hosts-text" style="letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">HOSTS</span>
             <span class="text-h5 font-weight-medium" style="color: white; text-shadow: 0 0 10px rgba(255,255,255,0.8);">管理器</span>
           </h1>
-          <p class="text-subtitle-1 mb-0" style="color: white; font-weight: 500;">
+          <p class="text-subtitle-1 mb-0" style="color: rgba(255,255,255,0.9); font-weight: 500; letter-spacing: 0.3px;">
             管理您的 hosts 文件配置，提高开发效率
           </p>
         </div>
       </div>
       <div class="d-flex align-center">
         <v-chip
-          :color="hostsResolveSwitch ? 'var(--jedi-green)' : 'var(--jedi-grey-dark)'"
+          :color="hostsResolveSwitch ? '#4CAF50' : '#757575'"
           :text-color="'white'"
-          size="large"
-          class="mr-3 px-4 force-chip"
+          size="small"
+          class="mr-3 px-4 force-chip jedi-hover-lift"
           variant="elevated"
-          elevation="3"
+          elevation="2"
+          style="border: 1px solid rgba(255,255,255,0.2); letter-spacing: 0.5px;"
         >
-          <v-icon start :icon="hostsResolveSwitch ? mdiCheckCircle : mdiPauseCircle"></v-icon>
+          <v-icon start :icon="hostsResolveSwitch ? mdiCheckCircle : mdiPauseCircle" size="small"></v-icon>
           <span style="font-weight: 500;">{{ hostsResolveSwitch ? '已启用' : '已禁用' }}</span>
         </v-chip>
-        <div class="d-flex align-center">
-          <span class="mr-2" style="color: white; font-weight: 500; text-shadow: 0 0 5px rgba(0,0,0,0.3);">全局开关</span>
+        <div class="d-flex align-center global-switch-container pa-1 px-3 rounded-pill" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); min-width: 140px; height: 36px;">
+          <span class="mr-2" style="color: white; font-weight: 500; font-size: 0.85rem; text-shadow: 0 0 5px rgba(0,0,0,0.3);">全局开关</span>
           <v-switch
             v-model="hostsResolveSwitch"
             hide-details
-            :color="hostsResolveSwitch ? 'var(--jedi-green)' : 'var(--jedi-grey-medium)'"
-            :track-color="hostsResolveSwitch ? 'var(--jedi-green-light)' : '#EEEEEE'"
+            color="success"
             @update:model-value="(val) => val !== null && handleHostsSwitch(val)"
-            density="comfortable"
-            class="global-switch lightsaber-switch"
+            density="compact"
+            class="global-switch lightsaber-switch green-switch"
+            style="transform: scale(0.75); margin-right: 8px; width: 40px;"
           ></v-switch>
         </div>
       </div>
@@ -46,105 +47,106 @@
   </div>
 
   <!-- 分组选择区域 - 绝地武士主题 -->
-  <v-card class="mb-6 rounded-xl elevation-3 overflow-hidden border">
-    <v-card-text class="pa-0">
-      <div class="d-flex align-center px-4 py-2" style="background-color: #4a90e2;">
-        <v-icon :icon="mdiDomain" class="mr-2" color="white"></v-icon>
-        <span class="text-subtitle-1 font-weight-medium text-white">分组管理</span>
-        <v-spacer></v-spacer>
-        <v-btn
-          color="white"
-          variant="elevated"
-          class="ml-2 lightsaber-btn"
-          :prepend-icon="mdiPlus"
-          @click="showAddGroupDialog = true"
-          size="small"
-          rounded="pill"
-          style="color: #4a90e2; font-weight: 500;"
-        >
-          添加分组
-        </v-btn>
+  <v-card class="mb-3 jedi-card" style="border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+    <div class="d-flex align-center px-4 py-3" style="background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);">
+      <div class="d-flex align-center">
+        <v-icon :icon="mdiDomain" class="mr-2" color="white" size="small"></v-icon>
+        <span class="text-subtitle-1 font-weight-medium" style="color: white; letter-spacing: 0.5px;">分组管理</span>
       </div>
-      <v-divider></v-divider>
-      <v-tabs
-        v-model="selectedTag"
-        color="var(--lightsaber-blue)"
-        align-tabs="start"
-        show-arrows
-        slider-color="var(--lightsaber-blue)"
-        class="px-2 jedi-tabs"
-        height="56"
-        bg-color="#f5f7fa"
+      <v-spacer></v-spacer>
+      <v-btn
+        color="white"
+        variant="flat"
+        class="jedi-btn jedi-hover-lift"
+        :prepend-icon="mdiPlus"
+        @click="showAddGroupDialog = true"
+        size="small"
+        rounded="pill"
+        style="background-color: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(5px);"
       >
-        <v-tab
+        <span style="font-weight: 500; letter-spacing: 0.5px;">添加分组</span>
+      </v-btn>
+    </div>
+
+    <div class="pa-2" style="background-color: #FAFBFD; border-top: 1px solid rgba(25, 118, 210, 0.05);">
+      <div class="d-flex flex-wrap gap-2 px-2 py-1">
+        <v-btn
           v-for="group in tags"
           :key="group.tag"
           :value="group.tag"
-          class="text-capitalize font-weight-medium jedi-tab pa-2"
+          :color="selectedTag === group.tag ? '#1976D2' : '#E8F1FF'"
+          :variant="selectedTag === group.tag ? 'flat' : 'outlined'"
+          class="group-btn"
+          size="small"
           rounded="pill"
+          :class="{'v-btn--active elevation-2': selectedTag === group.tag}"
+          @click="selectedTag = group.tag"
+          :style="{
+            minWidth: 'auto',
+            borderColor: '#1976D2 !important',
+            borderWidth: '1.5px !important',
+            fontWeight: 500,
+            color: selectedTag === group.tag ? 'white !important' : '#0D47A1 !important'
+          }"
         >
-          <v-chip
-            :color="selectedTag === group.tag ? 'var(--jedi-blue)' : '#f0f0f0'"
-            :text-color="selectedTag === group.tag ? 'var(--jedi-text-light)' : 'var(--jedi-text-medium)'"
-            size="small"
-            class="px-2 py-1 group-tab-chip"
-            :elevation="selectedTag === group.tag ? 2 : 1"
-            :style="selectedTag === group.tag ? 'border: 1px solid rgba(255,255,255,0.2)' : 'border: 1px solid #d0d0d0'"
-          >
-            <v-icon :icon="mdiDomain" size="x-small" class="mr-1"></v-icon>
-            {{ group.tag }}
-          </v-chip>
-        </v-tab>
-      </v-tabs>
-    </v-card-text>
+          <v-icon :icon="mdiDomain" size="x-small" class="mr-1" :style="{color: selectedTag === group.tag ? 'white !important' : '#0D47A1 !important'}"></v-icon>
+          <span :style="{color: selectedTag === group.tag ? 'white !important' : '#0D47A1 !important', fontWeight: 500}">{{ group.tag }}</span>
+        </v-btn>
+      </div>
+    </div>
   </v-card>
 
   <!-- 数据展示区域 - 绝地武士主题 -->
-  <v-card class="rounded-xl elevation-3 overflow-hidden border">
-    <v-card-text v-if="tags.length && selectedTag" class="pa-0">
-      <div v-for="group in tags.filter(t => t.tag === selectedTag)" :key="group.tag" class="pa-4">
-        <div class="d-flex justify-space-between align-center mb-5">
+  <v-card class="jedi-card" style="border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+    <template v-if="tags.length && selectedTag">
+      <template v-for="group in tags.filter(t => t.tag === selectedTag)" :key="group.tag">
+        <div class="jedi-card-header d-flex justify-space-between align-center" style="background: linear-gradient(to right, #E3F2FD, #BBDEFB); border-bottom: 1px solid rgba(25, 118, 210, 0.1);">
           <div class="d-flex align-center">
-            <v-btn
-              color="#4CAF50"
-              variant="elevated"
-              :prepend-icon="mdiPlus"
-              @click="openAddHostDialog(group.tag)"
-              rounded="pill"
-              elevation="3"
-              class="px-4 add-host-btn"
-              style="color: white; font-weight: 500;"
-            >
-              新增条目
-            </v-btn>
-            <div class="ml-4 pa-2 rounded-lg d-flex align-center" style="background-color: #edf2ff;">
-              <span class="text-caption mr-2" style="color: #333;">当前分组:</span>
+            <div class="d-flex align-center px-2 py-1 rounded-lg" style="background-color: rgba(255,255,255,0.6); border: 1px solid rgba(25, 118, 210, 0.2);">
+              <v-icon :icon="mdiDomain" size="small" class="mr-2" color="#1976D2"></v-icon>
+              <span class="font-weight-medium" style="color: #1976D2; letter-spacing: 0.3px;">当前分组:</span>
               <v-chip
-                color="#4a90e2"
+                color="#1976D2"
                 size="small"
-                variant="elevated"
-                class="font-weight-medium"
+                variant="flat"
+                class="font-weight-medium ml-2"
                 text-color="white"
+                style="border: 1px solid rgba(255,255,255,0.2)"
               >
                 {{ group.tag }}
               </v-chip>
             </div>
           </div>
-          <v-text-field
-            v-model="search"
-            label="搜索域名或IP"
-            :prepend-inner-icon="mdiMagnify"
-            variant="outlined"
-            hide-details
-            density="compact"
-            class="max-width-300"
-            bg-color="white"
-            color="#333333"
+          <v-btn
+            color="#4CAF50"
+            variant="flat"
+            :prepend-icon="mdiPlus"
+            @click="openAddHostDialog(group.tag)"
+            size="small"
             rounded="pill"
-          ></v-text-field>
+            class="jedi-btn jedi-hover-lift"
+            style="box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);"
+          >
+            <span style="font-weight: 500; letter-spacing: 0.3px;">新增条目</span>
+          </v-btn>
         </div>
+        <div class="jedi-card-content pa-4">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <v-text-field
+              v-model="search"
+              label="搜索域名或IP"
+              :prepend-inner-icon="mdiMagnify"
+              variant="outlined"
+              hide-details
+              density="compact"
+              class="max-width-300"
+              bg-color="white"
+              color="var(--jedi-text-medium)"
+              rounded="pill"
+              style="border: 1px solid rgba(0,0,0,0.05);"
+            ></v-text-field>
+          </div>
 
-        <v-card class="mb-4 border rounded-lg overflow-hidden" elevation="2">
           <v-data-table
             :headers="headers"
             :items="getHostsAsItems(group.hosts)"
@@ -154,6 +156,7 @@
             class="hosts-table jedi-table"
             :items-per-page="10"
             bg-color="white"
+            style="border-radius: 8px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08);"
             :footer-props="{
               'items-per-page-options': [5, 10, 15, 20, -1],
               'items-per-page-text': '每页显示',
@@ -161,27 +164,17 @@
             }"
           >
             <template v-slot:item.enabled="{ item }">
-              <div class="d-flex align-center">
+              <div class="d-flex status-column">
                 <v-switch
                   v-model="item.enabled"
                   hide-details
-                  :color="item.enabled ? 'var(--jedi-green)' : 'var(--jedi-grey-medium)'"
-                  :track-color="item.enabled ? 'var(--jedi-green-light)' : '#EEEEEE'"
-                  density="comfortable"
+                  color="success"
+                  density="compact"
                   @update:model-value="updateHostStatus(item)"
-                  class="ma-0 pa-0 lightsaber-switch"
+                  class="ma-0 pa-0 lightsaber-switch green-switch"
                   :ripple="false"
-                  style="background-color: transparent;"
+                  style="transform: scale(0.9); background-color: transparent;"
                 ></v-switch>
-                <v-chip
-                  size="x-small"
-                  :color="item.enabled ? 'var(--jedi-green-light)' : '#EEEEEE'"
-                  :text-color="item.enabled ? 'var(--jedi-green)' : 'var(--jedi-grey-medium)'"
-                  class="ml-1 status-chip"
-                  :style="item.enabled ? 'border: 1px solid var(--jedi-green)' : 'border: 1px solid #d0d0d0'"
-                >
-                  <span style="font-weight: 500;">{{ item.enabled ? '已启用' : '已禁用' }}</span>
-                </v-chip>
               </div>
             </template>
             <template v-slot:item.domain="{ item }">
@@ -193,11 +186,12 @@
                       icon
                       variant="text"
                       size="x-small"
-                      class="ml-2"
+                      class="ml-2 jedi-hover-scale"
                       v-bind="props"
                       @click="openDomainLink(item.domain)"
+                      style="background-color: #E3F2FD; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
                     >
-                      <v-icon :icon="mdiWeb" size="small" color="#4a90e2"></v-icon>
+                      <v-icon :icon="mdiWeb" size="x-small" color="#1976D2"></v-icon>
                     </v-btn>
                   </template>
                 </v-tooltip>
@@ -206,28 +200,30 @@
             <template v-slot:item.ip="{ item }">
               <v-chip
                 size="small"
-                color="#4a90e2"
-                variant="elevated"
+                color="#E3F2FD"
+                text-color="#1565C0"
+                variant="flat"
                 class="font-monospace"
+                style="border: 1px solid rgba(21, 101, 192, 0.2); font-weight: 500;"
               >
                 {{ item.ip }}
               </v-chip>
             </template>
             <template v-slot:item.actions="{ item }">
-              <div class="d-flex">
+              <div class="d-flex actions-column">
                 <v-tooltip text="编辑条目" location="top">
                   <template v-slot:activator="{ props }">
                     <v-btn
                       icon
                       variant="flat"
-                      color="#4a90e2"
-                      class="mr-1"
+                      color="#1976D2"
+                      class="mr-1 jedi-hover-lift"
                       @click="openEditHostDialog(item)"
                       v-bind="props"
-                      size="small"
-                      style="background-color: #e3f2fd;"
+                      size="x-small"
+                      style="background-color: #E3F2FD; border: 1px solid rgba(25, 118, 210, 0.2); box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
                     >
-                      <v-icon :icon="mdiPencil" color="#4a90e2"></v-icon>
+                      <v-icon :icon="mdiPencil" size="small" color="#1976D2"></v-icon>
                     </v-btn>
                   </template>
                 </v-tooltip>
@@ -239,53 +235,57 @@
                       color="#F44336"
                       @click="removeHost(item)"
                       v-bind="props"
-                      size="small"
-                      style="background-color: #ffebee;"
+                      size="x-small"
+                      class="jedi-hover-lift"
+                      style="background-color: #FFEBEE; border: 1px solid rgba(244, 67, 54, 0.2); box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
                     >
-                      <v-icon :icon="mdiDelete" color="#F44336"></v-icon>
+                      <v-icon :icon="mdiDelete" size="small" color="#F44336"></v-icon>
                     </v-btn>
                   </template>
                 </v-tooltip>
               </div>
             </template>
           </v-data-table>
-        </v-card>
-      </div>
-    </v-card-text>
-    <v-card-text v-else class="text-center pa-12" style="background-color: #f5f7fa;">
-      <div class="empty-state-container py-8">
-        <div class="death-star-icon mb-6">
-          <v-icon :icon="mdiDomain" size="80" color="#4a90e2" class="death-star"></v-icon>
         </div>
-        <h2 class="text-h5 font-weight-bold mb-2">暂无解析配置</h2>
-        <p class="text-body-1 text-grey-darken-1 mb-8 max-width-500 mx-auto">您可以手动添加分组或使用默认配置来开始管理您的 hosts 文件</p>
-        <div class="d-flex justify-center">
-          <v-btn
-            color="var(--lightsaber-blue)"
-            variant="elevated"
-            class="mr-4 px-6 lightsaber-btn blue"
-            rounded="pill"
-            size="large"
-            :prepend-icon="mdiPlus"
-            elevation="3"
-            @click="showAddGroupDialog = true"
-          >
-            添加分组
-          </v-btn>
-          <v-btn
-            color="var(--lightsaber-green)"
-            variant="elevated"
-            class="px-6 lightsaber-btn green"
-            rounded="pill"
-            size="large"
-            :prepend-icon="mdiDomain"
-            @click="initializeDefaultConfig"
-          >
-            使用默认配置
-          </v-btn>
+      </template>
+    </template>
+    <template v-else>
+      <div class="jedi-card-content text-center pa-12" style="background-color: #f5f7fa;">
+        <div class="empty-state-container py-8">
+          <div class="death-star-icon mb-6">
+            <v-icon :icon="mdiDomain" size="80" color="#1976D2" class="death-star jedi-hover-scale" style="filter: drop-shadow(0 4px 8px rgba(25, 118, 210, 0.3));"></v-icon>
+          </div>
+          <h2 class="text-h5 font-weight-bold mb-2" style="color: #1976D2; letter-spacing: 0.5px;">暂无解析配置</h2>
+          <p class="text-body-1 text-grey-darken-1 mb-8 max-width-500 mx-auto" style="letter-spacing: 0.3px;">您可以手动添加分组或使用默认配置来开始管理您的 hosts 文件</p>
+          <div class="d-flex justify-center">
+            <v-btn
+              color="#1976D2"
+              variant="flat"
+              class="mr-4 px-6 jedi-hover-lift"
+              rounded="pill"
+              size="large"
+              :prepend-icon="mdiPlus"
+              @click="showAddGroupDialog = true"
+              style="box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);"
+            >
+              <span style="font-weight: 500; letter-spacing: 0.5px;">添加分组</span>
+            </v-btn>
+            <v-btn
+              color="#4CAF50"
+              variant="flat"
+              class="px-6 jedi-hover-lift"
+              rounded="pill"
+              size="large"
+              :prepend-icon="mdiDomain"
+              @click="initializeDefaultConfig"
+              style="box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);"
+            >
+              <span style="font-weight: 500; letter-spacing: 0.5px;">使用默认配置</span>
+            </v-btn>
+          </div>
         </div>
       </div>
-    </v-card-text>
+    </template>
   </v-card>
 
   <!-- 添加分组对话框 - 绝地武士主题 -->

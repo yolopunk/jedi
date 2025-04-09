@@ -518,6 +518,51 @@
     </v-card>
   </v-dialog>
 
+  <!-- 删除确认对话框 - 绝地武士主题 -->
+  <v-dialog v-model="showDeleteConfirmDialog" max-width="400" persistent>
+    <v-card class="rounded-lg">
+      <v-card-title class="text-h5 pa-4" style="background-color: #FFEBEE; color: #D32F2F;">
+        <v-icon :icon="mdiAlertCircle" color="#D32F2F" class="mr-2"></v-icon>
+        确认删除
+      </v-card-title>
+      <v-card-text class="pa-4 pt-5">
+        <p class="text-body-1">您确定要删除以下条目吗？</p>
+        <div v-if="hostToDelete" class="mt-3 pa-3" style="background-color: #F5F5F5; border-radius: 8px;">
+          <div class="d-flex align-center mb-1">
+            <v-icon :icon="mdiIpNetwork" size="small" color="#1976D2" class="mr-2"></v-icon>
+            <span class="font-weight-medium">IP地址：</span>
+            <span class="ml-2">{{ hostToDelete.ip }}</span>
+          </div>
+          <div class="d-flex align-center">
+            <v-icon :icon="mdiDomain" size="small" color="#1976D2" class="mr-2"></v-icon>
+            <span class="font-weight-medium">域名：</span>
+            <span class="ml-2">{{ hostToDelete.domain }}</span>
+          </div>
+        </div>
+        <p class="text-body-2 mt-4" style="color: #F44336;">此操作不可撤销，删除后将立即生效。</p>
+      </v-card-text>
+      <v-card-actions class="pa-4 pt-0">
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="text"
+          @click="showDeleteConfirmDialog = false"
+          class="mr-2"
+          color="grey-darken-1"
+        >
+          取消
+        </v-btn>
+        <v-btn
+          color="#F44336"
+          variant="flat"
+          @click="confirmDeleteHost"
+          class="px-4"
+        >
+          确认删除
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
   <!-- 提示消息 - 绝地武士主题 -->
   <v-snackbar
     v-model="showSnackbar"
@@ -605,6 +650,10 @@ const currentEditHost = ref<any>(null)
 const showSnackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref('success')
+
+// 删除确认对话框
+const showDeleteConfirmDialog = ref(false)
+const hostToDelete = ref<any>(null)
 
 // 生命周期钩子
 onMounted(async () => {
@@ -1001,20 +1050,44 @@ function updateHostStatus(host: any) {
   }
 }
 
-// 移除主机
+// 打开删除确认对话框
 function removeHost(host: any) {
+  hostToDelete.value = host
+  showDeleteConfirmDialog.value = true
+}
+
+// 确认删除主机
+async function confirmDeleteHost() {
+  if (!hostToDelete.value) return
+
   const group = tags.value.find(t => t.tag === selectedTag.value)
   if (!group) return
 
   const index = group.hosts.findIndex(h => {
-    const domain = Object.keys(h)[0]
-    return domain === host.domain && h[domain] === host.ip
+    for (const key in h) {
+      if (key !== '__disabled' && key === hostToDelete.value.domain && h[key] === hostToDelete.value.ip) {
+        return true
+      }
+    }
+    return false
   })
 
   if (index !== -1) {
     group.hosts.splice(index, 1)
-    showNotification('条目已删除', 'info')
+
+    // 更新hosts文件
+    try {
+      await updateHosts()
+      showNotification('条目已删除', 'info')
+    } catch (error) {
+      console.error('删除条目失败', error)
+      showNotification('删除失败: ' + (error as Error).message, 'error')
+    }
   }
+
+  // 关闭对话框
+  showDeleteConfirmDialog.value = false
+  hostToDelete.value = null
 }
 
 // 打开域名链接

@@ -28,6 +28,11 @@
   --jedi-text-medium: #424242;   /* 次要文字 */
   --jedi-text-light: #FFFFFF;    /* 浅色背景上的文字 */
 
+  /* 光剑效果色 */
+  --lightsaber-blue: #2196F3;    /* 蓝色光剑 */
+  --lightsaber-green: #4CAF50;   /* 绿色光剑 */
+  --lightsaber-red: #F44336;     /* 红色光剑 */
+
   /* 间距系统 */
   --space-xs: 4px;               /* 超小间距 */
   --space-sm: 8px;               /* 小间距 */
@@ -430,4 +435,196 @@ button.group-btn {
   border-color: #1976D2 !important;
   color: #0D47A1 !important;
   box-shadow: 0 2px 5px rgba(25, 118, 210, 0.2) !important;
+}
+
+/* 光剑按钮样式 */
+.lightsaber-btn {
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.3s ease !important;
+}
+
+.lightsaber-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.lightsaber-btn.blue {
+  background-color: #2196F3 !important;
+  color: white !important;
+}
+
+.lightsaber-btn.green {
+  background-color: #4CAF50 !important;
+  color: white !important;
+}
+
+.lightsaber-btn.red {
+  background-color: #F44336 !important;
+  color: white !important;
+}
+
+/* 光剑开关样式 */
+.lightsaber-switch {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.lightsaber-switch.green-switch .v-switch__track {
+  background-color: #4CAF50 !important;
+  opacity: 1 !important;
+}
+
+.lightsaber-switch .v-switch__thumb {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+.lightsaber-glow {
+  transition: all 0.3s ease !important;
+}
+
+.lightsaber-glow:hover {
+  box-shadow: 0 0 15px rgba(33, 150, 243, 0.5) !important;
+}
+
+/* 悬停效果 */
+.jedi-hover-lift {
+  transition: all 0.3s ease !important;
+}
+
+.jedi-hover-lift:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.jedi-hover-scale {
+  transition: all 0.3s ease !important;
+}
+
+.jedi-hover-scale:hover {
+  transform: scale(1.05) !important;
+}
+
+.jedi-hover-bright {
+  transition: all 0.3s ease !important;
+}
+
+.jedi-hover-bright:hover {
+  filter: brightness(1.05) !important;
+}
+
+/* 按钮样式 */
+.jedi-btn {
+  font-weight: 500 !important;
+  letter-spacing: 0.3px !important;
+  border-radius: 50px !important;
+  padding: 0 16px !important;
+}
+
+/* 卡片样式 */
+.jedi-card {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  background-color: white !important;
+}
+
+.jedi-card-content {
+  padding: 24px !important;
+  background-color: white !important;
+}
+
+/* 表格样式 */
+.jedi-table {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  background-color: white !important;
+}
+
+.jedi-table .v-data-table__wrapper {
+  border-radius: 0 !important;
+}
+
+.jedi-table .v-data-table__thead th {
+  background-color: #F5F7FA !important;
+  color: #424242 !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  letter-spacing: 0.3px !important;
+}
+
+.jedi-table .v-data-table__tbody tr:hover {
+  background-color: #E3F2FD !important;
+}
+
+/* 状态标签样式 */
+.force-chip {
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  transition: all 0.3s ease !important;
+}
+
+.force-chip:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 标题和图标样式 */
+.jedi-logo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 48px !important;
+  height: 48px !important;
+}
+
+.jedi-title {
+  font-weight: bold !important;
+  letter-spacing: 1px !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+}
+
+.jedi-title .jedi-text {
+  color: white !important;
+}
+
+.jedi-title .hosts-text {
+  color: #E3F2FD !important;
+}
+
+/* 图标特效 */
+.lightsaber-icon {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5)) !important;
+  transition: all 0.3s ease !important;
+}
+
+.lightsaber-icon:hover {
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.8)) !important;
+  transform: scale(1.1) !important;
+}
+
+.death-star {
+  filter: drop-shadow(0 4px 8px rgba(25, 118, 210, 0.3)) !important;
+  transition: all 0.3s ease !important;
+}
+
+.death-star:hover {
+  filter: drop-shadow(0 6px 12px rgba(25, 118, 210, 0.5)) !important;
+  transform: scale(1.05) rotate(5deg) !important;
+}
+
+/* 宽度限制类 */
+.max-width-300 {
+  max-width: 300px !important;
+}
+
+.max-width-400 {
+  max-width: 400px !important;
+}
+
+.max-width-500 {
+  max-width: 500px !important;
 }

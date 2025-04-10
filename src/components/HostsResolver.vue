@@ -1,725 +1,216 @@
 <template>
-  <!-- 应用标题区域 - 绝地武士主题 -->
-  <div class="app-header mb-4 pa-4 jedi-hover-bright lightsaber-glow" style="background: linear-gradient(135deg, #1565C0 0%, #1976D2 100%); border-radius: 12px; box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);">
-    <div class="d-flex justify-space-between align-center">
-      <div class="d-flex align-center">
-        <div class="jedi-logo mr-4">
-          <v-icon :icon="mdiSwordCross" size="x-large" color="white" class="lightsaber-icon jedi-hover-scale" style="filter: drop-shadow(0 0 8px rgba(255,255,255,0.5));"></v-icon>
-        </div>
-        <div>
-          <h1 class="text-h4 font-weight-bold mb-1 jedi-title">
-            <span class="jedi-text" style="letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">JEDI</span>
-            <span class="hosts-text" style="letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">HOSTS</span>
-            <span class="text-h5 font-weight-medium" style="color: white; text-shadow: 0 0 10px rgba(255,255,255,0.8);">管理器</span>
-          </h1>
-          <p class="text-subtitle-1 mb-0" style="color: rgba(255,255,255,0.9); font-weight: 500; letter-spacing: 0.3px;">
-            管理您的 hosts 文件配置，提高开发效率
-          </p>
-        </div>
-      </div>
-      <div class="d-flex align-center">
-        <v-chip
-          :color="hostsResolveSwitch ? '#4CAF50' : '#757575'"
-          :text-color="'white'"
-          size="small"
-          class="mr-3 px-4 force-chip jedi-hover-lift"
-          variant="elevated"
-          elevation="2"
-          style="border: 1px solid rgba(255,255,255,0.2); letter-spacing: 0.5px;"
-        >
-          <v-icon start :icon="hostsResolveSwitch ? mdiCheckCircle : mdiPauseCircle" size="small"></v-icon>
-          <span style="font-weight: 500;">{{ hostsResolveSwitch ? '已启用' : '已禁用' }}</span>
-        </v-chip>
-        <div class="d-flex align-center global-switch-container pa-1 px-3 rounded-pill" style="background: rgba(255,255,255,0.15); backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); min-width: 140px; height: 36px;">
-          <span class="mr-2" style="color: white; font-weight: 500; font-size: 0.85rem; text-shadow: 0 0 5px rgba(0,0,0,0.3);">全局开关</span>
-          <v-switch
-            v-model="hostsResolveSwitch"
-            hide-details
-            color="success"
-            @update:model-value="(val) => val !== null && handleHostsSwitch(val)"
-            density="compact"
-            class="global-switch lightsaber-switch green-switch"
-            style="transform: scale(0.75); margin-right: 8px; width: 40px;"
-          ></v-switch>
-        </div>
-      </div>
-    </div>
-  </div>
+  <!--
+  ====================================
+  JEDIHOSTS管理器 - 主界面
+  功能：管理hosts文件配置，支持分组、启用/禁用、添加/编辑/删除条目
+  ====================================
+  -->
 
-  <!-- 分组选择区域 - 绝地武士主题 -->
-  <v-card class="mb-3 jedi-card" style="border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-    <div class="d-flex align-center px-4 py-3" style="background: linear-gradient(135deg, #1976D2 0%, #2196F3 100%);">
-      <div class="d-flex align-center">
-        <v-icon :icon="mdiDomain" class="mr-2" color="white" size="small"></v-icon>
-        <span class="text-subtitle-1 font-weight-medium" style="color: white; letter-spacing: 0.5px;">分组管理</span>
-      </div>
-      <v-spacer></v-spacer>
-      <v-btn
-        color="white"
-        variant="flat"
-        class="jedi-btn jedi-hover-lift"
-        :prepend-icon="mdiPlus"
-        @click="showAddGroupDialog = true"
-        size="small"
-        rounded="pill"
-        style="background-color: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(5px);"
-      >
-        <span style="font-weight: 500; letter-spacing: 0.5px;">添加分组</span>
-      </v-btn>
-    </div>
+  <!-- 1. 应用标题区域 -->
+  <header-section v-model="hostsResolveSwitch" @update:model-value="handleHostsSwitch" />
 
-    <div class="pa-2" style="background-color: #FAFBFD; border-top: 1px solid rgba(25, 118, 210, 0.05);">
-      <div class="d-flex flex-wrap gap-2 px-2 py-1">
-        <v-btn
-          v-for="group in tags"
-          :key="group.tag"
-          :value="group.tag"
-          :color="selectedTag === group.tag ? '#1976D2' : '#E8F1FF'"
-          :variant="selectedTag === group.tag ? 'flat' : 'outlined'"
-          class="group-btn"
-          size="small"
-          rounded="pill"
-          :class="{'v-btn--active elevation-2': selectedTag === group.tag}"
-          @click="selectedTag = group.tag"
-          :style="{
-            minWidth: 'auto',
-            borderColor: '#1976D2 !important',
-            borderWidth: '1.5px !important',
-            fontWeight: 500,
-            color: selectedTag === group.tag ? 'white !important' : '#0D47A1 !important'
-          }"
-        >
-          <v-icon :icon="mdiDomain" size="x-small" class="mr-1" :style="{color: selectedTag === group.tag ? 'white !important' : '#0D47A1 !important'}"></v-icon>
-          <span :style="{color: selectedTag === group.tag ? 'white !important' : '#0D47A1 !important', fontWeight: 500}">{{ group.tag }}</span>
-        </v-btn>
-      </div>
-    </div>
-  </v-card>
-
-  <!-- 数据展示区域 - 绝地武士主题 -->
+  <!-- 2. 主内容区域 -->
   <v-card class="jedi-card" style="border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-    <template v-if="tags.length && selectedTag">
-      <template v-for="group in tags.filter(t => t.tag === selectedTag)" :key="group.tag">
-        <div class="jedi-card-header d-flex justify-space-between align-center" style="background: linear-gradient(to right, #E3F2FD, #BBDEFB); border-bottom: 1px solid rgba(25, 118, 210, 0.1);">
-          <div class="d-flex align-center">
-            <div class="d-flex align-center px-2 py-1 rounded-lg" style="background-color: rgba(255,255,255,0.6); border: 1px solid rgba(25, 118, 210, 0.2);">
-              <v-icon :icon="mdiDomain" size="small" class="mr-2" color="#1976D2"></v-icon>
-              <span class="font-weight-medium" style="color: #1976D2; letter-spacing: 0.3px;">当前分组:</span>
-              <v-chip
-                color="#1976D2"
-                size="small"
-                variant="flat"
-                class="font-weight-medium ml-2"
-                text-color="white"
-                style="border: 1px solid rgba(255,255,255,0.2)"
-              >
-                {{ group.tag }}
-              </v-chip>
-            </div>
-          </div>
-          <v-btn
-            color="#4CAF50"
-            variant="flat"
-            :prepend-icon="mdiPlus"
-            @click="openAddHostDialog(group.tag)"
-            size="small"
-            rounded="pill"
-            class="jedi-btn jedi-hover-lift"
-            style="box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);"
-          >
-            <span style="font-weight: 500; letter-spacing: 0.3px;">新增条目</span>
-          </v-btn>
-        </div>
-        <div class="jedi-card-content pa-4">
-          <div class="d-flex justify-space-between align-center mb-4">
-            <v-text-field
-              v-model="search"
-              label="搜索域名或IP"
-              :prepend-inner-icon="mdiMagnify"
-              variant="outlined"
-              hide-details
-              density="compact"
-              class="max-width-300"
-              bg-color="white"
-              color="var(--jedi-text-medium)"
-              rounded="pill"
-              style="border: 1px solid rgba(0,0,0,0.05);"
-            ></v-text-field>
-          </div>
+    <!-- 分组管理区域 -->
+    <group-manager
+      v-if="tags.length"
+      v-model="selectedTag"
+      :groups="tags"
+      @add-group="showAddGroupDialog = true"
+    />
 
-          <v-data-table
-            :headers="headers"
-            :items="getHostsAsItems(group.hosts)"
-            :search="search"
-            density="comfortable"
-            hover
-            class="hosts-table jedi-table"
-            :items-per-page="10"
-            bg-color="white"
-            style="border-radius: 8px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08);"
-            :footer-props="{
-              'items-per-page-options': [5, 10, 15, 20, -1],
-              'items-per-page-text': '每页显示',
-              'page-text': '{0}-{1} 共 {2}'
-            }"
-          >
-            <template v-slot:item.enabled="{ item }">
-              <div class="d-flex status-column">
-                <v-switch
-                  v-model="item.enabled"
-                  hide-details
-                  color="success"
-                  density="compact"
-                  @update:model-value="updateHostStatus(item)"
-                  class="ma-0 pa-0 lightsaber-switch green-switch"
-                  :ripple="false"
-                  style="transform: scale(0.9); background-color: transparent;"
-                ></v-switch>
-              </div>
-            </template>
-            <template v-slot:item.domain="{ item }">
-              <div class="d-flex align-center">
-                <div class="font-weight-medium">{{ item.domain }}</div>
-                <v-tooltip text="打开域名" location="top">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      icon
-                      variant="text"
-                      size="x-small"
-                      class="ml-2 jedi-hover-scale"
-                      v-bind="props"
-                      @click="openDomainLink(item.domain)"
-                      style="background-color: #E3F2FD; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
-                    >
-                      <v-icon :icon="mdiWeb" size="x-small" color="#1976D2"></v-icon>
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-              </div>
-            </template>
-            <template v-slot:item.ip="{ item }">
-              <v-chip
-                size="small"
-                color="#E3F2FD"
-                text-color="#1565C0"
-                variant="flat"
-                class="font-monospace"
-                style="border: 1px solid rgba(21, 101, 192, 0.2); font-weight: 500;"
-              >
-                {{ item.ip }}
-              </v-chip>
-            </template>
-            <template v-slot:item.actions="{ item }">
-              <div class="d-flex actions-column">
-                <v-tooltip text="编辑条目" location="top">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      icon
-                      variant="flat"
-                      color="#1976D2"
-                      class="mr-1 jedi-hover-lift"
-                      @click="openEditHostDialog(item)"
-                      v-bind="props"
-                      size="x-small"
-                      style="background-color: #E3F2FD; border: 1px solid rgba(25, 118, 210, 0.2); box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
-                    >
-                      <v-icon :icon="mdiPencil" size="small" color="#1976D2"></v-icon>
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-                <v-tooltip text="删除条目" location="top">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      icon
-                      variant="flat"
-                      color="#F44336"
-                      @click="removeHost(item)"
-                      v-bind="props"
-                      size="x-small"
-                      class="jedi-hover-lift"
-                      style="background-color: #FFEBEE; border: 1px solid rgba(244, 67, 54, 0.2); box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
-                    >
-                      <v-icon :icon="mdiDelete" size="small" color="#F44336"></v-icon>
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-              </div>
-            </template>
-          </v-data-table>
-        </div>
-      </template>
+    <!-- 数据展示区域 -->
+    <template v-if="tags.length && selectedTag">
+      <hosts-table
+        v-if="currentGroup"
+        :current-group="currentGroup"
+        v-model:search="search"
+        @update-status="updateHostStatus"
+        @edit-host="openEditHostDialog"
+        @delete-host="removeHost"
+        @add-host="openAddHostDialog"
+        @open-domain="handleOpenDomain"
+      />
     </template>
+
+    <!-- 空状态显示 -->
     <template v-else>
-      <div class="jedi-card-content text-center pa-12" style="background-color: #f5f7fa;">
-        <div class="empty-state-container py-8">
-          <div class="death-star-icon mb-6">
-            <v-icon :icon="mdiDomain" size="80" color="#1976D2" class="death-star jedi-hover-scale" style="filter: drop-shadow(0 4px 8px rgba(25, 118, 210, 0.3));"></v-icon>
-          </div>
-          <h2 class="text-h5 font-weight-bold mb-2" style="color: #1976D2; letter-spacing: 0.5px;">暂无解析配置</h2>
-          <p class="text-body-1 text-grey-darken-1 mb-8 max-width-500 mx-auto" style="letter-spacing: 0.3px;">您可以手动添加分组或使用默认配置来开始管理您的 hosts 文件</p>
-          <div class="d-flex justify-center">
-            <v-btn
-              color="#1976D2"
-              variant="flat"
-              class="mr-4 px-6 jedi-hover-lift"
-              rounded="pill"
-              size="large"
-              :prepend-icon="mdiPlus"
-              @click="showAddGroupDialog = true"
-              style="box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);"
-            >
-              <span style="font-weight: 500; letter-spacing: 0.5px;">添加分组</span>
-            </v-btn>
-            <v-btn
-              color="#4CAF50"
-              variant="flat"
-              class="px-6 jedi-hover-lift"
-              rounded="pill"
-              size="large"
-              :prepend-icon="mdiDomain"
-              @click="initializeDefaultConfig"
-              style="box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);"
-            >
-              <span style="font-weight: 500; letter-spacing: 0.5px;">使用默认配置</span>
-            </v-btn>
-          </div>
-        </div>
-      </div>
+      <empty-state
+        @add-group="showAddGroupDialog = true"
+        @use-default="initializeDefaultConfig"
+      />
     </template>
   </v-card>
 
-  <!-- 添加分组对话框 - 绝地武士主题 -->
-  <v-dialog v-model="showAddGroupDialog" max-width="550" persistent>
-    <v-card class="rounded-lg overflow-hidden">
-      <v-toolbar color="#4a90e2" class="px-4">
-        <v-icon :icon="mdiDomainPlus" class="mr-2" color="var(--lightsaber-blue)"></v-icon>
-        <v-toolbar-title class="font-weight-medium">添加分组</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn icon @click="showAddGroupDialog = false">
-          <v-icon :icon="mdiClose" color="white"></v-icon>
-        </v-btn>
-      </v-toolbar>
-      <v-card-text class="pa-6">
-        <v-text-field
-          v-model="newGroupTag"
-          label="分组名称 (tag)"
-          variant="outlined"
-          placeholder="例如: development, production"
-          required
-          class="mb-4"
-          bg-color="white"
-        ></v-text-field>
+  <!-- 3. 对话框区域 -->
+  <!-- 添加分组对话框 -->
+  <add-group-dialog
+    v-model="showAddGroupDialog"
+    @add="addGroup"
+    @error="showNotification($event, 'error')"
+  />
 
-        <v-card class="mb-4 pa-3 rounded-lg" style="background-color: #edf2ff;">
-          <div class="d-flex align-center">
-            <v-switch
-              v-model="newGroupIsRemote"
-              label="使用远程配置"
-              color="var(--lightsaber-blue)"
-              hide-details
-              density="comfortable"
-              inset
-              class="lightsaber-switch"
-            ></v-switch>
-            <v-tooltip text="从远程 URL 加载 hosts 配置" location="top">
-              <template v-slot:activator="{ props }">
-                <v-icon v-bind="props" class="ml-2" size="small" color="var(--lightsaber-blue)" :icon="mdiInformationOutline"></v-icon>
-              </template>
-            </v-tooltip>
-          </div>
-        </v-card>
+  <!-- 添加条目对话框 -->
+  <add-host-dialog
+    v-model="showAddHostDialog"
+    :group-tag="currentAddGroupTag"
+    @add="addHost"
+    @error="showNotification($event, 'error')"
+  />
 
-        <v-expand-transition>
-          <v-text-field
-            v-if="newGroupIsRemote"
-            v-model="newGroupUrl"
-            label="远程配置 URL"
-            variant="outlined"
-            placeholder="https://example.com/hosts.json"
-            required
-            :prepend-inner-icon="mdiLinkVariant"
-            bg-color="white"
-          ></v-text-field>
-        </v-expand-transition>
+  <!-- 编辑条目对话框 -->
+  <edit-host-dialog
+    v-model="showEditHostDialog"
+    :host="currentEditHost"
+    @edit="editHost"
+    @error="showNotification($event, 'error')"
+  />
 
-        <v-expand-transition>
-          <div v-if="!newGroupIsRemote">
-            <v-textarea
-              v-model="newGroupHosts"
-              label="Hosts 列表"
-              variant="outlined"
-              placeholder="格式: IP 域名，每行一条\n例如:\n127.0.0.1 localhost\n192.168.1.1 router.local"
-              rows="6"
-              auto-grow
-              required
-              bg-color="white"
-              class="font-monospace"
-            ></v-textarea>
-            <v-alert
-              type="info"
-              variant="tonal"
-              density="compact"
-              class="mt-2 text-body-2"
-            >
-              <v-icon start :icon="mdiInformationOutline" color="var(--lightsaber-blue)"></v-icon>
-              每行一条记录，格式为 "IP地址 域名"
-            </v-alert>
-          </div>
-        </v-expand-transition>
-      </v-card-text>
-      <v-divider></v-divider>
-      <v-card-actions class="pa-4" style="background-color: #f5f7fa;">
-        <v-spacer></v-spacer>
-        <v-btn
-          variant="text"
-          @click="showAddGroupDialog = false"
-          class="mr-2"
-          color="grey-darken-1"
-        >
-          取消
-        </v-btn>
-        <v-btn
-          color="var(--lightsaber-blue)"
-          variant="elevated"
-          @click="confirmAddGroup"
-          class="lightsaber-btn blue"
-        >
-          确认
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+  <!-- 删除确认对话框 -->
+  <delete-confirm-dialog
+    v-model="showDeleteConfirmDialog"
+    :host="hostToDelete"
+    @delete="confirmDeleteHost"
+  />
 
-  <!-- 添加条目对话框 - 绝地武士主题 -->
-  <v-dialog v-model="showAddHostDialog" max-width="500" persistent>
-    <v-card class="rounded-lg overflow-hidden">
-      <v-toolbar color="#42b983" class="px-4">
-        <v-icon :icon="mdiDns" class="mr-2" color="var(--lightsaber-green)"></v-icon>
-        <v-toolbar-title class="font-weight-medium">新增条目</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn icon @click="showAddHostDialog = false">
-          <v-icon :icon="mdiClose" color="white"></v-icon>
-        </v-btn>
-      </v-toolbar>
-      <v-card-text class="pa-6">
-        <v-text-field
-          v-model="newHostIp"
-          label="IP地址"
-          variant="outlined"
-          placeholder="例如: 127.0.0.1"
-          required
-          class="mb-4"
-          bg-color="white"
-          :prepend-inner-icon="mdiIpNetwork"
-        ></v-text-field>
-        <v-text-field
-          v-model="newHostDomain"
-          label="域名"
-          variant="outlined"
-          placeholder="例如: example.local"
-          required
-          bg-color="white"
-          :prepend-inner-icon="mdiWeb"
-        ></v-text-field>
-        <v-alert
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mt-4 text-body-2"
-        >
-          <v-icon start :icon="mdiInformationOutline" color="var(--lightsaber-green)"></v-icon>
-          此条目将属于当前选中的分组
-        </v-alert>
-      </v-card-text>
-      <v-divider></v-divider>
-      <v-card-actions class="pa-4" style="background-color: #f5f7fa;">
-        <v-spacer></v-spacer>
-        <v-btn
-          variant="text"
-          @click="showAddHostDialog = false"
-          class="mr-2"
-          color="grey-darken-1"
-        >
-          取消
-        </v-btn>
-        <v-btn
-          color="var(--lightsaber-green)"
-          variant="elevated"
-          @click="confirmAddHost"
-          class="lightsaber-btn green"
-        >
-          确认
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-
-  <!-- 编辑条目对话框 - 绝地武士主题 -->
-  <v-dialog v-model="showEditHostDialog" max-width="500" persistent>
-    <v-card class="rounded-lg overflow-hidden">
-      <v-toolbar color="#4a90e2" class="px-4">
-        <v-icon :icon="mdiPencil" class="mr-2" color="var(--lightsaber-blue)"></v-icon>
-        <v-toolbar-title class="font-weight-medium">编辑条目</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn icon @click="showEditHostDialog = false">
-          <v-icon :icon="mdiClose" color="white"></v-icon>
-        </v-btn>
-      </v-toolbar>
-      <v-card-text class="pa-6">
-        <v-text-field
-          v-model="editHostIp"
-          label="IP地址"
-          variant="outlined"
-          placeholder="例如: 127.0.0.1"
-          required
-          class="mb-4"
-          bg-color="white"
-          :prepend-inner-icon="mdiIpNetwork"
-        ></v-text-field>
-        <v-text-field
-          v-model="editHostDomain"
-          label="域名"
-          variant="outlined"
-          placeholder="例如: example.local"
-          required
-          bg-color="white"
-          :prepend-inner-icon="mdiWeb"
-        ></v-text-field>
-        <v-alert
-          type="info"
-          variant="tonal"
-          density="compact"
-          class="mt-4 text-body-2"
-        >
-          <v-icon start :icon="mdiInformationOutline" color="var(--lightsaber-blue)"></v-icon>
-          编辑条目将保留其启用/禁用状态
-        </v-alert>
-      </v-card-text>
-      <v-divider></v-divider>
-      <v-card-actions class="pa-4" style="background-color: #f5f7fa;">
-        <v-spacer></v-spacer>
-        <v-btn
-          variant="text"
-          @click="showEditHostDialog = false"
-          class="mr-2"
-          color="grey-darken-1"
-        >
-          取消
-        </v-btn>
-        <v-btn
-          color="var(--lightsaber-blue)"
-          variant="elevated"
-          @click="confirmEditHost"
-          class="lightsaber-btn blue"
-        >
-          保存
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-
-  <!-- 删除确认对话框 - 绝地武士主题 -->
-  <v-dialog v-model="showDeleteConfirmDialog" max-width="400" persistent>
-    <v-card class="rounded-lg">
-      <v-card-title class="text-h5 pa-4" style="background-color: #FFEBEE; color: #D32F2F;">
-        <v-icon :icon="mdiAlertCircle" color="#D32F2F" class="mr-2"></v-icon>
-        确认删除
-      </v-card-title>
-      <v-card-text class="pa-4 pt-5">
-        <p class="text-body-1">您确定要删除以下条目吗？</p>
-        <div v-if="hostToDelete" class="mt-3 pa-3" style="background-color: #F5F5F5; border-radius: 8px;">
-          <div class="d-flex align-center mb-1">
-            <v-icon :icon="mdiIpNetwork" size="small" color="#1976D2" class="mr-2"></v-icon>
-            <span class="font-weight-medium">IP地址：</span>
-            <span class="ml-2">{{ hostToDelete.ip }}</span>
-          </div>
-          <div class="d-flex align-center">
-            <v-icon :icon="mdiDomain" size="small" color="#1976D2" class="mr-2"></v-icon>
-            <span class="font-weight-medium">域名：</span>
-            <span class="ml-2">{{ hostToDelete.domain }}</span>
-          </div>
-        </div>
-        <p class="text-body-2 mt-4" style="color: #F44336;">此操作不可撤销，删除后将立即生效。</p>
-      </v-card-text>
-      <v-card-actions class="pa-4 pt-0">
-        <v-spacer></v-spacer>
-        <v-btn
-          variant="text"
-          @click="showDeleteConfirmDialog = false"
-          class="mr-2"
-          color="grey-darken-1"
-        >
-          取消
-        </v-btn>
-        <v-btn
-          color="#F44336"
-          variant="flat"
-          @click="confirmDeleteHost"
-          class="px-4"
-        >
-          确认删除
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-
-  <!-- 提示消息 - 绝地武士主题 -->
-  <v-snackbar
+  <!-- 4. 通知消息组件 -->
+  <notification-snackbar
     v-model="showSnackbar"
+    :text="snackbarText"
     :color="snackbarColor"
     :timeout="3000"
-    location="top"
-    rounded="pill"
-    class="mt-6"
-  >
-    <div class="d-flex align-center">
-      <v-icon
-        :icon="snackbarColor === 'success' ? mdiCheckCircle : snackbarColor === 'error' ? mdiAlertCircle : mdiInformation"
-        class="mr-2"
-      ></v-icon>
-      {{ snackbarText }}
-    </div>
-    <template v-slot:actions>
-      <v-btn
-        variant="text"
-        @click="showSnackbar = false"
-        icon
-        size="small"
-      >
-        <v-icon :icon="mdiClose"></v-icon>
-      </v-btn>
-    </template>
-  </v-snackbar>
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
+/**
+ * JEDIHOSTS管理器 - 主组件
+ * 功能：管理hosts文件配置，支持分组、启用/禁用、添加/编辑/删除条目
+ */
+
+// ===== 导入依赖 =====
+import { ref, computed, onMounted } from 'vue'
+
+// 导入子组件
+import HeaderSection from '@/components/hosts/common/HeaderSection.vue'
+import GroupManager from '@/components/hosts/common/GroupManager.vue'
+import HostsTable from '@/components/hosts/tables/HostsTable.vue'
+import EmptyState from '@/components/hosts/common/EmptyState.vue'
+import AddGroupDialog from '@/components/hosts/dialogs/AddGroupDialog.vue'
+import AddHostDialog from '@/components/hosts/dialogs/AddHostDialog.vue'
+import EditHostDialog from '@/components/hosts/dialogs/EditHostDialog.vue'
+import DeleteConfirmDialog from '@/components/hosts/dialogs/DeleteConfirmDialog.vue'
+import NotificationSnackbar from '@/components/hosts/common/NotificationSnackbar.vue'
+
+// 导入工具和服务
 import {
-  mdiPlus,
-  mdiDelete,
-  mdiMagnify,
-  mdiDomain,
-  mdiDomainPlus,
-  mdiDns,
-  mdiPencil,
-  mdiCheckCircle,
-  mdiPauseCircle,
-  mdiClose,
-  mdiInformationOutline,
-  mdiLinkVariant,
-  mdiWeb,
-  mdiIpNetwork,
-  mdiAlertCircle,
-  mdiInformation,
-  mdiSwordCross
-} from '@mdi/js'
+  findHostEntry,
+  findHostIndex,
+  updateHostEntryStatus,
+  enableAllHosts,
+  disableAllHosts
+} from '@/utils/hostsUtils'
+import {
+  getOsInfo,
+  readSystemHosts,
+  updateHostsWithTag,
+  revertHosts,
+  initializeDefaultConfig as initDefaultConfig
+} from '@/services/hostsService'
 
-// 数据表格配置
-const headers = [
-  { title: 'IP地址', key: 'ip', sortable: true },
-  { title: '域名', key: 'domain', sortable: true },
-  { title: '状态', key: 'enabled', sortable: false },
-  { title: '操作', key: 'actions', sortable: false }
-]
+// ===== 状态变量 =====
 
-// 状态变量
+/**
+ * 全局开关状态
+ * @description 控制所有hosts条目的启用/禁用状态
+ */
 const hostsResolveSwitch = ref(false)
-// 注释掉未使用的变量
-// const remoteUrl = ref('')
+
+/**
+ * 分组数据
+ * @description 存储所有分组及其hosts条目
+ */
 const tags = ref<Array<{ tag: string; hosts: Array<Record<string, string>> }>>([])
+
+/**
+ * 当前选中的分组
+ */
 const selectedTag = ref<string>('')
+
+/**
+ * 搜索关键词
+ */
 const search = ref('')
 
-// 对话框状态
+// ===== 对话框状态 =====
+
+/**
+ * 添加分组对话框状态
+ */
 const showAddGroupDialog = ref(false)
+
+/**
+ * 添加条目对话框状态
+ */
 const showAddHostDialog = ref(false)
-const showEditHostDialog = ref(false)
-const newGroupTag = ref('')
-const newGroupIsRemote = ref(false)
-const newGroupUrl = ref('')
-const newGroupHosts = ref('')
-const newHostIp = ref('')
-const newHostDomain = ref('')
-const editHostIp = ref('')
-const editHostDomain = ref('')
 const currentAddGroupTag = ref('')
+
+/**
+ * 编辑条目对话框状态
+ */
+const showEditHostDialog = ref(false)
 const currentEditHost = ref<any>(null)
 
-// 提示消息
-const showSnackbar = ref(false)
-const snackbarText = ref('')
-const snackbarColor = ref('success')
-
-// 删除确认对话框
+/**
+ * 删除确认对话框状态
+ */
 const showDeleteConfirmDialog = ref(false)
 const hostToDelete = ref<any>(null)
 
-// 生命周期钩子
+/**
+ * 提示消息状态
+ */
+const showSnackbar = ref(false)
+const snackbarText = ref('')
+const snackbarColor = ref<'success' | 'error' | 'info' | 'warning'>('success')
+
+// ===== 计算属性 =====
+
+/**
+ * 当前选中的分组数据
+ */
+const currentGroup = computed(() => {
+  return tags.value.find(t => t.tag === selectedTag.value)
+})
+
+// ===== 生命周期钩子 =====
+
+/**
+ * 组件挂载时初始化
+ */
 onMounted(async () => {
   await getOsInfo()
   await loadSystemHosts()
 })
 
-// 监听全局开关状态变化
-watch(hostsResolveSwitch, (newValue) => {
-  handleHostsSwitch(newValue)
-})
+// ===== 方法 =====
 
-// 将hosts数组转换为数据表格项目
-function getHostsAsItems(hosts: Array<Record<string, string>>) {
-  return hosts.map((hostMap, index) => {
-    // 检查是否禁用
-    const isDisabled = hostMap.hasOwnProperty('__disabled')
-
-    // 提取域名和IP（跳过特殊键）
-    let domain = ''
-    let ip = ''
-
-    for (const key in hostMap) {
-      if (key !== '__disabled') {
-        domain = key
-        ip = hostMap[key]
-        break
-      }
-    }
-
-    return {
-      id: index,
-      domain,
-      ip,
-      enabled: !isDisabled,
-      originalMap: hostMap
-    }
-  })
-}
-
-// 处理全局开关状态变化
+/**
+ * 处理全局开关状态变化
+ * @param switchState 开关状态
+ */
 async function handleHostsSwitch(switchState: boolean) {
   try {
-    console.log('切换全局开关状态：', switchState)
     if (switchState) {
-      // 如果开启，先将所有条目启用（移除__disabled标记）
-      for (const tag of tags.value) {
-        for (const host of tag.hosts) {
-          if (host.hasOwnProperty('__disabled')) {
-            delete host['__disabled']
-          }
-        }
-      }
-      // 然后更新hosts文件
-      await updateHosts()
+      // 如果开启，启用所有条目
+      enableAllHosts(tags.value)
+      // 更新hosts文件
+      await updateHostsWithTag(tags.value)
       showNotification('Hosts解析已启用，所有条目已生效', 'success')
     } else {
-      // 如果关闭，先将所有条目禁用（添加__disabled标记）
-      for (const tag of tags.value) {
-        for (const host of tag.hosts) {
-          if (!host.hasOwnProperty('__disabled')) {
-            host['__disabled'] = 'true'
-          }
-        }
-      }
-      // 然后调用revertHosts来注释所有条目
+      // 如果关闭，禁用所有条目
+      disableAllHosts(tags.value)
+      // 恢复hosts文件
       await revertHosts()
       showNotification('Hosts解析已禁用，所有条目已暂停生效，但配置已保留', 'info')
     }
@@ -731,34 +222,101 @@ async function handleHostsSwitch(switchState: boolean) {
   }
 }
 
-// 更新hosts文件
+/**
+ * 加载系统hosts配置
+ * @description 从系统中读取hosts配置并更新界面
+ */
+async function loadSystemHosts() {
+  try {
+    // 调用后端API来读取系统hosts文件
+    const result = await readSystemHosts();
+
+    // 如果有数据，则使用返回的数据
+    if (Array.isArray(result) && result.length > 0) {
+      // 更新数据
+      updateTagsData(result);
+
+      // 更新全局开关状态
+      updateGlobalSwitchState(result);
+
+      showNotification('成功加载系统 Hosts 配置', 'success');
+    } else {
+      // 如果没有数据，使用默认空标签
+      initializeEmptyTags();
+    }
+  } catch (error) {
+    console.error('加载系统 Hosts 失败:', error);
+    showNotification('加载系统 Hosts 失败: ' + (error as Error).message, 'error');
+
+    // 出错时使用默认空标签
+    initializeEmptyTags();
+  }
+}
+
+/**
+ * 更新分组数据
+ * @param result 从后端获取的数据
+ */
+function updateTagsData(result: Array<{ tag: string; hosts: Array<Record<string, string>> }>) {
+  tags.value = result;
+  selectedTag.value = result[0].tag;
+}
+
+/**
+ * 更新全局开关状态
+ * @param result 从后端获取的数据
+ */
+function updateGlobalSwitchState(result: Array<{ tag: string; hosts: Array<Record<string, string>> }>) {
+  // 检查是否有未禁用的条目，如果有，则设置全局开关为开
+  let hasEnabledEntries = false;
+  for (const tag of result) {
+    for (const host of tag.hosts) {
+      if (!host.hasOwnProperty('__disabled')) {
+        hasEnabledEntries = true;
+        break;
+      }
+    }
+    if (hasEnabledEntries) break;
+  }
+  hostsResolveSwitch.value = hasEnabledEntries;
+}
+
+/**
+ * 初始化空标签
+ * @description 当没有数据或出错时初始化默认空标签
+ */
+function initializeEmptyTags() {
+  tags.value = [
+    {
+      tag: '默认',
+      hosts: []
+    }
+  ];
+  selectedTag.value = '默认';
+  hostsResolveSwitch.value = false;
+}
+
+/**
+ * 更新hosts文件
+ * @description 将当前界面上的配置写入hosts文件
+ */
 async function updateHosts() {
   try {
-    // 使用当前界面上的配置
-    console.log('开始更新hosts文件，当前标签数量：', tags.value.length)
-
     // 直接将当前界面上的标签数据传递给后端
-    await invoke('update_hosts_with_tag', {
-      source: 'current',
-      url: null,
-      tags: tags.value
-    })
-
-    console.log('hosts文件更新成功')
+    await updateHostsWithTag(tags.value)
   } catch (error) {
     console.error('更新hosts失败', error)
     throw error
   }
 }
 
-// 初始化默认配置
+/**
+ * 初始化默认配置
+ * @description 使用默认配置初始化hosts文件
+ */
 async function initializeDefaultConfig() {
   try {
-    await invoke('update_hosts_with_tag', {
-      source: 'default',
-      url: null,
-      tags: null
-    })
+    await initDefaultConfig()
     showNotification('默认配置初始化成功', 'success')
     await loadSystemHosts() // 重新加载配置
   } catch (error) {
@@ -767,312 +325,175 @@ async function initializeDefaultConfig() {
   }
 }
 
-// 恢复hosts文件
-async function revertHosts() {
-  try {
-    await invoke('revert_hosts')
-  } catch (error) {
-    console.error('恢复hosts失败', error)
-    throw error
+/**
+ * 获取当前分组
+ * @returns 当前选中的分组
+ */
+function getCurrentGroup() {
+  const group = tags.value.find(t => t.tag === selectedTag.value);
+  if (!group) {
+    showNotification('未找到对应分组', 'error');
+    return null;
   }
+  return group;
 }
 
-// 加载系统hosts配置
-async function loadSystemHosts() {
-  try {
-    // 调用后端API来读取系统hosts文件
-    const result = await invoke('read_system_hosts');
-
-    // 如果有数据，则使用返回的数据
-    if (Array.isArray(result) && result.length > 0) {
-      tags.value = result;
-      selectedTag.value = result[0].tag;
-
-      // 检查是否有未禁用的条目，如果有，则设置全局开关为开
-      let hasEnabledEntries = false;
-      for (const tag of result) {
-        for (const host of tag.hosts) {
-          if (!host.hasOwnProperty('__disabled')) {
-            hasEnabledEntries = true;
-            break;
-          }
-        }
-        if (hasEnabledEntries) break;
-      }
-
-      hostsResolveSwitch.value = hasEnabledEntries;
-      showNotification('成功加载系统 Hosts 配置', 'success');
-    } else {
-      // 如果没有数据，使用默认空标签
-      tags.value = [
-        {
-          tag: '默认',
-          hosts: []
-        }
-      ];
-      selectedTag.value = '默认';
-      hostsResolveSwitch.value = false;
-    }
-  } catch (error) {
-    console.error('加载系统 Hosts 失败:', error);
-    showNotification('加载系统 Hosts 失败: ' + (error as Error).message, 'error');
-
-    // 出错时使用默认空标签
-    tags.value = [
-      {
-        tag: '默认',
-        hosts: []
-      }
-    ];
-    selectedTag.value = '默认';
-    hostsResolveSwitch.value = false;
-  }
-}
-
-// 加载远程配置
-// 注释掉未使用的函数以避免 TypeScript 警告
-/*
-async function loadConfig() {
-  try {
-    const result: Array<{ tag: string; hosts: Array<Record<string, string>> }> =
-      await invoke('fetch_remote_config', { url: remoteUrl.value })
-
-    if (result.length > 0) {
-      tags.value = result
-      selectedTag.value = result[0].tag
-      showNotification('远程配置加载成功', 'success')
-    } else {
-      showNotification('远程配置为空', 'warning')
-    }
-  } catch (error) {
-    console.error('加载配置失败', error)
-    showNotification('加载配置失败: ' + (error as Error).message, 'error')
-  }
-}
-*/
-
-// 打开添加主机对话框
+/**
+ * 打开添加主机对话框
+ * @param tag 分组名称
+ * @description 打开添加主机对话框，并初始化表单
+ */
 function openAddHostDialog(tag: string) {
+  // 设置当前分组
   currentAddGroupTag.value = tag
-  newHostIp.value = ''
-  newHostDomain.value = ''
+  // 显示对话框
   showAddHostDialog.value = true
 }
 
-// 打开编辑主机对话框
+/**
+ * 打开编辑主机对话框
+ * @param host 要编辑的主机信息
+ * @description 打开编辑主机对话框，并填充表单
+ */
 function openEditHostDialog(host: any) {
+  // 保存当前编辑的主机
   currentEditHost.value = host
-  editHostIp.value = host.ip
-  editHostDomain.value = host.domain
+  // 显示对话框
   showEditHostDialog.value = true
 }
 
-// 确认添加主机
-function confirmAddHost() {
-  if (!newHostIp.value.trim() || !newHostDomain.value.trim()) {
-    showNotification('IP和域名不能为空', 'error')
-    return
-  }
-
-  const group = tags.value.find(t => t.tag === currentAddGroupTag.value)
-  if (!group) {
-    showNotification('未找到对应分组', 'error')
-    return
-  }
-
-  group.hosts.push({ [newHostDomain.value.trim()]: newHostIp.value.trim() })
-
-  selectedTag.value = currentAddGroupTag.value
-  showAddHostDialog.value = false
-  newHostIp.value = ''
-  newHostDomain.value = ''
-  showNotification('条目添加成功', 'success')
-}
-
-// 确认编辑主机
-function confirmEditHost() {
-  if (!editHostIp.value.trim() || !editHostDomain.value.trim()) {
-    showNotification('IP和域名不能为空', 'error')
-    return
-  }
-
-  if (!currentEditHost.value) {
-    showNotification('编辑数据丢失', 'error')
-    return
-  }
-
-  const group = tags.value.find(t => t.tag === selectedTag.value)
-  if (!group) {
-    showNotification('未找到对应分组', 'error')
-    return
-  }
-
-  // 找到对应的主机条目
-  const hostEntry = group.hosts.find(h => {
-    for (const key in h) {
-      if (key !== '__disabled' && key === currentEditHost.value.domain && h[key] === currentEditHost.value.ip) {
-        return true
-      }
-    }
-    return false
-  })
-
-  if (hostEntry) {
-    // 保存禁用状态
-    const isDisabled = hostEntry.hasOwnProperty('__disabled')
-
-    // 删除旧条目
-    const index = group.hosts.indexOf(hostEntry)
-    if (index !== -1) {
-      group.hosts.splice(index, 1)
-    }
-
-    // 添加新条目
-    const newHostEntry = { [editHostDomain.value.trim()]: editHostIp.value.trim() }
-    if (isDisabled) {
-      newHostEntry['__disabled'] = 'true'
-    }
-    group.hosts.push(newHostEntry)
-
-    // 更新hosts文件
-    updateHosts().then(() => {
-      showNotification('条目编辑成功', 'success')
-      showEditHostDialog.value = false
-      editHostIp.value = ''
-      editHostDomain.value = ''
-      currentEditHost.value = null
-    }).catch(error => {
-      console.error('更新状态失败', error)
-      showNotification('更新状态失败: ' + (error as Error).message, 'error')
-    })
-  } else {
-    showNotification('未找到要编辑的条目', 'error')
-  }
-}
-
-// 确认添加分组
-async function confirmAddGroup() {
-  if (!newGroupTag.value) {
-    showNotification('分组名称不能为空', 'error')
-    return
-  }
-
-  if (newGroupIsRemote.value && !newGroupUrl.value) {
-    showNotification('远程配置URL不能为空', 'error')
-    return
-  }
-
-  let hostsArray: Array<Record<string, string>> = []
-
-  if (newGroupIsRemote.value) {
-    try {
-      const result: Array<{ tag: string; hosts: Array<Record<string, string>> }> =
-        await invoke('fetch_remote_config', { url: newGroupUrl.value })
-
-      const found = result.find(r => r.tag === newGroupTag.value)
-      if (found) {
-        hostsArray = found.hosts
-      } else {
-        showNotification('远程配置中未找到该分组', 'error')
-        return
-      }
-    } catch (error) {
-      console.error('远程加载失败', error)
-      showNotification('远程加载失败: ' + (error as Error).message, 'error')
-      return
-    }
-  } else {
-    hostsArray = newGroupHosts.value
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(line => {
-        const [ip, domain] = line.split(/\s+/)
-        return { [domain]: ip }
-      })
-  }
-
+/**
+ * 添加分组
+ * @param data 分组数据
+ */
+function addGroup(data: { tag: string; isRemote: boolean; url?: string; hosts?: Array<Record<string, string>> }) {
   tags.value.push({
-    tag: newGroupTag.value,
-    hosts: hostsArray
+    tag: data.tag,
+    hosts: data.hosts || []
   })
 
-  selectedTag.value = newGroupTag.value
-
-  showAddGroupDialog.value = false
-  newGroupTag.value = ''
-  newGroupIsRemote.value = false
-  newGroupUrl.value = ''
-  newGroupHosts.value = ''
+  selectedTag.value = data.tag
   showNotification('分组添加成功', 'success')
 }
 
-// 更新主机状态
-function updateHostStatus(host: any) {
-  console.log('更新主机状态:', host)
+/**
+ * 添加主机
+ * @param data 主机数据
+ */
+function addHost(data: { groupTag: string; ip: string; domain: string }) {
+  const group = tags.value.find(t => t.tag === data.groupTag)
+  if (!group) {
+    showNotification('未找到对应分组', 'error')
+    return
+  }
 
+  // 添加新条目
+  group.hosts.push({ [data.domain]: data.ip })
+
+  // 更新UI状态
+  selectedTag.value = data.groupTag
+  showNotification('条目添加成功', 'success')
+}
+
+/**
+ * 编辑主机
+ * @param data 编辑数据
+ */
+async function editHost(data: { originalHost: any; ip: string; domain: string }) {
   // 获取当前分组
-  const group = tags.value.find(t => t.tag === selectedTag.value)
+  const group = getCurrentGroup()
   if (!group) return
 
   // 找到对应的主机条目
-  const hostEntry = group.hosts.find(h => {
-    for (const key in h) {
-      if (key !== '__disabled' && key === host.domain && h[key] === host.ip) {
-        return true
-      }
-    }
-    return false
-  })
+  const hostEntry = findHostEntry(group, data.originalHost)
+  if (!hostEntry) {
+    showNotification('未找到要编辑的条目', 'error')
+    return
+  }
 
-  if (hostEntry) {
-    // 更新启用/禁用状态
-    if (host.enabled) {
-      // 如果启用，删除禁用标记
-      delete hostEntry['__disabled']
-    } else {
-      // 如果禁用，添加禁用标记
-      hostEntry['__disabled'] = 'true'
-    }
+  // 保存禁用状态
+  const isDisabled = hostEntry.hasOwnProperty('__disabled')
 
-    // 更新hosts文件
-    updateHosts().then(() => {
-      showNotification(
-        host.enabled ? '条目已启用' : '条目已禁用',
-        host.enabled ? 'success' : 'info'
-      )
-    }).catch(error => {
-      console.error('更新状态失败', error)
-      showNotification('更新状态失败: ' + (error as Error).message, 'error')
-      // 恢复状态
-      host.enabled = !host.enabled
-    })
+  // 删除旧条目
+  const index = group.hosts.indexOf(hostEntry)
+  if (index !== -1) {
+    group.hosts.splice(index, 1)
+  }
+
+  // 添加新条目
+  const newHostEntry = { [data.domain]: data.ip }
+  if (isDisabled) {
+    newHostEntry['__disabled'] = 'true'
+  }
+  group.hosts.push(newHostEntry)
+
+  // 更新hosts文件
+  try {
+    await updateHosts()
+    showNotification('条目编辑成功', 'success')
+  } catch (error) {
+    console.error('更新状态失败', error)
+    showNotification('更新状态失败: ' + (error as Error).message, 'error')
   }
 }
 
-// 打开删除确认对话框
+/**
+ * 更新主机状态
+ * @param host 要更新的主机信息
+ * @description 更新hosts条目的启用/禁用状态
+ */
+async function updateHostStatus(host: any) {
+  // 获取当前分组
+  const group = getCurrentGroup()
+  if (!group) return
+
+  // 找到对应的主机条目
+  const hostEntry = findHostEntry(group, host)
+  if (!hostEntry) return
+
+  // 更新启用/禁用状态
+  updateHostEntryStatus(hostEntry, host.enabled)
+
+  // 更新hosts文件
+  try {
+    await updateHosts()
+    showNotification(
+      host.enabled ? '条目已启用' : '条目已禁用',
+      host.enabled ? 'success' : 'info'
+    )
+  } catch (error) {
+    console.error('更新状态失败', error)
+    showNotification('更新状态失败: ' + (error as Error).message, 'error')
+    // 恢复状态
+    host.enabled = !host.enabled
+  }
+}
+
+/**
+ * 打开删除确认对话框
+ * @param host 要删除的主机信息
+ */
 function removeHost(host: any) {
   hostToDelete.value = host
   showDeleteConfirmDialog.value = true
 }
 
-// 确认删除主机
-async function confirmDeleteHost() {
-  if (!hostToDelete.value) return
-
-  const group = tags.value.find(t => t.tag === selectedTag.value)
+/**
+ * 确认删除主机
+ * @param host 要删除的主机信息
+ * @description 删除指定的hosts条目并更新hosts文件
+ */
+async function confirmDeleteHost(host: any) {
+  // 获取当前分组
+  const group = getCurrentGroup()
   if (!group) return
 
-  const index = group.hosts.findIndex(h => {
-    for (const key in h) {
-      if (key !== '__disabled' && key === hostToDelete.value.domain && h[key] === hostToDelete.value.ip) {
-        return true
-      }
-    }
-    return false
-  })
+  // 查找要删除的条目索引
+  const index = findHostIndex(group, host)
 
+  // 如果找到了条目，则删除并更新hosts文件
   if (index !== -1) {
+    // 删除条目
     group.hosts.splice(index, 1)
 
     // 更新hosts文件
@@ -1084,181 +505,31 @@ async function confirmDeleteHost() {
       showNotification('删除失败: ' + (error as Error).message, 'error')
     }
   }
-
-  // 关闭对话框
-  showDeleteConfirmDialog.value = false
-  hostToDelete.value = null
 }
 
-// 打开域名链接
-function openDomainLink(domain: string) {
-  // 根据域名构建 URL
-  let url = domain
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'http://' + url
-  }
-
-  // 在新标签页中打开链接
-  window.open(url, '_blank')
-  showNotification('正在打开: ' + domain, 'info')
+/**
+ * 处理打开域名链接
+ * @param domain 域名
+ * @param message 通知消息
+ */
+function handleOpenDomain(_domain: string, message: string) {
+  showNotification(message, 'info')
 }
 
-// 显示通知
+/**
+ * 显示通知
+ * @param text 通知文本
+ * @param color 通知颜色
+ * @description 显示一个通知消息，用于反馈操作结果
+ */
 function showNotification(text: string, color: 'success' | 'error' | 'info' | 'warning') {
   snackbarText.value = text
   snackbarColor.value = color
   showSnackbar.value = true
 }
-
-// 获取系统信息
-async function getOsInfo() {
-  await invoke('get_os_info')
-}
 </script>
 
 <style scoped>
-/* 绝地武士主题样式 - 优化配色 */
-:root {
-  --jedi-blue: #2c5aa0;         /* 更柔和的蓝色 */
-  --jedi-light-blue: #5d8dc9;   /* 更柔和的浅蓝色 */
-  --jedi-dark-blue: #1a3a6a;    /* 更深沉的蓝色 */
-  --lightsaber-blue: #4a90e2;   /* 更柔和的光剑蓝 */
-  --lightsaber-green: #42b983;  /* 更柔和的光剑绿 */
-  --lightsaber-red: #e74c3c;    /* 更柔和的光剑红 */
-  --empire-gray: #34495e;       /* 更柔和的灰色 */
-  --star-yellow: #f1c40f;       /* 更柔和的黄色 */
-}
-
-.app-header {
-  background: linear-gradient(135deg, var(--jedi-blue) 0%, var(--jedi-dark-blue) 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.tabs-header {
-  background-color: var(--empire-gray);
-  color: white;
-}
-
-.max-width-200 {
-  max-width: 200px;
-}
-
-.max-width-300 {
-  max-width: 300px;
-}
-
-.max-width-500 {
-  max-width: 500px;
-}
-
-.border {
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.hosts-table :deep(th) {
-  background-color: #e0e7ff !important; /* 浅蓝色背景 */
-  font-weight: 600 !important;
-  color: #1a3a6a !important; /* 深蓝色文字 */
-  letter-spacing: 0.5px;
-}
-
-.hosts-table :deep(tbody tr) {
-  background-color: white !important;
-  color: #333 !important;
-}
-
-.hosts-table :deep(tbody tr:nth-child(even)) {
-  background-color: #f8faff !important; /* 非常浅的蓝色 */
-}
-
-.hosts-table :deep(tbody tr:hover) {
-  background-color: #edf2ff !important; /* 浅蓝色高亮 */
-}
-
-.switch-large :deep(.v-switch__track) {
-  opacity: 1;
-  background-color: var(--empire-gray);
-  border: none;
-}
-
-.switch-large :deep(.v-switch__track--active) {
-  background-color: var(--lightsaber-green) !important;
-}
-
-.switch-large :deep(.v-switch__thumb) {
-  background-color: white;
-}
-
-.empty-state-container {
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-/* 光剑开关效果 - 减弱版 */
-.lightsaber-switch :deep(.v-switch__track) {
-  height: 14px !important;
-  opacity: 1 !important;
-  background-color: rgba(0, 0, 0, 0.2) !important;
-  border: none !important;
-}
-
-.lightsaber-switch :deep(.v-switch__track--active) {
-  background-color: var(--lightsaber-blue) !important;
-  box-shadow: 0 0 5px var(--lightsaber-blue) !important;
-}
-
-.lightsaber-switch.green :deep(.v-switch__track--active) {
-  background-color: var(--lightsaber-green) !important;
-  box-shadow: 0 0 5px var(--lightsaber-green) !important;
-}
-
-.lightsaber-switch.red :deep(.v-switch__track--active) {
-  background-color: var(--lightsaber-red) !important;
-  box-shadow: 0 0 5px var(--lightsaber-red) !important;
-}
-
-/* 星空背景 - 减弱版 */
-.star-bg {
-  background-color: var(--jedi-dark-blue);
-  background-image:
-    radial-gradient(white, rgba(255,255,255,.1) 1px, transparent 2px),
-    radial-gradient(white, rgba(255,255,255,.05) 1px, transparent 1px);
-  background-size: 550px 550px, 350px 350px;
-  background-position: 0 0, 40px 60px;
-}
-
-/* 光剑按钮 - 减弱版 */
-.lightsaber-btn {
-  position: relative;
-  overflow: hidden;
-  transition: all 0.3s ease;
-}
-
-.lightsaber-btn.blue {
-  background-color: var(--jedi-blue) !important;
-}
-
-.lightsaber-btn.blue:hover {
-  box-shadow: 0 0 5px var(--lightsaber-blue) !important;
-}
-
-.lightsaber-btn.green {
-  background-color: var(--lightsaber-green) !important;
-}
-
-.lightsaber-btn.green:hover {
-  box-shadow: 0 0 5px var(--lightsaber-green) !important;
-}
-
-.lightsaber-btn.red {
-  background-color: var(--lightsaber-red) !important;
-}
-
-.lightsaber-btn.red:hover {
-  box-shadow: 0 0 5px var(--lightsaber-red) !important;
-}
+/* 引入全局样式 */
+@import '@/assets/style.css';
 </style>

@@ -13,14 +13,14 @@
       </template>
     </v-navigation-drawer>
     <v-main class="bg-grey-lighten-4">
-      <v-container class="py-10" height="100%">
+      <v-container class="py-8 px-6" height="100%">
         <hosts-resolver></hosts-resolver>
       </v-container>
     </v-main>
   </v-app>
 </template>
 <script setup lang="ts">
-import HostsResolver from './components/HostsResolver.vue'
+import HostsResolver from '@/components/HostsResolver.vue'
 </script>
 
 

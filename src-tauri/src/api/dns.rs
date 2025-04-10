@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 use std::error::Error;
-use std::fs::{self, File};
-use std::io::Read;
 use serde::{Deserialize, Serialize};
 use reqwest;
 use tauri::utils::platform::resource_dir;

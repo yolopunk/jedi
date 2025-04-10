@@ -1,0 +1,132 @@
+<template>
+  <!-- 编辑条目对话框 -->
+  <v-dialog v-model="dialogModel" max-width="500" persistent>
+    <v-card class="rounded-lg overflow-hidden">
+      <v-toolbar color="#4a90e2" class="px-4">
+        <v-icon :icon="mdiPencil" class="mr-2" color="white"></v-icon>
+        <v-toolbar-title class="font-weight-medium">编辑条目</v-toolbar-title>
+        <v-spacer></v-spacer>
+        <v-btn icon @click="closeDialog">
+          <v-icon :icon="mdiClose" color="white"></v-icon>
+        </v-btn>
+      </v-toolbar>
+      <v-card-text class="pa-6">
+        <v-text-field
+          v-model="hostIp"
+          label="IP地址"
+          variant="outlined"
+          placeholder="例如: 127.0.0.1"
+          required
+          bg-color="white"
+          :prepend-inner-icon="mdiIpNetwork"
+        ></v-text-field>
+        <v-text-field
+          v-model="hostDomain"
+          label="域名"
+          variant="outlined"
+          placeholder="例如: example.com"
+          required
+          bg-color="white"
+          :prepend-inner-icon="mdiDomain"
+        ></v-text-field>
+      </v-card-text>
+      <v-card-actions class="pa-6 pt-0">
+        <v-spacer></v-spacer>
+        <v-btn
+          variant="text"
+          @click="closeDialog"
+          class="mr-2"
+          color="grey-darken-1"
+        >
+          取消
+        </v-btn>
+        <v-btn
+          color="#2196F3"
+          variant="elevated"
+          @click="confirmEdit"
+          class="lightsaber-btn blue"
+        >
+          保存
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, watch } from 'vue'
+import { mdiPencil, mdiClose, mdiIpNetwork, mdiDomain } from '@mdi/js'
+import { validateHostInput } from '@/utils/hostsUtils'
+
+// 定义组件属性
+const props = defineProps<{
+  modelValue: boolean;
+  host: any | null;
+}>()
+
+// 定义组件事件
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'edit', data: {
+    originalHost: any;
+    ip: string;
+    domain: string;
+  }): void;
+  (e: 'error', message: string): void;
+}>()
+
+// 对话框状态
+const dialogModel = computed({
+  get: () => props.modelValue,
+  set: (value) => emit('update:modelValue', value)
+})
+
+// 表单数据
+const hostIp = ref('')
+const hostDomain = ref('')
+
+// 监听主机数据变化
+watch(() => props.host, (newHost) => {
+  if (newHost) {
+    hostIp.value = newHost.ip
+    hostDomain.value = newHost.domain
+  }
+}, { immediate: true })
+
+// 关闭对话框
+function closeDialog() {
+  dialogModel.value = false
+  resetForm()
+}
+
+// 重置表单
+function resetForm() {
+  hostIp.value = ''
+  hostDomain.value = ''
+}
+
+// 确认编辑
+function confirmEdit() {
+  // 验证输入
+  if (!validateHostInput(hostIp.value, hostDomain.value)) {
+    emit('error', 'IP和域名不能为空')
+    return
+  }
+
+  // 验证编辑数据
+  if (!props.host) {
+    emit('error', '编辑数据丢失')
+    return
+  }
+
+  // 提交编辑事件
+  emit('edit', {
+    originalHost: props.host,
+    ip: hostIp.value.trim(),
+    domain: hostDomain.value.trim()
+  })
+
+  // 关闭对话框
+  closeDialog()
+}
+</script>

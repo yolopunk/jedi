@@ -126,11 +126,14 @@ pub async fn update_hosts_with_groups(
     let mut new_lines: Vec<String> = Vec::new();
     let mut skip = false;
     for line in hosts_content.lines() {
-        if line.trim_start().starts_with("# Added by Jedi") {
+        let trimmed = line.trim_start();
+        // 检查新旧格式的开始标记
+        if trimmed.starts_with("# Added by Jedi") || trimmed.starts_with("# === JEDI HOSTS MANAGER ===") {
             skip = true;
             continue;
         }
-        if line.trim_start().starts_with("# End of section") {
+        // 检查新旧格式的结束标记
+        if trimmed.starts_with("# End of section") || trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") {
             skip = false;
             continue;
         }

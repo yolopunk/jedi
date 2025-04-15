@@ -13,20 +13,19 @@
           bg-color="white"
           color="var(--jedi-text-medium)"
           rounded="pill"
-          style="min-width: 200px;"
+          style="width: 400px; min-width: 400px;"
         ></v-text-field>
       </div>
       <v-btn
         color="#4CAF50"
         variant="flat"
-        :prepend-icon="mdiPlus"
-        @click="$emit('add-host', currentGroup.tag)"
-        size="small"
         rounded="pill"
+        size="small"
         class="jedi-btn jedi-hover-lift"
-        style="box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);"
+        @click="emit('add-host', currentGroup.name)"
       >
-        <span style="font-weight: 500; letter-spacing: 0.3px;">新增条目</span>
+        <v-icon :icon="mdiPlus" size="small" class="mr-1"></v-icon>
+        <span>添加条目</span>
       </v-btn>
     </div>
 
@@ -50,7 +49,7 @@
       <!-- IP地址列 -->
       <template v-slot:item.ip="{ item }">
         <div class="d-flex align-center">
-          <v-icon :icon="mdiIpNetwork" size="small" color="var(--jedi-blue)" class="mr-2"></v-icon>
+          <v-icon :icon="mdiIpNetwork" size="small" color="#1976D2" class="mr-2"></v-icon>
           <span>{{ item.ip }}</span>
         </div>
       </template>
@@ -58,17 +57,17 @@
       <!-- 域名列 -->
       <template v-slot:item.domain="{ item }">
         <div class="d-flex align-center">
-          <v-icon :icon="mdiDomain" size="small" color="var(--jedi-blue)" class="mr-2"></v-icon>
-          <span>{{ item.domain }}</span>
+          <v-icon :icon="mdiDomain" size="small" color="#1976D2" class="mr-2"></v-icon>
+          <span class="domain-text">{{ item.domain }}</span>
           <v-btn
             icon
-            variant="text"
             size="x-small"
+            variant="text"
+            color="#1976D2"
             class="ml-2 jedi-hover-scale"
             @click="handleOpenDomain(item.domain)"
-            style="background-color: #E3F2FD; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
           >
-            <v-icon :icon="mdiWeb" size="x-small" color="#1976D2"></v-icon>
+            <v-icon :icon="mdiWeb" size="small"></v-icon>
           </v-btn>
         </div>
       </template>
@@ -77,61 +76,36 @@
       <template v-slot:item.enabled="{ item }">
         <v-switch
           v-model="item.enabled"
-          hide-details
           color="success"
+          hide-details
           density="compact"
-          @update:model-value="$emit('update-status', item)"
-          class="ma-0 pa-0 lightsaber-switch green-switch"
-          :ripple="false"
-          style="transform: scale(0.9); background-color: transparent;"
+          @update:model-value="emit('update-status', item)"
+          class="status-switch"
         ></v-switch>
       </template>
 
       <!-- 操作列 -->
       <template v-slot:item.actions="{ item }">
         <div class="d-flex">
-          <v-tooltip location="top" text="编辑">
-            <template v-slot:activator="{ props }">
-              <v-btn
-                icon
-                variant="flat"
-                color="#1976D2"
-                class="mr-1 jedi-hover-lift"
-                @click="$emit('edit-host', item)"
-                v-bind="props"
-                size="x-small"
-                style="background-color: #E3F2FD; border: 1px solid rgba(25, 118, 210, 0.2); box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
-              >
-                <v-icon :icon="mdiPencil" size="small" color="#1976D2"></v-icon>
-              </v-btn>
-            </template>
-          </v-tooltip>
-
-          <v-tooltip location="top" text="删除">
-            <template v-slot:activator="{ props }">
-              <v-btn
-                icon
-                variant="flat"
-                color="#F44336"
-                @click="$emit('delete-host', item)"
-                v-bind="props"
-                size="x-small"
-                class="jedi-hover-lift"
-                style="background-color: #FFEBEE; border: 1px solid rgba(244, 67, 54, 0.2); box-shadow: 0 1px 2px rgba(0,0,0,0.05);"
-              >
-                <v-icon :icon="mdiDelete" size="small" color="#F44336"></v-icon>
-              </v-btn>
-            </template>
-          </v-tooltip>
-        </div>
-      </template>
-
-      <!-- 空状态 -->
-      <template v-slot:no-data>
-        <div class="text-center pa-4">
-          <v-icon :icon="mdiDomain" size="large" color="var(--jedi-blue-light)" class="mb-2"></v-icon>
-          <div class="text-subtitle-1 font-weight-medium">暂无数据</div>
-          <div class="text-body-2 text-grey">请添加新的hosts条目</div>
+          <v-btn
+            icon
+            size="small"
+            variant="text"
+            color="#1976D2"
+            class="mr-2"
+            @click="emit('edit-host', item)"
+          >
+            <v-icon :icon="mdiPencil" size="small"></v-icon>
+          </v-btn>
+          <v-btn
+            icon
+            size="small"
+            variant="text"
+            color="#F44336"
+            @click="emit('delete-host', item)"
+          >
+            <v-icon :icon="mdiDelete" size="small"></v-icon>
+          </v-btn>
         </div>
       </template>
     </v-data-table>
@@ -149,11 +123,12 @@ import {
   mdiPencil,
   mdiDelete
 } from '@mdi/js'
-import { getHostsAsItems, openDomainLink } from '@/utils/hostsUtils'
+import { getHostsAsItems, openDomainLink } from '@/utils/hostsUtils.refactored'
+import { Group } from '@/types/hosts'
 
 // 定义组件属性
 const props = defineProps<{
-  currentGroup: { tag: string; hosts: Array<Record<string, string>> };
+  currentGroup: Group;
   search?: string;
 }>()
 
@@ -163,7 +138,7 @@ const emit = defineEmits<{
   (e: 'update-status', host: any): void;
   (e: 'edit-host', host: any): void;
   (e: 'delete-host', host: any): void;
-  (e: 'add-host', tag: string): void;
+  (e: 'add-host', name: string): void;
   (e: 'open-domain', domain: string, message: string): void;
 }>()
 
@@ -192,3 +167,17 @@ function handleOpenDomain(domain: string) {
   emit('open-domain', domain, message)
 }
 </script>
+
+<style scoped>
+.domain-text {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-switch {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+</style>

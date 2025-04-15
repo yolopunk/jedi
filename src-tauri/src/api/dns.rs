@@ -140,14 +140,17 @@ pub async fn update_hosts_with_groups(
     }
 
     println!("Adding Jedi section with {} groups", groups.len());
+    new_lines.push("".to_string());
     new_lines.push("# ====================== JEDI HOSTS MANAGER ======================".to_string());
     new_lines.push("#".to_string());
 
     for g in &groups {
         // 创建分组标题，居中显示
         let group_name = g.name.clone();
-        let header = format!("# +--------------------- {} ---------------------+", group_name);
-        new_lines.push(header);
+        new_lines.push("#".to_string());
+        new_lines.push(format!("# +==================================================================+", ));
+        new_lines.push(format!("# |                           {}                           |", group_name));
+        new_lines.push(format!("# +==================================================================+", ));
         new_lines.push("#".to_string());
 
         // 按域名排序显示
@@ -180,12 +183,14 @@ pub async fn update_hosts_with_groups(
         }
 
         new_lines.push("#".to_string());
-        let footer = format!("# +---------------------- END {} ----------------------+", g.name);
-        new_lines.push(footer);
+        new_lines.push(format!("# +==================================================================+", ));
+        new_lines.push(format!("# |                         END {}                         |", g.name));
+        new_lines.push(format!("# +==================================================================+", ));
         new_lines.push("#".to_string());
     }
 
     new_lines.push("# ====================== END JEDI HOSTS MANAGER ======================".to_string());
+    new_lines.push("".to_string());
 
     let new_content = new_lines.join("\n");
     println!("Writing new hosts file, content length: {}", new_content.len());
@@ -323,6 +328,8 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
     let mut in_jedi_section = false;
     let mut found_jedi_section = false;
 
+    // 记录是否找到了Jedi部分
+
     // 解析hosts文件内容
     for (line_num, line) in hosts_content.lines().enumerate() {
         let trimmed = line.trim_start();
@@ -330,8 +337,33 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         // 检查是否进入Jedi管理的部分
         if trimmed.starts_with("# Added by Jedi") || trimmed.starts_with("# ====================== JEDI HOSTS MANAGER") {
             println!("Found Jedi section at line {}", line_num + 1);
+
+            // 如果已经在Jedi部分中，先完成当前部分的处理
+            if in_jedi_section {
+                // 保存最后一个分组的数据
+                if let Some(name) = current_group.take() {
+                    if !current_hosts.is_empty() {
+                        println!("Adding group '{}' with {} hosts", name, current_hosts.len());
+                        result.push(GroupHosts {
+                            name,
+                            hosts: current_hosts,
+                        });
+                        current_hosts = Vec::new();
+                    } else {
+                        println!("Group '{}' has no hosts, skipping", name);
+                    }
+                }
+            }
+
+            // 开始新的Jedi部分
             in_jedi_section = true;
             found_jedi_section = true;
+
+            // 清除之前的结果，只保留默认分组
+            if result.len() > 1 {
+                result.truncate(1);
+            }
+
             continue;
         }
 
@@ -339,6 +371,7 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         if trimmed.starts_with("# End of section") || trimmed.starts_with("# ====================== END JEDI HOSTS MANAGER") {
             println!("End of Jedi section at line {}", line_num + 1);
             in_jedi_section = false;
+
             // 保存最后一个分组的数据
             if let Some(name) = current_group.take() {
                 if !current_hosts.is_empty() {

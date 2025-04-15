@@ -265,7 +265,10 @@ async function loadSystemHosts() {
 function updateGroupsData(result: Array<{ tag: string; hosts: Array<Record<string, string>> }>) {
   // 将旧格式转换为新格式
   groups.value = result.map(tag => tagToGroup(tag));
-  selectedGroup.value = result[0].tag;
+  // 使用转换后的分组名称
+  if (groups.value.length > 0) {
+    selectedGroup.value = groups.value[0].name;
+  }
 }
 
 /**

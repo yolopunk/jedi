@@ -2,7 +2,7 @@
   <!-- 编辑条目对话框 -->
   <v-dialog v-model="dialogModel" max-width="500" persistent>
     <v-card class="rounded-lg overflow-hidden">
-      <v-toolbar color="#4a90e2" class="px-4">
+      <v-toolbar color="#2196F3" class="px-4">
         <v-icon :icon="mdiPencil" class="mr-2" color="white"></v-icon>
         <v-toolbar-title class="font-weight-medium">编辑条目</v-toolbar-title>
         <v-spacer></v-spacer>
@@ -46,7 +46,7 @@
           @click="confirmEdit"
           class="lightsaber-btn blue"
         >
-          保存
+          确认
         </v-btn>
       </v-card-actions>
     </v-card>

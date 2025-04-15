@@ -21,24 +21,24 @@
       <div class="d-flex flex-wrap gap-2 px-2 py-1">
         <v-btn
           v-for="group in groups"
-          :key="group.tag"
-          :value="group.tag"
-          :color="modelValue === group.tag ? '#1976D2' : '#E8F1FF'"
-          :variant="modelValue === group.tag ? 'flat' : 'outlined'"
+          :key="group.name"
+          :value="group.name"
+          :color="modelValue === group.name ? '#1976D2' : '#E8F1FF'"
+          :variant="modelValue === group.name ? 'flat' : 'outlined'"
           class="group-btn"
           size="small"
           rounded="pill"
-          :class="{'v-btn--active elevation-2': modelValue === group.tag}"
-          @click="$emit('update:modelValue', group.tag)"
+          :class="{'v-btn--active elevation-2': modelValue === group.name}"
+          @click="$emit('update:modelValue', group.name)"
           :style="{
             minWidth: 'auto',
             borderColor: '#1976D2',
             fontWeight: 500,
-            color: modelValue === group.tag ? 'white !important' : '#0D47A1 !important'
+            color: modelValue === group.name ? 'white !important' : '#0D47A1 !important'
           }"
         >
-          <v-icon :icon="mdiDomain" size="x-small" class="mr-1" :style="{color: modelValue === group.tag ? 'white !important' : '#0D47A1 !important'}"></v-icon>
-          <span :style="{color: modelValue === group.tag ? 'white !important' : '#0D47A1 !important', fontWeight: 500}">{{ group.tag }}</span>
+          <v-icon :icon="mdiDomain" size="x-small" class="mr-1" :style="{color: modelValue === group.name ? 'white !important' : '#0D47A1 !important'}"></v-icon>
+          <span :style="{color: modelValue === group.name ? 'white !important' : '#0D47A1 !important', fontWeight: 500}">{{ group.name }}</span>
         </v-btn>
       </div>
     </div>
@@ -47,11 +47,12 @@
 
 <script setup lang="ts">
 import { mdiDomain, mdiPlus } from '@mdi/js'
+import { Group } from '@/types/hosts'
 
 // 定义组件属性
 defineProps<{
   modelValue: string;
-  groups: Array<{ tag: string; hosts: Array<Record<string, string>> }>;
+  groups: Group[];
 }>()
 
 // 定义组件事件

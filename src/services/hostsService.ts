@@ -3,6 +3,7 @@
  * 封装与Tauri API的交互
  */
 import { invoke } from '@tauri-apps/api/core'
+import { Group } from '@/types/hosts'
 
 /**
  * 获取系统信息
@@ -22,14 +23,14 @@ export async function readSystemHosts() {
 
 /**
  * 更新hosts文件
- * @param tags 分组数据
+ * @param groups 分组数据
  * @returns 更新结果
  */
-export async function updateHostsWithTag(tags: Array<{ tag: string; hosts: Array<Record<string, string>> }>) {
-  return await invoke('update_hosts_with_tag', {
+export async function updateHostsWithGroups(groups: Group[]) {
+  return await invoke('update_hosts_with_groups', {
     source: 'current',
     url: null,
-    tags
+    groups
   })
 }
 
@@ -46,10 +47,10 @@ export async function revertHosts() {
  * @returns 初始化结果
  */
 export async function initializeDefaultConfig() {
-  return await invoke('update_hosts_with_tag', {
+  return await invoke('update_hosts_with_groups', {
     source: 'default',
     url: null,
-    tags: null
+    groups: null
   })
 }
 

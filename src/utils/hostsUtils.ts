@@ -3,12 +3,14 @@
  * 提供处理hosts文件的通用工具函数
  */
 
+import { Group, HostEntry } from '@/types/hosts'
+
 /**
  * 将hosts数组转换为数据表格项目
  * @param hosts hosts条目数组
  * @returns 格式化后的数据表格项目
  */
-export function getHostsAsItems(hosts: Array<Record<string, string>>) {
+export function getHostsAsItems(hosts: HostEntry[]) {
   return hosts.map((hostMap, index) => {
     // 检查是否禁用
     const isDisabled = hostMap.hasOwnProperty('__disabled')
@@ -51,7 +53,7 @@ export function validateHostInput(ip: string, domain: string): boolean {
  * @param host 主机信息
  * @returns 找到的主机条目
  */
-export function findHostEntry(group: { tag: string; hosts: Array<Record<string, string>> }, host: any) {
+export function findHostEntry(group: Group, host: any): HostEntry | undefined {
   return group.hosts.find(h => {
     for (const key in h) {
       if (key !== '__disabled' && key === host.domain && h[key] === host.ip) {
@@ -68,7 +70,7 @@ export function findHostEntry(group: { tag: string; hosts: Array<Record<string, 
  * @param host 主机信息
  * @returns 找到的主机条目索引
  */
-export function findHostIndex(group: { tag: string; hosts: Array<Record<string, string>> }, host: any) {
+export function findHostIndex(group: Group, host: any): number {
   return group.hosts.findIndex(h => {
     for (const key in h) {
       if (key !== '__disabled' && key === host.domain && h[key] === host.ip) {
@@ -84,7 +86,7 @@ export function findHostIndex(group: { tag: string; hosts: Array<Record<string, 
  * @param hostEntry 主机条目
  * @param enabled 是否启用
  */
-export function updateHostEntryStatus(hostEntry: Record<string, string>, enabled: boolean) {
+export function updateHostEntryStatus(hostEntry: HostEntry, enabled: boolean): void {
   if (enabled) {
     // 如果启用，删除禁用标记
     delete hostEntry['__disabled']
@@ -96,11 +98,11 @@ export function updateHostEntryStatus(hostEntry: Record<string, string>, enabled
 
 /**
  * 启用所有hosts条目
- * @param tags 分组数据
+ * @param groups 分组数据
  */
-export function enableAllHosts(tags: Array<{ tag: string; hosts: Array<Record<string, string>> }>) {
-  for (const tag of tags) {
-    for (const host of tag.hosts) {
+export function enableAllHosts(groups: Group[]): void {
+  for (const group of groups) {
+    for (const host of group.hosts) {
       if (host.hasOwnProperty('__disabled')) {
         delete host['__disabled']
       }
@@ -110,11 +112,11 @@ export function enableAllHosts(tags: Array<{ tag: string; hosts: Array<Record<st
 
 /**
  * 禁用所有hosts条目
- * @param tags 分组数据
+ * @param groups 分组数据
  */
-export function disableAllHosts(tags: Array<{ tag: string; hosts: Array<Record<string, string>> }>) {
-  for (const tag of tags) {
-    for (const host of tag.hosts) {
+export function disableAllHosts(groups: Group[]): void {
+  for (const group of groups) {
+    for (const host of group.hosts) {
       if (!host.hasOwnProperty('__disabled')) {
         host['__disabled'] = 'true'
       }
@@ -133,7 +135,7 @@ export function openDomainLink(domain: string): string {
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     url = 'http://' + url
   }
-  
+
   // 在新标签页中打开链接
   window.open(url, '_blank')
   return `正在打开: ${domain}`

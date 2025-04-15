@@ -61,14 +61,14 @@ import { validateHostInput } from '@/utils/hostsUtils'
 // 定义组件属性
 const props = defineProps<{
   modelValue: boolean;
-  groupTag: string;
+  groupName: string;
 }>()
 
 // 定义组件事件
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
   (e: 'add', data: {
-    groupTag: string;
+    groupName: string;
     ip: string;
     domain: string;
   }): void;
@@ -107,7 +107,7 @@ function confirmAdd() {
 
   // 提交添加事件
   emit('add', {
-    groupTag: props.groupTag,
+    groupName: props.groupName,
     ip: hostIp.value.trim(),
     domain: hostDomain.value.trim()
   })

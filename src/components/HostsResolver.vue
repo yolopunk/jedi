@@ -13,14 +13,14 @@
   <v-card class="jedi-card" style="border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
     <!-- 分组管理区域 -->
     <group-manager
-      v-if="tags.length"
-      v-model="selectedTag"
-      :groups="tags"
+      v-if="groups.length"
+      v-model="selectedGroup"
+      :groups="groups"
       @add-group="showAddGroupDialog = true"
     />
 
     <!-- 数据展示区域 -->
-    <template v-if="tags.length && selectedTag">
+    <template v-if="groups.length && selectedGroup">
       <hosts-table
         v-if="currentGroup"
         :current-group="currentGroup"
@@ -53,7 +53,7 @@
   <!-- 添加条目对话框 -->
   <add-host-dialog
     v-model="showAddHostDialog"
-    :group-tag="currentAddGroupTag"
+    :group-name="currentAddGroupName"
     @add="addHost"
     @error="showNotification($event, 'error')"
   />
@@ -91,6 +91,9 @@
 // ===== 导入依赖 =====
 import { ref, computed, onMounted } from 'vue'
 
+// 导入类型定义
+import { Group, HostEntry } from '@/types/hosts'
+
 // 导入子组件
 import HeaderSection from '@/components/hosts/common/HeaderSection.vue'
 import GroupManager from '@/components/hosts/common/GroupManager.vue'
@@ -113,7 +116,7 @@ import {
 import {
   getOsInfo,
   readSystemHosts,
-  updateHostsWithTag,
+  updateHostsWithGroups,
   revertHosts,
   initializeDefaultConfig as initDefaultConfig
 } from '@/services/hostsService'
@@ -130,12 +133,14 @@ const hostsResolveSwitch = ref(false)
  * 分组数据
  * @description 存储所有分组及其hosts条目
  */
-const tags = ref<Array<{ tag: string; hosts: Array<Record<string, string>> }>>([])
+const groups = ref<Group[]>([])
 
 /**
  * 当前选中的分组
  */
-const selectedTag = ref<string>('')
+const selectedGroup = ref<string>('')
+
+// 注意：我们已经统一使用 Group 类型和 name 属性，移除了兼容层
 
 /**
  * 搜索关键词
@@ -153,7 +158,7 @@ const showAddGroupDialog = ref(false)
  * 添加条目对话框状态
  */
 const showAddHostDialog = ref(false)
-const currentAddGroupTag = ref('')
+const currentAddGroupName = ref('')
 
 /**
  * 编辑条目对话框状态
@@ -180,7 +185,7 @@ const snackbarColor = ref<'success' | 'error' | 'info' | 'warning'>('success')
  * 当前选中的分组数据
  */
 const currentGroup = computed(() => {
-  return tags.value.find(t => t.tag === selectedTag.value)
+  return groups.value.find((g: Group) => g.name === selectedGroup.value)
 })
 
 // ===== 生命周期钩子 =====
@@ -203,13 +208,13 @@ async function handleHostsSwitch(switchState: boolean) {
   try {
     if (switchState) {
       // 如果开启，启用所有条目
-      enableAllHosts(tags.value)
+      enableAllHosts(groups.value)
       // 更新hosts文件
-      await updateHostsWithTag(tags.value)
+      await updateHosts()
       showNotification('Hosts解析已启用，所有条目已生效', 'success')
     } else {
       // 如果关闭，禁用所有条目
-      disableAllHosts(tags.value)
+      disableAllHosts(groups.value)
       // 恢复hosts文件
       await revertHosts()
       showNotification('Hosts解析已禁用，所有条目已暂停生效，但配置已保留', 'info')
@@ -234,22 +239,22 @@ async function loadSystemHosts() {
     // 如果有数据，则使用返回的数据
     if (Array.isArray(result) && result.length > 0) {
       // 更新数据
-      updateTagsData(result);
+      updateGroupsData(result);
 
       // 更新全局开关状态
       updateGlobalSwitchState(result);
 
       showNotification('成功加载系统 Hosts 配置', 'success');
     } else {
-      // 如果没有数据，使用默认空标签
-      initializeEmptyTags();
+      // 如果没有数据，使用默认空分组
+      initializeEmptyGroups();
     }
   } catch (error) {
     console.error('加载系统 Hosts 失败:', error);
     showNotification('加载系统 Hosts 失败: ' + (error as Error).message, 'error');
 
-    // 出错时使用默认空标签
-    initializeEmptyTags();
+    // 出错时使用默认空分组
+    initializeEmptyGroups();
   }
 }
 
@@ -257,20 +262,24 @@ async function loadSystemHosts() {
  * 更新分组数据
  * @param result 从后端获取的数据
  */
-function updateTagsData(result: Array<{ tag: string; hosts: Array<Record<string, string>> }>) {
-  tags.value = result;
-  selectedTag.value = result[0].tag;
+function updateGroupsData(result: Array<{ name: string; hosts: Array<Record<string, string>> }>) {
+  // 直接使用后端返回的分组数据
+  groups.value = result;
+  // 设置选中的分组
+  if (groups.value.length > 0) {
+    selectedGroup.value = groups.value[0].name;
+  }
 }
 
 /**
  * 更新全局开关状态
  * @param result 从后端获取的数据
  */
-function updateGlobalSwitchState(result: Array<{ tag: string; hosts: Array<Record<string, string>> }>) {
+function updateGlobalSwitchState(result: Array<{ name: string; hosts: Array<Record<string, string>> }>) {
   // 检查是否有未禁用的条目，如果有，则设置全局开关为开
   let hasEnabledEntries = false;
-  for (const tag of result) {
-    for (const host of tag.hosts) {
+  for (const group of result) {
+    for (const host of group.hosts) {
       if (!host.hasOwnProperty('__disabled')) {
         hasEnabledEntries = true;
         break;
@@ -282,17 +291,17 @@ function updateGlobalSwitchState(result: Array<{ tag: string; hosts: Array<Recor
 }
 
 /**
- * 初始化空标签
- * @description 当没有数据或出错时初始化默认空标签
+ * 初始化空分组
+ * @description 当没有数据或出错时初始化默认空分组
  */
-function initializeEmptyTags() {
-  tags.value = [
+function initializeEmptyGroups() {
+  groups.value = [
     {
-      tag: '默认',
+      name: '默认',
       hosts: []
     }
   ];
-  selectedTag.value = '默认';
+  selectedGroup.value = '默认';
   hostsResolveSwitch.value = false;
 }
 
@@ -302,8 +311,8 @@ function initializeEmptyTags() {
  */
 async function updateHosts() {
   try {
-    // 直接将当前界面上的标签数据传递给后端
-    await updateHostsWithTag(tags.value)
+    // 直接使用当前分组数据
+    await updateHostsWithGroups(groups.value)
   } catch (error) {
     console.error('更新hosts失败', error)
     throw error
@@ -329,8 +338,8 @@ async function initializeDefaultConfig() {
  * 获取当前分组
  * @returns 当前选中的分组
  */
-function getCurrentGroup() {
-  const group = tags.value.find(t => t.tag === selectedTag.value);
+function getCurrentGroup(): Group | null {
+  const group = groups.value.find((g: Group) => g.name === selectedGroup.value);
   if (!group) {
     showNotification('未找到对应分组', 'error');
     return null;
@@ -340,12 +349,12 @@ function getCurrentGroup() {
 
 /**
  * 打开添加主机对话框
- * @param tag 分组名称
+ * @param groupName 分组名称
  * @description 打开添加主机对话框，并初始化表单
  */
-function openAddHostDialog(tag: string) {
+function openAddHostDialog(groupName: string) {
   // 设置当前分组
-  currentAddGroupTag.value = tag
+  currentAddGroupName.value = groupName
   // 显示对话框
   showAddHostDialog.value = true
 }
@@ -366,22 +375,32 @@ function openEditHostDialog(host: any) {
  * 添加分组
  * @param data 分组数据
  */
-function addGroup(data: { tag: string; isRemote: boolean; url?: string; hosts?: Array<Record<string, string>> }) {
-  tags.value.push({
-    tag: data.tag,
+async function addGroup(data: { name: string; isRemote: boolean; url?: string; hosts?: HostEntry[] }) {
+  // 添加新分组
+  groups.value.push({
+    name: data.name,
     hosts: data.hosts || []
   })
 
-  selectedTag.value = data.tag
-  showNotification('分组添加成功', 'success')
+  // 更新hosts文件
+  try {
+    await updateHosts()
+    selectedGroup.value = data.name
+    showNotification('分组添加成功', 'success')
+  } catch (error) {
+    console.error('添加分组失败', error)
+    showNotification('添加失败: ' + (error as Error).message, 'error')
+    // 回滚操作
+    groups.value.pop()
+  }
 }
 
 /**
  * 添加主机
  * @param data 主机数据
  */
-function addHost(data: { groupTag: string; ip: string; domain: string }) {
-  const group = tags.value.find(t => t.tag === data.groupTag)
+async function addHost(data: { groupName: string; ip: string; domain: string }) {
+  const group = groups.value.find((g: Group) => g.name === data.groupName)
   if (!group) {
     showNotification('未找到对应分组', 'error')
     return
@@ -390,9 +409,18 @@ function addHost(data: { groupTag: string; ip: string; domain: string }) {
   // 添加新条目
   group.hosts.push({ [data.domain]: data.ip })
 
-  // 更新UI状态
-  selectedTag.value = data.groupTag
-  showNotification('条目添加成功', 'success')
+  // 更新hosts文件
+  try {
+    await updateHosts()
+    // 更新UI状态
+    selectedGroup.value = data.groupName
+    showNotification('条目添加成功', 'success')
+  } catch (error) {
+    console.error('添加条目失败', error)
+    showNotification('添加失败: ' + (error as Error).message, 'error')
+    // 回滚操作
+    group.hosts.pop()
+  }
 }
 
 /**
@@ -421,7 +449,7 @@ async function editHost(data: { originalHost: any; ip: string; domain: string })
   }
 
   // 添加新条目
-  const newHostEntry = { [data.domain]: data.ip }
+  const newHostEntry = { [data.domain]: data.ip } as HostEntry
   if (isDisabled) {
     newHostEntry['__disabled'] = 'true'
   }
@@ -495,6 +523,21 @@ async function confirmDeleteHost(host: any) {
   if (index !== -1) {
     // 删除条目
     group.hosts.splice(index, 1)
+
+    // 如果分组中没有条目了，则删除该分组
+    if (group.hosts.length === 0) {
+      const groupIndex = groups.value.findIndex((g: Group) => g.name === group.name)
+      if (groupIndex !== -1) {
+        groups.value.splice(groupIndex, 1)
+
+        // 如果还有其他分组，则选中第一个分组
+        if (groups.value.length > 0) {
+          selectedGroup.value = groups.value[0].name
+        } else {
+          selectedGroup.value = ''
+        }
+      }
+    }
 
     // 更新hosts文件
     try {

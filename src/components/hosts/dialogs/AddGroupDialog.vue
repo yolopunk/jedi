@@ -12,7 +12,7 @@
       </v-toolbar>
       <v-card-text class="pa-6">
         <v-text-field
-          v-model="groupTag"
+          v-model="groupName"
           label="分组名称"
           variant="outlined"
           placeholder="例如: 开发环境"
@@ -97,6 +97,7 @@
 import { ref, computed } from 'vue'
 import { mdiDomainPlus, mdiClose, mdiLinkVariant } from '@mdi/js'
 import { fetchRemoteConfig } from '@/services/hostsService'
+import { HostEntry } from '@/types/hosts'
 
 // 定义组件属性
 const props = defineProps<{
@@ -107,10 +108,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
   (e: 'add', data: {
-    tag: string;
+    name: string;
     isRemote: boolean;
     url?: string;
-    hosts?: Array<Record<string, string>>
+    hosts?: HostEntry[]
   }): void;
   (e: 'error', message: string): void;
 }>()
@@ -122,7 +123,7 @@ const dialogModel = computed({
 })
 
 // 表单数据
-const groupTag = ref('')
+const groupName = ref('')
 const isRemote = ref(false)
 const remoteUrl = ref('')
 const hostsContent = ref('')
@@ -135,7 +136,7 @@ function closeDialog() {
 
 // 重置表单
 function resetForm() {
-  groupTag.value = ''
+  groupName.value = ''
   isRemote.value = false
   remoteUrl.value = ''
   hostsContent.value = ''
@@ -144,7 +145,7 @@ function resetForm() {
 // 确认添加
 async function confirmAdd() {
   // 验证分组名称
-  if (!groupTag.value) {
+  if (!groupName.value) {
     emit('error', '分组名称不能为空')
     return
   }
@@ -167,12 +168,12 @@ async function confirmAdd() {
       }
 
       // 查找匹配的分组
-      const matchedGroup = result.find(g => g.tag === groupTag.value)
+      const matchedGroup = result.find(g => g.name === groupName.value)
 
       if (matchedGroup) {
         // 提交添加事件
         emit('add', {
-          tag: groupTag.value,
+          name: groupName.value,
           isRemote: true,
           url: remoteUrl.value,
           hosts: matchedGroup.hosts
@@ -199,7 +200,7 @@ async function confirmAdd() {
 
     // 提交添加事件
     emit('add', {
-      tag: groupTag.value,
+      name: groupName.value,
       isRemote: false,
       hosts: hostsArray
     })

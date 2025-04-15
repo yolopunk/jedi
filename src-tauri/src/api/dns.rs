@@ -244,7 +244,7 @@ pub fn revert_hosts() -> Result<String, String> {
     }
 
     // 处理Jedi部分，确保所有hosts条目都被注释
-    let mut in_tag = false;
+    let mut in_group = false;
     for line in &jedi_section_lines {
         let trimmed = line.trim_start();
 
@@ -254,14 +254,14 @@ pub fn revert_hosts() -> Result<String, String> {
            trimmed.contains("# +---------------------") || trimmed.contains("# +---------------------- END ") ||
            trimmed.starts_with("# ====================== JEDI HOSTS MANAGER") || trimmed.starts_with("# ====================== END JEDI HOSTS MANAGER") ||
            trimmed.starts_with("#") && trimmed.len() == 1 {
-            // 保留标签行和分隔线
+            // 保留分组行和分隔线
             new_lines.push(line.to_string());
             if trimmed.contains("# +---------------------") {
-                in_tag = true;
+                in_group = true;
             } else if trimmed.contains("# +---------------------- END ") {
-                in_tag = false;
+                in_group = false;
             }
-        } else if in_tag {
+        } else if in_group {
             // 如果是hosts条目，确保它被注释
             if !trimmed.starts_with('#') {
                 // 如果还没有注释，添加注释

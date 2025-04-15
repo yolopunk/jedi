@@ -382,10 +382,13 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
                 trimmed["# tag: ".len()..].to_string()
             } else if trimmed.contains("# +---------------------") {
                 // 新格式，从标题行提取分组名称
-                let start_idx = trimmed.find("---------------------") + 21;
-                let end_idx = trimmed.rfind("---------------------");
-                if let Some(end) = end_idx {
-                    trimmed[start_idx..end].trim().to_string()
+                if let Some(start) = trimmed.find("---------------------") {
+                    let start_idx = start + 21; // 安全地添加偏移量
+                    if let Some(end) = trimmed.rfind("---------------------") {
+                        trimmed[start_idx..end].trim().to_string()
+                    } else {
+                        "Unknown".to_string()
+                    }
                 } else {
                     "Unknown".to_string()
                 }

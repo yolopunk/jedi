@@ -248,16 +248,17 @@ pub fn revert_hosts() -> Result<String, String> {
     for line in &jedi_section_lines {
         let trimmed = line.trim_start();
 
-        if trimmed.starts_with("# tag:") || trimmed.starts_with("# group:") || trimmed.starts_with("# Added by Jedi") ||
-           trimmed.starts_with("# End of section") || trimmed.starts_with("# endtag") || trimmed.starts_with("# endgroup") ||
-           trimmed.starts_with("# ----") || trimmed.starts_with("# ====") || trimmed.is_empty() ||
+        if trimmed.starts_with("# Added by Jedi") ||
+           trimmed.starts_with("# End of section") ||
+           trimmed.starts_with("# ----") || trimmed.starts_with("# ====") || line.trim().is_empty() ||
            trimmed.contains("# +---------------------") || trimmed.contains("# +---------------------- END ") ||
-           trimmed.starts_with("# ====================== JEDI HOSTS MANAGER") || trimmed.starts_with("# ====================== END JEDI HOSTS MANAGER") {
+           trimmed.starts_with("# ====================== JEDI HOSTS MANAGER") || trimmed.starts_with("# ====================== END JEDI HOSTS MANAGER") ||
+           trimmed.starts_with("#") && trimmed.len() == 1 {
             // 保留标签行和分隔线
             new_lines.push(line.to_string());
-            if trimmed.starts_with("# tag:") || trimmed.starts_with("# group:") || trimmed.contains("# +---------------------") {
+            if trimmed.contains("# +---------------------") {
                 in_tag = true;
-            } else if trimmed.starts_with("# endtag") || trimmed.starts_with("# endgroup") || trimmed.contains("# +---------------------- END ") {
+            } else if trimmed.contains("# +---------------------- END ") {
                 in_tag = false;
             }
         } else if in_tag {
@@ -267,7 +268,8 @@ pub fn revert_hosts() -> Result<String, String> {
                 new_lines.push(format!("# {}", line));
                 println!("Disabling host entry: {}", line);
             } else if trimmed.starts_with("# ") && trimmed.len() > 2 &&
-                      !trimmed.starts_with("# group:") && !trimmed.starts_with("# tag:") {
+                      !trimmed.contains("# +---------------------") && !trimmed.contains("# +---------------------- END ") &&
+                      !trimmed.starts_with("# ====================== JEDI HOSTS MANAGER") && !trimmed.starts_with("# ====================== END JEDI HOSTS MANAGER") {
                 // 如果是被注释的hosts条目，保持注释
                 new_lines.push(line.to_string());
                 println!("Already disabled host entry: {}", line);
@@ -359,7 +361,7 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         }
 
         // 解析分组行
-        if trimmed.starts_with("# group: ") || trimmed.starts_with("# tag: ") || trimmed.contains("# +---------------------") {
+        if trimmed.contains("# +---------------------") {
             // 保存之前的分组数据（如果有）
             if let Some(name) = current_group.take() {
                 if !current_hosts.is_empty() {
@@ -375,12 +377,7 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
             }
 
             // 提取新分组
-            let name = if trimmed.starts_with("# group: ") {
-                trimmed["# group: ".len()..].to_string()
-            } else if trimmed.starts_with("# tag: ") {
-                // 兼容旧的 tag 格式
-                trimmed["# tag: ".len()..].to_string()
-            } else if trimmed.contains("# +---------------------") {
+            let name = if trimmed.contains("# +---------------------") {
                 // 新格式，从标题行提取分组名称
                 if let Some(start) = trimmed.find("---------------------") {
                     let start_idx = start + 21; // 安全地添加偏移量
@@ -401,29 +398,28 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         }
 
         // 解析结束分组行
-        if trimmed.starts_with("# endtag") || trimmed.starts_with("# endgroup") || trimmed.contains("# +---------------------- END ") {
+        if trimmed.contains("# +---------------------- END ") {
             println!("Found end of group at line {}", line_num + 1);
             continue;
         }
 
         // 解析hosts条目 - 处理注释行和非注释行
         if current_group.is_some() && !trimmed.is_empty() &&
-           !trimmed.starts_with("# tag:") && !trimmed.starts_with("# group:") &&
-           !trimmed.starts_with("# endtag") && !trimmed.starts_with("# endgroup") &&
+           !trimmed.contains("# +---------------------") && !trimmed.contains("# +---------------------- END ") &&
            !trimmed.starts_with("# ----") && !trimmed.starts_with("# ====") {
             let group_name = current_group.as_ref().unwrap();
             let mut is_disabled = false;
             let mut line_to_parse = trimmed.to_string();
 
             // 检查是否是注释行（已禁用的条目）
-            if trimmed.starts_with("# ") && !trimmed.starts_with("# tag:") && !trimmed.starts_with("# endtag") &&
+            if trimmed.starts_with("# ") &&
                !trimmed.starts_with("# Added by") && !trimmed.starts_with("# End of") &&
                !trimmed.starts_with("# ----") && !trimmed.starts_with("# ====") {
                 // 去除注释符号和空格
                 line_to_parse = trimmed[2..].to_string();
                 is_disabled = true;
                 println!("Found disabled host entry: {}", line_to_parse);
-            } else if trimmed.starts_with('#') && !trimmed.starts_with("#tag:") && !trimmed.starts_with("#endtag") &&
+            } else if trimmed.starts_with('#') &&
                       !trimmed.starts_with("#Added by") && !trimmed.starts_with("#End of") &&
                       !trimmed.starts_with("#----") && !trimmed.starts_with("#====") {
                 // 如果只有#没有空格，也去除

@@ -3,7 +3,7 @@
  * 提供处理hosts文件的通用工具函数
  */
 
-import { Group, Tag, HostEntry } from '@/types/hosts'
+import { Group, HostEntry } from '@/types/hosts'
 
 /**
  * 将hosts数组转换为数据表格项目
@@ -53,7 +53,7 @@ export function validateHostInput(ip: string, domain: string): boolean {
  * @param host 主机信息
  * @returns 找到的主机条目
  */
-export function findHostEntry(group: Group | Tag, host: any): HostEntry | undefined {
+export function findHostEntry(group: Group, host: any): HostEntry | undefined {
   return group.hosts.find(h => {
     for (const key in h) {
       if (key !== '__disabled' && key === host.domain && h[key] === host.ip) {
@@ -70,7 +70,7 @@ export function findHostEntry(group: Group | Tag, host: any): HostEntry | undefi
  * @param host 主机信息
  * @returns 找到的主机条目索引
  */
-export function findHostIndex(group: Group | Tag, host: any): number {
+export function findHostIndex(group: Group, host: any): number {
   return group.hosts.findIndex(h => {
     for (const key in h) {
       if (key !== '__disabled' && key === host.domain && h[key] === host.ip) {
@@ -100,7 +100,7 @@ export function updateHostEntryStatus(hostEntry: HostEntry, enabled: boolean): v
  * 启用所有hosts条目
  * @param groups 分组数据
  */
-export function enableAllHosts(groups: Group[] | Tag[]): void {
+export function enableAllHosts(groups: Group[]): void {
   for (const group of groups) {
     for (const host of group.hosts) {
       if (host.hasOwnProperty('__disabled')) {
@@ -114,7 +114,7 @@ export function enableAllHosts(groups: Group[] | Tag[]): void {
  * 禁用所有hosts条目
  * @param groups 分组数据
  */
-export function disableAllHosts(groups: Group[] | Tag[]): void {
+export function disableAllHosts(groups: Group[]): void {
   for (const group of groups) {
     for (const host of group.hosts) {
       if (!host.hasOwnProperty('__disabled')) {
@@ -135,7 +135,7 @@ export function openDomainLink(domain: string): string {
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     url = 'http://' + url
   }
-  
+
   // 在新标签页中打开链接
   window.open(url, '_blank')
   return `正在打开: ${domain}`

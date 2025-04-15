@@ -97,7 +97,7 @@
 import { ref, computed } from 'vue'
 import { mdiDomainPlus, mdiClose, mdiLinkVariant } from '@mdi/js'
 import { fetchRemoteConfig } from '@/services/hostsService'
-import { HostEntry, tagToGroup } from '@/types/hosts'
+import { HostEntry } from '@/types/hosts'
 
 // 定义组件属性
 const props = defineProps<{
@@ -168,18 +168,15 @@ async function confirmAdd() {
       }
 
       // 查找匹配的分组
-      const matchedGroup = result.find(g => g.tag === groupName.value)
+      const matchedGroup = result.find(g => g.name === groupName.value)
 
       if (matchedGroup) {
-        // 转换为新格式
-        const newGroup = tagToGroup(matchedGroup)
-        
         // 提交添加事件
         emit('add', {
           name: groupName.value,
           isRemote: true,
           url: remoteUrl.value,
-          hosts: newGroup.hosts
+          hosts: matchedGroup.hosts
         })
 
         // 关闭对话框

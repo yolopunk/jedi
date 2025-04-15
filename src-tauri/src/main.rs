@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::api::dns::{revert_hosts, update_hosts_with_tag, read_system_hosts};
+use crate::api::dns::{revert_hosts, update_hosts_with_groups, read_system_hosts};
 use crate::api::os::get_os_info;
 use crate::utils::logger;
 use tauri::RunEvent::WindowEvent;
@@ -21,7 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
-      update_hosts_with_tag,
+      update_hosts_with_groups,
       revert_hosts,
       read_system_hosts,
       get_os_info

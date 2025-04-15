@@ -14,6 +14,14 @@ Jedi Hosts Manager 是一个基于 Tauri 和 Vue 3 开发的跨平台应用程�
 
 名称 "Jedi" 灵感来自星球大战中的绝地武士，象征着这个工具能够帮助开发者像绝地武士一样轻松掌控不同环境的网络配置。
 
+## 📷 Screenshot | 应用截图
+
+![Jedi Hosts Manager Screenshot](public/screenshot.png)
+
+*Note: This is a placeholder image. Please replace it with an actual screenshot of your application.*
+
+*注意：这是一个占位图片。请将其替换为您的应用程序的实际截图。*
+
 ## ✨ Features | 特性
 
 - **Group Management**: Create hosts configuration groups by project or environment

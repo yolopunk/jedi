@@ -50,10 +50,8 @@ pub async fn update_hosts_with_groups(
     url: Option<String>,
     groups: Option<Vec<GroupHosts>>,
 ) -> Result<String, String> {
-    println!("Updating hosts with groups, source: {}", source);
     let groups_result = if source == "remote" {
         if let Some(u) = url {
-            println!("Fetching remote config from URL: {}", u);
             fetch_remote_config(&u).await.map_err(|e| e.to_string())
         } else {
             return Err("Remote source requires URL".to_string());
@@ -61,14 +59,12 @@ pub async fn update_hosts_with_groups(
     } else if source == "current" {
         // 使用前端传递的分组数据
         if let Some(g) = groups {
-            println!("Using current groups from frontend, count: {}", g.len());
             Ok(g)
         } else {
             return Err("Current source requires groups".to_string());
         }
     } else if source == "default" {
         // 创建默认的分组和条目
-        println!("Creating default hosts configuration");
         let mut default_hosts = Vec::new();
 
         // localhost
@@ -93,34 +89,17 @@ pub async fn update_hosts_with_groups(
 
         Ok(vec![default_group])
     } else {
-        println!("Loading local config");
         load_local_config(&app).map_err(|e| e.to_string())
     };
 
     let groups = match groups_result {
-        Ok(g) => {
-            println!("Got {} groups", g.len());
-            for group in &g {
-                println!("  - Group: '{}' with {} hosts", group.name, group.hosts.len());
-            }
-            g
-        },
-        Err(e) => {
-            println!("Error getting groups: {}", e);
-            return Err(e);
-        },
+        Ok(g) => g,
+        Err(e) => return Err(e),
     };
 
-    println!("Reading hosts file from: {}", HOSTS_PATH);
     let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {
-        Ok(content) => {
-            println!("Successfully read hosts file, content length: {}", content.len());
-            content
-        },
-        Err(e) => {
-            println!("Failed to read hosts file: {}", e);
-            return Err(format!("Failed to read hosts file: {}", e));
-        },
+        Ok(content) => content,
+        Err(e) => return Err(format!("Failed to read hosts file: {}", e)),
     };
 
     // 分析原始 hosts 文件，提取非 Jedi 管理部分
@@ -148,7 +127,6 @@ pub async fn update_hosts_with_groups(
         }
     }
 
-    println!("Adding Jedi section with {} groups", groups.len());
     new_lines.push("# === JEDI HOSTS MANAGER ===".to_string());
 
     for g in &groups {
@@ -177,11 +155,9 @@ pub async fn update_hosts_with_groups(
             if is_disabled {
                 // 如果禁用，添加注释符号
                 new_lines.push(format!("# {} {}", ip, hostname));
-                println!("Writing disabled host entry: # {} {}", ip, hostname);
             } else {
                 // 如果启用，正常显示
                 new_lines.push(format!("{} {}", ip, hostname));
-                println!("Writing enabled host entry: {} {}", ip, hostname);
             }
         }
 
@@ -191,13 +167,9 @@ pub async fn update_hosts_with_groups(
     new_lines.push("# === END JEDI HOSTS MANAGER ===".to_string());
 
     let new_content = new_lines.join("\n");
-    println!("Writing new hosts file, content length: {}", new_content.len());
     match std::fs::write(HOSTS_PATH, new_content) {
-        Ok(_) => println!("Successfully wrote hosts file"),
-        Err(e) => {
-            println!("Failed to write hosts file: {}", e);
-            return Err(format!("Failed to write hosts file: {}", e));
-        },
+        Ok(_) => {},
+        Err(e) => return Err(format!("Failed to write hosts file: {}", e)),
     };
 
     Ok("Hosts updated successfully".to_string())
@@ -206,7 +178,6 @@ pub async fn update_hosts_with_groups(
 #[tauri::command]
 pub fn revert_hosts() -> Result<String, String> {
     // 读取hosts文件
-    println!("Reading hosts file for disabling: {}", HOSTS_PATH);
     let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {
         Ok(content) => content,
         Err(e) => return Err(format!("Failed to read hosts file: {}", e)),
@@ -251,9 +222,8 @@ pub fn revert_hosts() -> Result<String, String> {
     for line in &jedi_section_lines {
         let trimmed = line.trim_start();
 
-        if trimmed.starts_with("# === JEDI HOSTS MANAGER ===") || trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") ||
-           (trimmed.starts_with("# +") && trimmed.ends_with("+")) || line.trim().is_empty() ||
-           trimmed.starts_with("#") && trimmed.len() == 1 {
+        if trimmed.starts_with("# ===") || trimmed.starts_with("# +") ||
+           line.trim().is_empty() || (trimmed.starts_with("#") && trimmed.len() == 1) {
             // 保留分组行和分隔线
             new_lines.push(line.to_string());
             if trimmed.starts_with("# +") && trimmed.ends_with("+") {
@@ -264,13 +234,9 @@ pub fn revert_hosts() -> Result<String, String> {
             if !trimmed.starts_with('#') {
                 // 如果还没有注释，添加注释
                 new_lines.push(format!("# {}", line));
-                println!("Disabling host entry: {}", line);
-            } else if trimmed.starts_with("# ") && trimmed.len() > 2 &&
-                      !trimmed.starts_with("# === JEDI HOSTS MANAGER ===") && !trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") &&
-                      !(trimmed.starts_with("# +") && trimmed.ends_with("+")) {
+            } else if trimmed.starts_with("# ") && !trimmed.starts_with("# ===") && !trimmed.starts_with("# +") {
                 // 如果是被注释的hosts条目，保持注释
                 new_lines.push(line.to_string());
-                println!("Already disabled host entry: {}", line);
             } else {
                 // 其他注释行直接添加
                 new_lines.push(line.to_string());
@@ -292,16 +258,9 @@ pub fn revert_hosts() -> Result<String, String> {
 #[tauri::command]
 pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
     // 读取系统hosts文件
-    println!("Reading hosts file from: {}", HOSTS_PATH);
     let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {
-        Ok(content) => {
-            println!("Successfully read hosts file, content length: {}", content.len());
-            content
-        },
-        Err(e) => {
-            println!("Failed to read hosts file: {}", e);
-            return Err(format!("Failed to read hosts file: {}", e))
-        },
+        Ok(content) => content,
+        Err(e) => return Err(format!("Failed to read hosts file: {}", e)),
     };
 
     // 初始化一个默认的分组，包含一些常用的hosts条目
@@ -321,29 +280,22 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
     let mut in_jedi_section = false;
     let mut found_jedi_section = false;
 
-    // 记录是否找到了Jedi部分
-
     // 解析hosts文件内容
-    for (line_num, line) in hosts_content.lines().enumerate() {
+    for line in hosts_content.lines() {
         let trimmed = line.trim_start();
 
         // 检查是否进入Jedi管理的部分
         if trimmed.starts_with("# === JEDI HOSTS MANAGER ===") {
-            println!("Found Jedi section at line {}", line_num + 1);
-
             // 如果已经在Jedi部分中，先完成当前部分的处理
             if in_jedi_section {
                 // 保存最后一个分组的数据
                 if let Some(name) = current_group.take() {
                     if !current_hosts.is_empty() {
-                        println!("Adding group '{}' with {} hosts", name, current_hosts.len());
                         result.push(GroupHosts {
                             name,
                             hosts: current_hosts,
                         });
                         current_hosts = Vec::new();
-                    } else {
-                        println!("Group '{}' has no hosts, skipping", name);
                     }
                 }
             }
@@ -362,20 +314,16 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
 
         // 检查是否离开Jedi管理的部分
         if trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") {
-            println!("End of Jedi section at line {}", line_num + 1);
             in_jedi_section = false;
 
             // 保存最后一个分组的数据
             if let Some(name) = current_group.take() {
                 if !current_hosts.is_empty() {
-                    println!("Adding group '{}' with {} hosts", name, current_hosts.len());
                     result.push(GroupHosts {
                         name,
                         hosts: current_hosts,
                     });
                     current_hosts = Vec::new();
-                } else {
-                    println!("Group '{}' has no hosts, skipping", name);
                 }
             }
             continue;
@@ -391,14 +339,11 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
             // 保存之前的分组数据（如果有）
             if let Some(name) = current_group.take() {
                 if !current_hosts.is_empty() {
-                    println!("Adding group '{}' with {} hosts", name, current_hosts.len());
                     result.push(GroupHosts {
                         name,
                         hosts: current_hosts,
                     });
                     current_hosts = Vec::new();
-                } else {
-                    println!("Group '{}' has no hosts, skipping", name);
                 }
             }
 
@@ -407,37 +352,25 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
             let start_idx = "# +".len();
             let end_idx = trimmed.len() - 1; // 去除右加号
             let name = trimmed[start_idx..end_idx].trim().to_string();
-            println!("Found group: '{}' at line {}", name, line_num + 1);
+
             current_group = Some(name);
             continue;
         }
 
-        // 不再需要解析结束分组行，因为新格式不使用结束标记
-
         // 解析hosts条目 - 处理注释行和非注释行
         if current_group.is_some() && !trimmed.is_empty() &&
-           !(trimmed.starts_with("# +") && trimmed.ends_with("+")) &&
-           !trimmed.starts_with("# === JEDI HOSTS MANAGER ===") && !trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") {
+           !trimmed.starts_with("# +") && !trimmed.starts_with("# ===") {
             let group_name = current_group.as_ref().unwrap();
-            let mut is_disabled = false;
-            let mut line_to_parse = trimmed.to_string();
-
             // 检查是否是注释行（已禁用的条目）
-            if trimmed.starts_with("# ") &&
-               !trimmed.starts_with("# Added by") && !trimmed.starts_with("# End of") &&
-               !trimmed.starts_with("# ----") && !trimmed.starts_with("# ====") {
-                // 去除注释符号和空格
-                line_to_parse = trimmed[2..].to_string();
-                is_disabled = true;
-                println!("Found disabled host entry: {}", line_to_parse);
-            } else if trimmed.starts_with('#') &&
-                      !trimmed.starts_with("#Added by") && !trimmed.starts_with("#End of") &&
-                      !trimmed.starts_with("#----") && !trimmed.starts_with("#====") {
+            let (line_to_parse, is_disabled) = if trimmed.starts_with("# ") && !trimmed.starts_with("# +") && !trimmed.starts_with("# ===") {
+                // 如果是普通注释行，去除注释符号
+                (trimmed[2..].to_string(), true)
+            } else if trimmed.starts_with('#') && !trimmed.starts_with("#+") && !trimmed.starts_with("#===") {
                 // 如果只有#没有空格，也去除
-                line_to_parse = trimmed[1..].to_string();
-                is_disabled = true;
-                println!("Found disabled host entry: {}", line_to_parse);
-            }
+                (trimmed[1..].to_string(), true)
+            } else {
+                (trimmed.to_string(), false)
+            };
 
             // 解析IP和域名
             let parts: Vec<&str> = line_to_parse.split_whitespace().collect();
@@ -448,7 +381,6 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
                 // 检查是否已经存在相同的域名，避免重复
                 let domain_exists = current_hosts.iter().any(|h| h.contains_key(&domain));
                 if !domain_exists {
-                    println!("Found host entry: {} -> {} for group '{}', disabled: {}", domain, ip, group_name, is_disabled);
                     let mut host_map = HashMap::new();
                     host_map.insert(domain, ip);
 
@@ -458,8 +390,6 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
                     }
 
                     current_hosts.push(host_map);
-                } else {
-                    println!("Skipping duplicate domain: {} for group '{}'", domain, group_name);
                 }
             }
         }
@@ -468,27 +398,16 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
     // 如果文件结束时还有未保存的分组数据，保存它
     if let Some(name) = current_group {
         if !current_hosts.is_empty() {
-            println!("Adding final group '{}' with {} hosts", name, current_hosts.len());
             result.push(GroupHosts {
                 name,
                 hosts: current_hosts,
             });
-        } else {
-            println!("Final group '{}' has no hosts, skipping", name);
         }
     }
 
     // 如果找到了Jedi管理的部分，则移除默认分组
     if found_jedi_section && result.len() > 1 {
-        println!("Found Jedi section, removing default group");
         result.remove(0); // 移除默认分组
-    } else {
-        println!("No Jedi section found or no valid groups, using default group");
-    }
-
-    println!("Returning {} groups", result.len());
-    for group in &result {
-        println!("  - Group: '{}' with {} hosts", group.name, group.hosts.len());
     }
 
     Ok(result)

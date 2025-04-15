@@ -21,37 +21,37 @@ pub struct HostEntry {
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct TagHosts {
-    pub tag: String,
+pub struct GroupHosts {
+    pub name: String,
     pub hosts: Vec<HashMap<String, String>>,
 }
 
-pub fn load_local_config(app: &AppHandle) -> Result<Vec<TagHosts>, Box<dyn Error>> {
+pub fn load_local_config(app: &AppHandle) -> Result<Vec<GroupHosts>, Box<dyn Error>> {
     let mut hosts_path = resource_dir(app.package_info(), &app.env())?;
     hosts_path.push("config");
     hosts_path.push("hosts.json");
 
     let hosts_content = std::fs::read_to_string(hosts_path)?;
-    let tags: Vec<TagHosts> = serde_json::from_str(&hosts_content)?;
-    Ok(tags)
+    let groups: Vec<GroupHosts> = serde_json::from_str(&hosts_content)?;
+    Ok(groups)
 }
 
-pub async fn fetch_remote_config(url: &str) -> Result<Vec<TagHosts>, Box<dyn Error>> {
+pub async fn fetch_remote_config(url: &str) -> Result<Vec<GroupHosts>, Box<dyn Error>> {
     let resp = reqwest::get(url).await?;
     let text = resp.text().await?;
-    let tags: Vec<TagHosts> = serde_json::from_str(&text)?;
-    Ok(tags)
+    let groups: Vec<GroupHosts> = serde_json::from_str(&text)?;
+    Ok(groups)
 }
 
 #[tauri::command]
-pub async fn update_hosts_with_tag(
+pub async fn update_hosts_with_groups(
     app: AppHandle,
     source: String,
     url: Option<String>,
-    tags: Option<Vec<TagHosts>>,
+    groups: Option<Vec<GroupHosts>>,
 ) -> Result<String, String> {
-    println!("Updating hosts with tag, source: {}", source);
-    let tags_result = if source == "remote" {
+    println!("Updating hosts with groups, source: {}", source);
+    let groups_result = if source == "remote" {
         if let Some(u) = url {
             println!("Fetching remote config from URL: {}", u);
             fetch_remote_config(&u).await.map_err(|e| e.to_string())
@@ -59,15 +59,15 @@ pub async fn update_hosts_with_tag(
             return Err("Remote source requires URL".to_string());
         }
     } else if source == "current" {
-        // 使用前端传递的标签数据
-        if let Some(t) = tags {
-            println!("Using current tags from frontend, count: {}", t.len());
-            Ok(t)
+        // 使用前端传递的分组数据
+        if let Some(g) = groups {
+            println!("Using current groups from frontend, count: {}", g.len());
+            Ok(g)
         } else {
-            return Err("Current source requires tags".to_string());
+            return Err("Current source requires groups".to_string());
         }
     } else if source == "default" {
-        // 创建默认的标签和条目
+        // 创建默认的分组和条目
         println!("Creating default hosts configuration");
         let mut default_hosts = Vec::new();
 
@@ -86,27 +86,27 @@ pub async fn update_hosts_with_tag(
         example_map.insert("example.test".to_string(), "127.0.0.1".to_string());
         default_hosts.push(example_map);
 
-        let default_tag = TagHosts {
-            tag: "开发环境".to_string(),
+        let default_group = GroupHosts {
+            name: "开发环境".to_string(),
             hosts: default_hosts,
         };
 
-        Ok(vec![default_tag])
+        Ok(vec![default_group])
     } else {
         println!("Loading local config");
         load_local_config(&app).map_err(|e| e.to_string())
     };
 
-    let tags = match tags_result {
-        Ok(t) => {
-            println!("Got {} tags", t.len());
-            for tag in &t {
-                println!("  - Tag: '{}' with {} hosts", tag.tag, tag.hosts.len());
+    let groups = match groups_result {
+        Ok(g) => {
+            println!("Got {} groups", g.len());
+            for group in &g {
+                println!("  - Group: '{}' with {} hosts", group.name, group.hosts.len());
             }
-            t
+            g
         },
         Err(e) => {
-            println!("Error getting tags: {}", e);
+            println!("Error getting groups: {}", e);
             return Err(e);
         },
     };
@@ -139,17 +139,17 @@ pub async fn update_hosts_with_tag(
         }
     }
 
-    println!("Adding Jedi section with {} tags", tags.len());
+    println!("Adding Jedi section with {} groups", groups.len());
     new_lines.push("# Added by Jedi".to_string());
     new_lines.push("# =======================================".to_string());
 
-    for t in &tags {
-        new_lines.push(format!("# tag: {}", t.tag));
+    for g in &groups {
+        new_lines.push(format!("# group: {}", g.name));
         new_lines.push("# ---------------------------------------".to_string());
 
         // 按域名排序显示
         let mut sorted_hosts: Vec<(String, String, bool)> = Vec::new();
-        for host_map in &t.hosts {
+        for host_map in &g.hosts {
             // 检查是否禁用
             let is_disabled = host_map.contains_key("__disabled");
 
@@ -176,7 +176,7 @@ pub async fn update_hosts_with_tag(
             }
         }
 
-        new_lines.push("# endtag".to_string());
+        new_lines.push("# endgroup".to_string());
         new_lines.push("".to_string()); // 添加空行增强可读性
     }
 
@@ -244,14 +244,14 @@ pub fn revert_hosts() -> Result<String, String> {
     for line in &jedi_section_lines {
         let trimmed = line.trim_start();
 
-        if trimmed.starts_with("# tag:") || trimmed.starts_with("# Added by Jedi") ||
-           trimmed.starts_with("# End of section") || trimmed.starts_with("# endtag") ||
+        if trimmed.starts_with("# tag:") || trimmed.starts_with("# group:") || trimmed.starts_with("# Added by Jedi") ||
+           trimmed.starts_with("# End of section") || trimmed.starts_with("# endtag") || trimmed.starts_with("# endgroup") ||
            trimmed.starts_with("# ----") || trimmed.starts_with("# ====") || trimmed.is_empty() {
             // 保留标签行和分隔线
             new_lines.push(line.to_string());
-            if trimmed.starts_with("# tag:") {
+            if trimmed.starts_with("# tag:") || trimmed.starts_with("# group:") {
                 in_tag = true;
-            } else if trimmed.starts_with("# endtag") {
+            } else if trimmed.starts_with("# endtag") || trimmed.starts_with("# endgroup") {
                 in_tag = false;
             }
         } else if in_tag {
@@ -260,7 +260,8 @@ pub fn revert_hosts() -> Result<String, String> {
                 // 如果还没有注释，添加注释
                 new_lines.push(format!("# {}", line));
                 println!("Disabling host entry: {}", line);
-            } else if trimmed.starts_with("# ") && trimmed.len() > 2 {
+            } else if trimmed.starts_with("# ") && trimmed.len() > 2 &&
+                      !trimmed.starts_with("# group:") && !trimmed.starts_with("# tag:") {
                 // 如果是被注释的hosts条目，保持注释
                 new_lines.push(line.to_string());
                 println!("Already disabled host entry: {}", line);
@@ -283,7 +284,7 @@ pub fn revert_hosts() -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn read_system_hosts() -> Result<Vec<TagHosts>, String> {
+pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
     // 读取系统hosts文件
     println!("Reading hosts file from: {}", HOSTS_PATH);
     let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {
@@ -297,19 +298,19 @@ pub fn read_system_hosts() -> Result<Vec<TagHosts>, String> {
         },
     };
 
-    // 初始化一个默认的标签，包含一些常用的hosts条目
+    // 初始化一个默认的分组，包含一些常用的hosts条目
     let mut default_hosts = Vec::new();
     let mut localhost_map = HashMap::new();
     localhost_map.insert("localhost".to_string(), "127.0.0.1".to_string());
     default_hosts.push(localhost_map);
 
-    // 如果没有找到Jedi管理的部分，就使用这个默认标签
-    let mut result = vec![TagHosts {
-        tag: "默认".to_string(),
+    // 如果没有找到Jedi管理的部分，就使用这个默认分组
+    let mut result = vec![GroupHosts {
+        name: "默认".to_string(),
         hosts: default_hosts,
     }];
 
-    let mut current_tag: Option<String> = None;
+    let mut current_group: Option<String> = None;
     let mut current_hosts: Vec<HashMap<String, String>> = Vec::new();
     let mut in_jedi_section = false;
     let mut found_jedi_section = false;
@@ -330,17 +331,17 @@ pub fn read_system_hosts() -> Result<Vec<TagHosts>, String> {
         if trimmed.starts_with("# End of section") {
             println!("End of Jedi section at line {}", line_num + 1);
             in_jedi_section = false;
-            // 保存最后一个标签的数据
-            if let Some(tag) = current_tag.take() {
+            // 保存最后一个分组的数据
+            if let Some(name) = current_group.take() {
                 if !current_hosts.is_empty() {
-                    println!("Adding tag '{}' with {} hosts", tag, current_hosts.len());
-                    result.push(TagHosts {
-                        tag,
+                    println!("Adding group '{}' with {} hosts", name, current_hosts.len());
+                    result.push(GroupHosts {
+                        name,
                         hosts: current_hosts,
                     });
                     current_hosts = Vec::new();
                 } else {
-                    println!("Tag '{}' has no hosts, skipping", tag);
+                    println!("Group '{}' has no hosts, skipping", name);
                 }
             }
             continue;
@@ -351,38 +352,46 @@ pub fn read_system_hosts() -> Result<Vec<TagHosts>, String> {
             continue;
         }
 
-        // 解析标签行
-        if trimmed.starts_with("# tag: ") {
-            // 保存之前的标签数据（如果有）
-            if let Some(tag) = current_tag.take() {
+        // 解析分组行
+        if trimmed.starts_with("# group: ") || trimmed.starts_with("# tag: ") {
+            // 保存之前的分组数据（如果有）
+            if let Some(name) = current_group.take() {
                 if !current_hosts.is_empty() {
-                    println!("Adding tag '{}' with {} hosts", tag, current_hosts.len());
-                    result.push(TagHosts {
-                        tag,
+                    println!("Adding group '{}' with {} hosts", name, current_hosts.len());
+                    result.push(GroupHosts {
+                        name,
                         hosts: current_hosts,
                     });
                     current_hosts = Vec::new();
                 } else {
-                    println!("Tag '{}' has no hosts, skipping", tag);
+                    println!("Group '{}' has no hosts, skipping", name);
                 }
             }
 
-            // 提取新标签
-            let tag = trimmed["# tag: ".len()..].to_string();
-            println!("Found tag: '{}' at line {}", tag, line_num + 1);
-            current_tag = Some(tag);
+            // 提取新分组
+            let name = if trimmed.starts_with("# group: ") {
+                trimmed["# group: ".len()..].to_string()
+            } else {
+                // 兼容旧的 tag 格式
+                trimmed["# tag: ".len()..].to_string()
+            };
+            println!("Found group: '{}' at line {}", name, line_num + 1);
+            current_group = Some(name);
             continue;
         }
 
-        // 解析结束标签行
-        if trimmed.starts_with("# endtag") {
-            println!("Found endtag at line {}", line_num + 1);
+        // 解析结束分组行
+        if trimmed.starts_with("# endtag") || trimmed.starts_with("# endgroup") {
+            println!("Found end of group at line {}", line_num + 1);
             continue;
         }
 
         // 解析hosts条目 - 处理注释行和非注释行
-        if current_tag.is_some() && !trimmed.is_empty() && !trimmed.starts_with("# tag:") && !trimmed.starts_with("# endtag") && !trimmed.starts_with("# ----") && !trimmed.starts_with("# ====") {
-            let tag = current_tag.as_ref().unwrap();
+        if current_group.is_some() && !trimmed.is_empty() &&
+           !trimmed.starts_with("# tag:") && !trimmed.starts_with("# group:") &&
+           !trimmed.starts_with("# endtag") && !trimmed.starts_with("# endgroup") &&
+           !trimmed.starts_with("# ----") && !trimmed.starts_with("# ====") {
+            let group_name = current_group.as_ref().unwrap();
             let mut is_disabled = false;
             let mut line_to_parse = trimmed.to_string();
 
@@ -412,7 +421,7 @@ pub fn read_system_hosts() -> Result<Vec<TagHosts>, String> {
                 // 检查是否已经存在相同的域名，避免重复
                 let domain_exists = current_hosts.iter().any(|h| h.contains_key(&domain));
                 if !domain_exists {
-                    println!("Found host entry: {} -> {} for tag '{}', disabled: {}", domain, ip, tag, is_disabled);
+                    println!("Found host entry: {} -> {} for group '{}', disabled: {}", domain, ip, group_name, is_disabled);
                     let mut host_map = HashMap::new();
                     host_map.insert(domain, ip);
 
@@ -423,36 +432,36 @@ pub fn read_system_hosts() -> Result<Vec<TagHosts>, String> {
 
                     current_hosts.push(host_map);
                 } else {
-                    println!("Skipping duplicate domain: {} for tag '{}'", domain, tag);
+                    println!("Skipping duplicate domain: {} for group '{}'", domain, group_name);
                 }
             }
         }
     }
 
-    // 如果文件结束时还有未保存的标签数据，保存它
-    if let Some(tag) = current_tag {
+    // 如果文件结束时还有未保存的分组数据，保存它
+    if let Some(name) = current_group {
         if !current_hosts.is_empty() {
-            println!("Adding final tag '{}' with {} hosts", tag, current_hosts.len());
-            result.push(TagHosts {
-                tag,
+            println!("Adding final group '{}' with {} hosts", name, current_hosts.len());
+            result.push(GroupHosts {
+                name,
                 hosts: current_hosts,
             });
         } else {
-            println!("Final tag '{}' has no hosts, skipping", tag);
+            println!("Final group '{}' has no hosts, skipping", name);
         }
     }
 
-    // 如果找到了Jedi管理的部分，则移除默认标签
+    // 如果找到了Jedi管理的部分，则移除默认分组
     if found_jedi_section && result.len() > 1 {
-        println!("Found Jedi section, removing default tag");
-        result.remove(0); // 移除默认标签
+        println!("Found Jedi section, removing default group");
+        result.remove(0); // 移除默认分组
     } else {
-        println!("No Jedi section found or no valid tags, using default tag");
+        println!("No Jedi section found or no valid groups, using default group");
     }
 
-    println!("Returning {} tags", result.len());
-    for tag in &result {
-        println!("  - Tag: '{}' with {} hosts", tag.tag, tag.hosts.len());
+    println!("Returning {} groups", result.len());
+    for group in &result {
+        println!("  - Group: '{}' with {} hosts", group.name, group.hosts.len());
     }
 
     Ok(result)

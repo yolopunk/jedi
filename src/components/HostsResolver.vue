@@ -92,7 +92,7 @@
 import { ref, computed, onMounted } from 'vue'
 
 // 导入类型定义
-import { Group, HostEntry, tagToGroup, groupToTag } from '@/types/hosts'
+import { Group, HostEntry } from '@/types/hosts'
 
 // 导入子组件
 import HeaderSection from '@/components/hosts/common/HeaderSection.vue'
@@ -116,7 +116,7 @@ import {
 import {
   getOsInfo,
   readSystemHosts,
-  updateHostsWithTag,
+  updateHostsWithGroups,
   revertHosts,
   initializeDefaultConfig as initDefaultConfig
 } from '@/services/hostsService'
@@ -262,10 +262,10 @@ async function loadSystemHosts() {
  * 更新分组数据
  * @param result 从后端获取的数据
  */
-function updateGroupsData(result: Array<{ tag: string; hosts: Array<Record<string, string>> }>) {
-  // 将旧格式转换为新格式
-  groups.value = result.map(tag => tagToGroup(tag));
-  // 使用转换后的分组名称
+function updateGroupsData(result: Array<{ name: string; hosts: Array<Record<string, string>> }>) {
+  // 直接使用后端返回的分组数据
+  groups.value = result;
+  // 设置选中的分组
   if (groups.value.length > 0) {
     selectedGroup.value = groups.value[0].name;
   }
@@ -275,11 +275,11 @@ function updateGroupsData(result: Array<{ tag: string; hosts: Array<Record<strin
  * 更新全局开关状态
  * @param result 从后端获取的数据
  */
-function updateGlobalSwitchState(result: Array<{ tag: string; hosts: Array<Record<string, string>> }>) {
+function updateGlobalSwitchState(result: Array<{ name: string; hosts: Array<Record<string, string>> }>) {
   // 检查是否有未禁用的条目，如果有，则设置全局开关为开
   let hasEnabledEntries = false;
-  for (const tag of result) {
-    for (const host of tag.hosts) {
+  for (const group of result) {
+    for (const host of group.hosts) {
       if (!host.hasOwnProperty('__disabled')) {
         hasEnabledEntries = true;
         break;
@@ -311,9 +311,8 @@ function initializeEmptyGroups() {
  */
 async function updateHosts() {
   try {
-    // 将当前分组数据转换为后端兼容的格式
-    const tagsData = groups.value.map(group => groupToTag(group))
-    await updateHostsWithTag(tagsData)
+    // 直接使用当前分组数据
+    await updateHostsWithGroups(groups.value)
   } catch (error) {
     console.error('更新hosts失败', error)
     throw error

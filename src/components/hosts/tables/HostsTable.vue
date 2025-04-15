@@ -123,7 +123,7 @@ import {
   mdiPencil,
   mdiDelete
 } from '@mdi/js'
-import { getHostsAsItems, openDomainLink } from '@/utils/hostsUtils.refactored'
+import { getHostsAsItems, openDomainLink } from '@/utils/hostsUtils'
 import { Group } from '@/types/hosts'
 
 // 定义组件属性

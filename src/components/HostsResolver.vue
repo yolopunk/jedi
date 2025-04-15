@@ -92,7 +92,7 @@
 import { ref, computed, onMounted } from 'vue'
 
 // 导入类型定义
-import { Group, Tag, HostEntry, tagToGroup, groupToTag } from '@/types/hosts'
+import { Group, HostEntry, tagToGroup, groupToTag } from '@/types/hosts'
 
 // 导入子组件
 import HeaderSection from '@/components/hosts/common/HeaderSection.vue'
@@ -130,31 +130,17 @@ import {
 const hostsResolveSwitch = ref(false)
 
 /**
- * 分组数据 - 新版本
+ * 分组数据
  * @description 存储所有分组及其hosts条目
  */
 const groups = ref<Group[]>([])
 
 /**
- * 当前选中的分组 - 新版本
+ * 当前选中的分组
  */
 const selectedGroup = ref<string>('')
 
-/**
- * 分组数据 - 兼容层
- * @description 存储所有分组及其hosts条目
- */
-const tags = computed<Tag[]>(() => {
-  return groups.value.map(group => groupToTag(group))
-})
-
-/**
- * 当前选中的分组 - 兼容层
- */
-const selectedTag = computed<string>({
-  get: () => selectedGroup.value,
-  set: (value) => { selectedGroup.value = value }
-})
+// 注意：我们已经统一使用 Group 类型和 name 属性，移除了兼容层
 
 /**
  * 搜索关键词
@@ -199,7 +185,7 @@ const snackbarColor = ref<'success' | 'error' | 'info' | 'warning'>('success')
  * 当前选中的分组数据
  */
 const currentGroup = computed(() => {
-  return groups.value.find(g => g.name === selectedGroup.value)
+  return groups.value.find((g: Group) => g.name === selectedGroup.value)
 })
 
 // ===== 生命周期钩子 =====
@@ -222,13 +208,13 @@ async function handleHostsSwitch(switchState: boolean) {
   try {
     if (switchState) {
       // 如果开启，启用所有条目
-      enableAllHosts(tags.value)
+      enableAllHosts(groups.value)
       // 更新hosts文件
-      await updateHostsWithTag(tags.value)
+      await updateHosts()
       showNotification('Hosts解析已启用，所有条目已生效', 'success')
     } else {
       // 如果关闭，禁用所有条目
-      disableAllHosts(tags.value)
+      disableAllHosts(groups.value)
       // 恢复hosts文件
       await revertHosts()
       showNotification('Hosts解析已禁用，所有条目已暂停生效，但配置已保留', 'info')
@@ -322,8 +308,9 @@ function initializeEmptyGroups() {
  */
 async function updateHosts() {
   try {
-    // 直接将当前界面上的标签数据传递给后端
-    await updateHostsWithTag(tags.value)
+    // 将当前分组数据转换为后端兼容的格式
+    const tagsData = groups.value.map(group => groupToTag(group))
+    await updateHostsWithTag(tagsData)
   } catch (error) {
     console.error('更新hosts失败', error)
     throw error
@@ -349,8 +336,8 @@ async function initializeDefaultConfig() {
  * 获取当前分组
  * @returns 当前选中的分组
  */
-function getCurrentGroup() {
-  const group = groups.value.find(g => g.name === selectedGroup.value);
+function getCurrentGroup(): Group | null {
+  const group = groups.value.find((g: Group) => g.name === selectedGroup.value);
   if (!group) {
     showNotification('未找到对应分组', 'error');
     return null;
@@ -411,7 +398,7 @@ async function addGroup(data: { name: string; isRemote: boolean; url?: string; h
  * @param data 主机数据
  */
 async function addHost(data: { groupName: string; ip: string; domain: string }) {
-  const group = groups.value.find(g => g.name === data.groupName)
+  const group = groups.value.find((g: Group) => g.name === data.groupName)
   if (!group) {
     showNotification('未找到对应分组', 'error')
     return
@@ -444,7 +431,7 @@ async function editHost(data: { originalHost: any; ip: string; domain: string })
   if (!group) return
 
   // 找到对应的主机条目
-  const hostEntry = findHostEntry(groupToTag(group), data.originalHost)
+  const hostEntry = findHostEntry(group, data.originalHost)
   if (!hostEntry) {
     showNotification('未找到要编辑的条目', 'error')
     return
@@ -487,7 +474,7 @@ async function updateHostStatus(host: any) {
   if (!group) return
 
   // 找到对应的主机条目
-  const hostEntry = findHostEntry(groupToTag(group), host)
+  const hostEntry = findHostEntry(group, host)
   if (!hostEntry) return
 
   // 更新启用/禁用状态
@@ -528,7 +515,7 @@ async function confirmDeleteHost(host: any) {
   if (!group) return
 
   // 查找要删除的条目索引
-  const index = findHostIndex(groupToTag(group), host)
+  const index = findHostIndex(group, host)
 
   // 如果找到了条目，则删除并更新hosts文件
   if (index !== -1) {
@@ -537,7 +524,7 @@ async function confirmDeleteHost(host: any) {
 
     // 如果分组中没有条目了，则删除该分组
     if (group.hosts.length === 0) {
-      const groupIndex = groups.value.findIndex(g => g.name === group.name)
+      const groupIndex = groups.value.findIndex((g: Group) => g.name === group.name)
       if (groupIndex !== -1) {
         groups.value.splice(groupIndex, 1)
 

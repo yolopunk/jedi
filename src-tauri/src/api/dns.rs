@@ -140,20 +140,12 @@ pub async fn update_hosts_with_groups(
     }
 
     println!("Adding Jedi section with {} groups", groups.len());
-    new_lines.push("".to_string());
-    new_lines.push("# ╔════════════════════════════════════════════════════════════════════╗".to_string());
-    new_lines.push("# ║                      JEDI HOSTS MANAGER                      ║".to_string());
-    new_lines.push("# ╚════════════════════════════════════════════════════════════════════╝".to_string());
-    new_lines.push("#".to_string());
+    new_lines.push("# === JEDI HOSTS MANAGER ===".to_string());
 
     for g in &groups {
-        // 创建分组标题，更加直观
+        // 创建分组标题，简洁版本
         let group_name = g.name.clone();
-        new_lines.push("#".to_string());
-        new_lines.push("# ╔════════════════════════════════════════════════════════════════════╗".to_string());
-        new_lines.push(format!("# ║                          【{}】                          ║", group_name));
-        new_lines.push("# ╚════════════════════════════════════════════════════════════════════╝".to_string());
-        new_lines.push("#".to_string());
+        new_lines.push(format!("# [GROUP: {}]", group_name));
 
         // 按域名排序显示
         let mut sorted_hosts: Vec<(String, String, bool)> = Vec::new();
@@ -184,15 +176,11 @@ pub async fn update_hosts_with_groups(
             }
         }
 
-        new_lines.push("#".to_string());
-        new_lines.push("# ═════════════════════════════════════════════════════════════════════".to_string());
-        new_lines.push("#".to_string());
+        // 分组结束标记
+        new_lines.push(format!("# [END GROUP: {}]", g.name));
     }
 
-    new_lines.push("# ╔════════════════════════════════════════════════════════════════════╗".to_string());
-    new_lines.push("# ║                  END JEDI HOSTS MANAGER                  ║".to_string());
-    new_lines.push("# ╚════════════════════════════════════════════════════════════════════╝".to_string());
-    new_lines.push("".to_string());
+    new_lines.push("# === END JEDI HOSTS MANAGER ===".to_string());
 
     let new_content = new_lines.join("\n");
     println!("Writing new hosts file, content length: {}", new_content.len());
@@ -224,15 +212,13 @@ pub fn revert_hosts() -> Result<String, String> {
     for line in hosts_content.lines() {
         let trimmed = line.trim_start();
 
-        if trimmed.starts_with("# Added by Jedi") || trimmed.starts_with("# ====================== JEDI HOSTS MANAGER") ||
-           trimmed.starts_with("# ║                      JEDI HOSTS MANAGER") {
+        if trimmed.starts_with("# === JEDI HOSTS MANAGER ===") {
             in_jedi_section = true;
             jedi_section_lines.push(line.to_string());
             continue;
         }
 
-        if trimmed.starts_with("# End of section") || trimmed.starts_with("# ====================== END JEDI HOSTS MANAGER") ||
-           trimmed.starts_with("# ║                  END JEDI HOSTS MANAGER") {
+        if trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") {
             in_jedi_section = false;
             jedi_section_lines.push(line.to_string());
             continue;
@@ -257,19 +243,14 @@ pub fn revert_hosts() -> Result<String, String> {
     for line in &jedi_section_lines {
         let trimmed = line.trim_start();
 
-        if trimmed.starts_with("# Added by Jedi") ||
-           trimmed.starts_with("# End of section") ||
-           trimmed.starts_with("# ----") || trimmed.starts_with("# ====") || line.trim().is_empty() ||
-           trimmed.contains("# +---------------------") || trimmed.contains("# +---------------------- END ") ||
-           trimmed.contains("# ╔") || trimmed.contains("# ║") || trimmed.contains("# ╚") ||
-           trimmed.contains("# ═════════════════════════════════════════════════════════════════════") ||
-           trimmed.starts_with("# ====================== JEDI HOSTS MANAGER") || trimmed.starts_with("# ====================== END JEDI HOSTS MANAGER") ||
+        if trimmed.starts_with("# === JEDI HOSTS MANAGER ===") || trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") ||
+           trimmed.starts_with("# [GROUP: ") || trimmed.starts_with("# [END GROUP: ") || line.trim().is_empty() ||
            trimmed.starts_with("#") && trimmed.len() == 1 {
             // 保留分组行和分隔线
             new_lines.push(line.to_string());
-            if trimmed.contains("# +---------------------") || trimmed.contains("# ║                          【") {
+            if trimmed.starts_with("# [GROUP: ") {
                 in_group = true;
-            } else if trimmed.contains("# +---------------------- END ") || trimmed.contains("# ═════════════════════════════════════════════════════════════════════") {
+            } else if trimmed.starts_with("# [END GROUP: ") {
                 in_group = false;
             }
         } else if in_group {
@@ -279,8 +260,8 @@ pub fn revert_hosts() -> Result<String, String> {
                 new_lines.push(format!("# {}", line));
                 println!("Disabling host entry: {}", line);
             } else if trimmed.starts_with("# ") && trimmed.len() > 2 &&
-                      !trimmed.contains("# +---------------------") && !trimmed.contains("# +---------------------- END ") &&
-                      !trimmed.starts_with("# ====================== JEDI HOSTS MANAGER") && !trimmed.starts_with("# ====================== END JEDI HOSTS MANAGER") {
+                      !trimmed.starts_with("# === JEDI HOSTS MANAGER ===") && !trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") &&
+                      !trimmed.starts_with("# [GROUP: ") && !trimmed.starts_with("# [END GROUP: ") {
                 // 如果是被注释的hosts条目，保持注释
                 new_lines.push(line.to_string());
                 println!("Already disabled host entry: {}", line);
@@ -341,8 +322,7 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         let trimmed = line.trim_start();
 
         // 检查是否进入Jedi管理的部分
-        if trimmed.starts_with("# Added by Jedi") || trimmed.starts_with("# ====================== JEDI HOSTS MANAGER") ||
-           trimmed.starts_with("# ║                      JEDI HOSTS MANAGER") {
+        if trimmed.starts_with("# === JEDI HOSTS MANAGER ===") {
             println!("Found Jedi section at line {}", line_num + 1);
 
             // 如果已经在Jedi部分中，先完成当前部分的处理
@@ -375,8 +355,7 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         }
 
         // 检查是否离开Jedi管理的部分
-        if trimmed.starts_with("# End of section") || trimmed.starts_with("# ====================== END JEDI HOSTS MANAGER") ||
-           trimmed.starts_with("# ║                  END JEDI HOSTS MANAGER") {
+        if trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") {
             println!("End of Jedi section at line {}", line_num + 1);
             in_jedi_section = false;
 
@@ -402,7 +381,7 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         }
 
         // 解析分组行
-        if trimmed.contains("# +---------------------") || trimmed.contains("# ║                          【") {
+        if trimmed.starts_with("# [GROUP: ") {
             // 保存之前的分组数据（如果有）
             if let Some(name) = current_group.take() {
                 if !current_hosts.is_empty() {
@@ -418,30 +397,11 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
             }
 
             // 提取新分组
-            let name = if trimmed.contains("# +---------------------") {
-                // 旧格式，从标题行提取分组名称
-                if let Some(start) = trimmed.find("---------------------") {
-                    let start_idx = start + 21; // 安全地添加偏移量
-                    if let Some(end) = trimmed.rfind("---------------------") {
-                        trimmed[start_idx..end].trim().to_string()
-                    } else {
-                        "Unknown".to_string()
-                    }
-                } else {
-                    "Unknown".to_string()
-                }
-            } else if trimmed.contains("# ║                          【") {
-                // 新格式，从标题行提取分组名称
-                if let Some(start) = trimmed.find("【") {
-                    let start_idx = start + 1; // 安全地添加偏移量
-                    if let Some(end) = trimmed.find("】") {
-                        trimmed[start_idx..end].trim().to_string()
-                    } else {
-                        "Unknown".to_string()
-                    }
-                } else {
-                    "Unknown".to_string()
-                }
+            // 从分组行提取分组名称
+            let name = if trimmed.starts_with("# [GROUP: ") {
+                let start_idx = "# [GROUP: ".len();
+                let end_idx = trimmed.len() - 1; // 去除右括号
+                trimmed[start_idx..end_idx].trim().to_string()
             } else {
                 "Unknown".to_string()
             };
@@ -451,17 +411,15 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         }
 
         // 解析结束分组行
-        if trimmed.contains("# +---------------------- END ") || trimmed.contains("# ═════════════════════════════════════════════════════════════════════") {
+        if trimmed.starts_with("# [END GROUP: ") {
             println!("Found end of group at line {}", line_num + 1);
             continue;
         }
 
         // 解析hosts条目 - 处理注释行和非注释行
         if current_group.is_some() && !trimmed.is_empty() &&
-           !trimmed.contains("# +---------------------") && !trimmed.contains("# +---------------------- END ") &&
-           !trimmed.contains("# ║") && !trimmed.contains("# ╔") && !trimmed.contains("# ╚") &&
-           !trimmed.contains("# ═════════════════════════════════════════════════════════════════════") &&
-           !trimmed.starts_with("# ----") && !trimmed.starts_with("# ====") {
+           !trimmed.starts_with("# [GROUP: ") && !trimmed.starts_with("# [END GROUP: ") &&
+           !trimmed.starts_with("# === JEDI HOSTS MANAGER ===") && !trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") {
             let group_name = current_group.as_ref().unwrap();
             let mut is_disabled = false;
             let mut line_to_parse = trimmed.to_string();

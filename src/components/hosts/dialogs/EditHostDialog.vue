@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { mdiPencil, mdiClose, mdiIpNetwork, mdiDomain } from '@mdi/js'
-import { validateHostInput } from '@/utils/hostsUtils.refactored'
+import { validateHostInput } from '@/utils/hostsUtils'
 
 // 定义组件属性
 const props = defineProps<{

@@ -123,21 +123,27 @@ pub async fn update_hosts_with_groups(
         },
     };
 
+    // 分析原始 hosts 文件，提取非 Jedi 管理部分
     let mut new_lines: Vec<String> = Vec::new();
-    let mut skip = false;
+    let mut in_jedi_section = false;
+
     for line in hosts_content.lines() {
         let trimmed = line.trim_start();
-        // 检查新旧格式的开始标记
-        if trimmed.starts_with("# Added by Jedi") || trimmed.starts_with("# === JEDI HOSTS MANAGER ===") {
-            skip = true;
+
+        // 检查是否进入 Jedi 管理部分
+        if trimmed.starts_with("# === JEDI HOSTS MANAGER ===") {
+            in_jedi_section = true;
             continue;
         }
-        // 检查新旧格式的结束标记
-        if trimmed.starts_with("# End of section") || trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") {
-            skip = false;
+
+        // 检查是否离开 Jedi 管理部分
+        if trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") {
+            in_jedi_section = false;
             continue;
         }
-        if !skip {
+
+        // 如果不在 Jedi 管理部分中，添加到非 Jedi 行
+        if !in_jedi_section {
             new_lines.push(line.to_string());
         }
     }
@@ -401,13 +407,9 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
 
             // 提取新分组
             // 从分组行提取分组名称
-            let name = if trimmed.starts_with("# [GROUP: ") {
-                let start_idx = "# [GROUP: ".len();
-                let end_idx = trimmed.len() - 1; // 去除右括号
-                trimmed[start_idx..end_idx].trim().to_string()
-            } else {
-                "Unknown".to_string()
-            };
+            let start_idx = "# [GROUP: ".len();
+            let end_idx = trimmed.len() - 1; // 去除右括号
+            let name = trimmed[start_idx..end_idx].trim().to_string();
             println!("Found group: '{}' at line {}", name, line_num + 1);
             current_group = Some(name);
             continue;

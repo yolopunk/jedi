@@ -1,8 +1,8 @@
 <template>
   <!-- 添加分组对话框 -->
   <v-dialog v-model="dialogModel" max-width="550" persistent>
-    <v-card class="rounded-lg overflow-hidden">
-      <v-toolbar color="#4a90e2" class="px-4">
+    <v-card class="rounded-lg overflow-hidden jedi-dialog-card">
+      <v-toolbar style="background: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%); border-bottom: 1px solid rgba(52, 152, 219, 0.3);" class="px-4 jedi-dialog-header">
         <v-icon :icon="mdiDomainPlus" class="mr-2" color="white"></v-icon>
         <v-toolbar-title class="font-weight-medium">添加分组</v-toolbar-title>
         <v-spacer></v-spacer>
@@ -23,7 +23,7 @@
         <v-switch
           v-model="isRemote"
           label="使用远程配置"
-          color="#2196F3"
+          color="var(--jedi-primary)"
           hide-details
           class="mb-4"
         ></v-switch>
@@ -76,14 +76,15 @@
           @click="closeDialog"
           class="mr-2"
           color="grey-darken-1"
+          rounded="sm"
         >
           取消
         </v-btn>
         <v-btn
-          color="#2196F3"
+          color="var(--jedi-accent)"
           variant="elevated"
           @click="confirmAdd"
-          class="lightsaber-btn blue"
+          rounded="sm"
         >
           确认
         </v-btn>
@@ -95,7 +96,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { mdiDomainPlus, mdiClose, mdiLinkVariant } from '@mdi/js'
-import { fetchRemoteConfig } from '@/services/hostsService'
+import { fetchRemoteConfig } from '@/api/hosts'
 import { HostEntry } from '@/types/hosts'
 
 // 定义组件属性

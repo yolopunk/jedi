@@ -3,6 +3,7 @@
 
 use crate::api::dns::{revert_hosts, update_hosts_with_groups, read_system_hosts};
 use crate::api::os::get_os_info;
+use crate::api::app::get_app_info;
 use crate::utils::logger;
 use tauri::RunEvent::WindowEvent;
 use tauri::{Manager, RunEvent};
@@ -16,6 +17,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
+    .plugin(tauri_plugin_shell::init())
     .setup(|app| {
       config::app::load_tray_config(app);
       Ok(())
@@ -24,7 +26,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       update_hosts_with_groups,
       revert_hosts,
       read_system_hosts,
-      get_os_info
+      get_os_info,
+      get_app_info
     ])
     .build(tauri::generate_context!())?;
 

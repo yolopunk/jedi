@@ -10,17 +10,17 @@
     "tauri": "tauri"
   },
   "dependencies": {
-    "@tauri-apps/api": "2.4.1",
+    "@tauri-apps/api": "2.5.0",
     "vue": "^3.5.13",
-    "vuetify": "^3.8.0"
+    "vuetify": "^3.8.2"
   },
   "devDependencies": {
     "@mdi/js": "^7.4.47",
-    "@tauri-apps/cli": "2.4.1",
-    "@types/node": "^22.14.0",
+    "@tauri-apps/cli": "2.5.0",
+    "@types/node": "^22.14.1",
     "@vitejs/plugin-vue": "^5.2.3",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5",
+    "vite": "^6.3.1",
     "vite-plugin-vuetify": "^2.1.1",
     "vue-tsc": "^2.2.8"
   }

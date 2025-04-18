@@ -168,7 +168,7 @@ pub async fn update_hosts_with_groups(
 
     new_lines.push("# === END JEDI HOSTS MANAGER ===".to_string());
 
-    let new_content = new_lines.join("\n");
+    let new_content = new_lines.join("\n") + "\n";
     match std::fs::write(HOSTS_PATH, new_content) {
         Ok(_) => {},
         Err(e) => return Err(format!("Failed to write hosts file: {}", e)),

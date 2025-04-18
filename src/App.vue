@@ -17,10 +17,14 @@
         <hosts-resolver></hosts-resolver>
       </v-container>
     </v-main>
+
+    <!-- 系统信息栏 -->
+    <system-info-bar></system-info-bar>
   </v-app>
 </template>
 <script setup lang="ts">
 import HostsResolver from '@/components/HostsResolver.vue'
+import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 </script>
 
 

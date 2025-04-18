@@ -1,8 +1,8 @@
 <template>
   <!-- 编辑条目对话框 -->
   <v-dialog v-model="dialogModel" max-width="500" persistent>
-    <v-card class="rounded-lg overflow-hidden">
-      <v-toolbar color="#2196F3" class="px-4">
+    <v-card class="rounded-lg overflow-hidden jedi-dialog-card">
+      <v-toolbar style="background: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%); border-bottom: 1px solid rgba(52, 152, 219, 0.3);" class="px-4 jedi-dialog-header">
         <v-icon :icon="mdiPencil" class="mr-2" color="white"></v-icon>
         <v-toolbar-title class="font-weight-medium">编辑条目</v-toolbar-title>
         <v-spacer></v-spacer>
@@ -37,14 +37,15 @@
           @click="closeDialog"
           class="mr-2"
           color="grey-darken-1"
+          rounded="sm"
         >
           取消
         </v-btn>
         <v-btn
-          color="#2196F3"
+          color="var(--jedi-accent)"
           variant="elevated"
           @click="confirmEdit"
-          class="lightsaber-btn blue"
+          rounded="sm"
         >
           确认
         </v-btn>

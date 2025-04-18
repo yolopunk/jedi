@@ -4,12 +4,11 @@
     <div class="d-flex justify-end pa-3">
       <v-btn
         @click="$emit('add-group')"
-        color="#1976D2"
         variant="flat"
         size="small"
-        rounded="pill"
+        rounded="sm"
         class="jedi-btn jedi-hover-lift"
-        style="box-shadow: 0 2px 4px rgba(25, 118, 210, 0.2);"
+        style="background-color: var(--jedi-accent); color: white; box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2); text-transform: uppercase; letter-spacing: 0.5px;"
       >
         <v-icon :icon="mdiPlus" size="small" class="mr-1"></v-icon>
         <span style="font-weight: 500; letter-spacing: 0.5px;">添加分组</span>
@@ -17,13 +16,13 @@
     </div>
 
     <!-- 分组选择区域 -->
-    <div class="pa-2" style="background-color: #FAFBFD; border-top: 1px solid rgba(25, 118, 210, 0.05);">
+    <div class="pa-2" style="background-color: #F8F9FA; border-top: 1px solid rgba(52, 152, 219, 0.1); border-radius: 0 0 8px 8px;">
       <div class="d-flex flex-wrap gap-2 px-2 py-1">
         <v-btn
           v-for="group in groups"
           :key="group.name"
           :value="group.name"
-          :color="modelValue === group.name ? '#1976D2' : '#E8F1FF'"
+          :color="modelValue === group.name ? 'var(--jedi-accent)' : '#ECF0F1'"
           :variant="modelValue === group.name ? 'flat' : 'outlined'"
           class="group-btn"
           size="small"
@@ -32,13 +31,13 @@
           @click="$emit('update:modelValue', group.name)"
           :style="{
             minWidth: 'auto',
-            borderColor: '#1976D2',
+            borderColor: 'var(--jedi-accent)',
             fontWeight: 500,
-            color: modelValue === group.name ? 'white !important' : '#0D47A1 !important'
+            color: modelValue === group.name ? 'white !important' : 'var(--jedi-primary) !important'
           }"
         >
-          <v-icon :icon="mdiDomain" size="x-small" class="mr-1" :style="{color: modelValue === group.name ? 'white !important' : '#0D47A1 !important'}"></v-icon>
-          <span :style="{color: modelValue === group.name ? 'white !important' : '#0D47A1 !important', fontWeight: 500}">{{ group.name }}</span>
+          <v-icon :icon="mdiDomain" size="x-small" class="mr-1" :style="{color: modelValue === group.name ? 'white !important' : 'var(--jedi-primary) !important'}"></v-icon>
+          <span :style="{color: modelValue === group.name ? 'white !important' : 'var(--jedi-primary) !important', fontWeight: 500}">{{ group.name }}</span>
         </v-btn>
       </div>
     </div>

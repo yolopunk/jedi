@@ -1,16 +1,17 @@
 /**
- * JEDIHOSTS管理器 - API服务
- * 封装与Tauri API的交互
+ * Hosts管理 API
+ * 封装与Tauri后端的交互
  */
-import { invoke } from '@tauri-apps/api/core'
-import { Group } from '@/types/hosts'
+// @ts-ignore
+import { invoke } from '@tauri-apps/api/core';
+import { Group } from '@/types/hosts';
 
 /**
  * 获取系统信息
  * @returns 系统信息
  */
 export async function getOsInfo() {
-  return await invoke('get_os_info')
+  return await invoke('get_os_info');
 }
 
 /**
@@ -18,7 +19,7 @@ export async function getOsInfo() {
  * @returns hosts配置数据
  */
 export async function readSystemHosts() {
-  return await invoke('read_system_hosts')
+  return await invoke('read_system_hosts');
 }
 
 /**
@@ -31,7 +32,7 @@ export async function updateHostsWithGroups(groups: Group[]) {
     source: 'current',
     url: null,
     groups
-  })
+  });
 }
 
 /**
@@ -39,7 +40,7 @@ export async function updateHostsWithGroups(groups: Group[]) {
  * @returns 恢复结果
  */
 export async function revertHosts() {
-  return await invoke('revert_hosts')
+  return await invoke('revert_hosts');
 }
 
 /**
@@ -51,7 +52,7 @@ export async function initializeDefaultConfig() {
     source: 'default',
     url: null,
     groups: null
-  })
+  });
 }
 
 /**
@@ -60,5 +61,5 @@ export async function initializeDefaultConfig() {
  * @returns 远程配置数据
  */
 export async function fetchRemoteConfig(url: string) {
-  return await invoke('fetch_remote_config', { url })
+  return await invoke('fetch_remote_config', { url });
 }

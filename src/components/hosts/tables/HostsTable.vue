@@ -17,12 +17,13 @@
         ></v-text-field>
       </div>
       <v-btn
-        color="#4CAF50"
+        color="var(--jedi-accent)"
         variant="flat"
-        rounded="pill"
+        rounded="sm"
         size="small"
         class="jedi-btn jedi-hover-lift"
         @click="emit('add-host', currentGroup.name)"
+        style="color: white; text-transform: uppercase; letter-spacing: 0.5px;"
       >
         <v-icon :icon="mdiPlus" size="small" class="mr-1"></v-icon>
         <span>添加条目</span>
@@ -39,7 +40,7 @@
       class="hosts-table jedi-table"
       :items-per-page="10"
       bg-color="white"
-      style="border-radius: 8px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08);"
+      style="border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 2px 8px rgba(0,0,0,0.05);"
       :footer-props="{
         'items-per-page-options': [5, 10, 15, 20, -1],
         'items-per-page-text': '每页显示',
@@ -49,7 +50,7 @@
       <!-- IP地址列 -->
       <template v-slot:item.ip="{ item }">
         <div class="d-flex align-center">
-          <v-icon :icon="mdiIpNetwork" size="small" color="#1976D2" class="mr-2"></v-icon>
+          <v-icon :icon="mdiIpNetwork" size="small" color="primary" class="mr-2"></v-icon>
           <span>{{ item.ip }}</span>
         </div>
       </template>
@@ -57,13 +58,13 @@
       <!-- 域名列 -->
       <template v-slot:item.domain="{ item }">
         <div class="d-flex align-center">
-          <v-icon :icon="mdiDomain" size="small" color="#1976D2" class="mr-2"></v-icon>
+          <v-icon :icon="mdiDomain" size="small" color="primary" class="mr-2"></v-icon>
           <span class="domain-text">{{ item.domain }}</span>
           <v-btn
             icon
             size="x-small"
             variant="text"
-            color="#1976D2"
+            color="primary"
             class="ml-2 jedi-hover-scale"
             @click="handleOpenDomain(item.domain)"
           >
@@ -91,7 +92,7 @@
             icon
             size="small"
             variant="text"
-            color="#1976D2"
+            color="primary"
             class="mr-2"
             @click="emit('edit-host', item)"
           >
@@ -101,7 +102,7 @@
             icon
             size="small"
             variant="text"
-            color="#F44336"
+            color="var(--jedi-danger)"
             @click="emit('delete-host', item)"
           >
             <v-icon :icon="mdiDelete" size="small"></v-icon>

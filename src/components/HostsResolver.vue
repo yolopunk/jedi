@@ -119,7 +119,7 @@ import {
   updateHostsWithGroups,
   revertHosts,
   initializeDefaultConfig as initDefaultConfig
-} from '@/services/hostsService'
+} from '@/api/hosts'
 
 // ===== 状态变量 =====
 

@@ -1,20 +1,49 @@
-/* 全局样式 - 绝地武士主题配色 */
+/* 全局样式 - 绝地武士主题配色 - 统一设计系统 */
 :root {
-  /* 主色调 - Material Design Blue */
-  --jedi-blue: #1976D2;         /* 主色调蓝色 */
-  --jedi-blue-light: #E3F2FD;   /* 浅蓝色，更高对比度 */
-  --jedi-blue-dark: #1565C0;     /* 深蓝色 */
-  --jedi-blue-hover: #1E88E5;   /* 蓝色悬停状态 */
+  /* 主色调 - 科技感深灰色系，与图标口罩/面部匹配 */
+  --jedi-primary: #2C3E50;       /* 主色调 - 深灰蓝 */
+  --jedi-primary-light: #ECF0F1; /* 浅色变体 - 淡灰 */
+  --jedi-primary-dark: #1A2530;  /* 深色变体 - 深灰蓝 */
+  --jedi-primary-hover: #34495E; /* 悬停状态 */
+  --jedi-primary-active: #0F1C2D; /* 激活状态 */
+  --jedi-primary-focus: #243342; /* 聚焦状态 */
 
-  /* 功能色 - Material Design Colors */
-  --jedi-green: #4CAF50;         /* 成功/启用色 */
-  --jedi-green-light: #C8E6C9;   /* 浅绿色，更高对比度 */
-  --jedi-green-hover: #43A047;   /* 绿色悬停状态 */
-  --jedi-red: #F44336;           /* 错误/删除色 */
-  --jedi-red-light: #FFEBEE;     /* 浅红色 */
-  --jedi-red-hover: #E53935;     /* 红色悬停状态 */
-  --jedi-amber: #FFC107;         /* 警告色 */
-  --jedi-amber-light: #FFF8E1;   /* 浅黄色 */
+  /* 强调色 - 结合金色和蓝色元素 */
+  --jedi-accent: #3498DB;        /* 强调色 - 科技蓝 */
+  --jedi-accent-light: #E3F2FD; /* 强调浅色 */
+  --jedi-accent-dark: #2980B9;  /* 强调深色 */
+
+  /* 金色点缀 - 保留图标的金色元素 */
+  --jedi-gold: #D4AF37;         /* 金色点缀 */
+  --jedi-gold-light: #F5EFD9;   /* 浅金色 */
+  --jedi-gold-dark: #A67C00;    /* 深金色 */
+
+  /* 功能色 - 统一语义色彩 */
+  --jedi-success: #4CAF50;       /* 成功/启用色 */
+  --jedi-success-light: #C8E6C9; /* 浅绿色 */
+  --jedi-success-hover: #43A047; /* 绿色悬停 */
+  --jedi-danger: #F44336;        /* 错误/删除色 */
+  --jedi-danger-light: #FFEBEE;  /* 浅红色 */
+  --jedi-danger-hover: #E53935;  /* 红色悬停 */
+  --jedi-warning: #FFC107;       /* 警告色 */
+  --jedi-warning-light: #FFF8E1; /* 浅黄色 */
+
+  /* 兼容旧变量名 */
+  --jedi-blue: var(--jedi-accent);
+  --jedi-blue-light: var(--jedi-accent-light);
+  --jedi-blue-dark: var(--jedi-accent-dark);
+  --jedi-blue-hover: var(--jedi-accent-dark);
+  --jedi-green: var(--jedi-success);
+  --jedi-green-light: var(--jedi-success-light);
+  --jedi-green-hover: var(--jedi-success-hover);
+  --jedi-red: var(--jedi-danger);
+  --jedi-red-light: var(--jedi-danger-light);
+  --jedi-red-hover: var(--jedi-danger-hover);
+  --jedi-amber: var(--jedi-warning);
+  --jedi-amber-light: var(--jedi-warning-light);
+  --jedi-gold: var(--jedi-gold);
+  --jedi-gold-light: var(--jedi-gold-light);
+  --jedi-gold-dark: var(--jedi-gold-dark);
 
   /* 中性色 - Material Design Greys */
   --jedi-grey-dark: #424242;     /* 深灰色，文字 */
@@ -127,7 +156,7 @@
 
 .jedi-card-header {
   padding: var(--space-md) var(--space-lg) !important;
-  background-color: var(--jedi-blue-light) !important;
+  background-color: var(--jedi-primary-light) !important;
   border-bottom: 1px solid rgba(0,0,0,0.05) !important;
 }
 
@@ -150,7 +179,7 @@
 }
 
 .jedi-table .v-data-table__tr:hover {
-  background-color: var(--jedi-blue-light) !important;
+  background-color: var(--jedi-primary-light) !important;
 }
 
 .jedi-table .v-data-table__thead th {
@@ -192,7 +221,7 @@
 
 /* 标题区域样式 */
 .app-header {
-  background: linear-gradient(135deg, var(--jedi-blue) 0%, var(--jedi-blue-dark) 100%);
+  background: linear-gradient(135deg, var(--jedi-primary) 0%, var(--jedi-primary-dark) 100%);
   box-shadow: var(--shadow-md);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
@@ -247,7 +276,7 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.3) 0%, rgba(166, 124, 0, 0) 70%);
   opacity: 0;
   transition: opacity var(--transition-normal);
   pointer-events: none;
@@ -402,10 +431,10 @@ button.group-btn {
 
 .v-application .v-btn.group-btn:not(.v-btn--active),
 .group-btn:not(.v-btn--active) {
-  border-width: 1.5px !important;
+  border-width: 1px !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-  color: #0D47A1 !important; /* 强制设置未选中状态的文字颜色 */
-  background-color: #E8F1FF !important;
+  color: var(--jedi-primary) !important; /* 强制设置未选中状态的文字颜色 */
+  background-color: #ECF0F1 !important;
 }
 
 /* 强制设置按钮内部元素的颜色 */
@@ -413,13 +442,15 @@ button.group-btn {
 .group-btn:not(.v-btn--active) .v-btn__content *,
 .group-btn:not(.v-btn--active) span,
 .group-btn:not(.v-btn--active) i {
-  color: #0D47A1 !important;
+  color: var(--jedi-primary) !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.3px !important;
 }
 
 .v-application .v-btn.group-btn.v-btn--active,
 .group-btn.v-btn--active {
   color: white !important; /* 强制设置选中状态的文字颜色 */
-  background-color: #1976D2 !important;
+  background-color: var(--jedi-accent) !important;
 }
 
 /* 强制设置选中按钮内部元素的颜色 */
@@ -431,10 +462,10 @@ button.group-btn {
 }
 
 .group-btn:not(.v-btn--active):hover {
-  background-color: #E3F2FD !important;
-  border-color: #1976D2 !important;
-  color: #0D47A1 !important;
-  box-shadow: 0 2px 5px rgba(25, 118, 210, 0.2) !important;
+  background-color: var(--jedi-accent-light) !important;
+  border-color: var(--jedi-accent) !important;
+  color: var(--jedi-primary) !important;
+  box-shadow: 0 2px 5px rgba(52, 152, 219, 0.2) !important;
 }
 
 /* 光剑按钮样式 */
@@ -451,7 +482,7 @@ button.group-btn {
 }
 
 .lightsaber-btn.blue {
-  background-color: #2196F3 !important;
+  background-color: var(--jedi-primary) !important;
   color: white !important;
 }
 
@@ -485,7 +516,7 @@ button.group-btn {
 }
 
 .lightsaber-glow:hover {
-  box-shadow: 0 0 15px rgba(33, 150, 243, 0.5) !important;
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.5) !important;
 }
 
 /* 悬停效果 */
@@ -518,8 +549,41 @@ button.group-btn {
 .jedi-btn {
   font-weight: 500 !important;
   letter-spacing: 0.3px !important;
-  border-radius: 50px !important;
+  border-radius: 8px !important;
   padding: 0 16px !important;
+  transition: all 0.2s ease !important;
+}
+
+/* 对话框按钮样式 - 科技感 */
+.jedi-dialog-card .v-btn {
+  border-radius: 4px !important;
+  letter-spacing: 0.3px !important;
+  font-weight: 500 !important;
+  min-width: 80px !important;
+  text-transform: uppercase !important;
+}
+
+.jedi-dialog-card .v-btn.v-btn--variant-elevated {
+  background-color: var(--jedi-accent) !important;
+  color: white !important;
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2) !important;
+}
+
+.jedi-dialog-card .v-btn.v-btn--variant-elevated:hover {
+  background-color: var(--jedi-accent-dark) !important;
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* 对话框标题样式 */
+.jedi-dialog-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.jedi-dialog-header .v-toolbar-title {
+  color: white !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.5px !important;
 }
 
 /* 卡片样式 */
@@ -556,7 +620,7 @@ button.group-btn {
 }
 
 .jedi-table .v-data-table__tbody tr:hover {
-  background-color: #E3F2FD !important;
+  background-color: var(--jedi-primary-light) !important;
 }
 
 /* 状态标签样式 */
@@ -592,7 +656,7 @@ button.group-btn {
 }
 
 .jedi-title .hosts-text {
-  color: #E3F2FD !important;
+  color: #F5EFD9 !important;
 }
 
 /* 图标特效 */
@@ -607,14 +671,24 @@ button.group-btn {
 }
 
 .death-star {
-  filter: drop-shadow(0 4px 8px rgba(25, 118, 210, 0.3)) !important;
+  filter: drop-shadow(0 4px 8px rgba(212, 175, 55, 0.3)) !important;
   transition: all 0.3s ease !important;
 }
 
 .death-star:hover {
-  filter: drop-shadow(0 6px 12px rgba(25, 118, 210, 0.5)) !important;
+  filter: drop-shadow(0 6px 12px rgba(212, 175, 55, 0.5)) !important;
   transform: scale(1.05) rotate(5deg) !important;
 }
+
+/* 对话框样式 */
+.jedi-dialog-card {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  border: none !important;
+}
+
+/* 已在上面定义了新的样式 */
 
 /* 宽度限制类 */
 .max-width-300 {

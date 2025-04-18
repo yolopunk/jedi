@@ -144,6 +144,8 @@ pub async fn update_hosts_with_groups(
             for (hostname, ip) in host_map {
                 if hostname != "__disabled" {
                     sorted_hosts.push((hostname.clone(), ip.clone(), is_disabled));
+                    // 只处理第一个非__disabled键值对，因为每个host_map应该只有一个域名和IP
+                    break;
                 }
             }
         }
@@ -360,7 +362,6 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         // 解析hosts条目 - 处理注释行和非注释行
         if current_group.is_some() && !trimmed.is_empty() &&
            !trimmed.starts_with("# +") && !trimmed.starts_with("# ===") {
-            let group_name = current_group.as_ref().unwrap();
             // 检查是否是注释行（已禁用的条目）
             let (line_to_parse, is_disabled) = if trimmed.starts_with("# ") && !trimmed.starts_with("# +") && !trimmed.starts_with("# ===") {
                 // 如果是普通注释行，去除注释符号

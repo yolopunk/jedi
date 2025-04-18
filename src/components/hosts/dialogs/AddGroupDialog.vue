@@ -51,8 +51,7 @@
 例如:
 127.0.0.1 localhost
 192.168.1.1 router.local"
-              rows="6"
-              auto-grow
+              rows="4"
               required
               bg-color="white"
               class="font-monospace"
@@ -189,14 +188,33 @@ async function confirmAdd() {
     }
   } else {
     // 处理本地配置
-    const hostsArray = hostsContent.value
+    // 先解析所有行
+    const parsedLines = hostsContent.value
       .split('\n')
       .map(line => line.trim())
       .filter(line => line.length > 0)
       .map(line => {
-        const [ip, domain] = line.split(/\s+/)
-        return { [domain]: ip }
+        const parts = line.split(/\s+/)
+        if (parts.length >= 2) {
+          const ip = parts[0]
+          const domain = parts[1]
+          return { domain, ip }
+        }
+        return null
       })
+      .filter(item => item !== null)
+
+    // 检查重复域名，只保留第一个出现的域名
+    const uniqueDomains = new Set()
+    const hostsArray = parsedLines
+      .filter(item => {
+        if (item && !uniqueDomains.has(item.domain)) {
+          uniqueDomains.add(item.domain)
+          return true
+        }
+        return false
+      })
+      .map(item => ({ [item!.domain]: item!.ip }))
 
     // 提交添加事件
     emit('add', {

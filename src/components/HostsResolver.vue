@@ -406,6 +406,21 @@ async function addHost(data: { groupName: string; ip: string; domain: string }) 
     return
   }
 
+  // 检查是否已存在相同域名
+  const domainExists = group.hosts.some(host => {
+    for (const key in host) {
+      if (key !== '__disabled' && key === data.domain) {
+        return true
+      }
+    }
+    return false
+  })
+
+  if (domainExists) {
+    showNotification('该域名已存在于当前分组中', 'error')
+    return
+  }
+
   // 添加新条目
   group.hosts.push({ [data.domain]: data.ip })
 
@@ -437,6 +452,23 @@ async function editHost(data: { originalHost: any; ip: string; domain: string })
   if (!hostEntry) {
     showNotification('未找到要编辑的条目', 'error')
     return
+  }
+
+  // 如果域名发生了变化，检查新域名是否已存在
+  if (data.domain !== data.originalHost.domain) {
+    const domainExists = group.hosts.some(host => {
+      for (const key in host) {
+        if (key !== '__disabled' && key === data.domain && host !== hostEntry) {
+          return true
+        }
+      }
+      return false
+    })
+
+    if (domainExists) {
+      showNotification('该域名已存在于当前分组中', 'error')
+      return
+    }
   }
 
   // 保存禁用状态

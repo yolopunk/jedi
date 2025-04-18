@@ -184,19 +184,22 @@ onUnmounted(() => {
   background-color: #FAFAFA !important;
   transition: all 0.25s ease;
   padding: 4px 12px !important;
+  backdrop-filter: blur(10px);
 }
 
 .info-item {
   display: flex;
   align-items: center;
-  padding: 0 4px;
-  border-radius: 4px;
+  padding: 0 6px;
+  border-radius: 6px;
   transition: all 0.15s ease;
   height: 24px;
+  margin: 0 2px;
 }
 
 .info-item:hover {
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
 }
 
 .version-tag {
@@ -207,15 +210,17 @@ onUnmounted(() => {
   border-radius: 12px;
   font-size: 11px;
   letter-spacing: 0.3px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border: 1px solid rgba(44, 62, 80, 0.15);
   transition: all 0.15s ease;
   display: flex;
   align-items: center;
   height: 20px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .version-tag:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(44, 62, 80, 0.25);
 }
 </style>

@@ -37,6 +37,7 @@
       :headers="headers"
       :items="tableItems"
       :search="searchModel"
+      :loading="loading"
       density="comfortable"
       hover
       fixed-header
@@ -52,6 +53,27 @@
         'class': 'justify-start'
       }"
     >
+      <template v-slot:loading>
+        <div class="pa-4">
+          <v-skeleton-loader
+            type="table-heading, table-row@10"
+            class="mb-2"
+          ></v-skeleton-loader>
+        </div>
+      </template>
+
+      <template v-slot:no-data>
+        <div class="d-flex flex-column align-center justify-center pa-6">
+          <v-icon
+            :icon="mdiDatabaseOff"
+            size="large"
+            color="grey-lighten-1"
+            class="mb-4"
+          ></v-icon>
+          <span class="text-grey-darken-1">暂无数据</span>
+        </div>
+      </template>
+
       <!-- IP地址列 -->
       <template v-slot:item.ip="{ item }">
         <div class="d-flex align-center">
@@ -128,7 +150,8 @@ import {
   mdiWeb,
   mdiPencil,
   mdiDelete,
-  mdiMagnify
+  mdiMagnify,
+  mdiDatabaseOff
 } from '@mdi/js'
 import { getHostsAsItems, openDomainLink } from '@/utils/hostsUtils'
 import { Group } from '@/types/hosts'
@@ -137,6 +160,7 @@ import { Group } from '@/types/hosts'
 const props = defineProps<{
   currentGroup: Group;
   search?: string;
+  loading?: boolean;
 }>()
 
 // 定义组件事件
@@ -165,6 +189,10 @@ const searchModel = computed({
 
 // 表格数据
 const tableItems = computed(() => {
+  // 如果在加载状态且没有currentGroup，返回空数组
+  if (props.loading && (!props.currentGroup || !props.currentGroup.hosts)) {
+    return []
+  }
   return getHostsAsItems(props.currentGroup.hosts)
 })
 

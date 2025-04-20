@@ -1,24 +1,31 @@
 <template>
-  <v-footer app class="system-info-bar px-3" color="grey-lighten-5">
-    <div class="d-flex flex-wrap align-center w-100">
+  <v-footer app class="system-info-bar px-3 lightsaber-border-container" color="grey-lighten-5">
+
+    <div class="d-flex flex-wrap align-center w-100" style="position: relative; z-index: 2;">
       <!-- 左侧：版本号 -->
       <div class="d-flex align-center mb-1 mb-sm-0">
-        <span class="version-tag mr-1">
-          <v-icon :icon="mdiInformation" size="x-small" class="mr-1" />
-          v{{ appVersion }}
+        <span class="version-tag mr-1 responsive-version-tag">
+          <v-tooltip activator="parent" location="top" :text="`版本: v${appVersion}`">
+          </v-tooltip>
+          <v-icon :icon="mdiPackageVariant" size="x-small" class="mr-1" />
+          <span class="version-text">v{{ appVersion }}</span>
         </span>
       </div>
 
       <!-- 中间：系统信息 -->
       <div class="d-flex align-center ml-0 ml-sm-3 mb-1 mb-sm-0 flex-grow-1 flex-wrap">
-        <div class="info-item mb-1 mb-sm-0">
+        <div class="info-item mb-1 mb-sm-0 responsive-info-item">
+          <v-tooltip activator="parent" location="top" :text="`${osInfo?.name} ${osInfo?.os_version}`">
+          </v-tooltip>
           <v-icon :icon="mdiDesktopTower" size="x-small" class="mr-1" color="var(--jedi-primary)" />
-          <span class="text-caption text-grey-darken-1">{{ osInfo?.name }} {{ osInfo?.os_version }}</span>
+          <span class="text-caption text-grey-darken-1 info-text">{{ osInfo?.name }} {{ osInfo?.os_version }}</span>
         </div>
         <v-divider vertical class="mx-2 d-none d-sm-flex" style="height: 12px"></v-divider>
-        <div class="info-item mb-1 mb-sm-0">
+        <div class="info-item mb-1 mb-sm-0 responsive-info-item">
+          <v-tooltip activator="parent" location="top" :text="osInfo?.host_name">
+          </v-tooltip>
           <v-icon :icon="mdiServer" size="x-small" class="mr-1" color="var(--jedi-primary)" />
-          <span class="text-caption text-grey-darken-1">{{ osInfo?.host_name }}</span>
+          <span class="text-caption text-grey-darken-1 info-text">{{ osInfo?.host_name }}</span>
         </div>
       </div>
 
@@ -27,33 +34,43 @@
       <!-- 右侧：系统资源信息 -->
       <div class="d-flex align-center flex-wrap justify-end">
         <!-- CPU -->
-        <div class="info-item mx-1 mb-1 mb-sm-0">
+        <div class="info-item mx-1 mb-1 mb-sm-0 responsive-info-item">
+          <v-tooltip activator="parent" location="top" :text="`CPU: ${formatPercentage(osInfo?.metrics?.cpu_usage)}`">
+          </v-tooltip>
           <v-icon :icon="mdiCpu64Bit" size="x-small" class="mr-1" color="var(--jedi-primary)" />
-          <span class="text-caption text-grey-darken-1">CPU: {{ formatPercentage(osInfo?.metrics?.cpu_usage) }}</span>
+          <span class="text-caption text-grey-darken-1 info-text">CPU: {{ formatPercentage(osInfo?.metrics?.cpu_usage) }}</span>
         </div>
 
         <!-- 内存 -->
-        <div class="info-item mx-1 mb-1 mb-sm-0">
+        <div class="info-item mx-1 mb-1 mb-sm-0 responsive-info-item">
+          <v-tooltip activator="parent" location="top" :text="`内存: ${formatMemory(osInfo?.metrics?.memory_used)}`">
+          </v-tooltip>
           <v-icon :icon="mdiMemory" size="x-small" class="mr-1" color="var(--jedi-primary)" />
-          <span class="text-caption text-grey-darken-1">内存: {{ formatMemory(osInfo?.metrics?.memory_used) }}</span>
+          <span class="text-caption text-grey-darken-1 info-text">内存: {{ formatMemory(osInfo?.metrics?.memory_used) }}</span>
         </div>
 
         <!-- 磁盘 -->
-        <div class="info-item mx-1 mb-1 mb-sm-0">
+        <div class="info-item mx-1 mb-1 mb-sm-0 responsive-info-item">
+          <v-tooltip activator="parent" location="top" :text="`磁盘: ${formatPercentage(getDiskUsagePercentage())}`">
+          </v-tooltip>
           <v-icon :icon="mdiHarddisk" size="x-small" class="mr-1" color="var(--jedi-primary)" />
-          <span class="text-caption text-grey-darken-1">磁盘: {{ formatPercentage(getDiskUsagePercentage()) }}</span>
+          <span class="text-caption text-grey-darken-1 info-text">磁盘: {{ formatPercentage(getDiskUsagePercentage()) }}</span>
         </div>
 
         <!-- 网络 -->
-        <div class="info-item mx-1 mb-1 mb-sm-0 d-none d-md-flex">
+        <div class="info-item mx-1 mb-1 mb-sm-0 responsive-info-item">
+          <v-tooltip activator="parent" location="top" :text="`网络: ↓${formatDataSize(osInfo?.metrics?.network_received)} ↑${formatDataSize(osInfo?.metrics?.network_transmitted)}`">
+          </v-tooltip>
           <v-icon :icon="mdiEthernet" size="x-small" class="mr-1" color="var(--jedi-primary)" />
-          <span class="text-caption text-grey-darken-1">网络: ↓{{ formatDataSize(osInfo?.metrics?.network_received) }} ↑{{ formatDataSize(osInfo?.metrics?.network_transmitted) }}</span>
+          <span class="text-caption text-grey-darken-1 info-text">网络: ↓{{ formatDataSize(osInfo?.metrics?.network_received) }} ↑{{ formatDataSize(osInfo?.metrics?.network_transmitted) }}</span>
         </div>
 
         <!-- 时间 -->
-        <div class="info-item ml-1 mb-1 mb-sm-0">
+        <div class="info-item ml-1 mb-1 mb-sm-0 responsive-info-item">
+          <v-tooltip activator="parent" location="top" :text="currentTime">
+          </v-tooltip>
           <v-icon :icon="mdiClockOutline" size="x-small" class="mr-1" color="var(--jedi-primary)" />
-          <span class="text-caption text-grey-darken-1">{{ currentTime }}</span>
+          <span class="text-caption text-grey-darken-1 info-text">{{ currentTime }}</span>
         </div>
       </div>
     </div>
@@ -68,7 +85,7 @@ import {
   mdiHarddisk,
   mdiEthernet,
   mdiClockOutline,
-  mdiInformation,
+  mdiPackageVariant,
   mdiDesktopTower,
   mdiServer
 } from '@mdi/js'
@@ -91,23 +108,7 @@ const currentTime = computed(() => {
   return now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 })
 
-// 计算CPU使用率
-const cpuUsage = computed(() => {
-  return osInfo.value?.metrics?.cpu_usage || 0
-})
-
-// 计算内存使用率
-const memoryUsage = computed(() => {
-  if (!osInfo.value?.metrics) return 0
-  const { memory_total, memory_used } = osInfo.value.metrics
-  if (memory_total === 0) return 0
-  return (memory_used / memory_total) * 100
-})
-
-// 计算磁盘使用率
-const diskUsage = computed(() => {
-  return getDiskUsagePercentage()
-})
+// 注意：移除了未使用的计算属性
 
 // 格式化百分比
 function formatPercentage(value?: number): string {
@@ -216,11 +217,130 @@ onUnmounted(() => {
   align-items: center;
   height: 20px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(135deg, var(--jedi-primary-light) 0%, rgba(52, 152, 219, 0.1) 100%);
 }
 
 .version-tag:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(44, 62, 80, 0.25);
+}
+
+/* 响应式信息项样式 */
+.responsive-info-item {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.info-text {
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+/* 在小屏幕上只显示图标 */
+@media (max-width: 1200px) {
+  .responsive-info-item .info-text {
+    display: none;
+  }
+
+  .responsive-info-item {
+    width: 24px;
+    justify-content: center;
+  }
+
+  .responsive-info-item .v-icon {
+    margin-right: 0 !important;
+  }
+}
+
+/* 版本标签响应式样式 */
+.responsive-version-tag {
+  transition: all 0.3s ease;
+}
+
+.version-text {
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+/* 在小屏幕上只显示图标 */
+@media (max-width: 1200px) {
+  .responsive-version-tag .version-text {
+    display: none;
+  }
+
+  .responsive-version-tag {
+    width: 24px;
+    justify-content: center;
+    padding: 2px;
+  }
+
+  .responsive-version-tag .v-icon {
+    margin-right: 0 !important;
+  }
+}
+
+/* 在更小的屏幕上调整间距 */
+@media (max-width: 600px) {
+  .responsive-info-item {
+    margin: 0 1px;
+    padding: 0 3px;
+  }
+
+  .responsive-version-tag {
+    margin: 0 1px;
+    padding: 2px;
+  }
+}
+
+/* 光剑边框效果 - 只在底部 */
+.lightsaber-border-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.lightsaber-border-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    transparent,
+    rgba(52, 152, 219, 0.1),
+    rgba(52, 152, 219, 0.4),
+    rgba(52, 152, 219, 0.8),
+    rgba(52, 152, 219, 1),
+    rgba(52, 152, 219, 0.8),
+    rgba(52, 152, 219, 0.4),
+    rgba(52, 152, 219, 0.1),
+    transparent,
+    transparent
+  );
+  background-size: 200% 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+  box-shadow: 0 0 12px rgba(52, 152, 219, 0.8), 0 0 5px rgba(255, 255, 255, 0.5);
+  animation: lightsaber-flow 3s linear infinite;
+  animation-play-state: paused;
+}
+
+.lightsaber-border-container:hover::after {
+  opacity: 1;
+  animation-play-state: running;
+}
+
+@keyframes lightsaber-flow {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 </style>

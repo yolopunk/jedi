@@ -265,22 +265,13 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         Err(e) => return Err(format!("Failed to read hosts file: {}", e)),
     };
 
-    // 初始化一个默认的分组，包含一些常用的hosts条目
-    let mut default_hosts = Vec::new();
-    let mut localhost_map = HashMap::new();
-    localhost_map.insert("localhost".to_string(), "127.0.0.1".to_string());
-    default_hosts.push(localhost_map);
-
-    // 如果没有找到Jedi管理的部分，就使用这个默认分组
-    let mut result = vec![GroupHosts {
-        name: "默认".to_string(),
-        hosts: default_hosts,
-    }];
+    // 初始化一个空的结果数组，不再创建默认分组
+    let mut result = Vec::new();
 
     let mut current_group: Option<String> = None;
     let mut current_hosts: Vec<HashMap<String, String>> = Vec::new();
     let mut in_jedi_section = false;
-    let mut found_jedi_section = false;
+    let mut found_jedi_section = false; // 记录是否找到Jedi管理的部分
 
     // 解析hosts文件内容
     for line in hosts_content.lines() {
@@ -406,10 +397,9 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         }
     }
 
-    // 如果找到了Jedi管理的部分，则移除默认分组
-    if found_jedi_section && result.len() > 1 {
-        result.remove(0); // 移除默认分组
-    }
+    // 不再需要处理默认分组，因为我们不再创建它
+    // 无论是否找到Jedi管理的部分，都直接返回当前的result
+    // 如果没有找到Jedi管理的部分，则result为空数组
 
     Ok(result)
 }

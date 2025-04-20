@@ -314,16 +314,11 @@ function updateGlobalSwitchState(result: Array<{ name: string; hosts: Array<Reco
 
 /**
  * 初始化空分组
- * @description 当没有数据或出错时初始化默认空分组
+ * @description 初始化空状态，不创建默认分组
  */
 function initializeEmptyGroups() {
-  groups.value = [
-    {
-      name: '默认',
-      hosts: []
-    }
-  ];
-  selectedGroup.value = '默认';
+  groups.value = [];
+  selectedGroup.value = '';
   hostsResolveSwitch.value = false;
 }
 
@@ -593,6 +588,7 @@ async function confirmDeleteHost(host: any) {
         if (groups.value.length > 0) {
           selectedGroup.value = groups.value[0].name
         } else {
+          // 如果没有分组了，则显示空状态
           selectedGroup.value = ''
         }
       }

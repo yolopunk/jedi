@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::api::dns::{revert_hosts, update_hosts_with_groups, read_system_hosts};
+use crate::api::hosts::{revert_hosts, update_hosts_with_groups, read_system_hosts};
 use crate::api::os::get_os_info;
 use crate::api::app::get_app_info;
 use crate::utils::logger;

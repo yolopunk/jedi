@@ -29,14 +29,22 @@
         </v-list-item>
       </v-list>
     </v-container>
-    <app-footer
-      @open-github="$emit('open-github')"
-      @open-website="$emit('open-website')"
-      @open-email="$emit('open-email')"
-      @show-help="$emit('show-help')"
-      @show-settings="$emit('show-settings')"
-      @show-about="$emit('show-about')"
-    />
+
+
+    <div class="sidebar-bottom-line-container">
+      <div class="lightsaber-flow-line"></div>
+    </div>
+
+    <div class="sidebar-footer-container">
+      <app-footer
+        @open-github="$emit('open-github')"
+        @open-website="$emit('open-website')"
+        @open-email="$emit('open-email')"
+        @show-help="$emit('show-help')"
+        @show-settings="$emit('show-settings')"
+        @show-about="$emit('show-about')"
+      />
+    </div>
   </v-navigation-drawer>
 </template>
 
@@ -60,6 +68,7 @@ defineEmits<{
   background-color: #f8f9fa !important;
   border-right: 1px solid rgba(0, 0, 0, 0.05) !important;
   overflow-y: auto !important;
+  position: relative;
 }
 
 .sidebar-banner {
@@ -260,5 +269,11 @@ defineEmits<{
   100% {
     opacity: 0.7;
   }
+}
+
+.sidebar-footer-container {
+  position: relative;
+  width: 100%;
+  z-index: 10;
 }
 </style>

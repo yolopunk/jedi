@@ -18,12 +18,12 @@
       class="fade-in"
     />
 
-    <!-- 数据展示区域 -->
-    <template v-if="groups.length && selectedGroup">
+    <!-- 数据展示区域（包括加载状态） -->
+    <template v-if="loading || currentGroup">
       <hosts-table
-        v-if="currentGroup"
-        :current-group="currentGroup"
+        :current-group="currentGroup || { name: '', hosts: [] }"
         v-model:search="search"
+        :loading="loading"
         @update-status="updateHostStatus"
         @edit-host="openEditHostDialog"
         @delete-host="removeHost"
@@ -98,7 +98,7 @@
  */
 
 // ===== 导入依赖 =====
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, shallowRef } from 'vue'
 
 // 导入类型定义
 import { Group, HostEntry } from '@/types/hosts'
@@ -155,6 +155,13 @@ const selectedGroup = ref<string>('')
  * 搜索关键词
  */
 const search = ref('')
+
+/**
+ * 加载状态
+ * 初始设置为true，表示应用启动时正在加载
+ * 使用shallowRef而非ref，因为这是一个简单的布尔值，不需要深度响应式
+ */
+const loading = shallowRef(true)
 
 // ===== 对话框状态 =====
 
@@ -214,6 +221,7 @@ onMounted(async () => {
  * @param switchState 开关状态
  */
 async function handleHostsSwitch(switchState: boolean) {
+  loading.value = true;
   try {
     if (switchState) {
       // 如果开启，启用所有条目
@@ -233,6 +241,8 @@ async function handleHostsSwitch(switchState: boolean) {
     showNotification('操作失败: ' + (error as Error).message, 'error')
     // 恢复开关状态
     hostsResolveSwitch.value = !switchState
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -241,6 +251,7 @@ async function handleHostsSwitch(switchState: boolean) {
  * @description 从系统中读取hosts配置并更新界面
  */
 async function loadSystemHosts() {
+  loading.value = true;
   try {
     // 调用后端API来读取系统hosts文件
     const result = await readSystemHosts();
@@ -264,6 +275,8 @@ async function loadSystemHosts() {
 
     // 出错时使用默认空分组
     initializeEmptyGroups();
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -319,12 +332,15 @@ function initializeEmptyGroups() {
  * @description 将当前界面上的配置写入hosts文件
  */
 async function updateHosts() {
+  loading.value = true;
   try {
     // 直接使用当前分组数据
     await updateHostsWithGroups(groups.value)
   } catch (error) {
     console.error('更新hosts失败', error)
     throw error
+  } finally {
+    loading.value = false;
   }
 }
 
@@ -333,6 +349,7 @@ async function updateHosts() {
  * @description 使用默认配置初始化hosts文件
  */
 async function initializeDefaultConfig() {
+  loading.value = true;
   try {
     await initDefaultConfig()
     showNotification('默认配置初始化成功', 'success')
@@ -340,6 +357,7 @@ async function initializeDefaultConfig() {
   } catch (error) {
     console.error('初始化默认配置失败', error)
     showNotification('初始化失败: ' + (error as Error).message, 'error')
+    loading.value = false;
   }
 }
 
@@ -617,7 +635,7 @@ function showNotification(text: string, color: 'success' | 'error' | 'info' | 'w
 .hosts-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 80px);
   overflow: hidden;
 }
 

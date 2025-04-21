@@ -35,10 +35,7 @@
     "resources": [],
     "macOS": {
       "frameworks": [],
-      "minimumSystemVersion": "",
-      "exceptionDomain": "",
-      "signingIdentity": null,
-      "entitlements": null
+      "minimumSystemVersion": "10.13.0"
     }
   },
   "updater": {

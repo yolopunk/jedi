@@ -17,15 +17,16 @@
       </div>
     </div>
     <v-container class="py-0 pb-32">
-      <v-list nav class="jedi-nav-list pa-2">
+      <v-list nav class="jedi-nav-list pa-0 mt-2">
         <v-list-item
           :active="true"
           color="var(--jedi-accent)"
-          rounded="sm"
           title="Hosts 管理"
-          :prepend-icon="mdiDns"
-          class="jedi-nav-item mb-1"
+          class="jedi-nav-item"
         >
+          <template v-slot:prepend>
+            <v-icon :icon="mdiDns" size="small" class="menu-icon"></v-icon>
+          </template>
         </v-list-item>
       </v-list>
     </v-container>
@@ -131,19 +132,52 @@ defineEmits<{
 
 .jedi-nav-list {
   background-color: transparent !important;
+  border-radius: 0;
 }
 
 .jedi-nav-item {
-  margin-bottom: 4px;
   transition: all 0.2s ease;
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
+  position: relative;
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.jedi-nav-item .v-list-item__content {
+  padding-left: 12px;
+}
+
+.menu-icon {
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.jedi-nav-item:hover .menu-icon {
+  opacity: 0.9;
+}
+
+.jedi-nav-item.v-list-item--active .menu-icon {
+  opacity: 1;
+  color: var(--jedi-accent);
 }
 
 .jedi-nav-item:hover {
+  background-color: rgba(66, 165, 245, 0.05) !important;
+}
+
+.jedi-nav-item.v-list-item--active {
   background-color: rgba(66, 165, 245, 0.08) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.jedi-nav-item.v-list-item--active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background-color: var(--jedi-accent);
 }
 
 /* 光剑电流边框效果 */
@@ -271,9 +305,28 @@ defineEmits<{
   }
 }
 
+.sidebar-bottom-line-container {
+  position: absolute;
+  bottom: 80px; /* 与页脚高度匹配 */
+  left: 0;
+  width: 100%;
+  height: 1px;
+  z-index: 5;
+}
+
+.lightsaber-flow-line {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(to right, transparent, rgba(52, 152, 219, 0.3), transparent);
+  box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+}
+
 .sidebar-footer-container {
-  position: relative;
+  position: absolute;
+  bottom: 0;
+  left: 0;
   width: 100%;
   z-index: 10;
+  height: 80px; /* 设置固定高度，防止内容溢出 */
 }
 </style>

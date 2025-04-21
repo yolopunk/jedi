@@ -40,14 +40,15 @@ defineEmits<{
 
 <style scoped>
 .nav-footer {
-  position: fixed;
+  position: absolute; /* 改为absolute定位，避免与页面滚动冲突 */
   bottom: 0;
   left: 0;
-  width: 200px;
+  width: 100%; /* 使用100%宽度，但在父容器中已限制为200px */
   background-color: transparent;
   z-index: 1;
   padding-bottom: 8px;
   overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 /* 星空背景效果 */
@@ -59,9 +60,10 @@ defineEmits<{
   height: 100%;
   overflow: hidden;
   z-index: -1;
-  background: linear-gradient(to top, rgba(10, 20, 35, 1), rgba(10, 20, 35, 0.9));
-  border-top: 1px solid rgba(52, 152, 219, 0.5);
-  box-shadow: 0 -5px 15px rgba(10, 20, 35, 0.7);
+  background: linear-gradient(to top, rgba(44, 62, 80, 0.85), rgba(44, 62, 80, 0.7));
+  border-top: 1px solid rgba(52, 152, 219, 0.3);
+  box-shadow: 0 -3px 10px rgba(44, 62, 80, 0.4);
+  backdrop-filter: blur(3px);
 }
 
 .stars-background {
@@ -71,43 +73,36 @@ defineEmits<{
   width: 100%;
   height: 100%;
   background-image:
-    /* 小星星 */
-    radial-gradient(1px 1px at 25px 5px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 50px 25px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 125px 20px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 50px 75px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 15px 45px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 110px 70px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 160px 15px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 175px 50px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 85px 65px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 140px 40px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 20px 80px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1px 1px at 180px 80px, rgba(255, 255, 255, 1), transparent),
-    /* 中等星星 */
-    radial-gradient(1.5px 1.5px at 40px 30px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1.5px 1.5px at 100px 50px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1.5px 1.5px at 170px 70px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(1.5px 1.5px at 80px 90px, rgba(255, 255, 255, 1), transparent),
-    /* 大星星 */
-    radial-gradient(2px 2px at 70px 60px, rgba(255, 255, 255, 1), transparent),
-    radial-gradient(2px 2px at 150px 30px, rgba(255, 255, 255, 1), transparent),
-    /* 蓝色星星 */
-    radial-gradient(1.5px 1.5px at 55px 45px, rgba(52, 152, 219, 1), transparent),
-    radial-gradient(1.5px 1.5px at 120px 60px, rgba(52, 152, 219, 1), transparent),
-    radial-gradient(2px 2px at 160px 90px, rgba(52, 152, 219, 1), transparent);
-  animation: twinkle 4s infinite alternate;
+    /* 小星星 - 降低亮度 */
+    radial-gradient(1px 1px at 25px 5px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 50px 25px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 125px 20px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 50px 75px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 15px 45px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 110px 70px, rgba(255, 255, 255, 0.7), transparent),
+    /* 减少星星数量 */
+    radial-gradient(1px 1px at 160px 15px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 85px 65px, rgba(255, 255, 255, 0.7), transparent),
+    /* 中等星星 - 降低亮度 */
+    radial-gradient(1.5px 1.5px at 40px 30px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 100px 50px, rgba(255, 255, 255, 0.8), transparent),
+    /* 大星星 - 保留但降低亮度 */
+    radial-gradient(2px 2px at 70px 60px, rgba(255, 255, 255, 0.8), transparent),
+    /* 蓝色星星 - 与主题色调协调 */
+    radial-gradient(1.5px 1.5px at 55px 45px, rgba(52, 152, 219, 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 120px 60px, rgba(52, 152, 219, 0.8), transparent);
+  animation: twinkle 5s infinite alternate;
 }
 
 .shooting-star {
   position: absolute;
-  width: 80px;
-  height: 2px;
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 1), transparent);
+  width: 60px; /* 减小流星长度 */
+  height: 1px; /* 减小流星宽度 */
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
   transform: rotate(15deg);
   opacity: 0;
-  animation: shooting-star 8s infinite ease-out;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 1);
+  animation: shooting-star 12s infinite ease-out; /* 减慢动画频率 */
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.7); /* 减弱发光效果 */
   z-index: 0;
 }
 
@@ -137,35 +132,35 @@ defineEmits<{
   position: absolute;
   top: 30px;
   left: 50%;
-  width: 4px;
-  height: 4px;
-  background-color: rgba(52, 152, 219, 1);
+  width: 3px; /* 减小尺寸 */
+  height: 3px;
+  background-color: rgba(52, 152, 219, 0.9); /* 降低亮度 */
   border-radius: 50%;
-  box-shadow: 0 0 15px rgba(52, 152, 219, 1);
-  animation: blue-star-pulse 3s infinite alternate;
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.8); /* 减弱发光效果 */
+  animation: blue-star-pulse 4s infinite alternate; /* 放慢动画 */
   z-index: 0;
 }
 
 .footer-btn {
   position: relative;
   z-index: 2;
-  background-color: rgba(52, 152, 219, 0.2);
+  background-color: rgba(52, 152, 219, 0.15); /* 降低背景色强度 */
   border-radius: 50%;
   transition: all 0.3s ease;
 }
 
 .footer-btn:hover {
-  background-color: rgba(52, 152, 219, 0.4);
+  background-color: rgba(52, 152, 219, 0.3); /* 降低悬停背景色强度 */
   transform: translateY(-2px);
-  box-shadow: 0 0 15px rgba(52, 152, 219, 0.6);
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); /* 减弱发光效果 */
 }
 
 @keyframes twinkle {
   0% {
-    opacity: 0.7;
+    opacity: 0.5; /* 降低最小不透明度 */
   }
   100% {
-    opacity: 1;
+    opacity: 0.8; /* 降低最大不透明度 */
   }
 }
 
@@ -175,33 +170,33 @@ defineEmits<{
     opacity: 0;
   }
   3% {
-    opacity: 1;
+    opacity: 0.7; /* 降低最大不透明度 */
   }
-  12% {
-    transform: translateX(200px) rotate(15deg);
+  10% {
+    transform: translateX(180px) rotate(15deg); /* 减少移动距离 */
     opacity: 0;
   }
   100% {
     opacity: 0;
-    transform: translateX(200px) rotate(15deg);
+    transform: translateX(180px) rotate(15deg);
   }
 }
 
 @keyframes blue-star-pulse {
   0% {
     transform: scale(1);
-    opacity: 0.9;
-    box-shadow: 0 0 10px rgba(52, 152, 219, 0.8);
+    opacity: 0.7; /* 降低最小不透明度 */
+    box-shadow: 0 0 8px rgba(52, 152, 219, 0.6); /* 减弱发光效果 */
   }
   50% {
-    transform: scale(1.5);
-    opacity: 1;
-    box-shadow: 0 0 20px rgba(52, 152, 219, 1);
+    transform: scale(1.3); /* 减少缩放幅度 */
+    opacity: 0.9; /* 降低最大不透明度 */
+    box-shadow: 0 0 12px rgba(52, 152, 219, 0.8); /* 减弱发光效果 */
   }
   100% {
     transform: scale(1);
-    opacity: 0.9;
-    box-shadow: 0 0 10px rgba(52, 152, 219, 0.8);
+    opacity: 0.7;
+    box-shadow: 0 0 8px rgba(52, 152, 219, 0.6);
   }
 }
 </style>

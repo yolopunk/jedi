@@ -271,7 +271,6 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
     let mut current_group: Option<String> = None;
     let mut current_hosts: Vec<HashMap<String, String>> = Vec::new();
     let mut in_jedi_section = false;
-    let mut found_jedi_section = false; // 记录是否找到Jedi管理的部分
 
     // 解析hosts文件内容
     for line in hosts_content.lines() {
@@ -295,7 +294,6 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
 
             // 开始新的Jedi部分
             in_jedi_section = true;
-            found_jedi_section = true;
 
             // 清除之前的结果，只保留默认分组
             if result.len() > 1 {

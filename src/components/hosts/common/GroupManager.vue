@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { mdiDomain, mdiPlus } from '@mdi/js'
 import { Group } from '@/types/hosts'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 
 // 定义组件属性
 const props = defineProps<{

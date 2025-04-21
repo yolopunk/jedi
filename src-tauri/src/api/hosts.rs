@@ -116,10 +116,10 @@ pub async fn update_hosts_with_groups(
     // 尝试读取hosts文件，如果失败则返回空字符串
     let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {
         Ok(content) => content,
-        Err(e) => {
+        Err(_e) => {
             #[cfg(debug_assertions)]
             {
-                return Err(format!("Failed to read hosts file: {}", e));
+                return Err(format!("Failed to read hosts file: {}", _e));
             }
 
             #[cfg(not(debug_assertions))]
@@ -222,10 +222,10 @@ pub fn revert_hosts() -> Result<String, String> {
     // 读取hosts文件
     let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {
         Ok(content) => content,
-        Err(e) => {
+        Err(_e) => {
             #[cfg(debug_assertions)]
             {
-                return Err(format!("Failed to read hosts file: {}", e));
+                return Err(format!("Failed to read hosts file: {}", _e));
             }
 
             #[cfg(not(debug_assertions))]
@@ -330,10 +330,10 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
     // 读取系统hosts文件
     let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {
         Ok(content) => content,
-        Err(e) => {
+        Err(_e) => {
             #[cfg(debug_assertions)]
             {
-                return Err(format!("Failed to read hosts file: {}", e));
+                return Err(format!("Failed to read hosts file: {}", _e));
             }
 
             #[cfg(not(debug_assertions))]

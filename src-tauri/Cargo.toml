@@ -1,5 +1,5 @@
 [package]
-name = "Jedi"
+name = "jedi"
 version = "0.1.0"
 description = "A multi-functional development toolkit to enhance productivity."
 authors = ["yolo"]

@@ -5,6 +5,8 @@ on:
 
 jobs:
   release:
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +47,7 @@ jobs:
       # 为不同平台配置不同的构建参数
       - name: Build the app (macOS)
         if: matrix.platform == 'macos-latest'
-        uses: tauri-apps/tauri-action@v0.6.0
+        uses: tauri-apps/tauri-action@v0.5.20
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -63,7 +65,7 @@ jobs:
       # 为Windows和Linux构建
       - name: Build the app (Windows & Linux)
         if: matrix.platform != 'macos-latest'
-        uses: tauri-apps/tauri-action@v0.6.0
+        uses: tauri-apps/tauri-action@v0.5.20
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

@@ -1,7 +1,7 @@
 {
   "productName": "Jedi",
-  "version": "0.0.1",
-  "identifier": "aaron.che",
+  "version": "0.1.0",
+  "identifier": "io.jedi",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:31420",

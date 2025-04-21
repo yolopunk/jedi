@@ -36,9 +36,14 @@
     "macOS": {
       "frameworks": [],
       "minimumSystemVersion": "10.13.0"
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0"]
+      },
+      "appimage": {
+        "bundleMediaFramework": true
+      }
     }
-  },
-  "updater": {
-    "active": false
   }
 }

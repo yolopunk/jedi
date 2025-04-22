@@ -3,6 +3,28 @@
 version = 4
 
 [[package]]
+name = "Jedi"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "nvml-wrapper",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-fs",
+ "tauri-plugin-shell",
+ "time",
+ "tokio",
+ "tracing",
+ "tracing-appender",
+ "tracing-error",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1660,28 +1682,6 @@ dependencies = [
  "gobject-sys",
  "libc",
  "system-deps",
-]
-
-[[package]]
-name = "jedi"
-version = "0.1.0"
-dependencies = [
- "log",
- "nvml-wrapper",
- "reqwest",
- "serde",
- "serde_json",
- "sysinfo",
- "tauri",
- "tauri-build",
- "tauri-plugin-fs",
- "tauri-plugin-shell",
- "time",
- "tokio",
- "tracing",
- "tracing-appender",
- "tracing-error",
- "tracing-subscriber",
 ]
 
 [[package]]

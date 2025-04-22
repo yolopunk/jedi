@@ -28,23 +28,6 @@
   --jedi-warning: #FFC107;       /* 警告色 */
   --jedi-warning-light: #FFF8E1; /* 浅黄色 */
 
-  /* 兼容旧变量名 */
-  --jedi-blue: var(--jedi-accent);
-  --jedi-blue-light: var(--jedi-accent-light);
-  --jedi-blue-dark: var(--jedi-accent-dark);
-  --jedi-blue-hover: var(--jedi-accent-dark);
-  --jedi-green: var(--jedi-success);
-  --jedi-green-light: var(--jedi-success-light);
-  --jedi-green-hover: var(--jedi-success-hover);
-  --jedi-red: var(--jedi-danger);
-  --jedi-red-light: var(--jedi-danger-light);
-  --jedi-red-hover: var(--jedi-danger-hover);
-  --jedi-amber: var(--jedi-warning);
-  --jedi-amber-light: var(--jedi-warning-light);
-  --jedi-gold: var(--jedi-gold);
-  --jedi-gold-light: var(--jedi-gold-light);
-  --jedi-gold-dark: var(--jedi-gold-dark);
-
   /* 中性色 - Material Design Greys */
   --jedi-grey-dark: #424242;     /* 深灰色，文字 */
   --jedi-grey-medium: #757575;   /* 中灰色，次要文字 */

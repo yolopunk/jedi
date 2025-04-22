@@ -151,7 +151,7 @@
         <v-btn variant="text" @click="dialogModel = false" rounded="sm" class="mr-2">
           取消
         </v-btn>
-        <v-btn color="var(--jedi-accent)" variant="flat" @click="dialogModel = false" rounded="sm">
+        <v-btn color="var(--jedi-accent)" variant="elevated" @click="dialogModel = false" rounded="sm">
           保存
         </v-btn>
       </v-card-actions>

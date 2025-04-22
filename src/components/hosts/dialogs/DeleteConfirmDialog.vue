@@ -36,7 +36,7 @@
         </v-btn>
         <v-btn
           color="var(--jedi-danger)"
-          variant="flat"
+          variant="elevated"
           @click="confirmDelete"
           class="px-4"
           rounded="sm"

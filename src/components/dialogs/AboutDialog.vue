@@ -26,7 +26,7 @@
       </v-card-text>
       <v-card-actions class="pa-4 pt-0">
         <v-spacer></v-spacer>
-        <v-btn color="var(--jedi-accent)" variant="flat" @click="dialogModel = false" rounded="sm">
+        <v-btn color="var(--jedi-accent)" variant="elevated" @click="dialogModel = false" rounded="sm">
           关闭
         </v-btn>
       </v-card-actions>

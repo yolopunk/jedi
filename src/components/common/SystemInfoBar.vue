@@ -90,6 +90,7 @@ import {
   mdiServer
 } from '@mdi/js'
 import { getOsInfo } from '@/api/hosts'
+import { getAppInfo } from '@/api/app'
 import { OsInfo } from '@/types/os'
 
 // 系统信息
@@ -100,7 +101,7 @@ const REFRESH_INTERVAL = 3000
 let refreshTimer: number | null = null
 
 // 应用版本号
-const appVersion = '0.1.0'
+const appVersion = ref('') 
 
 // 当前时间
 const currentTime = computed(() => {
@@ -157,6 +158,8 @@ async function loadSystemInfo() {
 
 // 组件挂载时
 onMounted(async () => {
+  appVersion.value = (await getAppInfo()).version
+
   // 立即加载一次
   await loadSystemInfo()
 

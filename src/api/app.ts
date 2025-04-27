@@ -13,3 +13,27 @@ export interface AppInfo {
 export async function getAppInfo(): Promise<AppInfo> {
   return invoke('get_app_info');
 }
+
+/**
+ * 启用开机自启动
+ * @returns 操作结果
+ */
+export async function enableAutostart(): Promise<void> {
+  return invoke('enable_autostart');
+}
+
+/**
+ * 禁用开机自启动
+ * @returns 操作结果
+ */
+export async function disableAutostart(): Promise<void> {
+  return invoke('disable_autostart');
+}
+
+/**
+ * 检查是否已启用开机自启动
+ * @returns 是否已启用
+ */
+export async function isAutostartEnabled(): Promise<boolean> {
+  return invoke('is_autostart_enabled');
+}

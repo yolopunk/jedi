@@ -10,5 +10,6 @@
     "windows"
   ],
   "permissions": [
+    "autostart:default"
   ]
 }

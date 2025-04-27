@@ -24,7 +24,13 @@
                 </template>
                 <v-list-item-title>开机自启动</v-list-item-title>
                 <template v-slot:append>
-                  <v-switch color="var(--jedi-accent)" hide-details></v-switch>
+                  <v-switch
+                    v-model="autostartEnabled"
+                    color="var(--jedi-accent)"
+                    hide-details
+                    :loading="autostartLoading"
+                    @update:model-value="toggleAutostart"
+                  ></v-switch>
                 </template>
               </v-list-item>
 
@@ -160,7 +166,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   mdiCog,
   mdiClose,
@@ -175,6 +181,7 @@ import {
   mdiRefresh,
   mdiCheckboxBlankCircle
 } from '@mdi/js'
+import { enableAutostart, disableAutostart, isAutostartEnabled } from '@/api/app'
 
 // 定义组件属性
 const props = defineProps<{
@@ -194,4 +201,44 @@ const dialogModel = computed({
 
 // 设置选项卡
 const settingsTab = ref('general')
+
+// 自启动相关状态
+const autostartEnabled = ref(false)
+const autostartLoading = ref(false)
+
+// 切换自启动状态
+async function toggleAutostart(value: boolean) {
+  try {
+    autostartLoading.value = true
+    if (value) {
+      await enableAutostart()
+    } else {
+      await disableAutostart()
+    }
+  } catch (error) {
+    console.error('切换自启动状态失败:', error)
+    // 恢复原来的状态
+    autostartEnabled.value = !value
+  } finally {
+    autostartLoading.value = false
+  }
+}
+
+// 检查自启动状态
+async function checkAutostartStatus() {
+  try {
+    autostartLoading.value = true
+    const enabled = await isAutostartEnabled()
+    autostartEnabled.value = enabled
+  } catch (error) {
+    console.error('检查自启动状态失败:', error)
+  } finally {
+    autostartLoading.value = false
+  }
+}
+
+// 组件挂载时检查自启动状态
+onMounted(() => {
+  checkAutostartStatus()
+})
 </script>

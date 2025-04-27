@@ -1,9 +1,9 @@
+use crate::api::app::get_app_info;
+use crate::api::os::get_os_info;
 use tauri::image::Image;
 use tauri::menu::{MenuBuilder, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{App, Manager};
-use crate::api::app::get_app_info;
-use crate::api::os::get_os_info;
 
 pub fn load_tray_config(app: &App) {
   let show = MenuItem::with_id(app, "show", "显示窗口", true, None::<&str>).unwrap();
@@ -19,7 +19,8 @@ pub fn load_tray_config(app: &App) {
   let os_info = get_os_info();
 
   // 构建悬停提示文本
-  let tooltip = format!("{} v{} - 运行于 {} {}",
+  let tooltip = format!(
+    "{} v{} - 运行于 {} {}",
     app_info.name,
     app_info.version,
     os_info.name,

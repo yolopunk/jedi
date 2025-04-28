@@ -66,11 +66,15 @@
                 <v-list-item-title>主题模式</v-list-item-title>
                 <template v-slot:append>
                   <v-select
-                    :items="['浅色', '深色', '跟随系统']"
+                    v-model="currentTheme"
+                    :items="themeOptions"
+                    item-title="text"
+                    item-value="value"
                     variant="outlined"
                     density="compact"
                     hide-details
                     style="width: 150px"
+                    @update:model-value="changeTheme"
                   ></v-select>
                 </template>
               </v-list-item>
@@ -182,6 +186,7 @@ import {
   mdiCheckboxBlankCircle
 } from '@mdi/js'
 import { enableAutostart, disableAutostart, isAutostartEnabled } from '@/api/app'
+import { useTheme, ThemeMode } from '@/composables/useTheme'
 
 // 定义组件属性
 const props = defineProps<{
@@ -235,6 +240,24 @@ async function checkAutostartStatus() {
   } finally {
     autostartLoading.value = false
   }
+}
+
+// 主题相关
+const { themeMode, setTheme } = useTheme()
+
+// 主题选项
+const themeOptions = [
+  { text: '浅色', value: 'light' },
+  { text: '深色', value: 'dark' },
+  { text: '跟随系统', value: 'system' }
+]
+
+// 当前主题
+const currentTheme = computed(() => themeMode.value)
+
+// 切换主题
+const changeTheme = (value: ThemeMode) => {
+  setTheme(value)
 }
 
 // 组件挂载时检查自启动状态

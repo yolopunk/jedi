@@ -37,3 +37,11 @@ export async function disableAutostart(): Promise<void> {
 export async function isAutostartEnabled(): Promise<boolean> {
   return invoke('is_autostart_enabled');
 }
+
+/**
+ * 确保 .jedi 目录存在
+ * @returns .jedi 目录路径
+ */
+export async function ensureJediDir(): Promise<string> {
+  return invoke('ensure_jedi_dir');
+}

@@ -30,7 +30,7 @@
   </v-app>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import HostsResolver from '@/components/HostsResolver.vue'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
@@ -38,6 +38,7 @@ import HelpDialog from '@/components/dialogs/HelpDialog.vue'
 import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
 import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 import { open } from '@tauri-apps/plugin-shell'
+import { initTheme } from '@/composables/useTheme'
 
 // 对话框状态
 const showHelpDialog = ref(false)
@@ -70,11 +71,16 @@ const sendEmail = async () => {
     console.error('Failed to open email client:', error)
   }
 }
+
+// 初始化主题
+onMounted(() => {
+  initTheme()
+})
 </script>
 
 
 <style scoped>
 .jedi-main-content {
-  background-color: #f0f2f5 !important;
+  background-color: var(--jedi-bg-color) !important;
 }
 </style>

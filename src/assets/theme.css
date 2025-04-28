@@ -1,0 +1,76 @@
+:root {
+  /* 默认浅色主题变量 */
+  --jedi-bg-color: #f0f2f5;
+  --jedi-card-bg: #ffffff;
+  --jedi-text-color: #333333;
+  --jedi-primary: #2C3E50;
+  --jedi-accent: #3498DB;
+  --jedi-danger: #e74c3c;
+  --jedi-success: #2ecc71;
+  --jedi-warning: #f39c12;
+  --jedi-border-color: rgba(0, 0, 0, 0.12);
+  --jedi-sidebar-bg: #1A2530;
+  --jedi-sidebar-text: #ffffff;
+  --jedi-dialog-header-bg: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%);
+  --jedi-dialog-header-text: #ffffff;
+  --jedi-footer-bg: #f5f5f5;
+  --jedi-footer-text: #666666;
+}
+
+/* 深色主题变量 */
+.dark-theme {
+  --jedi-bg-color: #121212;
+  --jedi-card-bg: #1e1e1e;
+  --jedi-text-color: #e0e0e0;
+  --jedi-primary: #3498DB;
+  --jedi-accent: #5dade2;
+  --jedi-danger: #e74c3c;
+  --jedi-success: #2ecc71;
+  --jedi-warning: #f39c12;
+  --jedi-border-color: rgba(255, 255, 255, 0.12);
+  --jedi-sidebar-bg: #0a1622;
+  --jedi-sidebar-text: #ffffff;
+  --jedi-dialog-header-bg: linear-gradient(135deg, #0a1622 0%, #1A2530 100%);
+  --jedi-dialog-header-text: #ffffff;
+  --jedi-footer-bg: #1a1a1a;
+  --jedi-footer-text: #a0a0a0;
+}
+
+/* 浅色主题变量 */
+.light-theme {
+  --jedi-bg-color: #f0f2f5;
+  --jedi-card-bg: #ffffff;
+  --jedi-text-color: #333333;
+  --jedi-primary: #2C3E50;
+  --jedi-accent: #3498DB;
+  --jedi-danger: #e74c3c;
+  --jedi-success: #2ecc71;
+  --jedi-warning: #f39c12;
+  --jedi-border-color: rgba(0, 0, 0, 0.12);
+  --jedi-sidebar-bg: #1A2530;
+  --jedi-sidebar-text: #ffffff;
+  --jedi-dialog-header-bg: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%);
+  --jedi-dialog-header-text: #ffffff;
+  --jedi-footer-bg: #f5f5f5;
+  --jedi-footer-text: #666666;
+}
+
+/* 应用主题变量到组件 */
+.v-application {
+  background-color: var(--jedi-bg-color) !important;
+  color: var(--jedi-text-color) !important;
+}
+
+.v-card {
+  background-color: var(--jedi-card-bg) !important;
+  color: var(--jedi-text-color) !important;
+}
+
+.jedi-main-content {
+  background-color: var(--jedi-bg-color) !important;
+}
+
+/* 平滑过渡 */
+body, .v-application, .v-card, .v-list, .v-toolbar, .v-footer {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

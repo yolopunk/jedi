@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::api::app::{disable_autostart, enable_autostart, get_app_info, is_autostart_enabled};
+use crate::api::app::{disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled};
 use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
 use crate::api::os::get_os_info;
 use crate::utils::logger;
@@ -19,6 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_autostart::Builder::new().build())
+    .plugin(tauri_plugin_store::Builder::default().build())
     .setup(|app| {
       config::app::load_tray_config(app);
 
@@ -54,7 +55,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       get_app_info,
       enable_autostart,
       disable_autostart,
-      is_autostart_enabled
+      is_autostart_enabled,
+      ensure_jedi_dir
     ])
     .build(tauri::generate_context!())?;
 

@@ -109,11 +109,11 @@ const debounce = (fn: Function, delay: number) => {
 // 防抖更新
 const debouncedUpdateIp = debounce((value: string) => {
   hostIp.value = value
-}, 100)
+}, 300)
 
 const debouncedUpdateDomain = debounce((value: string) => {
   hostDomain.value = value
-}, 100)
+}, 300)
 
 // 监听主机数据变化
 watch(() => props.host, (newHost) => {

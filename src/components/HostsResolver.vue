@@ -226,7 +226,7 @@ async function handleHostsSwitch(switchState: boolean) {
     if (switchState) {
       // 如果开启，启用所有条目
       enableAllHosts(groups.value)
-      // 更新hosts文件
+      // 更新hosts文件 - 使用直接更新而非防抖更新，因为这是用户明确的操作
       await updateHosts()
       showNotification('Hosts解析已启用，所有条目已生效', 'success')
     } else {
@@ -339,6 +339,40 @@ async function updateHosts() {
   }
 }
 
+// 添加批量更新功能和防抖
+const pendingUpdates = ref(false);
+const updateDebounceTimeout = ref<NodeJS.Timeout | null>(null);
+
+/**
+ * 批量更新hosts文件（防抖处理）
+ * @description 延迟更新hosts文件，避免频繁IO操作
+ */
+async function debouncedUpdateHosts() {
+  // 标记有待处理的更新
+  pendingUpdates.value = true;
+  
+  // 清除之前的定时器
+  if (updateDebounceTimeout.value) {
+    clearTimeout(updateDebounceTimeout.value);
+  }
+  
+  // 设置新的定时器，延迟500ms执行更新
+  updateDebounceTimeout.value = setTimeout(async () => {
+    if (pendingUpdates.value) {
+      try {
+        loading.value = true;
+        await updateHostsWithGroups(groups.value);
+        pendingUpdates.value = false;
+      } catch (error) {
+        console.error('批量更新hosts失败', error);
+        throw error;
+      } finally {
+        loading.value = false;
+      }
+    }
+  }, 500);
+}
+
 /**
  * 初始化默认配置
  * @description 使用默认配置初始化hosts文件
@@ -404,9 +438,9 @@ async function addGroup(data: { name: string; isRemote: boolean; url?: string; h
     hosts: data.hosts || []
   })
 
-  // 更新hosts文件
+  // 使用防抖更新替代直接更新
   try {
-    await updateHosts()
+    await debouncedUpdateHosts()
     selectedGroup.value = data.name
     showNotification('分组添加成功', 'success')
   } catch (error) {
@@ -446,11 +480,12 @@ async function addHost(data: { groupName: string; ip: string; domain: string }) 
   // 添加新条目
   group.hosts.push({ [data.domain]: data.ip })
 
-  // 更新hosts文件
+  // 使用防抖更新替代直接更新
   try {
-    await updateHosts()
     // 更新UI状态
     selectedGroup.value = data.groupName
+    // 调用防抖更新
+    await debouncedUpdateHosts()
     showNotification('条目添加成功', 'success')
   } catch (error) {
     console.error('添加条目失败', error)
@@ -509,9 +544,9 @@ async function editHost(data: { originalHost: any; ip: string; domain: string })
   }
   group.hosts.push(newHostEntry)
 
-  // 更新hosts文件
+  // 使用防抖更新替代直接更新
   try {
-    await updateHosts()
+    await debouncedUpdateHosts()
     showNotification('条目编辑成功', 'success')
   } catch (error) {
     console.error('更新状态失败', error)
@@ -536,9 +571,9 @@ async function updateHostStatus(host: any) {
   // 更新启用/禁用状态
   updateHostEntryStatus(hostEntry, host.enabled)
 
-  // 更新hosts文件
+  // 使用防抖更新替代直接更新
   try {
-    await updateHosts()
+    await debouncedUpdateHosts()
     showNotification(
       host.enabled ? '条目已启用' : '条目已禁用',
       host.enabled ? 'success' : 'info'
@@ -594,9 +629,9 @@ async function confirmDeleteHost(host: any) {
       }
     }
 
-    // 更新hosts文件
+    // 使用防抖更新替代直接更新
     try {
-      await updateHosts()
+      await debouncedUpdateHosts()
       showNotification('条目已删除', 'info')
     } catch (error) {
       console.error('删除条目失败', error)
@@ -624,6 +659,27 @@ function showNotification(text: string, color: 'success' | 'error' | 'info' | 'w
   snackbarText.value = text
   snackbarColor.value = color
   showSnackbar.value = true
+}
+
+/**
+ * 启用/禁用所有条目
+ * @param enable 是否启用
+ */
+async function toggleAllHosts(enable: boolean) {
+  if (enable) {
+    enableAllHosts(groups.value)
+  } else {
+    disableAllHosts(groups.value)
+  }
+  
+  // 使用防抖更新替代直接更新
+  try {
+    await debouncedUpdateHosts()
+    showNotification(enable ? '所有条目已启用' : '所有条目已禁用', 'success')
+  } catch (error) {
+    console.error('切换所有条目状态失败', error)
+    showNotification('操作失败: ' + (error as Error).message, 'error')
+  }
 }
 </script>
 

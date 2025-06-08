@@ -104,7 +104,7 @@
       <template v-slot:item.enabled="{ item }">
         <v-switch
           v-model="item.enabled"
-          color="success"
+          :color="item.enabled ? 'success' : 'default'"
           hide-details
           density="compact"
           @update:model-value="emit('update-status', item)"

@@ -19,6 +19,9 @@
           required
           bg-color="white"
           :prepend-inner-icon="mdiIpNetwork"
+          @update:model-value="debouncedUpdateIp"
+          validate-on="blur"
+          :rules="[rules.required]"
         ></v-text-field>
         <v-text-field
           v-model="hostDomain"
@@ -28,6 +31,9 @@
           required
           bg-color="white"
           :prepend-inner-icon="mdiDomain"
+          @update:model-value="debouncedUpdateDomain"
+          validate-on="blur"
+          :rules="[rules.required]"
         ></v-text-field>
       </v-card-text>
       <v-card-actions class="pa-6 pt-0">
@@ -82,9 +88,32 @@ const dialogModel = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
+// 验证规则
+const rules = {
+  required: (value: string) => !!value?.trim() || '此字段不能为空'
+}
+
 // 表单数据
 const hostIp = ref('')
 const hostDomain = ref('')
+
+// 防抖函数
+const debounce = (fn: Function, delay: number) => {
+  let timeoutId: NodeJS.Timeout
+  return (...args: any[]) => {
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => fn(...args), delay)
+  }
+}
+
+// 防抖更新
+const debouncedUpdateIp = debounce((value: string) => {
+  hostIp.value = value
+}, 100)
+
+const debouncedUpdateDomain = debounce((value: string) => {
+  hostDomain.value = value
+}, 100)
 
 // 监听主机数据变化
 watch(() => props.host, (newHost) => {

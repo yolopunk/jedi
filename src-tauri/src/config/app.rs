@@ -1,35 +1,62 @@
 use crate::api::app::get_app_info;
-use crate::api::os::get_os_info;
+use sysinfo::System;
 use tauri::image::Image;
 use tauri::menu::{MenuBuilder, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{App, Manager};
 
 pub fn load_tray_config(app: &App) {
-  let show = MenuItem::with_id(app, "show", "显示窗口", true, None::<&str>).unwrap();
-  let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>).unwrap();
+  let show = match MenuItem::with_id(app, "show", "显示窗口", true, None::<&str>) {
+    Ok(item) => item,
+    Err(e) => {
+      eprintln!("failed to create show menu item: {}", e);
+      return;
+    }
+  };
 
-  let menu = MenuBuilder::new(app)
-    .items(&[&show, &quit])
-    .build()
-    .unwrap();
+  let quit = match MenuItem::with_id(app, "quit", "退出", true, None::<&str>) {
+    Ok(item) => item,
+    Err(e) => {
+      eprintln!("failed to create quit menu item: {}", e);
+      return;
+    }
+  };
+
+  let menu = match MenuBuilder::new(app).items(&[&show, &quit]).build() {
+    Ok(menu) => menu,
+    Err(e) => {
+      eprintln!("failed to build menu: {}", e);
+      return;
+    }
+  };
 
   // 获取应用信息
-  let app_info = get_app_info().unwrap();
-  let os_info = get_os_info();
+  let app_info = get_app_info().unwrap_or(crate::api::app::AppInfo {
+    version: "0.0.0".to_string(),
+    name: "Jedi".to_string(),
+  });
+
+  // 获取系统信息
+  let os_name = System::name().unwrap_or_else(|| "Unknown".to_string());
+  let os_version = System::os_version().unwrap_or_default();
 
   // 构建悬停提示文本
   let tooltip = format!(
     "{} v{} - 运行于 {} {}",
-    app_info.name,
-    app_info.version,
-    os_info.name,
-    os_info.os_version.unwrap_or_default()
+    app_info.name, app_info.version, os_name, os_version
   );
+
+  let icon = match Image::from_bytes(include_bytes!("../../icons/icon.png")) {
+    Ok(icon) => icon,
+    Err(e) => {
+      eprintln!("failed to load tray icon: {}", e);
+      return;
+    }
+  };
 
   let _ = TrayIconBuilder::new()
     .menu(&menu)
-    .icon(Image::from_bytes(include_bytes!("../../icons/icon.png")).unwrap())
+    .icon(icon)
     .tooltip(&tooltip)
     .on_menu_event(move |app, event| match event.id.as_ref() {
       "show" => {

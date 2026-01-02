@@ -207,7 +207,7 @@ async function confirmAdd() {
 
     // 检查重复域名，只保留第一个出现的域名
     const uniqueDomains = new Set()
-    const hostsArray = parsedLines
+    const hostsArray: HostEntry[] = parsedLines
       .filter(item => {
         if (item && !uniqueDomains.has(item.domain)) {
           uniqueDomains.add(item.domain)
@@ -215,7 +215,11 @@ async function confirmAdd() {
         }
         return false
       })
-      .map(item => ({ [item!.domain]: item!.ip }))
+      .map(item => ({ 
+        domain: item!.domain, 
+        ip: item!.ip,
+        disabled: false
+      }))
 
     // 提交添加事件
     emit('add', {

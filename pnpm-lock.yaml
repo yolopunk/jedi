@@ -31,7 +31,7 @@ importers:
         specifier: ^7.4.47
         version: 7.4.47
       '@tauri-apps/cli':
-        specifier: 2.5.0
+        specifier: ^2.5.0
         version: 2.5.0
       '@types/node':
         specifier: ^22.15.2

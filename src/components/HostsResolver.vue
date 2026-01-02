@@ -98,10 +98,7 @@
  */
 
 // ===== 导入依赖 =====
-import { ref, computed, onMounted, shallowRef } from 'vue'
-
-// 导入类型定义
-import { Group, HostEntry } from '@/types/hosts'
+import { ref, onMounted } from 'vue'
 
 // 导入子组件
 import GroupManager from '@/components/hosts/common/GroupManager.vue'
@@ -115,545 +112,32 @@ import NotificationSnackbar from '@/components/hosts/common/NotificationSnackbar
 import GlobalSwitchFab from '@/components/hosts/common/GlobalSwitchFab.vue'
 
 // 导入工具和服务
-import {
-  findHostEntry,
-  findHostIndex,
-  updateHostEntryStatus,
-  enableAllHosts,
-  disableAllHosts
-} from '@/utils/hostsUtils'
-import {
-  getOsInfo,
-  readSystemHosts,
-  updateHostsWithGroups,
-  revertHosts,
-  initializeDefaultConfig as initDefaultConfig
-} from '@/api/hosts'
+import { getOsInfo } from '@/api/hosts'
+import { useHostsData } from '@/composables/useHostsData'
 
-// ===== 状态变量 =====
+// ===== 状态变量 - UI相关 =====
 
-/**
- * 全局开关状态
- * @description 控制所有hosts条目的启用/禁用状态
- */
-const hostsResolveSwitch = ref(false)
-
-/**
- * 分组数据
- * @description 存储所有分组及其hosts条目
- */
-const groups = ref<Group[]>([])
-
-/**
- * 当前选中的分组
- */
-const selectedGroup = ref<string>('')
-
-// 注意：我们已经统一使用 Group 类型和 name 属性，移除了兼容层
-
-/**
- * 搜索关键词
- */
-const search = ref('')
-
-/**
- * 加载状态
- * 初始设置为true，表示应用启动时正在加载
- * 使用shallowRef而非ref，因为这是一个简单的布尔值，不需要深度响应式
- */
-const loading = shallowRef(true)
-
-// ===== 对话框状态 =====
-
-/**
- * 添加分组对话框状态
- */
+// 对话框状态
 const showAddGroupDialog = ref(false)
-
-/**
- * 添加条目对话框状态
- */
 const showAddHostDialog = ref(false)
 const currentAddGroupName = ref('')
-
-/**
- * 编辑条目对话框状态
- */
 const showEditHostDialog = ref(false)
 const currentEditHost = ref<any>(null)
-
-/**
- * 删除确认对话框状态
- */
 const showDeleteConfirmDialog = ref(false)
 const hostToDelete = ref<any>(null)
 
-/**
- * 提示消息状态
- */
+// 提示消息状态
 const showSnackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref<'success' | 'error' | 'info' | 'warning'>('success')
 
-// ===== 计算属性 =====
+// 搜索关键词 (纯UI状态)
+const search = ref('')
 
-/**
- * 当前选中的分组数据
- */
-const currentGroup = computed(() => {
-  return groups.value.find((g: Group) => g.name === selectedGroup.value)
-})
-
-// ===== 生命周期钩子 =====
-
-/**
- * 组件挂载时初始化
- */
-onMounted(async () => {
-  await getOsInfo()
-  await loadSystemHosts()
-})
-
-// ===== 方法 =====
-
-/**
- * 处理全局开关状态变化
- * @param switchState 开关状态
- */
-async function handleHostsSwitch(switchState: boolean) {
-  loading.value = true;
-  try {
-    if (switchState) {
-      // 如果开启，启用所有条目
-      enableAllHosts(groups.value)
-      // 更新hosts文件 - 使用直接更新而非防抖更新，因为这是用户明确的操作
-      await updateHosts()
-      showNotification('Hosts解析已启用，所有条目已生效', 'success')
-    } else {
-      // 如果关闭，禁用所有条目
-      disableAllHosts(groups.value)
-      // 恢复hosts文件
-      await revertHosts()
-      showNotification('Hosts解析已禁用，所有条目已暂停生效，但配置已保留', 'info')
-    }
-  } catch (error) {
-    console.error('切换Hosts解析状态失败', error)
-    showNotification('操作失败: ' + (error as Error).message, 'error')
-    // 恢复开关状态
-    hostsResolveSwitch.value = !switchState
-  } finally {
-    loading.value = false;
-  }
-}
-
-/**
- * 加载系统hosts配置
- * @description 从系统中读取hosts配置并更新界面
- */
-async function loadSystemHosts() {
-  loading.value = true;
-  try {
-    // 调用后端API来读取系统hosts文件
-    const result = await readSystemHosts();
-
-    // 如果有数据，则使用返回的数据
-    if (Array.isArray(result) && result.length > 0) {
-      // 更新数据
-      updateGroupsData(result);
-
-      // 更新全局开关状态
-      updateGlobalSwitchState(result);
-
-      showNotification('成功加载系统 Hosts 配置', 'success');
-    } else {
-      // 如果没有数据，使用默认空分组
-      initializeEmptyGroups();
-    }
-  } catch (error) {
-    console.error('加载系统 Hosts 失败:', error);
-    showNotification('加载系统 Hosts 失败: ' + (error as Error).message, 'error');
-
-    // 出错时使用默认空分组
-    initializeEmptyGroups();
-  } finally {
-    loading.value = false;
-  }
-}
-
-/**
- * 更新分组数据
- * @param result 从后端获取的数据
- */
-function updateGroupsData(result: Array<{ name: string; hosts: Array<Record<string, string>> }>) {
-  // 直接使用后端返回的分组数据
-  groups.value = result;
-  // 设置选中的分组
-  if (groups.value.length > 0) {
-    selectedGroup.value = groups.value[0].name;
-  }
-}
-
-/**
- * 更新全局开关状态
- * @param result 从后端获取的数据
- */
-function updateGlobalSwitchState(result: Array<{ name: string; hosts: Array<Record<string, string>> }>) {
-  // 检查是否有未禁用的条目，如果有，则设置全局开关为开
-  let hasEnabledEntries = false;
-  for (const group of result) {
-    for (const host of group.hosts) {
-      if (!host.hasOwnProperty('__disabled')) {
-        hasEnabledEntries = true;
-        break;
-      }
-    }
-    if (hasEnabledEntries) break;
-  }
-  hostsResolveSwitch.value = hasEnabledEntries;
-}
-
-/**
- * 初始化空分组
- * @description 初始化空状态，不创建默认分组
- */
-function initializeEmptyGroups() {
-  groups.value = [];
-  selectedGroup.value = '';
-  hostsResolveSwitch.value = false;
-}
-
-/**
- * 更新hosts文件
- * @description 将当前界面上的配置写入hosts文件
- */
-async function updateHosts() {
-  loading.value = true;
-  try {
-    // 直接使用当前分组数据
-    await updateHostsWithGroups(groups.value)
-  } catch (error) {
-    console.error('更新hosts失败', error)
-    throw error
-  } finally {
-    loading.value = false;
-  }
-}
-
-// 添加批量更新功能和防抖
-const pendingUpdates = ref(false);
-const updateDebounceTimeout = ref<NodeJS.Timeout | null>(null);
-
-/**
- * 批量更新hosts文件（防抖处理）
- * @description 延迟更新hosts文件，避免频繁IO操作
- */
-async function debouncedUpdateHosts() {
-  // 标记有待处理的更新
-  pendingUpdates.value = true;
-  
-  // 清除之前的定时器
-  if (updateDebounceTimeout.value) {
-    clearTimeout(updateDebounceTimeout.value);
-  }
-  
-  // 设置新的定时器，延迟500ms执行更新
-  updateDebounceTimeout.value = setTimeout(async () => {
-    if (pendingUpdates.value) {
-      try {
-        loading.value = true;
-        await updateHostsWithGroups(groups.value);
-        pendingUpdates.value = false;
-      } catch (error) {
-        console.error('批量更新hosts失败', error);
-        throw error;
-      } finally {
-        loading.value = false;
-      }
-    }
-  }, 500);
-}
-
-/**
- * 初始化默认配置
- * @description 使用默认配置初始化hosts文件
- */
-async function initializeDefaultConfig() {
-  loading.value = true;
-  try {
-    await initDefaultConfig()
-    showNotification('默认配置初始化成功', 'success')
-    await loadSystemHosts() // 重新加载配置
-  } catch (error) {
-    console.error('初始化默认配置失败', error)
-    showNotification('初始化失败: ' + (error as Error).message, 'error')
-    loading.value = false;
-  }
-}
-
-/**
- * 获取当前分组
- * @returns 当前选中的分组
- */
-function getCurrentGroup(): Group | null {
-  const group = groups.value.find((g: Group) => g.name === selectedGroup.value);
-  if (!group) {
-    showNotification('未找到对应分组', 'error');
-    return null;
-  }
-  return group;
-}
-
-/**
- * 打开添加主机对话框
- * @param groupName 分组名称
- * @description 打开添加主机对话框，并初始化表单
- */
-function openAddHostDialog(groupName: string) {
-  // 设置当前分组
-  currentAddGroupName.value = groupName
-  // 显示对话框
-  showAddHostDialog.value = true
-}
-
-/**
- * 打开编辑主机对话框
- * @param host 要编辑的主机信息
- * @description 打开编辑主机对话框，并填充表单
- */
-function openEditHostDialog(host: any) {
-  // 保存当前编辑的主机
-  currentEditHost.value = host
-  // 显示对话框
-  showEditHostDialog.value = true
-}
-
-/**
- * 添加分组
- * @param data 分组数据
- */
-async function addGroup(data: { name: string; isRemote: boolean; url?: string; hosts?: HostEntry[] }) {
-  // 添加新分组
-  groups.value.push({
-    name: data.name,
-    hosts: data.hosts || []
-  })
-
-  // 使用防抖更新替代直接更新
-  try {
-    await debouncedUpdateHosts()
-    selectedGroup.value = data.name
-    showNotification('分组添加成功', 'success')
-  } catch (error) {
-    console.error('添加分组失败', error)
-    showNotification('添加失败: ' + (error as Error).message, 'error')
-    // 回滚操作
-    groups.value.pop()
-  }
-}
-
-/**
- * 添加主机
- * @param data 主机数据
- */
-async function addHost(data: { groupName: string; ip: string; domain: string }) {
-  const group = groups.value.find((g: Group) => g.name === data.groupName)
-  if (!group) {
-    showNotification('未找到对应分组', 'error')
-    return
-  }
-
-  // 检查是否已存在相同域名
-  const domainExists = group.hosts.some(host => {
-    for (const key in host) {
-      if (key !== '__disabled' && key === data.domain) {
-        return true
-      }
-    }
-    return false
-  })
-
-  if (domainExists) {
-    showNotification('该域名已存在于当前分组中', 'error')
-    return
-  }
-
-  // 添加新条目
-  group.hosts.push({ [data.domain]: data.ip })
-
-  // 使用防抖更新替代直接更新
-  try {
-    // 更新UI状态
-    selectedGroup.value = data.groupName
-    // 调用防抖更新
-    await debouncedUpdateHosts()
-    showNotification('条目添加成功', 'success')
-  } catch (error) {
-    console.error('添加条目失败', error)
-    showNotification('添加失败: ' + (error as Error).message, 'error')
-    // 回滚操作
-    group.hosts.pop()
-  }
-}
-
-/**
- * 编辑主机
- * @param data 编辑数据
- */
-async function editHost(data: { originalHost: any; ip: string; domain: string }) {
-  // 获取当前分组
-  const group = getCurrentGroup()
-  if (!group) return
-
-  // 找到对应的主机条目
-  const hostEntry = findHostEntry(group, data.originalHost)
-  if (!hostEntry) {
-    showNotification('未找到要编辑的条目', 'error')
-    return
-  }
-
-  // 如果域名发生了变化，检查新域名是否已存在
-  if (data.domain !== data.originalHost.domain) {
-    const domainExists = group.hosts.some(host => {
-      for (const key in host) {
-        if (key !== '__disabled' && key === data.domain && host !== hostEntry) {
-          return true
-        }
-      }
-      return false
-    })
-
-    if (domainExists) {
-      showNotification('该域名已存在于当前分组中', 'error')
-      return
-    }
-  }
-
-  // 保存禁用状态
-  const isDisabled = hostEntry.hasOwnProperty('__disabled')
-
-  // 删除旧条目
-  const index = group.hosts.indexOf(hostEntry)
-  if (index !== -1) {
-    group.hosts.splice(index, 1)
-  }
-
-  // 添加新条目
-  const newHostEntry = { [data.domain]: data.ip } as HostEntry
-  if (isDisabled) {
-    newHostEntry['__disabled'] = 'true'
-  }
-  group.hosts.push(newHostEntry)
-
-  // 使用防抖更新替代直接更新
-  try {
-    await debouncedUpdateHosts()
-    showNotification('条目编辑成功', 'success')
-  } catch (error) {
-    console.error('更新状态失败', error)
-    showNotification('更新状态失败: ' + (error as Error).message, 'error')
-  }
-}
-
-/**
- * 更新主机状态
- * @param host 要更新的主机信息
- * @description 更新hosts条目的启用/禁用状态
- */
-async function updateHostStatus(host: any) {
-  // 获取当前分组
-  const group = getCurrentGroup()
-  if (!group) return
-
-  // 找到对应的主机条目
-  const hostEntry = findHostEntry(group, host)
-  if (!hostEntry) return
-
-  // 更新启用/禁用状态
-  updateHostEntryStatus(hostEntry, host.enabled)
-
-  // 使用防抖更新替代直接更新
-  try {
-    await debouncedUpdateHosts()
-    showNotification(
-      host.enabled ? '条目已启用' : '条目已禁用',
-      host.enabled ? 'success' : 'info'
-    )
-  } catch (error) {
-    console.error('更新状态失败', error)
-    showNotification('更新状态失败: ' + (error as Error).message, 'error')
-    // 恢复状态
-    host.enabled = !host.enabled
-  }
-}
-
-/**
- * 打开删除确认对话框
- * @param host 要删除的主机信息
- */
-function removeHost(host: any) {
-  hostToDelete.value = host
-  showDeleteConfirmDialog.value = true
-}
-
-/**
- * 确认删除主机
- * @param host 要删除的主机信息
- * @description 删除指定的hosts条目并更新hosts文件
- */
-async function confirmDeleteHost(host: any) {
-  // 获取当前分组
-  const group = getCurrentGroup()
-  if (!group) return
-
-  // 查找要删除的条目索引
-  const index = findHostIndex(group, host)
-
-  // 如果找到了条目，则删除并更新hosts文件
-  if (index !== -1) {
-    // 删除条目
-    group.hosts.splice(index, 1)
-
-    // 如果分组中没有条目了，则删除该分组
-    if (group.hosts.length === 0) {
-      const groupIndex = groups.value.findIndex((g: Group) => g.name === group.name)
-      if (groupIndex !== -1) {
-        groups.value.splice(groupIndex, 1)
-
-        // 如果还有其他分组，则选中第一个分组
-        if (groups.value.length > 0) {
-          selectedGroup.value = groups.value[0].name
-        } else {
-          // 如果没有分组了，则显示空状态
-          selectedGroup.value = ''
-        }
-      }
-    }
-
-    // 使用防抖更新替代直接更新
-    try {
-      await debouncedUpdateHosts()
-      showNotification('条目已删除', 'info')
-    } catch (error) {
-      console.error('删除条目失败', error)
-      showNotification('删除失败: ' + (error as Error).message, 'error')
-    }
-  }
-}
-
-/**
- * 处理打开域名链接
- * @param domain 域名
- * @param message 通知消息
- */
-function handleOpenDomain(_domain: string, message: string) {
-  showNotification(message, 'info')
-}
+// ===== 核心逻辑 (Composable) =====
 
 /**
  * 显示通知
- * @param text 通知文本
- * @param color 通知颜色
- * @description 显示一个通知消息，用于反馈操作结果
  */
 function showNotification(text: string, color: 'success' | 'error' | 'info' | 'warning') {
   snackbarText.value = text
@@ -661,26 +145,62 @@ function showNotification(text: string, color: 'success' | 'error' | 'info' | 'w
   showSnackbar.value = true
 }
 
+const {
+  groups,
+  selectedGroup,
+  hostsResolveSwitch,
+  loading,
+  currentGroup,
+  loadSystemHosts,
+  handleHostsSwitch,
+  initializeDefaultConfig,
+  addGroup,
+  addHost,
+  editHost,
+  updateHostStatus,
+  confirmDeleteHost
+} = useHostsData(showNotification)
+
+// ===== UI 交互方法 =====
+
 /**
- * 启用/禁用所有条目
- * @param enable 是否启用
+ * 打开添加主机对话框
  */
-async function toggleAllHosts(enable: boolean) {
-  if (enable) {
-    enableAllHosts(groups.value)
-  } else {
-    disableAllHosts(groups.value)
-  }
-  
-  // 使用防抖更新替代直接更新
-  try {
-    await debouncedUpdateHosts()
-    showNotification(enable ? '所有条目已启用' : '所有条目已禁用', 'success')
-  } catch (error) {
-    console.error('切换所有条目状态失败', error)
-    showNotification('操作失败: ' + (error as Error).message, 'error')
-  }
+function openAddHostDialog(groupName: string) {
+  currentAddGroupName.value = groupName
+  showAddHostDialog.value = true
 }
+
+/**
+ * 打开编辑主机对话框
+ */
+function openEditHostDialog(host: any) {
+  currentEditHost.value = host
+  showEditHostDialog.value = true
+}
+
+/**
+ * 打开删除确认对话框
+ */
+function removeHost(host: any) {
+  hostToDelete.value = host
+  showDeleteConfirmDialog.value = true
+}
+
+/**
+ * 处理打开域名链接
+ */
+function handleOpenDomain(_domain: string, message: string) {
+  showNotification(message, 'info')
+}
+
+// ===== 生命周期钩子 =====
+
+onMounted(async () => {
+  await getOsInfo()
+  await loadSystemHosts()
+})
+
 </script>
 
 <style scoped>

@@ -11,28 +11,13 @@ import { Group, HostEntry } from '@/types/hosts'
  * @returns 格式化后的数据表格项目
  */
 export function getHostsAsItems(hosts: HostEntry[]) {
-  return hosts.map((hostMap, index) => {
-    // 检查是否禁用
-    const isDisabled = hostMap.hasOwnProperty('__disabled')
-
-    // 提取域名和IP（跳过特殊键）
-    let domain = ''
-    let ip = ''
-
-    for (const key in hostMap) {
-      if (key !== '__disabled') {
-        domain = key
-        ip = hostMap[key]
-        break
-      }
-    }
-
+  return hosts.map((host, index) => {
     return {
       id: index,
-      domain,
-      ip,
-      enabled: !isDisabled,
-      originalMap: hostMap
+      domain: host.domain,
+      ip: host.ip,
+      enabled: !host.disabled,
+      originalMap: host
     }
   })
 }
@@ -54,14 +39,7 @@ export function validateHostInput(ip: string, domain: string): boolean {
  * @returns 找到的主机条目
  */
 export function findHostEntry(group: Group, host: any): HostEntry | undefined {
-  return group.hosts.find(h => {
-    for (const key in h) {
-      if (key !== '__disabled' && key === host.domain && h[key] === host.ip) {
-        return true;
-      }
-    }
-    return false;
-  });
+  return group.hosts.find(h => h.domain === host.domain && h.ip === host.ip);
 }
 
 /**
@@ -71,14 +49,7 @@ export function findHostEntry(group: Group, host: any): HostEntry | undefined {
  * @returns 找到的主机条目索引
  */
 export function findHostIndex(group: Group, host: any): number {
-  return group.hosts.findIndex(h => {
-    for (const key in h) {
-      if (key !== '__disabled' && key === host.domain && h[key] === host.ip) {
-        return true;
-      }
-    }
-    return false;
-  });
+  return group.hosts.findIndex(h => h.domain === host.domain && h.ip === host.ip);
 }
 
 /**
@@ -87,13 +58,7 @@ export function findHostIndex(group: Group, host: any): number {
  * @param enabled 是否启用
  */
 export function updateHostEntryStatus(hostEntry: HostEntry, enabled: boolean): void {
-  if (enabled) {
-    // 如果启用，删除禁用标记
-    delete hostEntry['__disabled']
-  } else {
-    // 如果禁用，添加禁用标记
-    hostEntry['__disabled'] = 'true'
-  }
+  hostEntry.disabled = !enabled;
 }
 
 /**
@@ -103,9 +68,7 @@ export function updateHostEntryStatus(hostEntry: HostEntry, enabled: boolean): v
 export function enableAllHosts(groups: Group[]): void {
   for (const group of groups) {
     for (const host of group.hosts) {
-      if (host.hasOwnProperty('__disabled')) {
-        delete host['__disabled']
-      }
+      host.disabled = false;
     }
   }
 }
@@ -117,9 +80,7 @@ export function enableAllHosts(groups: Group[]): void {
 export function disableAllHosts(groups: Group[]): void {
   for (const group of groups) {
     for (const host of group.hosts) {
-      if (!host.hasOwnProperty('__disabled')) {
-        host['__disabled'] = 'true'
-      }
+      host.disabled = true;
     }
   }
 }

@@ -1,6 +1,5 @@
 use reqwest;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::error::Error;
 use tauri::AppHandle;
 
@@ -12,7 +11,7 @@ static HOSTS_PATH: &str = if cfg!(any(target_os = "linux", target_os = "macos"))
   panic!("Unsupported OS");
 };
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HostEntry {
   pub ip: String,
   pub domain: String,
@@ -22,7 +21,7 @@ pub struct HostEntry {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct GroupHosts {
   pub name: String,
-  pub hosts: Vec<HashMap<String, String>>,
+  pub hosts: Vec<HostEntry>,
 }
 
 pub fn load_local_config(_app: &AppHandle) -> Result<Vec<GroupHosts>, Box<dyn Error>> {
@@ -30,19 +29,25 @@ pub fn load_local_config(_app: &AppHandle) -> Result<Vec<GroupHosts>, Box<dyn Er
   let mut default_hosts = Vec::new();
 
   // localhost
-  let mut localhost_map = HashMap::new();
-  localhost_map.insert("localhost".to_string(), "127.0.0.1".to_string());
-  default_hosts.push(localhost_map);
+  default_hosts.push(HostEntry {
+    ip: "127.0.0.1".to_string(),
+    domain: "localhost".to_string(),
+    disabled: false,
+  });
 
   // localhost IPv6
-  let mut localhost_ipv6_map = HashMap::new();
-  localhost_ipv6_map.insert("localhost".to_string(), "::1".to_string());
-  default_hosts.push(localhost_ipv6_map);
+  default_hosts.push(HostEntry {
+    ip: "::1".to_string(),
+    domain: "localhost".to_string(),
+    disabled: false,
+  });
 
   // 常用的测试域名
-  let mut example_map = HashMap::new();
-  example_map.insert("example.test".to_string(), "127.0.0.1".to_string());
-  default_hosts.push(example_map);
+  default_hosts.push(HostEntry {
+    ip: "127.0.0.1".to_string(),
+    domain: "example.test".to_string(),
+    disabled: false,
+  });
 
   let default_group = GroupHosts {
     name: "开发环境".to_string(),
@@ -84,19 +89,25 @@ pub async fn update_hosts_with_groups(
     let mut default_hosts = Vec::new();
 
     // localhost
-    let mut localhost_map = HashMap::new();
-    localhost_map.insert("localhost".to_string(), "127.0.0.1".to_string());
-    default_hosts.push(localhost_map);
+    default_hosts.push(HostEntry {
+      ip: "127.0.0.1".to_string(),
+      domain: "localhost".to_string(),
+      disabled: false,
+    });
 
     // localhost IPv6
-    let mut localhost_ipv6_map = HashMap::new();
-    localhost_ipv6_map.insert("localhost".to_string(), "::1".to_string());
-    default_hosts.push(localhost_ipv6_map);
+    default_hosts.push(HostEntry {
+      ip: "::1".to_string(),
+      domain: "localhost".to_string(),
+      disabled: false,
+    });
 
     // 常用的测试域名
-    let mut example_map = HashMap::new();
-    example_map.insert("example.test".to_string(), "127.0.0.1".to_string());
-    default_hosts.push(example_map);
+    default_hosts.push(HostEntry {
+      ip: "127.0.0.1".to_string(),
+      domain: "example.test".to_string(),
+      disabled: false,
+    });
 
     let default_group = GroupHosts {
       name: "开发环境".to_string(),
@@ -164,31 +175,16 @@ pub async fn update_hosts_with_groups(
     new_lines.push(format!("# +{}+", group_name));
 
     // 按域名排序显示
-    let mut sorted_hosts: Vec<(String, String, bool)> = Vec::new();
-    for host_map in &g.hosts {
-      // 检查是否禁用
-      let is_disabled = host_map.contains_key("__disabled");
+    let mut sorted_hosts: Vec<HostEntry> = g.hosts.clone();
+    sorted_hosts.sort_by(|a, b| a.domain.cmp(&b.domain));
 
-      // 提取域名和IP（跳过特殊键）
-      for (hostname, ip) in host_map {
-        if hostname != "__disabled" {
-          sorted_hosts.push((hostname.clone(), ip.clone(), is_disabled));
-          // 只处理第一个非__disabled键值对，因为每个host_map应该只有一个域名和IP
-          break;
-        }
-      }
-    }
-
-    // 按域名排序
-    sorted_hosts.sort_by(|a, b| a.0.cmp(&b.0));
-
-    for (hostname, ip, is_disabled) in sorted_hosts {
-      if is_disabled {
+    for host in sorted_hosts {
+      if host.disabled {
         // 如果禁用，添加注释符号
-        new_lines.push(format!("# {} {}", ip, hostname));
+        new_lines.push(format!("# {} {}", host.ip, host.domain));
       } else {
         // 如果启用，正常显示
-        new_lines.push(format!("{} {}", ip, hostname));
+        new_lines.push(format!("{} {}", host.ip, host.domain));
       }
     }
 
@@ -355,7 +351,7 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
   let mut result = Vec::new();
 
   let mut current_group: Option<String> = None;
-  let mut current_hosts: Vec<HashMap<String, String>> = Vec::new();
+  let mut current_hosts: Vec<HostEntry> = Vec::new();
   let mut in_jedi_section = false;
 
   // 解析hosts文件内容
@@ -461,20 +457,24 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
       let parts: Vec<&str> = line_to_parse.split_whitespace().collect();
       if parts.len() >= 2 {
         let ip = parts[0].to_string();
-        let domain = parts[1].to_string();
 
-        // 检查是否已经存在相同的域名，避免重复
-        let domain_exists = current_hosts.iter().any(|h| h.contains_key(&domain));
-        if !domain_exists {
-          let mut host_map = HashMap::new();
-          host_map.insert(domain, ip);
-
-          // 将启用/禁用状态存储为布尔值
-          if is_disabled {
-            host_map.insert("__disabled".to_string(), "true".to_string());
+        // 支持一行多个域名 (Aliases)
+        for i in 1..parts.len() {
+          let domain = parts[i].to_string();
+          // 跳过注释部分（如果在行尾有注释）
+          if domain.starts_with('#') {
+            break;
           }
 
-          current_hosts.push(host_map);
+          // 检查是否已经存在相同的域名，避免重复
+          let domain_exists = current_hosts.iter().any(|h| h.domain == domain);
+          if !domain_exists {
+            current_hosts.push(HostEntry {
+              ip: ip.clone(),
+              domain,
+              disabled: is_disabled,
+            });
+          }
         }
       }
     }

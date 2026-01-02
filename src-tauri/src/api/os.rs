@@ -5,9 +5,14 @@ use nvml_wrapper::enum_wrappers::device::TemperatureSensor;
 use nvml_wrapper::Nvml;
 use serde::Serialize;
 use std::collections::HashMap;
-use std::thread::sleep;
-use std::time::Duration;
-use sysinfo::{Disks, Networks, System};
+use std::sync::Mutex;
+use sysinfo::{Disks, NetworkData, Networks, System};
+use tauri::State;
+
+pub struct SystemState {
+  pub system: Mutex<System>,
+  pub networks: Mutex<Networks>,
+}
 
 #[derive(Serialize, Debug)]
 pub struct OsInfo {
@@ -86,8 +91,8 @@ struct Metrics {
 }
 
 #[tauri::command]
-pub fn get_os_info() -> OsInfo {
-  let mut sys = System::new_all();
+pub async fn get_os_info(state: State<'_, SystemState>) -> Result<OsInfo, String> {
+  let mut sys = state.system.lock().map_err(|e| e.to_string())?;
   sys.refresh_all();
 
   let mut metrics = Metrics {
@@ -137,10 +142,19 @@ pub fn get_os_info() -> OsInfo {
   }
 
   let mut network_infos: HashMap<String, NetworkInfo> = HashMap::new();
-  let mut networks = Networks::new_with_refreshed_list();
-  sleep(Duration::from_secs(1));
-  networks.refresh(false); // false = don't remove unlisted interfaces
-  for (interface_name, data) in &networks {
+  // 使用全局 Networks 实例
+  let mut networks = state.networks.lock().map_err(|e| e.to_string())?;
+  // refresh(true) 会更新数据，true 表示移除未列出的接口（如果需要的话，之前是 false）
+  // 之前的逻辑是 sleep 1s 然后 refresh，为了计算速率。
+  // sysinfo 的 networks.refresh() 实际上会计算自上次刷新以来的流量增量。
+  // 如果我们需要瞬时速率，这里调用 refresh 是对的。
+  // 但是，如果两次调用间隔很短，增量可能很小。
+  // 为了保证一定的准确性，前端最好定时轮询。
+  networks.refresh(true);
+
+  for (interface_name, data) in networks.iter() {
+    let interface_name: &String = interface_name;
+    let data: &NetworkData = data;
     network_infos.insert(
       interface_name.to_string(),
       NetworkInfo {
@@ -157,23 +171,42 @@ pub fn get_os_info() -> OsInfo {
   let mut gpu_infos = Vec::new();
   #[cfg(target_os = "windows")]
   {
-    let nvml = Nvml::init().unwrap();
-    for i in 0..nvml.device_count().unwrap() {
-      let device = nvml.device_by_index(i).unwrap();
-      let memory_info = device.memory_info().unwrap();
-      let temperature = format!("{} °C", device.temperature(TemperatureSensor::Gpu).unwrap());
-      let gpu_info = GpuInfo {
-        name: Some(device.name().unwrap()),
-        memory_total: Some(memory_info.total),
-        memory_used: Some(memory_info.used),
-        memory_free: Some(memory_info.free),
-        temperature: Some(temperature.clone()),
-      };
+    // 尝试初始化 NVML，如果失败则忽略
+    if let Ok(nvml) = Nvml::init() {
+      if let Ok(device_count) = nvml.device_count() {
+        for i in 0..device_count {
+          if let Ok(device) = nvml.device_by_index(i) {
+            let memory_info = device.memory_info().unwrap_or_default(); // 假设有 Default 或处理错误
+                                                                        // 这里 Nvml 的 memory_info 实际上返回 Result<MemoryInfo, NvmlError>
+                                                                        // 且 MemoryInfo 字段是 u64
+                                                                        // 为了简单起见，我们还是用 unwrap_or 处理
 
-      gpu_infos.push(gpu_info);
-      metrics.gpu_temp = temperature.clone();
-      metrics.gpu_memory_total = memory_info.total;
-      metrics.gpu_memory_used = memory_info.used;
+            // 重新编写 NVML 逻辑以更健壮
+            let name = device.name().unwrap_or_else(|_| "Unknown GPU".to_string());
+            let temp = device.temperature(TemperatureSensor::Gpu).unwrap_or(0);
+            let temperature = format!("{} °C", temp);
+
+            let (mem_total, mem_used, mem_free) = match device.memory_info() {
+              Ok(m) => (m.total, m.used, m.free),
+              Err(_) => (0, 0, 0),
+            };
+
+            let gpu_info = GpuInfo {
+              name: Some(name),
+              memory_total: Some(mem_total),
+              memory_used: Some(mem_used),
+              memory_free: Some(mem_free),
+              temperature: Some(temperature.clone()),
+            };
+
+            gpu_infos.push(gpu_info);
+            // 简单覆盖 metrics，如果有多个 GPU 可能需要聚合，这里保持原逻辑
+            metrics.gpu_temp = temperature;
+            metrics.gpu_memory_total = mem_total;
+            metrics.gpu_memory_used = mem_used;
+          }
+        }
+      }
     }
   }
   #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
@@ -190,8 +223,8 @@ pub fn get_os_info() -> OsInfo {
   metrics.memory_total = sys.total_memory();
   metrics.memory_used = sys.used_memory();
 
-  OsInfo {
-    name: System::name().unwrap(),
+  Ok(OsInfo {
+    name: System::name().unwrap_or_else(|| "Unknown".to_string()),
     kernel_version: System::kernel_version(),
     os_version: System::os_version(),
     long_os_version: System::long_os_version(),
@@ -210,5 +243,5 @@ pub fn get_os_info() -> OsInfo {
     disks: disk_infos,
     networks: network_infos,
     metrics,
-  }
+  })
 }

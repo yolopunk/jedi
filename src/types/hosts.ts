@@ -6,10 +6,12 @@
 
 /**
  * 主机条目类型
- * 键为域名，值为IP地址
- * 可能包含 __disabled 属性表示禁用状态
  */
-export type HostEntry = Record<string, string>;
+export interface HostEntry {
+  ip: string;
+  domain: string;
+  disabled: boolean;
+}
 
 /**
  * 分组类型

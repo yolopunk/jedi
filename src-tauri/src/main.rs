@@ -1,10 +1,14 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::api::app::{disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled};
+use crate::api::app::{
+  disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
+};
 use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
-use crate::api::os::get_os_info;
+use crate::api::os::{get_os_info, SystemState};
 use crate::utils::logger;
+use std::sync::Mutex;
+use sysinfo::{Networks, System};
 use tauri::RunEvent::WindowEvent;
 use tauri::{Manager, RunEvent};
 
@@ -20,6 +24,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_autostart::Builder::new().build())
     .plugin(tauri_plugin_store::Builder::default().build())
+    .manage(SystemState {
+      system: Mutex::new(System::new_all()),
+      networks: Mutex::new(Networks::new_with_refreshed_list()),
+    })
     .setup(|app| {
       config::app::load_tray_config(app);
 
@@ -38,10 +46,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Enable autostart
         let _ = autostart_manager.enable();
         // Check enable state
-        println!(
-          "registered for autostart? {}",
-          autostart_manager.is_enabled().unwrap()
-        );
+        match autostart_manager.is_enabled() {
+          Ok(enabled) => println!("registered for autostart? {}", enabled),
+          Err(e) => eprintln!("failed to check autostart status: {}", e),
+        }
         // Disable autostart
         let _ = autostart_manager.disable();
       }
@@ -69,18 +77,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       ..
     } => {
       api.prevent_close();
-      _app_handle
-        .get_webview_window(label)
-        .unwrap()
-        .hide()
-        .unwrap();
+      if let Some(window) = _app_handle.get_webview_window(label) {
+        if let Err(e) = window.hide() {
+          eprintln!("failed to hide window: {}", e);
+        }
+      }
     }
     RunEvent::ExitRequested { api, code, .. } => {
       if code.is_none() {
         api.prevent_exit();
       }
 
-      revert_hosts().unwrap();
+      if let Err(e) = revert_hosts() {
+        eprintln!("failed to revert hosts on exit: {}", e);
+      }
     }
     _ => (),
   });

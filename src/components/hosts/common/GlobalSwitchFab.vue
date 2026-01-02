@@ -41,8 +41,8 @@ defineEmits<{
 <style scoped>
 .global-switch-fab {
   position: fixed;
-  bottom: 40px;
-  right: 40px;
+  bottom: 60px;
+  right: 32px;
   z-index: 100;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   border: 2px solid var(--jedi-border);

@@ -4,7 +4,7 @@
     <div class="d-flex flex-column align-center py-6 border-bottom">
       <v-img src="/icon.png" width="64" class="mb-3 jedi-logo-glow"></v-img>
       <h2 class="text-h6 font-weight-bold text-primary">JEDI</h2>
-      <div class="text-caption text-secondary">Hosts Manager</div>
+      <div class="text-caption text-secondary">Development Toolkit</div>
     </div>
 
     <!-- Navigation -->

@@ -2,12 +2,12 @@
   <!-- 添加分组对话框 -->
   <v-dialog v-model="dialogModel" max-width="550" persistent>
     <v-card class="rounded-lg overflow-hidden jedi-dialog-card">
-      <v-toolbar style="background: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%); border-bottom: 1px solid rgba(52, 152, 219, 0.3);" class="px-4 jedi-dialog-header">
-        <v-icon :icon="mdiDomainPlus" class="mr-2" color="white"></v-icon>
+      <v-toolbar class="px-4 jedi-dialog-header">
+        <v-icon :icon="mdiDomainPlus" class="mr-2"></v-icon>
         <v-toolbar-title class="font-weight-medium">添加分组</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn icon @click="closeDialog">
-          <v-icon :icon="mdiClose" color="white"></v-icon>
+          <v-icon :icon="mdiClose"></v-icon>
         </v-btn>
       </v-toolbar>
       <v-card-text class="pa-6">
@@ -17,13 +17,12 @@
           variant="outlined"
           placeholder="例如: 开发环境"
           required
-          bg-color="white"
         ></v-text-field>
 
         <v-switch
           v-model="isRemote"
           label="使用远程配置"
-          color="var(--jedi-primary)"
+          color="primary"
           hide-details
           class="mb-4"
         ></v-switch>
@@ -36,7 +35,6 @@
             variant="outlined"
             placeholder="例如: https://example.com/hosts.json"
             required
-            bg-color="white"
             :prepend-inner-icon="mdiLinkVariant"
           ></v-text-field>
         </v-expand-transition>
@@ -53,7 +51,6 @@
 192.168.1.1 router.local"
               rows="4"
               required
-              bg-color="white"
               class="font-monospace"
             ></v-textarea>
             <v-alert
@@ -81,7 +78,7 @@
           取消
         </v-btn>
         <v-btn
-          color="var(--jedi-accent)"
+          color="success"
           variant="elevated"
           @click="confirmAdd"
           rounded="sm"

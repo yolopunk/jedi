@@ -5,7 +5,7 @@
     <!-- 分组标签页 -->
     <v-tabs
       v-model="selectedTab"
-      bg-color="#F8F9FA"
+      bg-color="transparent"
       color="var(--jedi-accent)"
       align-tabs="start"
       show-arrows
@@ -69,13 +69,13 @@ const selectedTab = computed({
   position: sticky;
   top: 0;
   z-index: 10;
-  background-color: white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 16px 16px 0 0;
+  background-color: var(--jedi-bg-surface);
+  border-bottom: 1px solid var(--jedi-border);
+  transition: background-color 0.3s ease;
 }
 
 .group-tabs-container {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  /* Border handled by sticky-header */
 }
 
 .group-tabs {
@@ -88,6 +88,12 @@ const selectedTab = computed({
   text-transform: none;
   letter-spacing: 0.3px;
   transition: all 0.3s ease;
+  color: var(--jedi-text-secondary) !important;
+}
+
+.group-tab.v-tab--selected {
+  color: var(--jedi-text-primary) !important;
+  font-weight: 600;
 }
 
 .add-group-tab {
@@ -100,10 +106,6 @@ const selectedTab = computed({
 }
 
 .add-group-tab:hover {
-  background-color: rgba(76, 175, 80, 0.05);
-}
-
-.v-tab--selected {
-  font-weight: 600;
+  background-color: var(--jedi-bg-surface-hover) !important;
 }
 </style>

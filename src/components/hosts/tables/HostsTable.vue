@@ -1,38 +1,30 @@
 <template>
-  <div class="hosts-table-container">
-    <!-- 表格工具栏 -->
-    <div class="d-flex justify-space-between align-center pa-4">
-      <!-- 搜索框 -->
+  <div class="hosts-table-container pa-4 d-flex flex-column flex-grow-1" style="min-height: 0;">
+    <!-- Toolbar -->
+    <div class="d-flex justify-space-between align-center mb-4">
       <v-text-field
         v-model="searchModel"
-        label="搜索域名或IP"
+        placeholder="Search hosts..."
         :prepend-inner-icon="mdiMagnify"
         variant="outlined"
         density="compact"
         hide-details
-        bg-color="white"
-        color="var(--jedi-text-medium)"
-        rounded="pill"
         class="search-field"
         style="max-width: 300px;"
       ></v-text-field>
 
       <v-btn
-        color="var(--jedi-success)"
+        color="success"
         variant="flat"
-        rounded="lg"
-        size="small"
-        elevation="2"
-        class="add-host-btn"
+        class="text-none px-4"
         @click="emit('add-host', currentGroup.name)"
-        style="color: white; letter-spacing: 0.5px;"
       >
-        <v-icon :icon="mdiPlus" size="small" class="mr-1"></v-icon>
-        <span style="font-weight: 500;">添加条目</span>
+        <v-icon :icon="mdiPlus" class="mr-1"></v-icon>
+        Add Host
       </v-btn>
     </div>
 
-    <!-- 数据表格区域 -->
+    <!-- Table -->
     <v-data-table
       :headers="headers"
       :items="tableItems"
@@ -41,58 +33,23 @@
       density="comfortable"
       hover
       fixed-header
-      class="hosts-table jedi-table"
-      :items-per-page="10"
-      bg-color="white"
-      style="border-radius: 16px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08); box-shadow: 0 3px 10px rgba(0,0,0,0.05);"
-      :footer-props="{
-        'items-per-page-options': [5, 10, 15, 20, -1],
-        'items-per-page-text': '每页显示',
-        'page-text': '{0}-{1} 共 {2}',
-        'show-first-last-page': true,
-        'class': 'justify-start'
-      }"
+      class="flex-grow-1 jedi-data-table"
     >
-      <template v-slot:loading>
-        <div class="pa-4">
-          <v-skeleton-loader
-            type="table-heading, table-row@10"
-            class="mb-2"
-          ></v-skeleton-loader>
-        </div>
-      </template>
-
-      <template v-slot:no-data>
-        <div class="d-flex flex-column align-center justify-center pa-6">
-          <v-icon
-            :icon="mdiDatabaseOff"
-            size="large"
-            color="grey-lighten-1"
-            class="mb-4"
-          ></v-icon>
-          <span class="text-grey-darken-1">暂无数据</span>
-        </div>
-      </template>
-
-      <!-- IP地址列 -->
+      <!-- IP Column -->
       <template v-slot:item.ip="{ item }">
-        <div class="d-flex align-center">
-          <v-icon :icon="mdiIpNetwork" size="small" color="primary" class="mr-2"></v-icon>
-          <span>{{ item.ip }}</span>
-        </div>
+        <span class="jedi-table-ip">{{ item.ip }}</span>
       </template>
 
-      <!-- 域名列 -->
+      <!-- Domain Column -->
       <template v-slot:item.domain="{ item }">
         <div class="d-flex align-center">
-          <v-icon :icon="mdiDomain" size="small" color="primary" class="mr-2"></v-icon>
-          <span class="domain-text">{{ item.domain }}</span>
+          <span class="jedi-table-domain mr-2">{{ item.domain }}</span>
           <v-btn
             icon
             size="x-small"
             variant="text"
             color="primary"
-            class="ml-2 jedi-hover-scale"
+            class="opacity-50 hover-opacity-100"
             @click="handleOpenDomain(item.domain)"
           >
             <v-icon :icon="mdiWeb" size="small"></v-icon>
@@ -100,27 +57,27 @@
         </div>
       </template>
 
-      <!-- 状态列 -->
+      <!-- Status Column -->
       <template v-slot:item.enabled="{ item }">
         <v-switch
           v-model="item.enabled"
-          :color="item.enabled ? 'success' : 'default'"
+          color="success"
           hide-details
           density="compact"
+          inset
           @update:model-value="emit('update-status', item)"
-          class="status-switch"
         ></v-switch>
       </template>
 
-      <!-- 操作列 -->
+      <!-- Actions Column -->
       <template v-slot:item.actions="{ item }">
         <div class="d-flex">
           <v-btn
             icon
             size="small"
             variant="text"
-            color="var(--jedi-primary)"
-            class="mr-2 action-btn edit-btn"
+            color="primary"
+            class="mr-1"
             @click="emit('edit-host', item)"
           >
             <v-icon :icon="mdiPencil" size="small"></v-icon>
@@ -129,9 +86,8 @@
             icon
             size="small"
             variant="text"
-            color="var(--jedi-danger)"
-            class="action-btn delete-btn"
-            @click="emit('delete-host', item)"
+            color="error"
+            @click="emit('delete-host', item.id)"
           >
             <v-icon :icon="mdiDelete" size="small"></v-icon>
           </v-btn>
@@ -204,120 +160,60 @@ function handleOpenDomain(domain: string) {
 </script>
 
 <style scoped>
-.domain-text {
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-switch {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-}
-
-.search-field {
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.search-field:focus-within,
-.search-field:hover {
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
-}
-
-:deep(.v-data-table__tr:hover) {
-  background-color: rgba(52, 152, 219, 0.05) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-:deep(.v-data-table__thead) {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-
-:deep(.v-data-table__thead th) {
-  background-color: #f5f7fa !important;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.1) !important;
-  font-weight: 600 !important;
-  color: var(--jedi-primary) !important;
-}
-
-:deep(.v-data-table__wrapper) {
-  height: calc(100vh - 300px);
-  overflow-y: auto;
-}
-
-:deep(.v-data-table__tr) {
-  transition: all 0.2s ease;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.03) !important;
-}
-
-.add-host-btn {
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2) !important;
-}
-
-.add-host-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3) !important;
-}
-
-.action-btn {
-  opacity: 0.75;
-  transition: all 0.2s ease;
-  border-radius: 8px;
-}
-
-.action-btn:hover {
-  opacity: 1;
-  transform: translateY(-1px);
-}
-
-.edit-btn {
-  color: var(--jedi-primary) !important;
-}
-
-.edit-btn:hover {
-  background-color: rgba(44, 62, 80, 0.05) !important;
-}
-
-.delete-btn {
-  color: var(--jedi-danger) !important;
-}
-
-.delete-btn:hover {
-  background-color: rgba(231, 76, 60, 0.05) !important;
-}
-
-.hosts-table-container {
+/* Jedi Switch Styling */
+:deep(.jedi-switch) {
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
+  justify-content: center;
 }
 
-:deep(.v-data-table) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+:deep(.jedi-switch .v-selection-control) {
+  min-height: auto;
 }
 
-:deep(.v-data-table__wrapper) {
-  flex: 1;
+/* Track Styling */
+:deep(.jedi-switch .v-switch__track) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  opacity: 1 !important;
+  height: 20px;
+  width: 36px;
+  border-radius: 20px;
+  transition: all 0.3s ease;
 }
 
-:deep(.v-data-table-footer) {
-  justify-content: flex-start !important;
+:deep(.jedi-switch.v-input--is-dirty .v-switch__track) {
+  background-color: rgba(0, 255, 128, 0.15) !important;
+  border-color: rgba(0, 255, 128, 0.3);
+  box-shadow: 0 0 8px rgba(0, 255, 128, 0.2) inset;
 }
 
-:deep(.v-data-table-footer__items-per-page) {
-  margin-right: 16px;
+/* Thumb Styling */
+:deep(.jedi-switch .v-selection-control__input input) {
+  opacity: 0;
 }
 
-:deep(.v-data-table-footer__pagination) {
-  margin-left: 0 !important;
+:deep(.jedi-switch .v-switch__thumb) {
+  height: 14px;
+  width: 14px;
+  background-color: #95a5a6;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  top: calc(50% - 7px);
+}
+
+:deep(.jedi-switch.v-input--is-dirty .v-switch__thumb) {
+  background-color: #00ff80;
+  box-shadow: 0 0 10px rgba(0, 255, 128, 0.6), 0 0 15px rgba(0, 255, 128, 0.4);
+  transform: translateX(16px);
+}
+
+/* Hover effects */
+:deep(.jedi-switch:hover .v-switch__track) {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+:deep(.jedi-switch.v-input--is-dirty:hover .v-switch__track) {
+  border-color: rgba(0, 255, 128, 0.5);
+  box-shadow: 0 0 10px rgba(0, 255, 128, 0.3) inset;
 }
 </style>

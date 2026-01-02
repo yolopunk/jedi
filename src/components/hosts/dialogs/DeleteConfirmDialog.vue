@@ -2,14 +2,14 @@
   <!-- 删除确认对话框 -->
   <v-dialog v-model="dialogModel" max-width="400" persistent>
     <v-card class="rounded-lg jedi-dialog-card">
-      <v-toolbar style="background: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%); border-bottom: 1px solid rgba(52, 152, 219, 0.3);" class="px-4 jedi-dialog-header">
-        <v-icon :icon="mdiAlertCircle" color="white" class="mr-2"></v-icon>
+      <v-toolbar class="px-4 jedi-dialog-header">
+        <v-icon :icon="mdiAlertCircle" color="warning" class="mr-2"></v-icon>
         <v-toolbar-title class="font-weight-medium">确认删除</v-toolbar-title>
         <v-spacer></v-spacer>
       </v-toolbar>
       <v-card-text class="pa-4 pt-5">
         <p class="text-body-1">您确定要删除以下条目吗？</p>
-        <div v-if="host" class="mt-3 pa-3" style="background-color: #F5F5F5; border-radius: 8px;">
+        <div v-if="host" class="mt-3 pa-3 host-info-box">
           <div class="d-flex align-center mb-1">
             <v-icon :icon="mdiIpNetwork" size="small" color="primary" class="mr-2"></v-icon>
             <span class="font-weight-medium">IP地址：</span>
@@ -21,7 +21,7 @@
             <span class="ml-2">{{ host.domain }}</span>
           </div>
         </div>
-        <p class="text-body-2 mt-4" style="color: var(--jedi-danger);">此操作不可撤销，删除后将立即生效。</p>
+        <p class="text-body-2 mt-4 text-danger">此操作不可撤销，删除后将立即生效。</p>
       </v-card-text>
       <v-card-actions class="pa-4 pt-0">
         <v-spacer></v-spacer>
@@ -35,7 +35,7 @@
           取消
         </v-btn>
         <v-btn
-          color="var(--jedi-danger)"
+          color="error"
           variant="elevated"
           @click="confirmDelete"
           class="px-4"
@@ -83,3 +83,11 @@ function confirmDelete() {
   closeDialog()
 }
 </script>
+
+<style scoped>
+.host-info-box {
+  background-color: var(--jedi-bg-surface-hover);
+  border-radius: 8px;
+  border: 1px solid var(--jedi-border);
+}
+</style>

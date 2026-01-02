@@ -1,16 +1,15 @@
 <template>
   <v-dialog v-model="dialogModel" max-width="700" class="jedi-dialog-card">
     <v-card class="jedi-dialog-card">
-      <v-toolbar style="background: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%); border-bottom: 1px solid rgba(52, 152, 219, 0.3);" class="px-4 jedi-dialog-header">
-        <v-icon :icon="mdiCog" color="white" class="mr-2"></v-icon>
+      <v-toolbar color="surface" class="px-4 jedi-dialog-header border-b">
+        <v-icon :icon="mdiCog" color="primary" class="mr-2"></v-icon>
         <v-toolbar-title class="font-weight-medium">应用设置</v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-btn :icon="mdiClose" variant="text" color="white" @click="dialogModel = false"></v-btn>
+        <v-btn :icon="mdiClose" variant="text" color="medium-emphasis" @click="dialogModel = false"></v-btn>
       </v-toolbar>
       <v-card-text class="pa-6">
         <v-tabs v-model="settingsTab" color="var(--jedi-accent)">
           <v-tab value="general">常规设置</v-tab>
-          <v-tab value="appearance">外观设置</v-tab>
           <v-tab value="advanced">高级设置</v-tab>
         </v-tabs>
 
@@ -51,63 +50,6 @@
                 <v-list-item-title>自动检查更新</v-list-item-title>
                 <template v-slot:append>
                   <v-switch color="var(--jedi-accent)" hide-details></v-switch>
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-window-item>
-
-          <!-- 外观设置 -->
-          <v-window-item value="appearance">
-            <v-list>
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiThemeLightDark" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>主题模式</v-list-item-title>
-                <template v-slot:append>
-                  <v-select
-                    v-model="currentTheme"
-                    :items="themeOptions"
-                    item-title="text"
-                    item-value="value"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    style="width: 150px"
-                    @update:model-value="changeTheme"
-                  ></v-select>
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiPalette" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>主题颜色</v-list-item-title>
-                <template v-slot:append>
-                  <div class="d-flex">
-                    <v-btn :icon="mdiCheckboxBlankCircle" size="small" color="#2C3E50" class="mr-1"></v-btn>
-                    <v-btn :icon="mdiCheckboxBlankCircle" size="small" color="#3498DB" class="mr-1"></v-btn>
-                    <v-btn :icon="mdiCheckboxBlankCircle" size="small" color="#D4AF37" class="mr-1"></v-btn>
-                    <v-btn :icon="mdiCheckboxBlankCircle" size="small" color="#4CAF50" class="mr-1"></v-btn>
-                  </div>
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiFormatFont" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>字体大小</v-list-item-title>
-                <template v-slot:append>
-                  <v-slider
-                    color="var(--jedi-accent)"
-                    min="12"
-                    max="18"
-                    step="1"
-                    hide-details
-                    style="width: 150px"
-                  ></v-slider>
                 </template>
               </v-list-item>
             </v-list>
@@ -177,16 +119,11 @@ import {
   mdiLaunch,
   mdiTrayArrowDown,
   mdiUpdate,
-  mdiThemeLightDark,
-  mdiPalette,
-  mdiFormatFont,
   mdiFileDocument,
   mdiBackupRestore,
-  mdiRefresh,
-  mdiCheckboxBlankCircle
+  mdiRefresh
 } from '@mdi/js'
 import { enableAutostart, disableAutostart, isAutostartEnabled } from '@/api/app'
-import { useTheme, ThemeMode } from '@/composables/useTheme'
 
 // 定义组件属性
 const props = defineProps<{
@@ -212,7 +149,8 @@ const autostartEnabled = ref(false)
 const autostartLoading = ref(false)
 
 // 切换自启动状态
-async function toggleAutostart(value: boolean) {
+async function toggleAutostart(value: boolean | null) {
+  if (value === null) return
   try {
     autostartLoading.value = true
     if (value) {
@@ -240,24 +178,6 @@ async function checkAutostartStatus() {
   } finally {
     autostartLoading.value = false
   }
-}
-
-// 主题相关
-const { themeMode, setTheme } = useTheme()
-
-// 主题选项
-const themeOptions = [
-  { text: '浅色', value: 'light' },
-  { text: '深色', value: 'dark' },
-  { text: '跟随系统', value: 'system' }
-]
-
-// 当前主题
-const currentTheme = computed(() => themeMode.value)
-
-// 切换主题
-const changeTheme = (value: ThemeMode) => {
-  setTheme(value)
 }
 
 // 组件挂载时检查自启动状态

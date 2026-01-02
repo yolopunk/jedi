@@ -1,11 +1,11 @@
 <template>
   <v-dialog v-model="dialogModel" max-width="500" class="jedi-dialog-card">
     <v-card class="jedi-dialog-card">
-      <v-toolbar style="background: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%); border-bottom: 1px solid rgba(52, 152, 219, 0.3);" class="px-4 jedi-dialog-header">
-        <v-icon :icon="mdiInformation" color="white" class="mr-2"></v-icon>
+      <v-toolbar color="surface" class="px-4 jedi-dialog-header border-b">
+        <v-icon :icon="mdiInformation" color="primary" class="mr-2"></v-icon>
         <v-toolbar-title class="font-weight-medium">关于 Jedi 工具箱</v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-btn :icon="mdiClose" variant="text" color="white" @click="dialogModel = false"></v-btn>
+        <v-btn :icon="mdiClose" variant="text" color="medium-emphasis" @click="dialogModel = false"></v-btn>
       </v-toolbar>
       <v-card-text class="pa-6 text-center">
         <v-img src="/icon.png" width="100" class="mx-auto mb-4"></v-img>
@@ -22,7 +22,7 @@
           <v-btn :icon="mdiEmail" variant="text" color="var(--jedi-primary)" @click="$emit('open-email')" size="small" class="mx-1"></v-btn>
         </div>
 
-        <p class="text-caption text-grey-darken-1 mt-2">© 2025 Jedi. 保留所有权利。</p>
+        <p class="text-caption mt-2" style="color: var(--jedi-text-light)">© 2025 Jedi. 保留所有权利。</p>
       </v-card-text>
       <v-card-actions class="pa-4 pt-0">
         <v-spacer></v-spacer>

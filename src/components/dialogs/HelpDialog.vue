@@ -1,11 +1,11 @@
 <template>
   <v-dialog v-model="dialogModel" max-width="600" class="jedi-dialog-card">
     <v-card class="jedi-dialog-card">
-      <v-toolbar style="background: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%); border-bottom: 1px solid rgba(52, 152, 219, 0.3);" class="px-4 jedi-dialog-header">
-        <v-icon :icon="mdiHelpCircle" color="white" class="mr-2"></v-icon>
+      <v-toolbar color="surface" class="px-4 jedi-dialog-header border-b">
+        <v-icon :icon="mdiHelpCircle" color="primary" class="mr-2"></v-icon>
         <v-toolbar-title class="font-weight-medium">帮助中心</v-toolbar-title>
         <v-spacer></v-spacer>
-        <v-btn :icon="mdiClose" variant="text" color="white" @click="dialogModel = false"></v-btn>
+        <v-btn :icon="mdiClose" variant="text" color="medium-emphasis" @click="dialogModel = false"></v-btn>
       </v-toolbar>
       <v-card-text class="pa-6">
         <h3 class="text-h6 mb-4">基本操作指南</h3>

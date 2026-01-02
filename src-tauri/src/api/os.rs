@@ -144,12 +144,10 @@ pub async fn get_os_info(state: State<'_, SystemState>) -> Result<OsInfo, String
   let mut network_infos: HashMap<String, NetworkInfo> = HashMap::new();
   // 使用全局 Networks 实例
   let mut networks = state.networks.lock().map_err(|e| e.to_string())?;
-  // refresh(true) 会更新数据，true 表示移除未列出的接口（如果需要的话，之前是 false）
-  // 之前的逻辑是 sleep 1s 然后 refresh，为了计算速率。
-  // sysinfo 的 networks.refresh() 实际上会计算自上次刷新以来的流量增量。
-  // 如果我们需要瞬时速率，这里调用 refresh 是对的。
-  // 但是，如果两次调用间隔很短，增量可能很小。
-  // 为了保证一定的准确性，前端最好定时轮询。
+  
+  // 刷新网络数据
+  // sysinfo 的 refresh() 会计算自上次刷新以来的流量增量
+  // 前端应通过定时轮询(如每秒一次)来获取准确的传输速率
   networks.refresh(true);
 
   for (interface_name, data) in networks.iter() {

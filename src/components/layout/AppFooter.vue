@@ -1,31 +1,88 @@
 <template>
-  <div class="nav-footer px-4 pt-4">
-    <!-- 星空背景效果 -->
-    <div class="starfield-container">
-      <div class="stars-background"></div>
-      <div class="shooting-star star-1"></div>
-      <div class="shooting-star star-2"></div>
-      <div class="shooting-star star-3"></div>
-      <div class="blue-star"></div>
-    </div>
+  <div class="nav-footer">
+    <!-- 深色模式：星空背景 -->
+    <template v-if="isDark">
+      <!-- 深空背景 -->
+      <div class="deep-space-bg"></div>
+      
+      <!-- 星星层 -->
+      <div class="stars-layer small-stars"></div>
+      <div class="stars-layer medium-stars"></div>
+      
+      <!-- 极光/星云效果 -->
+      <div class="nebula-glow"></div>
+    </template>
 
-    <div class="d-flex flex-column align-center">
+    <!-- 浅色模式：曼达洛人日落风格 -->
+    <template v-else>
+      <!-- 日落背景 -->
+      <div class="sunset-bg"></div>
+      
+      <!-- 暖色光晕 -->
+      <div class="sunset-glow"></div>
+      
+      <!-- 尘埃粒子 -->
+      <div class="dust-particles"></div>
+    </template>
+
+    <!-- 底部控制台容器 -->
+    <div class="footer-console d-flex flex-column align-center px-4 pt-3 pb-2" :class="{'light-console': !isDark}">
+      <!-- 装饰线 -->
+      <div class="console-line" :class="{'light-line': !isDark}"></div>
+      
       <!-- 底部按钮 -->
-      <div class="d-flex justify-center w-100 mb-1">
-        <v-btn :icon="mdiGithub" variant="text" color="white" @click="$emit('open-github')" size="small" class="mx-1 footer-btn"></v-btn>
-        <v-btn :icon="mdiHelpCircle" variant="text" color="white" size="small" class="mx-1 footer-btn" @click="$emit('show-help')"></v-btn>
-        <v-btn :icon="mdiCog" variant="text" color="white" size="small" class="mx-1 footer-btn" @click="$emit('show-settings')"></v-btn>
-        <v-btn :icon="mdiInformation" variant="text" color="white" size="small" class="mx-1 footer-btn" @click="$emit('show-about')"></v-btn>
+      <div class="d-flex justify-center w-100 mb-1 button-group">
+        <v-btn variant="text" :color="isDark ? 'white' : 'brown-darken-3'" size="small" class="mx-1 footer-btn jedi-icon-btn" @click="toggleTheme" icon>
+          <v-icon :icon="themeIcon"></v-icon>
+          <v-tooltip activator="parent" location="top">{{ themeTooltip }}</v-tooltip>
+        </v-btn>
+        <v-btn :icon="mdiGithub" variant="text" :color="isDark ? 'white' : 'brown-darken-3'" @click="$emit('open-github')" size="small" class="mx-1 footer-btn jedi-icon-btn"></v-btn>
+        <v-btn :icon="mdiHelpCircle" variant="text" :color="isDark ? 'white' : 'brown-darken-3'" size="small" class="mx-1 footer-btn jedi-icon-btn" @click="$emit('show-help')"></v-btn>
+        <v-btn :icon="mdiCog" variant="text" :color="isDark ? 'white' : 'brown-darken-3'" size="small" class="mx-1 footer-btn jedi-icon-btn" @click="$emit('show-settings')"></v-btn>
+        <v-btn :icon="mdiInformation" variant="text" :color="isDark ? 'white' : 'brown-darken-3'" size="small" class="mx-1 footer-btn jedi-icon-btn" @click="$emit('show-about')"></v-btn>
       </div>
 
       <!-- 版权信息 -->
-      <div class="text-caption text-white mt-1">© 2025 Jedi</div>
+      <div class="copyright-text mt-1" :class="{'light-text': !isDark}">
+        <span :class="isDark ? 'text-white' : 'text-brown-darken-4'">© 2025</span> <span class="brand-text" :class="{'light-brand': !isDark}">Jedi</span>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { mdiGithub, mdiHelpCircle, mdiCog, mdiInformation } from '@mdi/js'
+import { ref, computed } from 'vue'
+import { mdiGithub, mdiHelpCircle, mdiCog, mdiInformation, mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark } from '@mdi/js'
+import { useTheme } from '@/composables/useTheme'
+
+// 获取主题状态
+const { isDark, themeMode, setTheme } = useTheme()
+
+// 计算属性图标
+const themeIcon = computed(() => {
+  if (themeMode.value === 'dark') return mdiWeatherNight
+  if (themeMode.value === 'light') return mdiWeatherSunny
+  return mdiThemeLightDark
+})
+
+// 主题文本提示
+const themeTooltip = computed(() => {
+  if (themeMode.value === 'dark') return '深色模式'
+  if (themeMode.value === 'light') return '浅色模式'
+  return '跟随系统'
+})
+
+// 切换主题
+function toggleTheme() {
+  // 切换顺序: 浅色 -> 深色 -> 跟随系统 -> 浅色
+  if (themeMode.value === 'light') {
+    setTheme('dark')
+  } else if (themeMode.value === 'dark') {
+    setTheme('system')
+  } else {
+    setTheme('light')
+  }
+}
 
 // 定义组件事件
 defineEmits<{
@@ -40,163 +97,226 @@ defineEmits<{
 
 <style scoped>
 .nav-footer {
-  position: absolute; /* 改为absolute定位，避免与页面滚动冲突 */
+  position: absolute;
   bottom: 0;
   left: 0;
-  width: 100%; /* 使用100%宽度，但在父容器中已限制为200px */
+  width: 100%;
   background-color: transparent;
-  z-index: 1;
-  padding-bottom: 8px;
+  z-index: 10;
   overflow: hidden;
-  transition: all 0.3s ease;
+  height: 120px; /* 稍微增加高度以容纳效果 */
+  display: flex;
+  align-items: flex-end;
+  /* 顶部边缘淡出，实现与侧边栏的无缝融合 */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+  pointer-events: none; /* 让鼠标事件穿透非按钮区域 */
 }
 
-/* 星空背景效果 */
-.starfield-container {
+/* 恢复按钮区域的交互 */
+.footer-console {
+  pointer-events: auto;
+}
+
+/* ================== 深色模式样式 ================== */
+
+/* 深空背景 */
+.deep-space-bg {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  z-index: -1;
-  background: linear-gradient(to top, rgba(44, 62, 80, 0.85), rgba(44, 62, 80, 0.7));
-  border-top: 1px solid rgba(52, 152, 219, 0.3);
-  box-shadow: 0 -3px 10px rgba(44, 62, 80, 0.4);
-  backdrop-filter: blur(3px);
+  background: linear-gradient(180deg, #020409 0%, #050b1a 40%, #0a1835 100%);
+  z-index: -2;
 }
 
-.stars-background {
+/* 星云发光 */
+.nebula-glow {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image:
-    /* 小星星 - 降低亮度 */
-    radial-gradient(1px 1px at 25px 5px, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 50px 25px, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 125px 20px, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 50px 75px, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 15px 45px, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 110px 70px, rgba(255, 255, 255, 0.7), transparent),
-    /* 减少星星数量 */
-    radial-gradient(1px 1px at 160px 15px, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1px 1px at 85px 65px, rgba(255, 255, 255, 0.7), transparent),
-    /* 中等星星 - 降低亮度 */
-    radial-gradient(1.5px 1.5px at 40px 30px, rgba(255, 255, 255, 0.8), transparent),
-    radial-gradient(1.5px 1.5px at 100px 50px, rgba(255, 255, 255, 0.8), transparent),
-    /* 大星星 - 保留但降低亮度 */
-    radial-gradient(2px 2px at 70px 60px, rgba(255, 255, 255, 0.8), transparent),
-    /* 蓝色星星 - 与主题色调协调 */
-    radial-gradient(1.5px 1.5px at 55px 45px, rgba(52, 152, 219, 0.8), transparent),
-    radial-gradient(1.5px 1.5px at 120px 60px, rgba(52, 152, 219, 0.8), transparent);
-  animation: twinkle 5s infinite alternate;
-}
-
-.shooting-star {
-  position: absolute;
-  width: 60px; /* 减小流星长度 */
-  height: 1px; /* 减小流星宽度 */
-  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
-  transform: rotate(15deg);
-  opacity: 0;
-  animation: shooting-star 12s infinite ease-out; /* 减慢动画频率 */
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.7); /* 减弱发光效果 */
-  z-index: 0;
-}
-
-.star-1 {
-  top: 20px;
-  left: -80px;
-  animation-delay: 2s;
-}
-
-.star-2 {
-  top: 40px;
-  left: -80px;
-  width: 60px;
-  transform: rotate(5deg);
-  animation-delay: 6s;
-}
-
-.star-3 {
-  top: 10px;
-  left: -60px;
-  width: 40px;
-  transform: rotate(25deg);
-  animation-delay: 10s;
-}
-
-.blue-star {
-  position: absolute;
-  top: 30px;
+  bottom: -50px;
   left: 50%;
-  width: 3px; /* 减小尺寸 */
-  height: 3px;
-  background-color: rgba(52, 152, 219, 0.9); /* 降低亮度 */
-  border-radius: 50%;
-  box-shadow: 0 0 10px rgba(52, 152, 219, 0.8); /* 减弱发光效果 */
-  animation: blue-star-pulse 4s infinite alternate; /* 放慢动画 */
-  z-index: 0;
+  transform: translateX(-50%);
+  width: 200%;
+  height: 150px;
+  background: radial-gradient(ellipse at center, rgba(60, 100, 255, 0.25) 0%, transparent 70%);
+  z-index: -1;
+  pointer-events: none;
+  animation: pulse-glow 8s infinite alternate;
 }
 
-.footer-btn {
+/* 简单的星星生成 (使用 box-shadow) */
+.stars-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+}
+
+.small-stars {
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  box-shadow: 
+    10px 10px #FFF, 50px 80px #FFF, 120px 30px #FFF, 
+    180px 10px #FFF, 40px 110px #FFF, 150px 90px #FFF,
+    90px 40px #FFF, 20px 60px #FFF, 160px 50px #FFF,
+    70px 20px #FFF, 110px 100px #FFF, 190px 70px #FFF,
+    30px 30px rgba(255,255,255,0.5), 140px 20px rgba(255,255,255,0.5);
+  animation: stars-move-1 100s linear infinite;
+}
+
+.medium-stars {
+  width: 2px;
+  height: 2px;
+  background: transparent;
+  box-shadow: 
+    30px 50px rgba(255,255,255,0.6), 100px 20px rgba(255,255,255,0.6), 
+    160px 80px rgba(255,255,255,0.6), 60px 90px rgba(255,255,255,0.6);
+  animation: stars-move-2 150s linear infinite;
+}
+
+/* ================== 浅色模式样式 (曼达洛人日落) ================== */
+
+/* 日落背景 */
+.sunset-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 沙漠日落渐变: 顶部深红褐 -> 中部橙红 -> 底部金黄 */
+  background: linear-gradient(180deg, #5D4037 0%, #D84315 40%, #FFA000 100%);
+  z-index: -2;
+}
+
+/* 暖色光晕 */
+.sunset-glow {
+  position: absolute;
+  bottom: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150%;
+  height: 120px;
+  background: radial-gradient(ellipse at center, rgba(255, 236, 179, 0.4) 0%, rgba(255, 111, 0, 0.1) 60%, transparent 80%);
+  z-index: -1;
+  pointer-events: none;
+  animation: sunset-pulse 6s infinite alternate;
+}
+
+/* 尘埃粒子效果 */
+.dust-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  background-image: 
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 40px 70px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(2px 2px at 90px 40px, rgba(255, 224, 178, 0.5), transparent),
+    radial-gradient(1px 1px at 160px 120px, rgba(255, 255, 255, 0.6), transparent);
+  background-size: 200px 200px;
+  animation: dust-float 30s linear infinite;
+}
+
+/* ================== 通用控制台样式 ================== */
+
+/* 底部控制台 */
+.footer-console {
+  width: 100%;
   position: relative;
   z-index: 2;
-  background-color: rgba(52, 152, 219, 0.15); /* 降低背景色强度 */
-  border-radius: 50%;
-  transition: all 0.3s ease;
+  backdrop-filter: blur(2px);
+  background: linear-gradient(to top, rgba(10, 20, 40, 0.9), rgba(10, 20, 40, 0));
+  transition: background 0.3s ease;
 }
 
-.footer-btn:hover {
-  background-color: rgba(52, 152, 219, 0.3); /* 降低悬停背景色强度 */
+.footer-console.light-console {
+  background: linear-gradient(to top, rgba(93, 64, 55, 0.8), rgba(93, 64, 55, 0));
+}
+
+/* 装饰线 */
+.console-line {
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(100, 150, 255, 0.6), transparent);
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.console-line.light-line {
+  background: linear-gradient(90deg, transparent, rgba(255, 160, 0, 0.6), transparent);
+}
+
+/* 版权文字 */
+.copyright-text {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 500;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+}
+
+.copyright-text.light-text {
+  color: rgba(255, 248, 225, 0.9);
+  text-shadow: 0 0 3px rgba(62, 39, 35, 0.5);
+}
+
+.brand-text {
+  color: #a0c4ff;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(60, 100, 255, 0.8), 0 0 15px rgba(60, 100, 255, 0.4);
+  margin-left: 4px;
+}
+
+.brand-text.light-brand {
+  color: #FFECB3;
+  text-shadow: 0 0 8px rgba(255, 111, 0, 0.8), 0 0 15px rgba(255, 111, 0, 0.4);
+}
+
+/* 按钮样式 */
+.jedi-icon-btn {
+  opacity: 0.7;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.jedi-icon-btn:hover {
+  opacity: 1;
   transform: translateY(-2px);
-  box-shadow: 0 0 10px rgba(52, 152, 219, 0.4); /* 减弱发光效果 */
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
 }
 
-@keyframes twinkle {
-  0% {
-    opacity: 0.5; /* 降低最小不透明度 */
-  }
-  100% {
-    opacity: 0.8; /* 降低最大不透明度 */
-  }
+/* ================== 动画定义 ================== */
+
+@keyframes pulse-glow {
+  0% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1.1); }
 }
 
-@keyframes shooting-star {
-  0% {
-    transform: translateX(0) rotate(15deg);
-    opacity: 0;
-  }
-  3% {
-    opacity: 0.7; /* 降低最大不透明度 */
-  }
-  10% {
-    transform: translateX(180px) rotate(15deg); /* 减少移动距离 */
-    opacity: 0;
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(180px) rotate(15deg);
-  }
+@keyframes sunset-pulse {
+  0% { opacity: 0.7; transform: translateX(-50%) scale(1); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1.05); }
 }
 
-@keyframes blue-star-pulse {
-  0% {
-    transform: scale(1);
-    opacity: 0.7; /* 降低最小不透明度 */
-    box-shadow: 0 0 8px rgba(52, 152, 219, 0.6); /* 减弱发光效果 */
-  }
-  50% {
-    transform: scale(1.3); /* 减少缩放幅度 */
-    opacity: 0.9; /* 降低最大不透明度 */
-    box-shadow: 0 0 12px rgba(52, 152, 219, 0.8); /* 减弱发光效果 */
-  }
-  100% {
-    transform: scale(1);
-    opacity: 0.7;
-    box-shadow: 0 0 8px rgba(52, 152, 219, 0.6);
-  }
+@keyframes stars-move-1 {
+  from { transform: translateY(0); }
+  to { transform: translateY(-200px); }
+}
+
+@keyframes stars-move-2 {
+  from { transform: translateY(0); }
+  to { transform: translateY(-150px); }
+}
+
+@keyframes dust-float {
+  0% { background-position: 0 0; }
+  100% { background-position: 50px -100px; }
 }
 </style>

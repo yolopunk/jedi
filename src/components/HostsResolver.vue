@@ -207,19 +207,7 @@ onMounted(async () => {
 .hosts-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 80px);
+  height: 100%;
   overflow: hidden;
 }
-
-.jedi-card {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-}
-</style>
-
-<style scoped>
-/* 引入全局样式 */
-@import '@/assets/style.css';
 </style>

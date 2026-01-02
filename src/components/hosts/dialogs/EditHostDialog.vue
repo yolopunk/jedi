@@ -2,12 +2,12 @@
   <!-- 编辑条目对话框 -->
   <v-dialog v-model="dialogModel" max-width="500" persistent>
     <v-card class="rounded-lg overflow-hidden jedi-dialog-card">
-      <v-toolbar style="background: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%); border-bottom: 1px solid rgba(52, 152, 219, 0.3);" class="px-4 jedi-dialog-header">
-        <v-icon :icon="mdiPencil" class="mr-2" color="white"></v-icon>
+      <v-toolbar class="px-4 jedi-dialog-header">
+        <v-icon :icon="mdiPencil" class="mr-2"></v-icon>
         <v-toolbar-title class="font-weight-medium">编辑条目</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn icon @click="closeDialog">
-          <v-icon :icon="mdiClose" color="white"></v-icon>
+          <v-icon :icon="mdiClose"></v-icon>
         </v-btn>
       </v-toolbar>
       <v-card-text class="pa-6">
@@ -17,7 +17,6 @@
           variant="outlined"
           placeholder="例如: 127.0.0.1"
           required
-          bg-color="white"
           :prepend-inner-icon="mdiIpNetwork"
           @update:model-value="debouncedUpdateIp"
           validate-on="blur"
@@ -29,7 +28,6 @@
           variant="outlined"
           placeholder="例如: example.com"
           required
-          bg-color="white"
           :prepend-inner-icon="mdiDomain"
           @update:model-value="debouncedUpdateDomain"
           validate-on="blur"
@@ -48,7 +46,7 @@
           取消
         </v-btn>
         <v-btn
-          color="var(--jedi-accent)"
+          color="success"
           variant="elevated"
           @click="confirmEdit"
           rounded="sm"

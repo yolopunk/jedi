@@ -1,7 +1,7 @@
 <template>
   <!-- 全局开关悬浮按钮 -->
   <v-btn
-    :color="modelValue ? 'var(--jedi-success)' : 'var(--jedi-grey-medium)'"
+    :color="modelValue ? 'success' : 'grey'"
     class="global-switch-fab"
     size="large"
     icon
@@ -45,27 +45,13 @@ defineEmits<{
   right: 40px;
   z-index: 100;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid var(--jedi-border);
   overflow: visible;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-  }
 }
 
 .global-switch-fab:hover {
   transform: translateY(-4px) scale(1.05);
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15) !important;
-  animation: none;
 }
 
 .global-switch-fab:active {
@@ -77,8 +63,8 @@ defineEmits<{
   position: absolute;
   top: -8px;
   right: -8px;
-  background-color: var(--jedi-grey-medium);
-  color: white;
+  background-color: var(--jedi-bg-surface);
+  color: var(--jedi-text-primary);
   border-radius: 12px;
   padding: 2px 8px;
   font-size: 10px;
@@ -86,7 +72,7 @@ defineEmits<{
   letter-spacing: 0.5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--jedi-border);
   opacity: 0;
   transform: translateY(10px);
   pointer-events: none;
@@ -97,42 +83,5 @@ defineEmits<{
 .global-switch-fab:hover .status-indicator {
   opacity: 1;
   transform: translateY(0);
-}
-
-.status-indicator.active {
-  background-color: var(--jedi-success);
-  animation: glow 1.5s infinite alternate;
-}
-
-@keyframes glow {
-  from {
-    box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
-  }
-  to {
-    box-shadow: 0 0 10px rgba(76, 175, 80, 0.8);
-  }
-}
-
-.status-text {
-  white-space: nowrap;
-}
-
-.active-icon {
-  animation: rotate 1s ease-in-out;
-}
-
-@keyframes rotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  25% {
-    transform: rotate(-30deg);
-  }
-  75% {
-    transform: rotate(30deg);
-  }
-  100% {
-    transform: rotate(0deg);
-  }
 }
 </style>

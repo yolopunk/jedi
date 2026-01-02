@@ -1,76 +1,179 @@
+/*
+ * Jedi Theme System - Destructive Refactor v2.0
+ * Based on Zed Editor Aesthetics (Zinc Scale)
+ * Strictly Semantic Variables
+ */
+
 :root {
-  /* 默认浅色主题变量 */
-  --jedi-bg-color: #f0f2f5;
-  --jedi-card-bg: #ffffff;
-  --jedi-text-color: #333333;
-  --jedi-primary: #2C3E50;
-  --jedi-accent: #3498DB;
-  --jedi-danger: #e74c3c;
-  --jedi-success: #2ecc71;
-  --jedi-warning: #f39c12;
-  --jedi-border-color: rgba(0, 0, 0, 0.12);
-  --jedi-sidebar-bg: #1A2530;
-  --jedi-sidebar-text: #ffffff;
-  --jedi-dialog-header-bg: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%);
-  --jedi-dialog-header-text: #ffffff;
-  --jedi-footer-bg: #f5f5f5;
-  --jedi-footer-text: #666666;
+  /* =========================================
+     Color Primitives (Internal Use Only)
+     ========================================= */
+  /* Zinc Scale */
+  --color-zinc-50: #fafafa;
+  --color-zinc-100: #f4f4f5;
+  --color-zinc-200: #e4e4e7;
+  --color-zinc-300: #d4d4d8;
+  --color-zinc-400: #a1a1aa;
+  --color-zinc-500: #71717a;
+  --color-zinc-600: #52525b;
+  --color-zinc-700: #3f3f46;
+  --color-zinc-800: #27272a;
+  --color-zinc-900: #18181b;
+  --color-zinc-950: #09090b;
+
+  /* Blue Scale (Electric) */
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+
+  /* Green Scale (Success) */
+  --color-green-400: #4ade80;
+  --color-green-500: #22c55e;
+
+  /* Red Scale (Danger) */
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+
+  /* Amber Scale (Warning) */
+  --color-amber-400: #fbbf24;
+  --color-amber-500: #f59e0b;
+
+  /* Syntax Highlighting */
+  --color-syntax-purple: #c084fc;
+  --color-syntax-lime: #a3e635;
+  --color-syntax-cyan: #22d3ee;
 }
 
-/* 深色主题变量 */
-.dark-theme {
-  --jedi-bg-color: #121212;
-  --jedi-card-bg: #1e1e1e;
-  --jedi-text-color: #e0e0e0;
-  --jedi-primary: #3498DB;
-  --jedi-accent: #5dade2;
-  --jedi-danger: #e74c3c;
-  --jedi-success: #2ecc71;
-  --jedi-warning: #f39c12;
-  --jedi-border-color: rgba(255, 255, 255, 0.12);
-  --jedi-sidebar-bg: #0a1622;
-  --jedi-sidebar-text: #ffffff;
-  --jedi-dialog-header-bg: linear-gradient(135deg, #0a1622 0%, #1A2530 100%);
-  --jedi-dialog-header-text: #ffffff;
-  --jedi-footer-bg: #1a1a1a;
-  --jedi-footer-text: #a0a0a0;
-}
-
-/* 浅色主题变量 */
+/* =========================================
+   Light Theme (Clean, Slate-like)
+   ========================================= */
 .light-theme {
-  --jedi-bg-color: #f0f2f5;
-  --jedi-card-bg: #ffffff;
-  --jedi-text-color: #333333;
-  --jedi-primary: #2C3E50;
-  --jedi-accent: #3498DB;
-  --jedi-danger: #e74c3c;
-  --jedi-success: #2ecc71;
-  --jedi-warning: #f39c12;
-  --jedi-border-color: rgba(0, 0, 0, 0.12);
-  --jedi-sidebar-bg: #1A2530;
-  --jedi-sidebar-text: #ffffff;
-  --jedi-dialog-header-bg: linear-gradient(135deg, #1A2530 0%, #2C3E50 100%);
-  --jedi-dialog-header-text: #ffffff;
-  --jedi-footer-bg: #f5f5f5;
-  --jedi-footer-text: #666666;
+  /* Backgrounds */
+  --jedi-bg-app: #ffffff;
+  --jedi-bg-surface: #f4f4f5;
+  /* Zinc-100 */
+  --jedi-bg-surface-hover: #e4e4e7;
+  /* Zinc-200 */
+  --jedi-bg-sidebar: #f4f4f5;
+  /* Light sidebar */
+  --jedi-bg-input: #ffffff;
+
+  /* Borders */
+  --jedi-border: #e4e4e7;
+  /* Zinc-200 */
+  --jedi-border-focus: #3b82f6;
+  /* Blue-500 */
+
+  /* Text */
+  --jedi-text-primary: #18181b;
+  /* Zinc-900 */
+  --jedi-text-secondary: #52525b;
+  /* Zinc-600 (Darkened for better contrast) */
+  --jedi-text-tertiary: #a1a1aa;
+  /* Zinc-400 */
+  --jedi-text-inverse: #ffffff;
+
+  /* Functional */
+  --jedi-primary: #09090b;
+  /* Zinc-950 (Black primary) */
+  --jedi-primary-hover: #27272a;
+  --jedi-accent: #3b82f6;
+  /* Blue-500 */
+  --jedi-success: #10b981;
+  /* Emerald-500 */
+  --jedi-warning: #f59e0b;
+  --jedi-danger: #ef4444;
+
+  /* Syntax */
+  --jedi-syntax-ip: #5b21b6;
+  /* Violet-800 (Darker, less dazzling) */
+  --jedi-syntax-domain: #059669;
+  /* Emerald-600 */
+
+  /* Shadows */
+  --jedi-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --jedi-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-/* 应用主题变量到组件 */
-.v-application {
-  background-color: var(--jedi-bg-color) !important;
-  color: var(--jedi-text-color) !important;
+/* =========================================
+   Dark Theme (Zed Inspired - Matte Zinc)
+   ========================================= */
+.dark-theme {
+  /* Backgrounds */
+  --jedi-bg-app: #09090b;
+  /* Zinc-950 */
+  --jedi-bg-surface: #18181b;
+  /* Zinc-900 */
+  --jedi-bg-surface-hover: #27272a;
+  /* Zinc-800 */
+  --jedi-bg-sidebar: #09090b;
+  /* Seamless sidebar */
+  --jedi-bg-input: #18181b;
+  /* Surface input */
+
+  /* Borders - Critical for "Border over Shadow" look */
+  --jedi-border: #27272a;
+  /* Zinc-800 */
+  --jedi-border-focus: #60a5fa;
+  /* Blue-400 */
+
+  /* Text */
+  --jedi-text-primary: #f4f4f5;
+  /* Zinc-100 */
+  --jedi-text-secondary: #a1a1aa;
+  /* Zinc-400 */
+  --jedi-text-tertiary: #52525b;
+  /* Zinc-600 */
+  --jedi-text-inverse: #09090b;
+
+  /* Functional */
+  --jedi-primary: #60a5fa;
+  /* Blue-400 */
+  --jedi-primary-hover: #93c5fd;
+  --jedi-accent: #818cf8;
+  /* Indigo-400 */
+  --jedi-success: #4ade80;
+  /* Green-400 */
+  --jedi-warning: #fbbf24;
+  --jedi-danger: #f87171;
+
+  /* Syntax */
+  --jedi-syntax-ip: #c084fc;
+  /* Purple-400 */
+  --jedi-syntax-domain: #a3e635;
+  /* Lime-400 */
+
+  /* Shadows - Minimal/None for matte look */
+  --jedi-shadow-sm: none;
+  --jedi-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
 }
 
-.v-card {
-  background-color: var(--jedi-card-bg) !important;
-  color: var(--jedi-text-color) !important;
+/* =========================================
+   Global Resets & Utilities
+   ========================================= */
+body {
+  background-color: var(--jedi-bg-app);
+  color: var(--jedi-text-primary);
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  -webkit-font-smoothing: antialiased;
 }
 
-.jedi-main-content {
-  background-color: var(--jedi-bg-color) !important;
+/* Scrollbar (Chrome/Safari) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
 }
 
-/* 平滑过渡 */
-body, .v-application, .v-card, .v-list, .v-toolbar, .v-footer {
-  transition: background-color 0.3s ease, color 0.3s ease;
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--jedi-border);
+  border-radius: 5px;
+  border: 2px solid var(--jedi-bg-app);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--jedi-text-tertiary);
 }

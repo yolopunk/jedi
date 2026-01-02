@@ -60,6 +60,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { mdiDns, mdiClose, mdiIpNetwork, mdiDomain } from '@mdi/js'
 import { validateHostInput } from '@/utils/hostsUtils'
 
@@ -68,6 +69,8 @@ const props = defineProps<{
   modelValue: boolean;
   groupName: string;
 }>()
+
+const { t } = useI18n()
 
 // 定义组件事件
 const emit = defineEmits<{
@@ -88,7 +91,7 @@ const dialogModel = computed({
 
 // 验证规则
 const rules = {
-  required: (value: string) => !!value?.trim() || '此字段不能为空'
+  required: (value: string) => !!value?.trim() || t('hosts.dialog.required')
 }
 
 // 表单数据

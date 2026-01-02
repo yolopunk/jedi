@@ -4,7 +4,7 @@
     <v-card class="rounded-lg overflow-hidden jedi-dialog-card">
       <v-toolbar class="px-4 jedi-dialog-header">
         <v-icon :icon="mdiDomainPlus" class="mr-2"></v-icon>
-        <v-toolbar-title class="font-weight-medium">添加分组</v-toolbar-title>
+        <v-toolbar-title class="font-weight-medium">{{ $t('hosts.dialog.addGroupTitle') }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn icon @click="closeDialog">
           <v-icon :icon="mdiClose"></v-icon>
@@ -13,15 +13,15 @@
       <v-card-text class="pa-6">
         <v-text-field
           v-model="groupName"
-          label="分组名称"
+          :label="$t('hosts.dialog.groupNameLabel')"
           variant="outlined"
-          placeholder="例如: 开发环境"
+          :placeholder="$t('hosts.dialog.groupNamePlaceholder')"
           required
         ></v-text-field>
 
         <v-switch
           v-model="isRemote"
-          label="使用远程配置"
+          :label="$t('hosts.dialog.useRemote')"
           color="primary"
           hide-details
           class="mb-4"
@@ -31,9 +31,9 @@
           <v-text-field
             v-if="isRemote"
             v-model="remoteUrl"
-            label="远程配置URL"
+            :label="$t('hosts.dialog.remoteUrlLabel')"
             variant="outlined"
-            placeholder="例如: https://example.com/hosts.json"
+            :placeholder="$t('hosts.dialog.remoteUrlPlaceholder')"
             required
             :prepend-inner-icon="mdiLinkVariant"
           ></v-text-field>
@@ -43,12 +43,9 @@
           <div v-if="!isRemote">
             <v-textarea
               v-model="hostsContent"
-              label="Hosts 列表"
+              :label="$t('hosts.dialog.hostsListLabel')"
               variant="outlined"
-              placeholder="格式: IP 域名，每行一条
-例如:
-127.0.0.1 localhost
-192.168.1.1 router.local"
+              :placeholder="$t('hosts.dialog.hostsListPlaceholder')"
               rows="4"
               required
               class="font-monospace"
@@ -59,8 +56,7 @@
               density="compact"
               class="mt-2"
             >
-              <div class="text-body-2">
-                每行一条记录，格式为: <code>IP地址 域名</code>
+              <div class="text-body-2" v-html="$t('hosts.dialog.hostsListHint')">
               </div>
             </v-alert>
           </div>
@@ -75,7 +71,7 @@
           color="grey-darken-1"
           rounded="sm"
         >
-          取消
+          {{ $t('common.cancel') }}
         </v-btn>
         <v-btn
           color="success"
@@ -83,7 +79,7 @@
           @click="confirmAdd"
           rounded="sm"
         >
-          确认
+          {{ $t('common.confirm') }}
         </v-btn>
       </v-card-actions>
     </v-card>

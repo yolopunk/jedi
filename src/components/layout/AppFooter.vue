@@ -51,11 +51,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { mdiGithub, mdiHelpCircle, mdiCog, mdiInformation, mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark } from '@mdi/js'
 import { useTheme } from '@/composables/useTheme'
 
 // 获取主题状态
+const { t } = useI18n()
 const { isDark, themeMode, setTheme } = useTheme()
 
 // 计算属性图标
@@ -67,9 +69,9 @@ const themeIcon = computed(() => {
 
 // 主题文本提示
 const themeTooltip = computed(() => {
-  if (themeMode.value === 'dark') return '深色模式'
-  if (themeMode.value === 'light') return '浅色模式'
-  return '跟随系统'
+  if (themeMode.value === 'dark') return t('theme.dark')
+  if (themeMode.value === 'light') return t('theme.light')
+  return t('theme.system')
 })
 
 // 切换主题

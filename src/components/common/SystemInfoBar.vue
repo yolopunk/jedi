@@ -41,7 +41,7 @@
             ></v-progress-linear>
             <v-tooltip activator="parent" location="top" content-class="jedi-tooltip">
               <div class="d-flex flex-column align-center">
-                <span class="font-weight-bold mb-1">CPU Usage</span>
+                <span class="font-weight-bold mb-1">{{ $t('system.cpuUsage') }}</span>
                 <span class="mono-text">{{ formatPercentage(osInfo?.metrics?.cpu_usage) }}</span>
               </div>
             </v-tooltip>
@@ -59,7 +59,7 @@
             ></v-progress-linear>
             <v-tooltip activator="parent" location="top" content-class="jedi-tooltip">
               <div class="d-flex flex-column align-center">
-                <span class="font-weight-bold mb-1">Memory</span>
+                <span class="font-weight-bold mb-1">{{ $t('system.memory') }}</span>
                 <span class="mono-text mb-1">{{ formatPercentage(getMemoryUsagePercentage()) }}</span>
                 <span class="text-caption text-high-emphasis" style="font-size: 10px; opacity: 0.9;">
                   {{ formatDataSize(osInfo?.metrics?.memory_used) }} / {{ formatDataSize(osInfo?.metrics?.memory_total) }}

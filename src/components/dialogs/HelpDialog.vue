@@ -3,43 +3,43 @@
     <v-card class="jedi-dialog-card">
       <v-toolbar color="surface" class="px-4 jedi-dialog-header border-b">
         <v-icon :icon="mdiHelpCircle" color="primary" class="mr-2"></v-icon>
-        <v-toolbar-title class="font-weight-medium">帮助中心</v-toolbar-title>
+        <v-toolbar-title class="font-weight-medium">{{ $t('help.title') }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn :icon="mdiClose" variant="text" color="medium-emphasis" @click="dialogModel = false"></v-btn>
       </v-toolbar>
       <v-card-text class="pa-6">
-        <h3 class="text-h6 mb-4">基本操作指南</h3>
+        <h3 class="text-h6 mb-4">{{ $t('help.basicGuide') }}</h3>
         <v-list>
           <v-list-item>
             <template v-slot:prepend>
               <v-icon :icon="mdiPlusCircle" color="var(--jedi-accent)" class="mr-2"></v-icon>
             </template>
-            <v-list-item-title>添加分组：点击 "+" 按钮创建新的 hosts 配置组</v-list-item-title>
+            <v-list-item-title>{{ $t('help.addGroup') }}</v-list-item-title>
           </v-list-item>
           <v-list-item>
             <template v-slot:prepend>
               <v-icon :icon="mdiPlus" color="var(--jedi-accent)" class="mr-2"></v-icon>
             </template>
-            <v-list-item-title>添加条目：在分组中点击 "添加条目" 按钮添加新的 hosts 条目</v-list-item-title>
+            <v-list-item-title>{{ $t('help.addEntry') }}</v-list-item-title>
           </v-list-item>
           <v-list-item>
             <template v-slot:prepend>
               <v-icon :icon="mdiToggleSwitch" color="var(--jedi-accent)" class="mr-2"></v-icon>
             </template>
-            <v-list-item-title>启用/禁用条目：使用每个条目旁边的开关控制其状态</v-list-item-title>
+            <v-list-item-title>{{ $t('help.toggleEntry') }}</v-list-item-title>
           </v-list-item>
           <v-list-item>
             <template v-slot:prepend>
               <v-icon :icon="mdiPower" color="var(--jedi-accent)" class="mr-2"></v-icon>
             </template>
-            <v-list-item-title>全局开关：使用顶部的主开关控制所有 hosts 配置</v-list-item-title>
+            <v-list-item-title>{{ $t('help.globalSwitch') }}</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-card-text>
       <v-card-actions class="pa-4 pt-0">
         <v-spacer></v-spacer>
         <v-btn color="var(--jedi-accent)" variant="elevated" @click="dialogModel = false" rounded="sm">
-          关闭
+          {{ $t('common.close') }}
         </v-btn>
       </v-card-actions>
     </v-card>

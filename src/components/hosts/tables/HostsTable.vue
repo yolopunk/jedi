@@ -4,7 +4,7 @@
     <div class="d-flex justify-space-between align-center mb-4">
       <v-text-field
         v-model="searchModel"
-        placeholder="Search hosts..."
+        :placeholder="$t('hosts.table.searchPlaceholder')"
         :prepend-inner-icon="mdiMagnify"
         variant="outlined"
         density="compact"
@@ -20,7 +20,7 @@
         @click="emit('add-host', currentGroup.name)"
       >
         <v-icon :icon="mdiPlus" class="mr-1"></v-icon>
-        Add Host
+        {{ $t('hosts.table.addHost') }}
       </v-btn>
     </div>
 
@@ -100,14 +100,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import {
+  mdiMagnify,
   mdiPlus,
-  mdiIpNetwork,
-  mdiDomain,
   mdiWeb,
   mdiPencil,
-  mdiDelete,
-  mdiMagnify,
-  mdiDatabaseOff
+  mdiDelete
 } from '@mdi/js'
 import { getHostsAsItems, openDomainLink } from '@/utils/hostsUtils'
 import { Group } from '@/types/hosts'

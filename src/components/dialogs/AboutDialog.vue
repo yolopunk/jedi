@@ -3,16 +3,16 @@
     <v-card class="jedi-dialog-card">
       <v-toolbar color="surface" class="px-4 jedi-dialog-header border-b">
         <v-icon :icon="mdiInformation" color="primary" class="mr-2"></v-icon>
-        <v-toolbar-title class="font-weight-medium">关于 Jedi 工具箱</v-toolbar-title>
+        <v-toolbar-title class="font-weight-medium">{{ $t('about.title') }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn :icon="mdiClose" variant="text" color="medium-emphasis" @click="dialogModel = false"></v-btn>
       </v-toolbar>
       <v-card-text class="pa-6 text-center">
         <v-img src="/icon.png" width="100" class="mx-auto mb-4"></v-img>
-        <h2 class="text-h5 font-weight-bold mb-2">Jedi 工具箱</h2>
-        <p class="text-body-1 mb-4">版本 v{{ appInfo.version }}</p>
-        <p class="text-body-2 mb-1">多功能开发辅助工具集</p>
-        <p class="text-body-2 mb-4">基于 Tauri + Vue + Vuetify 构建</p>
+        <h2 class="text-h5 font-weight-bold mb-2">{{ $t('about.appName') }}</h2>
+        <p class="text-body-1 mb-4">{{ $t('about.version', { version: appInfo.version }) }}</p>
+        <p class="text-body-2 mb-1">{{ $t('about.description') }}</p>
+        <p class="text-body-2 mb-4">{{ $t('about.techStack') }}</p>
 
         <v-divider class="mb-4"></v-divider>
 
@@ -22,12 +22,12 @@
           <v-btn :icon="mdiEmail" variant="text" color="var(--jedi-primary)" @click="$emit('open-email')" size="small" class="mx-1"></v-btn>
         </div>
 
-        <p class="text-caption mt-2" style="color: var(--jedi-text-light)">© {{ currentYear }} Jedi. 保留所有权利。</p>
+        <p class="text-caption mt-2" style="color: var(--jedi-text-light)">{{ $t('about.copyright', { year: currentYear }) }}</p>
       </v-card-text>
       <v-card-actions class="pa-4 pt-0">
         <v-spacer></v-spacer>
         <v-btn color="var(--jedi-accent)" variant="elevated" @click="dialogModel = false" rounded="sm">
-          关闭
+          {{ $t('common.close') }}
         </v-btn>
       </v-card-actions>
     </v-card>

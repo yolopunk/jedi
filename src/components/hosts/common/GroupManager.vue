@@ -30,7 +30,7 @@
         @click="$emit('add-group')"
       >
         <v-icon :icon="mdiPlus" size="small" class="mr-1"></v-icon>
-        添加分组
+        {{ $t('hosts.groups.add') }}
       </v-tab>
     </v-tabs>
   </div>

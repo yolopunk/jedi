@@ -11,7 +11,7 @@
     <v-tooltip
       activator="parent"
       location="top"
-      :text="modelValue ? '已启用 - 点击禁用' : '已禁用 - 点击启用'"
+      :text="modelValue ? $t('hosts.globalSwitch.enabledTooltip') : $t('hosts.globalSwitch.disabledTooltip')"
     ></v-tooltip>
 
     <v-icon :icon="modelValue ? mdiPowerPlugOutline : mdiPowerPlugOffOutline" size="large"
@@ -19,7 +19,7 @@
 
     <!-- 状态指示器 -->
     <div class="status-indicator" :class="{ 'active': modelValue }">
-      <span class="status-text">{{ modelValue ? '已启用' : '已禁用' }}</span>
+      <span class="status-text">{{ modelValue ? $t('hosts.globalSwitch.enabled') : $t('hosts.globalSwitch.disabled') }}</span>
     </div>
   </v-btn>
 </template>

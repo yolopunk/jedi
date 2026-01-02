@@ -31,6 +31,8 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useStorage } from '@/composables/useStorage'
 import HostsResolver from '@/components/HostsResolver.vue'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
@@ -40,10 +42,21 @@ import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 import { open } from '@tauri-apps/plugin-shell'
 import { initTheme } from '@/composables/useTheme'
 
+const { locale } = useI18n()
+const { getItem } = useStorage()
+
 // 对话框状态
 const showHelpDialog = ref(false)
 const showSettingsDialog = ref(false)
 const showAboutDialog = ref(false)
+
+// 初始化语言
+const initLanguage = async () => {
+  const savedLang = await getItem<string>('language')
+  if (savedLang) {
+    locale.value = savedLang
+  }
+}
 
 // 打开GitHub仓库
 const openGithubRepo = async () => {
@@ -75,6 +88,7 @@ const sendEmail = async () => {
 // 初始化主题
 onMounted(() => {
   initTheme()
+  initLanguage()
 })
 </script>
 

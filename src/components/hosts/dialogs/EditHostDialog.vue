@@ -4,7 +4,7 @@
     <v-card class="rounded-lg overflow-hidden jedi-dialog-card">
       <v-toolbar class="px-4 jedi-dialog-header">
         <v-icon :icon="mdiPencil" class="mr-2"></v-icon>
-        <v-toolbar-title class="font-weight-medium">编辑条目</v-toolbar-title>
+        <v-toolbar-title class="font-weight-medium">{{ $t('hosts.dialog.editTitle') }}</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-btn icon @click="closeDialog">
           <v-icon :icon="mdiClose"></v-icon>
@@ -13,9 +13,9 @@
       <v-card-text class="pa-6">
         <v-text-field
           v-model="hostIp"
-          label="IP地址"
+          :label="$t('hosts.dialog.ipLabel')"
           variant="outlined"
-          placeholder="例如: 127.0.0.1"
+          :placeholder="$t('hosts.dialog.ipPlaceholder')"
           required
           :prepend-inner-icon="mdiIpNetwork"
           @update:model-value="debouncedUpdateIp"
@@ -24,9 +24,9 @@
         ></v-text-field>
         <v-text-field
           v-model="hostDomain"
-          label="域名"
+          :label="$t('hosts.dialog.domainLabel')"
           variant="outlined"
-          placeholder="例如: example.com"
+          :placeholder="$t('hosts.dialog.domainPlaceholder')"
           required
           :prepend-inner-icon="mdiDomain"
           @update:model-value="debouncedUpdateDomain"
@@ -43,7 +43,7 @@
           color="grey-darken-1"
           rounded="sm"
         >
-          取消
+          {{ $t('common.cancel') }}
         </v-btn>
         <v-btn
           color="success"
@@ -51,7 +51,7 @@
           @click="confirmEdit"
           rounded="sm"
         >
-          确认
+          {{ $t('common.confirm') }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -60,6 +60,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { mdiPencil, mdiClose, mdiIpNetwork, mdiDomain } from '@mdi/js'
 import { validateHostInput } from '@/utils/hostsUtils'
 
@@ -68,6 +69,8 @@ const props = defineProps<{
   modelValue: boolean;
   host: any | null;
 }>()
+
+const { t } = useI18n()
 
 // 定义组件事件
 const emit = defineEmits<{
@@ -88,7 +91,7 @@ const dialogModel = computed({
 
 // 验证规则
 const rules = {
-  required: (value: string) => !!value?.trim() || '此字段不能为空'
+  required: (value: string) => !!value?.trim() || t('hosts.dialog.required')
 }
 
 // 表单数据

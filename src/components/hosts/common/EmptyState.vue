@@ -9,9 +9,9 @@
         class="death-star jedi-hover-scale"
       ></v-icon>
     </div>
-    <h2 class="text-h5 font-weight-bold mb-2 text-primary">暂无解析配置</h2>
+    <h2 class="text-h5 font-weight-bold mb-2 text-primary">{{ $t('hosts.empty.title') }}</h2>
     <p class="text-body-1 text-secondary mb-8 text-center" style="max-width: 500px;">
-      您可以手动添加分组或使用默认配置来开始管理您的 hosts 文件
+      {{ $t('hosts.empty.description') }}
     </p>
     <div class="d-flex justify-center gap-4">
       <v-btn
@@ -22,7 +22,7 @@
         :prepend-icon="mdiPlus"
         @click="$emit('add-group')"
       >
-        添加分组
+        {{ $t('hosts.empty.addGroup') }}
       </v-btn>
       <v-btn
         color="primary"
@@ -32,7 +32,7 @@
         :prepend-icon="mdiDomain"
         @click="$emit('use-default')"
       >
-        使用默认配置
+        {{ $t('hosts.empty.useDefault') }}
       </v-btn>
     </div>
   </div>

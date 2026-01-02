@@ -19,6 +19,40 @@
             <v-list>
               <v-list-item>
                 <template v-slot:prepend>
+                  <v-icon :icon="mdiTranslate" color="var(--jedi-primary)" class="mr-3"></v-icon>
+                </template>
+                <v-list-item-title>语言 / Language</v-list-item-title>
+                <template v-slot:append>
+                  <v-menu>
+                    <template v-slot:activator="{ props }">
+                      <v-btn
+                        color="var(--jedi-accent)"
+                        variant="tonal"
+                        size="small"
+                        v-bind="props"
+                        rounded="sm"
+                      >
+                        {{ currentLangLabel }}
+                      </v-btn>
+                    </template>
+                    <v-list density="compact">
+                      <v-list-item
+                        v-for="lang in languages"
+                        :key="lang.value"
+                        :value="lang.value"
+                        @click="changeLanguage(lang.value)"
+                        :active="locale === lang.value"
+                        color="primary"
+                      >
+                        <v-list-item-title>{{ lang.label }}</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+                </template>
+              </v-list-item>
+
+              <v-list-item>
+                <template v-slot:prepend>
                   <v-icon :icon="mdiLaunch" color="var(--jedi-primary)" class="mr-3"></v-icon>
                 </template>
                 <v-list-item-title>开机自启动</v-list-item-title>
@@ -113,6 +147,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useStorage } from '@/composables/useStorage'
 import {
   mdiCog,
   mdiClose,
@@ -121,7 +157,8 @@ import {
   mdiUpdate,
   mdiFileDocument,
   mdiBackupRestore,
-  mdiRefresh
+  mdiRefresh,
+  mdiTranslate
 } from '@mdi/js'
 import { enableAutostart, disableAutostart, isAutostartEnabled } from '@/api/app'
 
@@ -134,6 +171,24 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
 }>()
+
+const { locale } = useI18n()
+const { setItem } = useStorage()
+
+// 语言选项
+const languages = [
+  { label: '简体中文', value: 'zh' },
+  { label: 'English', value: 'en' }
+]
+
+const currentLangLabel = computed(() => {
+  return languages.find(l => l.value === locale.value)?.label || '简体中文'
+})
+
+const changeLanguage = async (lang: string) => {
+  locale.value = lang
+  await setItem('language', lang)
+}
 
 // 对话框状态
 const dialogModel = computed({

@@ -3,8 +3,8 @@
     <!-- Logo Area -->
     <div class="d-flex flex-column align-center py-6 border-bottom">
       <v-img src="/icon.png" width="64" class="mb-3 jedi-logo-glow"></v-img>
-      <h2 class="text-h6 font-weight-bold text-primary">JEDI</h2>
-      <div class="text-caption text-secondary">Development Toolkit</div>
+      <h2 class="text-h6 font-weight-bold text-primary">{{ $t('sidebar.title') }}</h2>
+      <div class="text-caption text-secondary">{{ $t('sidebar.subtitle') }}</div>
     </div>
 
     <!-- Navigation -->
@@ -18,7 +18,7 @@
         <template v-slot:prepend>
           <v-icon :icon="mdiDns" size="small" class="mr-2"></v-icon>
         </template>
-        <v-list-item-title>Hosts 管理</v-list-item-title>
+        <v-list-item-title>{{ $t('sidebar.hostsManager') }}</v-list-item-title>
       </v-list-item>
     </v-list>
 
@@ -56,7 +56,7 @@
               class="deck-btn"
             >
               <v-icon :icon="mdiCog" size="18"></v-icon>
-              <v-tooltip activator="parent" location="top">Holocron Settings</v-tooltip>
+              <v-tooltip activator="parent" location="top">{{ $t('settings.title') }}</v-tooltip>
             </v-btn>
             
             <v-btn 
@@ -68,13 +68,13 @@
               class="deck-btn"
             >
               <v-icon :icon="mdiGithub" size="18"></v-icon>
-              <v-tooltip activator="parent" location="top">Jedi Archives</v-tooltip>
+              <v-tooltip activator="parent" location="top">{{ $t('sidebar.github') }}</v-tooltip>
             </v-btn>
           </div>
         </div>
         
         <div class="text-center mt-3 text-caption jedi-status-text">
-          <span class="status-dot"></span> FORCE CONNECTED
+          <span class="status-dot"></span> {{ $t('sidebar.status_connected') }}
         </div>
       </div>
     </template>
@@ -83,9 +83,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { mdiDns, mdiCog, mdiGithub, mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark } from '@mdi/js'
 import { useTheme } from '@/composables/useTheme'
 
+const { t } = useI18n()
 const { isDark, themeMode, setTheme } = useTheme()
 
 const themeIcon = computed(() => {
@@ -95,9 +97,9 @@ const themeIcon = computed(() => {
 })
 
 const themeTooltip = computed(() => {
-  if (themeMode.value === 'dark') return '深色模式'
-  if (themeMode.value === 'light') return '浅色模式'
-  return '跟随系统'
+  if (themeMode.value === 'dark') return t('theme.dark')
+  if (themeMode.value === 'light') return t('theme.light')
+  return t('theme.system')
 })
 
 function toggleTheme() {

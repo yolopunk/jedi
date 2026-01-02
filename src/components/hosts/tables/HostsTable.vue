@@ -30,7 +30,7 @@
       :items="tableItems"
       :search="searchModel"
       :loading="loading"
-      density="comfortable"
+      density="compact"
       hover
       fixed-header
       class="flex-grow-1 jedi-data-table"
@@ -175,9 +175,9 @@ function handleOpenDomain(domain: string) {
   background-color: rgba(255, 255, 255, 0.1) !important;
   border: 1px solid rgba(255, 255, 255, 0.15);
   opacity: 1 !important;
-  height: 20px;
-  width: 36px;
-  border-radius: 20px;
+  height: 12px; /* Reduced to micro size */
+  width: 24px;  /* Reduced to micro size */
+  border-radius: 12px;
   transition: all 0.3s ease;
 }
 
@@ -193,18 +193,18 @@ function handleOpenDomain(domain: string) {
 }
 
 :deep(.jedi-switch .v-switch__thumb) {
-  height: 14px;
-  width: 14px;
+  height: 8px; /* Micro size */
+  width: 8px;  /* Micro size */
   background-color: #95a5a6;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  top: calc(50% - 7px);
+  top: calc(50% - 4px);
 }
 
 :deep(.jedi-switch.v-input--is-dirty .v-switch__thumb) {
   background-color: #00ff80;
-  box-shadow: 0 0 10px rgba(0, 255, 128, 0.6), 0 0 15px rgba(0, 255, 128, 0.4);
-  transform: translateX(16px);
+  box-shadow: 0 0 8px rgba(0, 255, 128, 0.6), 0 0 10px rgba(0, 255, 128, 0.4);
+  transform: translateX(12px);
 }
 
 /* Hover effects */

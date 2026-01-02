@@ -22,7 +22,7 @@
           <v-btn :icon="mdiEmail" variant="text" color="var(--jedi-primary)" @click="$emit('open-email')" size="small" class="mx-1"></v-btn>
         </div>
 
-        <p class="text-caption mt-2" style="color: var(--jedi-text-light)">© 2025 Jedi. 保留所有权利。</p>
+        <p class="text-caption mt-2" style="color: var(--jedi-text-light)">© {{ currentYear }} Jedi. 保留所有权利。</p>
       </v-card-text>
       <v-card-actions class="pa-4 pt-0">
         <v-spacer></v-spacer>
@@ -38,6 +38,8 @@
 import { computed, ref, onMounted } from 'vue'
 import { mdiInformation, mdiClose, mdiGithub, mdiWeb, mdiEmail } from '@mdi/js'
 import { getAppInfo, type AppInfo } from '@/api/app'
+
+const currentYear = new Date().getFullYear()
 
 // 定义组件属性
 const props = defineProps<{

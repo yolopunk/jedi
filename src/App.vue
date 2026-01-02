@@ -15,8 +15,8 @@
       </v-container>
     </v-main>
 
-    <!-- 系统信息栏 -->
-    <system-info-bar></system-info-bar>
+    <!-- 系统信息栏 (Global Status Bar) -->
+    <system-info-bar class="system-bar-override"></system-info-bar>
 
     <!-- 对话框组件 -->
     <help-dialog v-model="showHelpDialog" />

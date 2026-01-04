@@ -5,6 +5,7 @@ export default {
     hostsManager: 'Hosts 管理',
     github: 'GitHub 仓库',
     status_connected: '已连接',
+    wallpapers: '知识壁纸',
   },
   theme: {
     dark: '深色模式',
@@ -44,6 +45,11 @@ export default {
     backupBtn: '备份',
     resetBtn: '重置',
     language: '语言',
+    wallpaper: '壁纸设置',
+    wpAutoUpdate: '自动更新壁纸',
+    wpFrequency: '更新频率 (天)',
+    wpCategories: '偏好分类',
+    wpLastUpdate: '上次更新: {time}',
   },
   hosts: {
     globalSwitch: {
@@ -96,5 +102,16 @@ export default {
     edit: '编辑',
     add: '添加',
     close: '关闭',
+    refresh: '刷新',
+    noData: '暂无数据',
+  },
+  wallpapers: {
+    title: '知识壁纸',
+    subtitle: '将系统设计知识设为桌面壁纸，潜移默化地学习',
+    all: '全部',
+    setDesktop: '设为壁纸',
+    setSuccess: '壁纸设置成功！',
+    setError: '设置壁纸失败，请重试',
+    loadError: '加载壁纸列表失败',
   }
 }

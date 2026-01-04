@@ -9,4 +9,7 @@ export * from './app';
 // 导出Hosts管理API
 export * from './hosts';
 
+// 导出壁纸管理API
+export * from './wallpaper';
+
 // 可以在这里添加更多API模块的导出

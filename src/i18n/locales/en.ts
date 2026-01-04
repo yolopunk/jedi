@@ -5,6 +5,7 @@ export default {
     hostsManager: 'Hosts Manager',
     github: 'GitHub Repository',
     status_connected: 'Connected',
+    wallpapers: 'Knowledge Wall',
   },
   theme: {
     dark: 'Dark Mode',
@@ -44,6 +45,11 @@ export default {
     backupBtn: 'Backup',
     resetBtn: 'Reset',
     language: 'Language',
+    wallpaper: 'Wallpaper Settings',
+    wpAutoUpdate: 'Auto Update Wallpaper',
+    wpFrequency: 'Update Frequency (Days)',
+    wpCategories: 'Preferred Categories',
+    wpLastUpdate: 'Last Update: {time}',
   },
   hosts: {
     globalSwitch: {
@@ -96,5 +102,16 @@ export default {
     edit: 'Edit',
     add: 'Add',
     close: 'Close',
+    refresh: 'Refresh',
+    noData: 'No Data',
+  },
+  wallpapers: {
+    title: 'Knowledge Wall',
+    subtitle: 'Learn system design by setting diagrams as wallpapers',
+    all: 'All',
+    setDesktop: 'Set Wallpaper',
+    setSuccess: 'Wallpaper set successfully!',
+    setError: 'Failed to set wallpaper',
+    loadError: 'Failed to load wallpapers',
   }
 }

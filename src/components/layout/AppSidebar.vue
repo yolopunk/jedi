@@ -10,15 +10,29 @@
     <!-- Navigation -->
     <v-list nav class="pa-2 mt-2">
       <v-list-item
-        :active="true"
+        :active="activeItem === 'hosts'"
         rounded="lg"
         class="mb-1 sidebar-item"
         color="primary"
+        @click="$emit('update:activeItem', 'hosts')"
       >
         <template v-slot:prepend>
           <v-icon :icon="mdiDns" size="small" class="mr-2"></v-icon>
         </template>
         <v-list-item-title>{{ $t('sidebar.hostsManager') }}</v-list-item-title>
+      </v-list-item>
+
+      <v-list-item
+        :active="activeItem === 'wallpapers'"
+        rounded="lg"
+        class="mb-1 sidebar-item"
+        color="primary"
+        @click="selectItem('wallpapers')"
+      >
+        <template v-slot:prepend>
+          <v-icon :icon="mdiWallpaper" size="small" class="mr-2"></v-icon>
+        </template>
+        <v-list-item-title>{{ $t('sidebar.wallpapers') }}</v-list-item-title>
       </v-list-item>
     </v-list>
 
@@ -84,11 +98,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { mdiDns, mdiCog, mdiGithub, mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark } from '@mdi/js'
+import { mdiDns, mdiWallpaper, mdiCog, mdiGithub, mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark } from '@mdi/js'
 import { useTheme } from '@/composables/useTheme'
 
 const { t } = useI18n()
 const { isDark, themeMode, setTheme } = useTheme()
+
+defineProps<{
+  activeItem?: string
+}>()
+
+const emit = defineEmits(['update:activeItem', 'show-settings', 'open-github'])
+
+function selectItem(item: string) {
+  emit('update:activeItem', item)
+}
 
 const themeIcon = computed(() => {
   if (themeMode.value === 'dark') return mdiWeatherNight
@@ -112,14 +136,6 @@ function toggleTheme() {
   }
 }
 
-defineEmits<{
-  (e: 'open-github'): void;
-  (e: 'open-website'): void;
-  (e: 'open-email'): void;
-  (e: 'show-help'): void;
-  (e: 'show-settings'): void;
-  (e: 'show-about'): void;
-}>()
 </script>
 
 <style scoped>

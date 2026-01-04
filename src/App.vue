@@ -1,6 +1,7 @@
 <template>
   <v-app>
     <app-sidebar
+      v-model:active-item="currentView"
       @open-github="openGithubRepo"
       @open-website="openProjectWebsite"
       @open-email="sendEmail"
@@ -11,7 +12,8 @@
 
     <v-main class="jedi-main-content">
       <v-container class="py-6 px-6" height="100%">
-        <hosts-resolver></hosts-resolver>
+        <hosts-resolver v-if="currentView === 'hosts'"></hosts-resolver>
+        <wallpaper-manager v-else-if="currentView === 'wallpapers'"></wallpaper-manager>
       </v-container>
     </v-main>
 
@@ -29,11 +31,13 @@
     />
   </v-app>
 </template>
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStorage } from '@/composables/useStorage'
 import HostsResolver from '@/components/HostsResolver.vue'
+import WallpaperManager from '@/components/wallpapers/WallpaperManager.vue'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import HelpDialog from '@/components/dialogs/HelpDialog.vue'
@@ -41,9 +45,13 @@ import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
 import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 import { open } from '@tauri-apps/plugin-shell'
 import { initTheme } from '@/composables/useTheme'
+import { useWallpaper } from '@/composables/useWallpaper'
 
 const { locale } = useI18n()
 const { getItem } = useStorage()
+
+// 视图状态
+const currentView = ref('hosts')
 
 // 对话框状态
 const showHelpDialog = ref(false)
@@ -86,15 +94,23 @@ const sendEmail = async () => {
 }
 
 // 初始化主题
-onMounted(() => {
+onMounted(async () => {
   initTheme()
-  initLanguage()
+  await initLanguage()
+  
+  // Check and run wallpaper auto-update
+  const { startAutoUpdateCheck } = useWallpaper()
+  startAutoUpdateCheck()
 })
 </script>
 
-
 <style scoped>
 .jedi-main-content {
-  background-color: var(--jedi-bg-color) !important;
+  background-color: rgb(var(--v-theme-background));
+  min-height: 100vh;
+}
+
+.system-bar-override {
+  z-index: 100;
 }
 </style>

@@ -10,7 +10,8 @@
       <v-card-text class="pa-6">
         <v-tabs v-model="settingsTab" color="var(--jedi-accent)">
           <v-tab value="general">常规设置</v-tab>
-          <v-tab value="advanced">高级设置</v-tab>
+          <v-tab value="wallpaper">{{ $t('settings.wallpaper') }}</v-tab>
+          <v-tab value="advanced">{{ $t('settings.advanced') }}</v-tab>
         </v-tabs>
 
         <v-window v-model="settingsTab" class="mt-4">
@@ -89,6 +90,71 @@
             </v-list>
           </v-window-item>
 
+          <!-- 壁纸设置 -->
+          <v-window-item value="wallpaper">
+            <v-list>
+              <v-list-item>
+                <template v-slot:prepend>
+                  <v-icon :icon="mdiWallpaper" color="var(--jedi-primary)" class="mr-3"></v-icon>
+                </template>
+                <v-list-item-title>{{ $t('settings.wpAutoUpdate') }}</v-list-item-title>
+                <template v-slot:append>
+                  <v-switch
+                    v-model="wallpaperSettings.autoUpdate"
+                    color="var(--jedi-accent)"
+                    hide-details
+                    @update:model-value="saveWallpaperSettings(wallpaperSettings)"
+                  ></v-switch>
+                </template>
+              </v-list-item>
+
+              <v-list-item v-if="wallpaperSettings.autoUpdate">
+                 <template v-slot:prepend>
+                  <v-icon icon="" class="mr-3"></v-icon>
+                </template>
+                <v-list-item-title>{{ $t('settings.wpFrequency') }}</v-list-item-title>
+                <template v-slot:append>
+                  <v-text-field
+                    v-model.number="wallpaperSettings.frequencyDays"
+                    type="number"
+                    min="1"
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    style="width: 100px"
+                    @update:model-value="saveWallpaperSettings(wallpaperSettings)"
+                  ></v-text-field>
+                </template>
+              </v-list-item>
+
+              <v-list-item>
+                <template v-slot:prepend>
+                  <v-icon icon="" class="mr-3"></v-icon>
+                </template>
+                <v-list-item-title>{{ $t('settings.wpCategories') }}</v-list-item-title>
+                <template v-slot:append>
+                  <v-select
+                    v-model="wallpaperSettings.selectedCategories"
+                    :items="allCategories"
+                    multiple
+                    chips
+                    variant="outlined"
+                    density="compact"
+                    hide-details
+                    style="width: 250px"
+                    @update:model-value="saveWallpaperSettings(wallpaperSettings)"
+                  ></v-select>
+                </template>
+              </v-list-item>
+              
+               <v-list-item>
+                <v-list-item-subtitle class="text-caption text-right">
+                  {{ $t('settings.wpLastUpdate', { time: wallpaperSettings.lastUpdate ? new Date(wallpaperSettings.lastUpdate).toLocaleString() : 'N/A' }) }}
+                </v-list-item-subtitle>
+              </v-list-item>
+            </v-list>
+          </v-window-item>
+
           <!-- 高级设置 -->
           <v-window-item value="advanced">
             <v-list>
@@ -158,9 +224,12 @@ import {
   mdiFileDocument,
   mdiBackupRestore,
   mdiRefresh,
-  mdiTranslate
+  mdiTranslate,
+  mdiWallpaper
 } from '@mdi/js'
 import { enableAutostart, disableAutostart, isAutostartEnabled } from '@/api/app'
+import { useWallpaper } from '@/composables/useWallpaper'
+import { getWallpapers } from '@/api/wallpaper'
 
 // 定义组件属性
 const props = defineProps<{
@@ -171,6 +240,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
 }>()
+
+const { settings: wallpaperSettings, saveSettings: saveWallpaperSettings } = useWallpaper()
+const allCategories = ref<string[]>([])
 
 const { locale } = useI18n()
 const { setItem } = useStorage()
@@ -236,7 +308,19 @@ async function checkAutostartStatus() {
 }
 
 // 组件挂载时检查自启动状态
-onMounted(() => {
-  checkAutostartStatus()
+onMounted(async () => {
+  await checkAutostartStatus()
+
+  // Load wallpaper settings and categories
+  const { loadSettings } = useWallpaper()
+  await loadSettings()
+
+  try {
+    const wallpapers = await getWallpapers()
+    const categories = new Set(wallpapers.map(w => w.category))
+    allCategories.value = Array.from(categories).sort()
+  } catch (e) {
+    console.error('Failed to load wallpaper categories', e)
+  }
 })
 </script>

@@ -33,6 +33,18 @@ export async function getWallpapers(): Promise<WallpaperItem[]> {
 }
 
 /**
+ * 同步壁纸数据（增量更新）
+ */
+export async function syncWallpapers(): Promise<void> {
+  try {
+    await invoke('sync_wallpapers');
+  } catch (error) {
+    console.error('Failed to sync wallpapers:', error);
+    throw error;
+  }
+}
+
+/**
  * 设置桌面壁纸
  * @param url 图片URL
  */

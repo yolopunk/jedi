@@ -1,7 +1,7 @@
 use regex::Regex;
 use reqwest::Client;
 use std::fs;
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 
 use std::collections::HashMap;
 
@@ -36,16 +36,41 @@ type WallpaperCache = HashMap<String, CacheEntry>;
 
 #[tauri::command]
 pub async fn get_wallpapers<R: Runtime>(app: AppHandle<R>) -> Result<Vec<WallpaperItem>, String> {
-  println!("Fetching wallpapers...");
+  println!("Fetching wallpapers from cache...");
+  let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+
+  let cache_path = app_data_dir.join("wallpapers_cache.json");
+
+  if cache_path.exists() {
+    if let Ok(content) = fs::read_to_string(&cache_path) {
+      if let Ok(cache) = serde_json::from_str::<WallpaperCache>(&content) {
+        let mut wallpapers: Vec<WallpaperItem> =
+          cache.values().map(|entry| entry.item.clone()).collect();
+        // Remove duplicates by ID
+        wallpapers.sort_by(|a, b| a.id.cmp(&b.id));
+        wallpapers.dedup_by(|a, b| a.id == b.id);
+
+        println!("Loaded {} wallpapers from cache", wallpapers.len());
+        return Ok(wallpapers);
+      }
+    }
+  }
+
+  println!("No cache found or empty cache");
+  Ok(Vec::new())
+}
+
+#[tauri::command]
+pub async fn sync_wallpapers<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
+  println!("Syncing wallpapers...");
   let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
   if !app_data_dir.exists() {
     let _ = fs::create_dir_all(&app_data_dir);
   }
-  println!("App data dir: {:?}", app_data_dir);
 
   let cache_path = app_data_dir.join("wallpapers_cache.json");
 
-  // Load cache
+  // Load existing cache to skip unchanged items
   let cache: WallpaperCache = if cache_path.exists() {
     fs::read_to_string(&cache_path)
       .ok()
@@ -67,57 +92,73 @@ pub async fn get_wallpapers<R: Runtime>(app: AppHandle<R>) -> Result<Vec<Wallpap
     .map_err(|e| e.to_string())?;
 
   if !resp.status().is_success() {
-    println!("API request failed: {}", resp.status());
     return Err(format!("Failed to fetch guides list: {}", resp.status()));
   }
 
   let contents: Vec<GitHubContent> = resp.json().await.map_err(|e| e.to_string())?;
-  println!("Found {} guides from GitHub", contents.len());
 
-  let mut tasks = Vec::new();
-  let mut new_cache: WallpaperCache = HashMap::new();
+  // Build a list of items to process
+  let mut items_to_process = Vec::new();
+  let mut new_cache = cache.clone(); // Start with existing cache
 
   for item in contents {
     if item.name.ends_with(".md") {
       if let Some(url) = item.download_url {
-        // Check if we have valid cache
+        // If cache hit, we can emit it immediately if we want to simulate incremental load
+        // But usually we rely on get_wallpapers for initial load.
+        // Here we check if we need to update.
         if let Some(entry) = cache.get(&item.name) {
           if entry.sha == item.sha {
-            new_cache.insert(item.name.clone(), entry.clone());
+            // Already up to date
             continue;
           }
         }
-
-        let client_clone = client.clone();
-        let slug = item.name.replace(".md", "");
-        let name = item.name.clone();
-        let sha = item.sha.clone();
-        tasks.push(tokio::spawn(async move {
-          match fetch_guide_metadata(client_clone, slug.clone(), url.clone()).await {
-            Some(wallpaper) => {
-              println!("Successfully processed: {}", slug);
-              Some((name, sha, wallpaper))
-            }
-            None => {
-              println!("Failed to process: {}", slug);
-              None
-            }
-          }
-        }));
+        items_to_process.push((item.name, item.sha, url));
       }
     }
   }
 
-  // Wait for all tasks
-  for task in tasks {
-    if let Ok(Some((name, sha, item))) = task.await {
-      new_cache.insert(
-        name,
-        CacheEntry {
-          sha,
-          item: item.clone(),
-        },
-      );
+  println!("Items to process: {}", items_to_process.len());
+
+  // Process in chunks to stream results
+  let chunk_size = 5;
+  for chunk in items_to_process.chunks(chunk_size) {
+    let mut tasks = Vec::new();
+
+    for (name, sha, url) in chunk {
+      let client_clone = client.clone();
+      let name = name.clone();
+      let sha = sha.clone();
+      let url = url.clone();
+      let slug = name.replace(".md", "");
+
+      tasks.push(tokio::spawn(async move {
+        match fetch_guide_metadata(client_clone, slug.clone(), url.clone()).await {
+          Some(wallpaper) => Some((name, sha, wallpaper)),
+          None => None,
+        }
+      }));
+    }
+
+    let mut batch_items = Vec::new();
+
+    for task in tasks {
+      if let Ok(Some((name, sha, item))) = task.await {
+        new_cache.insert(
+          name,
+          CacheEntry {
+            sha,
+            item: item.clone(),
+          },
+        );
+        batch_items.push(item);
+      }
+    }
+
+    if !batch_items.is_empty() {
+      // Emit batch event
+      println!("Emitting batch of {} items", batch_items.len());
+      let _ = app.emit("wallpaper-batch", batch_items);
     }
   }
 
@@ -126,15 +167,9 @@ pub async fn get_wallpapers<R: Runtime>(app: AppHandle<R>) -> Result<Vec<Wallpap
     let _ = fs::write(&cache_path, json);
   }
 
-  let mut wallpapers: Vec<WallpaperItem> =
-    new_cache.values().map(|entry| entry.item.clone()).collect();
-  println!("Total wallpapers processed: {}", wallpapers.len());
+  let _ = app.emit("wallpaper-sync-complete", ());
 
-  // Remove duplicates by ID
-  wallpapers.sort_by(|a, b| a.id.cmp(&b.id));
-  wallpapers.dedup_by(|a, b| a.id == b.id);
-
-  Ok(wallpapers)
+  Ok(())
 }
 
 async fn fetch_guide_metadata(client: Client, slug: String, url: String) -> Option<WallpaperItem> {

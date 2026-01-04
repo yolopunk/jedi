@@ -1,8 +1,8 @@
 <template>
   <div class="wallpaper-manager">
     <!-- Header Area -->
-    <v-card class="jedi-card mb-4 px-4 py-3 d-flex flex-column rounded-lg" elevation="0">
-      <div class="d-flex align-center justify-space-between w-100 mb-2">
+    <v-card class="jedi-card mb-4 rounded-lg" elevation="0">
+      <div class="d-flex align-center justify-space-between px-4 pt-4 pb-2">
         <div class="d-flex align-center">
           <v-icon :icon="mdiWallpaper" color="primary" class="mr-3" size="32"></v-icon>
           <div>
@@ -11,26 +11,51 @@
           </div>
         </div>
         
-        <v-btn
-          :prepend-icon="mdiRefresh"
-          variant="text"
-          size="small"
-          @click="loadWallpapers"
-          :loading="loading"
-        >
-          {{ $t('common.refresh') }}
-        </v-btn>
+        <div class="d-flex align-center" style="gap: 12px; width: 300px;">
+          <v-text-field
+            v-model="searchQuery"
+            placeholder="搜索..."
+            density="compact"
+            variant="outlined"
+            hide-details
+            :prepend-inner-icon="mdiMagnify"
+            bg-color="surface"
+            single-line
+          ></v-text-field>
+          
+          <v-btn
+            icon
+            variant="text"
+            @click="loadWallpapers"
+            :loading="loading"
+            color="primary"
+          >
+            <v-icon :icon="mdiRefresh"></v-icon>
+          </v-btn>
+        </div>
       </div>
       
-      <!-- Category Filter -->
-      <div class="w-100">
-        <v-chip-group v-model="selectedCategory" filter mandatory show-arrows>
-          <v-chip value="All" filter-icon="mdi-check" variant="outlined" size="small">{{ $t('wallpapers.all') }}</v-chip>
-          <v-chip v-for="cat in categories" :key="cat" :value="cat" filter-icon="mdi-check" variant="outlined" size="small">
-            {{ cat }}
-          </v-chip>
-        </v-chip-group>
-      </div>
+      <v-divider class="mx-4"></v-divider>
+      
+      <!-- Category Tabs -->
+      <v-tabs
+        v-model="selectedCategory"
+        show-arrows
+        color="primary"
+        align-tabs="start"
+        class="px-2"
+        density="compact"
+      >
+        <v-tab value="All" class="text-body-2 text-capitalize">{{ $t('wallpapers.all') }}</v-tab>
+        <v-tab 
+          v-for="cat in categories" 
+          :key="cat" 
+          :value="cat"
+          class="text-body-2 text-capitalize"
+        >
+          {{ cat }}
+        </v-tab>
+      </v-tabs>
     </v-card>
 
     <!-- Wallpapers Grid -->
@@ -107,10 +132,7 @@
     <v-dialog v-model="showPreview" fullscreen transition="dialog-bottom-transition">
       <v-card v-if="currentPreview" class="rounded-0">
         <v-toolbar color="surface" density="compact" class="border-b">
-          <v-btn icon @click="showPreview = false">
-            <v-icon :icon="mdiClose"></v-icon>
-          </v-btn>
-          <v-toolbar-title class="text-subtitle-1 font-weight-bold">{{ currentPreview.title }}</v-toolbar-title>
+          <v-toolbar-title class="text-subtitle-1 font-weight-bold ml-4">{{ currentPreview.title }}</v-toolbar-title>
           <v-spacer></v-spacer>
           <v-toolbar-items>
             <v-btn
@@ -123,6 +145,9 @@
               {{ $t('wallpapers.setDesktop') }}
             </v-btn>
           </v-toolbar-items>
+          <v-btn icon @click="showPreview = false" class="mr-2">
+            <v-icon :icon="mdiClose"></v-icon>
+          </v-btn>
         </v-toolbar>
         
         <v-container class="fill-height align-start overflow-y-auto" style="max-width: 900px">
@@ -214,11 +239,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { mdiWallpaper, mdiRefresh, mdiMonitorScreenshot, mdiClose, mdiMagnify } from '@mdi/js'
-import { getWallpapers, setDesktopWallpaper, type WallpaperItem } from '@/api/wallpaper'
+import { getWallpapers, syncWallpapers, setDesktopWallpaper, type WallpaperItem } from '@/api/wallpaper'
 import { useI18n } from 'vue-i18n'
 import MarkdownIt from 'markdown-it'
+import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 
 const md = new MarkdownIt({
   html: true,
@@ -251,6 +277,7 @@ const loading = ref(false)
 const settingId = ref<string | null>(null)
 const wallpapers = ref<WallpaperItem[]>([])
 const selectedCategory = ref('All')
+const searchQuery = ref('')
 const showPreview = ref(false)
 const currentPreview = ref<WallpaperItem | null>(null)
 const snackbar = ref({
@@ -260,6 +287,8 @@ const snackbar = ref({
 })
 
 const showImageViewer = ref(false)
+let unlistenBatch: UnlistenFn | null = null
+let unlistenComplete: UnlistenFn | null = null
 
 const categories = computed(() => {
   const cats = new Set(wallpapers.value.map(w => w.category))
@@ -267,21 +296,43 @@ const categories = computed(() => {
 })
 
 const filteredWallpapers = computed(() => {
-  if (selectedCategory.value === 'All') return wallpapers.value
-  return wallpapers.value.filter(w => w.category === selectedCategory.value)
+  let result = wallpapers.value
+  
+  if (selectedCategory.value !== 'All') {
+    result = result.filter(w => w.category === selectedCategory.value)
+  }
+  
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(w => 
+      w.title.toLowerCase().includes(query) || 
+      w.description.toLowerCase().includes(query) ||
+      w.tags.some(tag => tag.toLowerCase().includes(query))
+    )
+  }
+  
+  return result
 })
 
 async function loadWallpapers() {
   loading.value = true
   console.log('Loading wallpapers...')
   try {
-    const data = await getWallpapers()
-    console.log('Wallpapers loaded:', data)
-    wallpapers.value = data
+    // 1. Load from cache first (fast)
+    const cachedData = await getWallpapers()
+    if (cachedData && cachedData.length > 0) {
+      console.log('Loaded from cache:', cachedData.length)
+      wallpapers.value = cachedData
+      loading.value = false // Show immediately
+    }
+    
+    // 2. Trigger background sync
+    console.log('Starting background sync...')
+    await syncWallpapers()
+    
   } catch (error) {
     console.error(error)
     showSnackbar(t('wallpapers.loadError'), 'error')
-  } finally {
     loading.value = false
   }
 }
@@ -309,8 +360,36 @@ function showSnackbar(text: string, color: string) {
   snackbar.value = { show: true, text, color }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // Setup event listeners
+  unlistenBatch = await listen<WallpaperItem[]>('wallpaper-batch', (event) => {
+    const newItems = event.payload
+    const currentIds = new Set(wallpapers.value.map(w => w.id))
+    
+    let hasNew = false
+    for (const item of newItems) {
+      if (!currentIds.has(item.id)) {
+        wallpapers.value.push(item)
+        currentIds.add(item.id)
+        hasNew = true
+      }
+    }
+    
+    if (hasNew && loading.value) {
+      loading.value = false
+    }
+  })
+  
+  unlistenComplete = await listen('wallpaper-sync-complete', () => {
+    loading.value = false
+  })
+
   loadWallpapers()
+})
+
+onUnmounted(() => {
+  if (unlistenBatch) unlistenBatch()
+  if (unlistenComplete) unlistenComplete()
 })
 </script>
 

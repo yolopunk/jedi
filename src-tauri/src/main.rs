@@ -6,7 +6,7 @@ use crate::api::app::{
 };
 use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
 use crate::api::os::{get_os_info, SystemState};
-use crate::api::wallpapers::{get_wallpapers, set_desktop_wallpaper};
+use crate::api::wallpapers::{get_wallpapers, set_desktop_wallpaper, sync_wallpapers};
 use crate::utils::logger;
 use std::sync::Mutex;
 use sysinfo::{Networks, System};
@@ -67,7 +67,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       is_autostart_enabled,
       ensure_jedi_dir,
       get_wallpapers,
-      set_desktop_wallpaper
+      set_desktop_wallpaper,
+      sync_wallpapers
     ])
     .build(tauri::generate_context!())?;
 

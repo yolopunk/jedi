@@ -1,3 +1,4 @@
+use regex::Regex;
 use reqwest::Client;
 use std::fs;
 use tauri::{AppHandle, Manager, Runtime};
@@ -12,6 +13,7 @@ pub struct WallpaperItem {
   pub category: String,
   pub tags: Vec<String>,
   pub description: String,
+  pub content: String,
 }
 
 const GUIDES_API_URL: &str =
@@ -39,6 +41,8 @@ pub async fn get_wallpapers<R: Runtime>(app: AppHandle<R>) -> Result<Vec<Wallpap
   if !app_data_dir.exists() {
     let _ = fs::create_dir_all(&app_data_dir);
   }
+  println!("App data dir: {:?}", app_data_dir);
+
   let cache_path = app_data_dir.join("wallpapers_cache.json");
 
   // Load cache
@@ -139,7 +143,10 @@ async fn fetch_guide_metadata(client: Client, slug: String, url: String) -> Opti
     Ok(resp) => {
       if resp.status().is_success() {
         if let Ok(text) = resp.text().await {
-          if let Some((title, description, image, category, tags)) = parse_frontmatter(&text) {
+          if let Some((title, description, image, category, tags, content)) =
+            parse_frontmatter(&text)
+          {
+            let content = fix_relative_paths(&content, &url);
             // Trust the image URL from frontmatter, let frontend handle load errors
             return Some(WallpaperItem {
               id: slug,
@@ -152,6 +159,7 @@ async fn fetch_guide_metadata(client: Client, slug: String, url: String) -> Opti
               },
               tags,
               description,
+              content,
             });
           } else {
             println!(
@@ -173,12 +181,13 @@ async fn fetch_guide_metadata(client: Client, slug: String, url: String) -> Opti
   None
 }
 
-fn parse_frontmatter(text: &str) -> Option<(String, String, String, String, Vec<String>)> {
+fn parse_frontmatter(text: &str) -> Option<(String, String, String, String, Vec<String>, String)> {
   let parts: Vec<&str> = text.split("---").collect();
   if parts.len() < 3 {
     return None;
   }
   let fm = parts[1];
+  let content = parts[2..].join("---");
 
   let mut title = String::new();
   let mut description = String::new();
@@ -270,7 +279,7 @@ fn parse_frontmatter(text: &str) -> Option<(String, String, String, String, Vec<
     return None;
   }
 
-  Some((title, description, image, category, tags))
+  Some((title, description, image, category, tags, content))
 }
 
 fn clean_value(val: &str) -> String {
@@ -284,6 +293,24 @@ fn clean_value(val: &str) -> String {
     }
   } else {
     val.to_string()
+  }
+}
+
+fn fix_relative_paths(content: &str, base_url: &str) -> String {
+  let parent_dir = base_url
+    .rsplit_once('/')
+    .map(|(h, _)| h)
+    .unwrap_or(base_url);
+
+  // Replace relative image paths ![alt](path) with ![alt](parent_dir/path)
+  // Only matches paths that don't start with http/https
+  if let Ok(re) = Regex::new(r"!\[(.*?)\]\(((?!http).+?)\)") {
+    re.replace_all(content, |caps: &regex::Captures| {
+      format!("![{}]({}/{})", &caps[1], parent_dir, &caps[2])
+    })
+    .to_string()
+  } else {
+    content.to_string()
   }
 }
 
@@ -351,7 +378,7 @@ pub async fn set_desktop_wallpaper<R: Runtime>(
 
   // Set wallpaper
   wallpaper::set_from_path(file_path.to_str().unwrap()).map_err(|e| e.to_string())?;
-  wallpaper::set_mode(wallpaper::Mode::Crop).map_err(|e| e.to_string())?;
+  wallpaper::set_mode(wallpaper::Mode::Fit).map_err(|e| e.to_string())?;
 
   Ok(())
 }

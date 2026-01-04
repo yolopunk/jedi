@@ -104,34 +104,101 @@
     </div>
 
     <!-- Preview Dialog -->
-    <v-dialog v-model="showPreview" max-width="900">
-      <v-card v-if="currentPreview" class="rounded-lg overflow-hidden">
-        <v-img :src="currentPreview.url" cover max-height="600"></v-img>
-        <v-card-title class="d-flex justify-space-between align-center pt-4">
-          <div class="text-truncate mr-2">{{ currentPreview.title }}</div>
-          <div class="d-flex flex-wrap gap-1 justify-end">
-            <v-chip size="small" color="primary" class="mr-1">{{ currentPreview.category }}</v-chip>
-            <v-chip v-for="tag in currentPreview.tags" :key="tag" size="small" variant="outlined" class="mr-1">
-              {{ tag }}
-            </v-chip>
-          </div>
-        </v-card-title>
-        <v-card-text>
-          {{ currentPreview.description }}
-        </v-card-text>
-        <v-card-actions class="pa-4">
-          <v-spacer></v-spacer>
-          <v-btn variant="text" @click="showPreview = false">{{ $t('common.close') }}</v-btn>
-          <v-btn
-            color="primary"
-            variant="elevated"
-            :prepend-icon="mdiMonitorScreenshot"
-            @click="setWallpaper(currentPreview)"
-            :loading="settingId === currentPreview.id"
-          >
-            {{ $t('wallpapers.setDesktop') }}
+    <v-dialog v-model="showPreview" fullscreen transition="dialog-bottom-transition">
+      <v-card v-if="currentPreview" class="rounded-0">
+        <v-toolbar color="surface" density="compact" class="border-b">
+          <v-btn icon @click="showPreview = false">
+            <v-icon :icon="mdiClose"></v-icon>
           </v-btn>
-        </v-card-actions>
+          <v-toolbar-title class="text-subtitle-1 font-weight-bold">{{ currentPreview.title }}</v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-toolbar-items>
+            <v-btn
+              variant="text"
+              color="primary"
+              :prepend-icon="mdiMonitorScreenshot"
+              @click="setWallpaper(currentPreview)"
+              :loading="settingId === currentPreview.id"
+            >
+              {{ $t('wallpapers.setDesktop') }}
+            </v-btn>
+          </v-toolbar-items>
+        </v-toolbar>
+        
+        <v-container class="fill-height align-start overflow-y-auto" style="max-width: 900px">
+          <v-row>
+            <v-col cols="12">
+              <v-card class="mb-6 rounded-lg elevation-2 position-relative overflow-hidden group">
+                <v-img 
+                  :src="currentPreview.url" 
+                  cover 
+                  max-height="500"
+                  class="bg-grey-lighten-2"
+                ></v-img>
+                <div class="position-absolute top-0 right-0 pa-4">
+                  <v-btn
+                    icon
+                    color="surface"
+                    variant="flat"
+                    @click="showImageViewer = true"
+                  >
+                    <v-icon :icon="mdiMagnify"></v-icon>
+                  </v-btn>
+                </div>
+              </v-card>
+              
+              <div class="d-flex align-center flex-wrap gap-2 mb-6">
+                <v-chip color="primary" label variant="flat" size="small" class="font-weight-bold">{{ currentPreview.category }}</v-chip>
+                <v-chip 
+                  v-for="tag in currentPreview.tags" 
+                  :key="tag" 
+                  variant="tonal" 
+                  size="small"
+                  color="secondary"
+                  class="text-body-2"
+                >
+                  #{{ tag }}
+                </v-chip>
+              </div>
+
+              <div class="text-h4 font-weight-bold mb-4">{{ currentPreview.title }}</div>
+              
+              <div v-if="currentPreview.description" class="text-body-1 text-medium-emphasis mb-6 font-italic">
+                {{ currentPreview.description }}
+              </div>
+              
+              <v-divider class="mb-6"></v-divider>
+              
+              <div class="markdown-body" v-html="renderMarkdown(currentPreview.content || '', currentPreview.url)"></div>
+            </v-col>
+          </v-row>
+        </v-container>
+      </v-card>
+    </v-dialog>
+
+    <!-- Image Viewer Dialog -->
+    <v-dialog v-model="showImageViewer" fullscreen z-index="2500" class="image-viewer-dialog">
+      <v-card class="d-flex align-center justify-center rounded-0 image-viewer-card" width="100%" height="100%">
+        <v-btn
+          icon
+          variant="text"
+          color="white"
+          class="position-absolute top-0 right-0 ma-4"
+          style="z-index: 10"
+          @click="showImageViewer = false"
+        >
+          <v-icon :icon="mdiClose" size="32"></v-icon>
+        </v-btn>
+        
+        <v-img
+          v-if="currentPreview"
+          :src="currentPreview.url"
+          max-height="90vh"
+          max-width="90vw"
+          width="auto"
+          height="auto"
+          contain
+        ></v-img>
       </v-card>
     </v-dialog>
 
@@ -148,9 +215,36 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { mdiWallpaper, mdiRefresh, mdiMonitorScreenshot } from '@mdi/js'
+import { mdiWallpaper, mdiRefresh, mdiMonitorScreenshot, mdiClose, mdiMagnify } from '@mdi/js'
 import { getWallpapers, setDesktopWallpaper, type WallpaperItem } from '@/api/wallpaper'
 import { useI18n } from 'vue-i18n'
+import MarkdownIt from 'markdown-it'
+
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true
+})
+
+// Custom render rule to hide the first image if it duplicates the main image
+// Since we can't easily check equality in the render rule, we'll just use a CSS class approach or
+// preprocess the content. Preprocessing is safer.
+function renderMarkdown(content: string, mainImageUrl: string) {
+  if (!content) return ''
+  
+  // Simple heuristic: if the content starts with an image tag, remove it
+  // Regex for ![alt](url) or <img src="url">
+  // We'll strip the first image if it appears within the first few lines
+  let processedContent = content.trim()
+  
+  // Check if it starts with an image
+  const mdImageRegex = /^!\[.*?\]\(.*?\)/
+  if (mdImageRegex.test(processedContent)) {
+    processedContent = processedContent.replace(mdImageRegex, '').trim()
+  }
+  
+  return md.render(processedContent)
+}
 
 const { t } = useI18n()
 const loading = ref(false)
@@ -164,6 +258,8 @@ const snackbar = ref({
   text: '',
   color: 'success'
 })
+
+const showImageViewer = ref(false)
 
 const categories = computed(() => {
   const cats = new Set(wallpapers.value.map(w => w.category))
@@ -234,5 +330,109 @@ onMounted(() => {
 .wallpaper-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 16px rgba(0,0,0,0.12) !important;
+}
+
+.image-viewer-card {
+  background-color: rgba(0, 0, 0, 0.9) !important;
+  backdrop-filter: blur(10px);
+}
+
+.markdown-body {
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(var(--v-theme-on-surface), 0.87);
+}
+
+.markdown-body :deep(h1),
+.markdown-body :deep(h2),
+.markdown-body :deep(h3) {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-body :deep(h1) {
+  font-size: 2em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.2);
+}
+
+.markdown-body :deep(h2) {
+  font-size: 1.5em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid rgba(var(--v-border-color), 0.2);
+}
+
+.markdown-body :deep(p) {
+  margin-bottom: 16px;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  padding-left: 2em;
+  margin-bottom: 16px;
+}
+
+.markdown-body :deep(img) {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 16px 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.markdown-body :deep(pre) {
+  background-color: rgba(var(--v-theme-surface-variant), 0.5);
+  padding: 16px;
+  border-radius: 8px;
+  overflow: auto;
+  margin-bottom: 16px;
+}
+
+.markdown-body :deep(code) {
+  background-color: rgba(var(--v-theme-surface-variant), 0.5);
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.markdown-body :deep(pre) :deep(code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-body :deep(blockquote) {
+  margin: 0 0 16px;
+  padding: 0 1em;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+  border-left: 0.25em solid rgba(var(--v-border-color), 0.5);
+}
+
+.markdown-body :deep(a) {
+  color: rgb(var(--v-theme-primary));
+  text-decoration: none;
+}
+
+.markdown-body :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.markdown-body :deep(table) {
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  width: 100%;
+  overflow: auto;
+  display: block;
+}
+
+.markdown-body :deep(table) th,
+.markdown-body :deep(table) td {
+  padding: 6px 13px;
+  border: 1px solid rgba(var(--v-border-color), 0.2);
+}
+
+.markdown-body :deep(table) tr:nth-child(2n) {
+  background-color: rgba(var(--v-theme-surface-variant), 0.1);
 }
 </style>

@@ -10,6 +10,7 @@ export interface WallpaperItem {
   category: string;
   tags: string[];
   description: string;
+  content: string;
 }
 
 export interface WallpaperConfig {

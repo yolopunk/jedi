@@ -144,7 +144,7 @@ pub async fn get_os_info(state: State<'_, SystemState>) -> Result<OsInfo, String
   let mut network_infos: HashMap<String, NetworkInfo> = HashMap::new();
   // 使用全局 Networks 实例
   let mut networks = state.networks.lock().map_err(|e| e.to_string())?;
-  
+
   // 刷新网络数据
   // sysinfo 的 refresh() 会计算自上次刷新以来的流量增量
   // 前端应通过定时轮询(如每秒一次)来获取准确的传输速率
@@ -174,11 +174,6 @@ pub async fn get_os_info(state: State<'_, SystemState>) -> Result<OsInfo, String
       if let Ok(device_count) = nvml.device_count() {
         for i in 0..device_count {
           if let Ok(device) = nvml.device_by_index(i) {
-            let memory_info = device.memory_info().unwrap_or_default(); // 假设有 Default 或处理错误
-                                                                        // 这里 Nvml 的 memory_info 实际上返回 Result<MemoryInfo, NvmlError>
-                                                                        // 且 MemoryInfo 字段是 u64
-                                                                        // 为了简单起见，我们还是用 unwrap_or 处理
-
             // 重新编写 NVML 逻辑以更健壮
             let name = device.name().unwrap_or_else(|_| "Unknown GPU".to_string());
             let temp = device.temperature(TemperatureSensor::Gpu).unwrap_or(0);

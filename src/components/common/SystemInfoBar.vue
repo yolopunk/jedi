@@ -4,7 +4,7 @@
       <!-- Left Section: App Info -->
       <div class="app-info d-flex align-center px-4 h-100 border-right">
         <span class="text-caption font-weight-black text-disabled mr-2 ls-1">JEDI</span>
-        <span class="text-caption mono-text text-medium-emphasis">v{{ appVersion }}</span>
+        <span class="text-caption text-medium-emphasis">v{{ appVersion }}</span>
       </div>
 
       <v-spacer></v-spacer>
@@ -15,7 +15,7 @@
         <!-- Module: Network -->
         <div class="info-module d-flex align-center px-3 h-100 border-left">
           <v-icon :icon="mdiEthernet" size="16" class="mr-3 text-medium-emphasis"></v-icon>
-          <div class="d-flex flex-column text-caption mono-text" style="line-height: 1.1;">
+          <div class="d-flex flex-column text-caption" style="line-height: 1.1;">
             <div class="d-flex align-center">
               <v-icon icon="mdi-arrow-down-thin" size="10" class="mr-1 text-success"></v-icon>
               {{ formatNetworkSpeed(osInfo?.metrics?.network_received) }}
@@ -42,7 +42,7 @@
             <v-tooltip activator="parent" location="top" content-class="jedi-tooltip">
               <div class="d-flex flex-column align-center">
                 <span class="font-weight-bold mb-1">{{ $t('system.cpuUsage') }}</span>
-                <span class="mono-text">{{ formatPercentage(osInfo?.metrics?.cpu_usage) }}</span>
+                <span>{{ formatPercentage(osInfo?.metrics?.cpu_usage) }}</span>
               </div>
             </v-tooltip>
           </div>
@@ -60,7 +60,7 @@
             <v-tooltip activator="parent" location="top" content-class="jedi-tooltip">
               <div class="d-flex flex-column align-center">
                 <span class="font-weight-bold mb-1">{{ $t('system.memory') }}</span>
-                <span class="mono-text mb-1">{{ formatPercentage(getMemoryUsagePercentage()) }}</span>
+                <span class="mb-1">{{ formatPercentage(getMemoryUsagePercentage()) }}</span>
                 <span class="text-caption text-high-emphasis" style="font-size: 10px; opacity: 0.9;">
                   {{ formatDataSize(osInfo?.metrics?.memory_used) }} / {{ formatDataSize(osInfo?.metrics?.memory_total) }}
                 </span>
@@ -82,7 +82,7 @@
 
         <!-- Module: Time -->
         <div class="info-module d-flex align-center px-4 h-100 border-left bg-surface-variant-opt">
-          <span class="text-caption mono-text font-weight-bold">{{ currentTime }}</span>
+          <span class="text-caption font-weight-bold">{{ currentTime }}</span>
         </div>
       </div>
     </div>
@@ -194,7 +194,7 @@ onUnmounted(() => {
   background-color: rgba(var(--v-theme-surface), 0.95) !important;
   backdrop-filter: blur(10px);
   z-index: 100;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--jedi-font-ui);
 }
 
 .border-right {
@@ -215,11 +215,6 @@ onUnmounted(() => {
 
 .bg-surface-variant-opt {
   background-color: rgba(var(--v-theme-surface-variant), 0.05);
-}
-
-.mono-text {
-  font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
-  letter-spacing: -0.5px;
 }
 
 .icon-hover {

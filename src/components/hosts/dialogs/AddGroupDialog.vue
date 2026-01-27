@@ -48,7 +48,6 @@
               :placeholder="$t('hosts.dialog.hostsListPlaceholder')"
               rows="4"
               required
-              class="font-monospace"
             ></v-textarea>
             <v-alert
               type="info"

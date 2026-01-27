@@ -256,7 +256,7 @@ defineEmits<{
 
 /* 版权文字 */
 .copyright-text {
-  font-family: 'Roboto Mono', monospace;
+  /* font-family: var(--jedi-font-ui); */
   font-size: 11px;
   color: rgba(255, 255, 255, 0.8);
   letter-spacing: 1px;

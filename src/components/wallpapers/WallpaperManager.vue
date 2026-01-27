@@ -194,7 +194,7 @@
               
               <v-divider class="mb-6"></v-divider>
               
-              <div class="markdown-body" v-html="renderMarkdown(currentPreview.content || '', currentPreview.url)"></div>
+              <div class="markdown-body" v-html="renderMarkdown(currentPreview.content || '')"></div>
             </v-col>
           </v-row>
         </v-container>
@@ -255,7 +255,7 @@ const md = new MarkdownIt({
 // Custom render rule to hide the first image if it duplicates the main image
 // Since we can't easily check equality in the render rule, we'll just use a CSS class approach or
 // preprocess the content. Preprocessing is safer.
-function renderMarkdown(content: string, mainImageUrl: string) {
+function renderMarkdown(content: string) {
   if (!content) return ''
   
   // Simple heuristic: if the content starts with an image tag, remove it
@@ -472,7 +472,6 @@ onUnmounted(() => {
   background-color: rgba(var(--v-theme-surface-variant), 0.5);
   padding: 0.2em 0.4em;
   border-radius: 4px;
-  font-family: monospace;
 }
 
 .markdown-body :deep(pre) :deep(code) {

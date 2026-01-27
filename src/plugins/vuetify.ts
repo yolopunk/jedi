@@ -1,5 +1,4 @@
 import 'vuetify/styles'
-import '../assets/style.css' // Ensure global overrides are loaded
 import { createVuetify } from 'vuetify'
 import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 import * as components from 'vuetify/components'

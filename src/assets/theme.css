@@ -8,6 +8,8 @@
   /* =========================================
      Color Primitives (Internal Use Only)
      ========================================= */
+  --jedi-font-ui: '苍耳今楷', '仓耳今楷05-W04', '仓耳今楷05 W04', '仓耳今楷', 'Kaiti SC', 'STKaiti', 'KaiTi', 'Songti SC', ui-serif, serif;
+
   /* Zinc Scale */
   --color-zinc-50: #fafafa;
   --color-zinc-100: #f4f4f5;
@@ -154,7 +156,7 @@
 body {
   background-color: var(--jedi-bg-app);
   color: var(--jedi-text-primary);
-  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-family: var(--jedi-font-ui);
   -webkit-font-smoothing: antialiased;
 }
 

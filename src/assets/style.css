@@ -62,6 +62,7 @@
 .v-application {
   background-color: var(--jedi-bg-app) !important;
   color: var(--jedi-text-primary) !important;
+  font-family: var(--jedi-font-ui) !important;
 }
 
 /* Navigation Drawer (Sidebar) */
@@ -103,7 +104,8 @@
 .jedi-dialog-card {
   background-color: var(--jedi-bg-surface) !important;
   border: 1px solid var(--jedi-border) !important;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2) !important; /* Subtle shadow for dialogs is ok */
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2) !important;
+  /* Subtle shadow for dialogs is ok */
 }
 
 .jedi-dialog-header {
@@ -131,8 +133,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeInUp {
@@ -140,6 +147,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -219,12 +227,10 @@
 /* Hosts Table Syntax Highlighting */
 .jedi-table-ip {
   color: var(--jedi-syntax-ip) !important;
-  font-family: monospace;
 }
 
 .jedi-table-domain {
   color: var(--jedi-syntax-domain) !important;
-  font-family: monospace;
 }
 
 /* System Info Bar Icons */

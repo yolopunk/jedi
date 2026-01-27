@@ -271,14 +271,14 @@ function toggleTheme() {
 
 /* Status Text */
 .jedi-status-text {
-  font-family: 'JetBrains Mono', monospace;
   font-size: 9px !important;
-  letter-spacing: 2px;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+  font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-transform: uppercase;
 }
 
 .status-dot {

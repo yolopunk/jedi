@@ -8,12 +8,6 @@
     elevation="4"
     @click="$emit('update:modelValue', !modelValue)"
   >
-    <v-tooltip
-      activator="parent"
-      location="top"
-      :text="modelValue ? $t('hosts.globalSwitch.enabledTooltip') : $t('hosts.globalSwitch.disabledTooltip')"
-    ></v-tooltip>
-
     <v-icon :icon="modelValue ? mdiPowerPlugOutline : mdiPowerPlugOffOutline" size="large"
            :class="{'active-icon': modelValue}"></v-icon>
 

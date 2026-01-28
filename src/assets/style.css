@@ -242,3 +242,9 @@
   color: var(--jedi-text-secondary) !important;
   font-size: 0.75rem !important;
 }
+
+/* Force Transparent Canvas for Models */
+.koala-3d-container canvas {
+  background: transparent !important;
+  background-color: transparent !important;
+}

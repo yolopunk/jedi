@@ -2,7 +2,7 @@
   <v-navigation-drawer permanent :width="220" class="jedi-sidebar">
     <!-- Logo Area -->
     <div class="d-flex flex-column align-center py-6 border-bottom">
-      <v-img src="/icon.png" width="64" class="mb-3 jedi-logo-glow"></v-img>
+      <KoalaModel class="mb-3" />
       <h2 class="text-h6 font-weight-bold text-primary">{{ $t('sidebar.title') }}</h2>
       <div class="text-caption text-secondary">{{ $t('sidebar.subtitle') }}</div>
     </div>
@@ -98,6 +98,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import KoalaModel from '../common/KoalaModel.vue'
 import { mdiDns, mdiWallpaper, mdiCog, mdiGithub, mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark } from '@mdi/js'
 import { useTheme } from '@/composables/useTheme'
 

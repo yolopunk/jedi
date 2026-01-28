@@ -53,8 +53,6 @@ export default {
   },
   hosts: {
     globalSwitch: {
-      enabledTooltip: '已启用 - 点击禁用',
-      disabledTooltip: '已禁用 - 点击启用',
       enabled: '已启用',
       disabled: '已禁用',
     },

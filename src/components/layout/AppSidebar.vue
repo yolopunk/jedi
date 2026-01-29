@@ -10,11 +10,11 @@
     <!-- Navigation -->
     <v-list nav class="pa-2 mt-2">
       <v-list-item
-        :active="activeItem === 'hosts'"
+        to="/hosts"
         rounded="lg"
         class="mb-1 sidebar-item"
         color="primary"
-        @click="$emit('update:activeItem', 'hosts')"
+        active-class="v-list-item--active"
       >
         <template v-slot:prepend>
           <v-icon :icon="mdiDns" size="small" class="mr-2"></v-icon>
@@ -23,11 +23,11 @@
       </v-list-item>
 
       <v-list-item
-        :active="activeItem === 'wallpapers'"
+        to="/wallpapers"
         rounded="lg"
         class="mb-1 sidebar-item"
         color="primary"
-        @click="selectItem('wallpapers')"
+        active-class="v-list-item--active"
       >
         <template v-slot:prepend>
           <v-icon :icon="mdiWallpaper" size="small" class="mr-2"></v-icon>
@@ -105,15 +105,15 @@ import { useTheme } from '@/composables/useTheme'
 const { t } = useI18n()
 const { isDark, themeMode, setTheme } = useTheme()
 
-defineProps<{
-  activeItem?: string
-}>()
+// defineProps<{
+//   activeItem?: string
+// }>()
 
-const emit = defineEmits(['update:activeItem', 'show-settings', 'open-github'])
+const emit = defineEmits(['show-settings', 'open-github'])
 
-function selectItem(item: string) {
-  emit('update:activeItem', item)
-}
+// function selectItem(item: string) {
+//   emit('update:activeItem', item)
+// }
 
 const themeIcon = computed(() => {
   if (themeMode.value === 'dark') return mdiWeatherNight

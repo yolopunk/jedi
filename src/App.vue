@@ -1,7 +1,6 @@
 <template>
   <v-app>
     <app-sidebar
-      v-model:active-item="currentView"
       @open-github="openGithubRepo"
       @open-website="openProjectWebsite"
       @open-email="sendEmail"
@@ -12,8 +11,9 @@
 
     <v-main class="jedi-main-content">
       <v-container class="py-6 px-6" height="100%">
-        <hosts-resolver v-if="currentView === 'hosts'"></hosts-resolver>
-        <wallpaper-manager v-else-if="currentView === 'wallpapers'"></wallpaper-manager>
+        <router-view v-slot="{ Component }">
+          <component :is="Component" />
+        </router-view>
       </v-container>
     </v-main>
 
@@ -36,8 +36,6 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStorage } from '@/composables/useStorage'
-import HostsResolver from '@/components/HostsResolver.vue'
-import WallpaperManager from '@/components/wallpapers/WallpaperManager.vue'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import HelpDialog from '@/components/dialogs/HelpDialog.vue'
@@ -49,9 +47,6 @@ import { useWallpaper } from '@/composables/useWallpaper'
 
 const { locale } = useI18n()
 const { getItem } = useStorage()
-
-// 视图状态
-const currentView = ref('hosts')
 
 // 对话框状态
 const showHelpDialog = ref(false)

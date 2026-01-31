@@ -41,8 +41,8 @@ const onCreated = ({ renderer, scene }: { renderer: WebGLRenderer; scene: any })
 
 <style scoped>
 .koala-3d-container {
-  width: 100px;
-  height: 100px;
+  width: 64px;
+  height: 64px;
   background: transparent !important;
 }
 

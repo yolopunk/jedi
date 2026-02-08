@@ -7,6 +7,10 @@
    Utility Classes
    ========================================= */
 
+body, .v-application {
+  font-family: var(--jedi-font-ui) !important;
+}
+
 /* Text Utilities */
 .text-primary {
   color: var(--jedi-text-primary) !important;
@@ -37,6 +41,10 @@
   background-color: var(--jedi-bg-surface) !important;
 }
 
+.bg-sidebar {
+  background-color: var(--jedi-bg-sidebar) !important;
+}
+
 /* Border Utilities */
 .border-base {
   border: 1px solid var(--jedi-border) !important;
@@ -48,203 +56,4 @@
 
 .border-bottom {
   border-bottom: 1px solid var(--jedi-border) !important;
-}
-
-.border-right {
-  border-right: 1px solid var(--jedi-border) !important;
-}
-
-/* =========================================
-   Component Overrides (Vuetify)
-   ========================================= */
-
-/* Application Background */
-.v-application {
-  background-color: var(--jedi-bg-app) !important;
-  color: var(--jedi-text-primary) !important;
-  font-family: var(--jedi-font-ui) !important;
-}
-
-/* Navigation Drawer (Sidebar) */
-.v-navigation-drawer {
-  background-color: var(--jedi-bg-sidebar) !important;
-  border-right: 1px solid var(--jedi-border) !important;
-}
-
-.v-navigation-drawer .v-list {
-  background: transparent !important;
-}
-
-.v-list-item {
-  color: var(--jedi-text-secondary) !important;
-  border-radius: 6px !important;
-  margin: 4px 8px !important;
-  transition: all 0.2s ease;
-}
-
-.v-list-item--active {
-  background-color: var(--jedi-bg-surface-hover) !important;
-  color: var(--jedi-text-primary) !important;
-}
-
-.v-list-item:hover:not(.v-list-item--active) {
-  background-color: var(--jedi-bg-surface-hover) !important;
-  color: var(--jedi-text-primary) !important;
-}
-
-/* Cards */
-.jedi-card {
-  background-color: var(--jedi-bg-surface) !important;
-  border: 1px solid var(--jedi-border) !important;
-  border-radius: 8px !important;
-  box-shadow: none !important;
-}
-
-/* Dialogs */
-.jedi-dialog-card {
-  background-color: var(--jedi-bg-surface) !important;
-  border: 1px solid var(--jedi-border) !important;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2) !important;
-  /* Subtle shadow for dialogs is ok */
-}
-
-.jedi-dialog-header {
-  background: var(--jedi-bg-surface) !important;
-  border-bottom: 1px solid var(--jedi-border) !important;
-  color: var(--jedi-text-primary) !important;
-}
-
-/* Text Field Overrides for Minimal Look */
-.v-field__outline {
-  color: var(--jedi-border) !important;
-}
-
-.v-field--focused .v-field__outline {
-  color: var(--jedi-focus) !important;
-}
-
-/* Global utility classes */
-.fade-in {
-  animation: fadeIn 0.3s ease-out;
-}
-
-.fade-in-up {
-  animation: fadeInUp 0.3s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Data Tables */
-.v-data-table {
-  background-color: transparent !important;
-  color: var(--jedi-text-primary) !important;
-}
-
-.v-data-table__tr:hover {
-  background-color: var(--jedi-bg-surface-hover) !important;
-}
-
-.v-data-table-footer {
-  background-color: transparent !important;
-  border-top: 1px solid var(--jedi-border) !important;
-}
-
-/* Table Headers */
-.v-data-table-header__content {
-  color: var(--jedi-text-secondary) !important;
-  font-weight: 600 !important;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
-}
-
-/* Inputs / Text Fields */
-.v-field {
-  background-color: var(--jedi-bg-input) !important;
-  border: 1px solid var(--jedi-border);
-  border-radius: 6px !important;
-  transition: border-color 0.2s ease;
-}
-
-.v-field--focused {
-  border-color: var(--jedi-border-focus) !important;
-  box-shadow: 0 0 0 1px var(--jedi-border-focus);
-}
-
-.v-field__outline {
-  display: none !important;
-  /* Hide Vuetify default outline to use our border */
-}
-
-/* Buttons */
-.v-btn {
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-  font-weight: 500 !important;
-}
-
-/* Switches */
-.v-switch__track {
-  background-color: var(--jedi-bg-surface-hover) !important;
-  border: 1px solid var(--jedi-border) !important;
-  opacity: 1 !important;
-}
-
-.v-switch--active .v-switch__track {
-  background-color: var(--jedi-success) !important;
-  border-color: var(--jedi-success) !important;
-}
-
-.v-switch__thumb {
-  background-color: #ffffff !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
-}
-
-/* =========================================
-   Specific Component Classes
-   ========================================= */
-
-/* Hosts Table Syntax Highlighting */
-.jedi-table-ip {
-  color: var(--jedi-syntax-ip) !important;
-}
-
-.jedi-table-domain {
-  color: var(--jedi-syntax-domain) !important;
-}
-
-/* System Info Bar Icons */
-.system-info-icon {
-  color: var(--jedi-text-secondary) !important;
-}
-
-.system-info-text {
-  color: var(--jedi-text-secondary) !important;
-  font-size: 0.75rem !important;
-}
-
-/* Force Transparent Canvas for Models */
-.koala-3d-container canvas {
-  background: transparent !important;
-  background-color: transparent !important;
 }

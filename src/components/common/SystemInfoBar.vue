@@ -17,11 +17,11 @@
           <v-icon :icon="mdiEthernet" size="16" class="mr-3 text-medium-emphasis"></v-icon>
           <div class="d-flex flex-column text-caption" style="line-height: 1.1;">
             <div class="d-flex align-center">
-              <v-icon icon="mdi-arrow-down-thin" size="10" class="mr-1 text-success"></v-icon>
+              <v-icon :icon="mdiArrowDownThin" size="10" class="mr-1 text-success"></v-icon>
               {{ formatNetworkSpeed(osInfo?.metrics?.network_received) }}
             </div>
             <div class="d-flex align-center">
-              <v-icon icon="mdi-arrow-up-thin" size="10" class="mr-1 text-info"></v-icon>
+              <v-icon :icon="mdiArrowUpThin" size="10" class="mr-1 text-info"></v-icon>
               {{ formatNetworkSpeed(osInfo?.metrics?.network_transmitted) }}
             </div>
           </div>
@@ -95,7 +95,9 @@ import {
   mdiEthernet,
   mdiServer,
   mdiCpu64Bit,
-  mdiMemory
+  mdiMemory,
+  mdiArrowDownThin,
+  mdiArrowUpThin
 } from '@mdi/js'
 import { getOsInfo } from '@/api/hosts'
 import { OsInfo } from '@/types/os'

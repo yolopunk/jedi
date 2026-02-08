@@ -8,7 +8,7 @@
   /* =========================================
      Color Primitives (Internal Use Only)
      ========================================= */
-  --jedi-font-ui: '苍耳今楷', '仓耳今楷05-W04', '仓耳今楷05 W04', '仓耳今楷', 'Kaiti SC', 'STKaiti', 'KaiTi', 'Songti SC', ui-serif, serif;
+  --jedi-font-ui: 'CangErJinKai', '苍耳今楷', '仓耳今楷05-W04', '仓耳今楷05 W04', '仓耳今楷', 'Kaiti SC', 'STKaiti', 'KaiTi', 'Songti SC', ui-serif, serif;
 
   /* Zinc Scale */
   --color-zinc-50: #fafafa;
@@ -178,4 +178,25 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--jedi-text-tertiary);
+}
+
+/* =========================================
+   Global Typography Overrides for Vuetify
+   ========================================= */
+.v-application,
+.v-card,
+.v-btn,
+.v-list-item,
+.v-tooltip,
+.v-snackbar,
+.v-dialog,
+.v-overlay-content,
+.v-card-title,
+.v-card-text,
+.v-card-subtitle,
+.text-h1, .text-h2, .text-h3, .text-h4, .text-h5, .text-h6,
+.text-body-1, .text-body-2,
+.text-subtitle-1, .text-subtitle-2,
+.text-caption, .text-overline {
+  font-family: var(--jedi-font-ui) !important;
 }

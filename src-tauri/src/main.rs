@@ -7,6 +7,10 @@ use crate::api::app::{
 use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
 use crate::api::os::{get_os_info, SystemState};
 use crate::api::wallpapers::{get_wallpapers, set_desktop_wallpaper, sync_wallpapers};
+use crate::api::podcast::{
+  fetch_episodes, fetch_rss_channel, get_subscriptions, import_opml,
+  refresh_subscription, remove_subscription, save_subscription, resolve_xiaoyuzhou_podcast,
+};
 use crate::utils::logger;
 use std::sync::Mutex;
 use sysinfo::{Networks, System};
@@ -68,7 +72,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       ensure_jedi_dir,
       get_wallpapers,
       set_desktop_wallpaper,
-      sync_wallpapers
+      sync_wallpapers,
+      get_subscriptions,
+      save_subscription,
+      remove_subscription,
+      refresh_subscription,
+      fetch_rss_channel,
+      fetch_episodes,
+      import_opml,
+      resolve_xiaoyuzhou_podcast
     ])
     .build(tauri::generate_context!())?;
 

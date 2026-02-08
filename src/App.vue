@@ -29,11 +29,19 @@
       @open-website="openProjectWebsite"
       @open-email="sendEmail"
     />
+
+    <!-- Global Audio Element -->
+    <audio 
+      ref="audioEl"
+      class="d-none" 
+      :src="currentPlaying?.audio_url"
+      autoplay
+    ></audio>
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStorage } from '@/composables/useStorage'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
@@ -44,14 +52,25 @@ import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 import { open } from '@tauri-apps/plugin-shell'
 import { initTheme } from '@/composables/useTheme'
 import { useWallpaper } from '@/composables/useWallpaper'
+import { useAudioPlayer } from '@/composables/useAudioPlayer'
 
 const { locale } = useI18n()
 const { getItem } = useStorage()
+const { currentPlaying, setAudioRef } = useAudioPlayer()
+
+const audioEl = ref<HTMLAudioElement | null>(null)
 
 // 对话框状态
 const showHelpDialog = ref(false)
 const showSettingsDialog = ref(false)
 const showAboutDialog = ref(false)
+
+// Initialize Audio Player
+watch(audioEl, (el) => {
+  if (el) {
+    setAudioRef(el)
+  }
+})
 
 // 初始化语言
 const initLanguage = async () => {

@@ -15,7 +15,9 @@
         "resizable": true,
         "title": "Jedi",
         "width": 900,
-        "height": 600
+        "height": 600,
+        "minWidth": 800,
+        "minHeight": 500
       }
     ],
     "security": {

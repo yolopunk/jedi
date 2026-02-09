@@ -104,33 +104,48 @@
         <!-- Detail View: Podcast Info & Episodes -->
         <div v-else-if="currentView === 'detail' && currentSub" class="fill-height">
             <!-- Podcast Header -->
-            <div class="podcast-header pa-8 d-flex flex-column flex-md-row align-start">
-                 <v-img 
-                    :src="currentSub.image_url" 
-                    width="240" 
-                    max-width="240" 
-                    aspect-ratio="1" 
-                    cover 
-                    class="rounded-lg elevation-6 mr-md-8 mb-4 mb-md-0 flex-shrink-0"
-                >
-                    <template v-slot:placeholder>
-                        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
-                            <v-icon :icon="mdiPodcast" size="64" color="grey"></v-icon>
-                        </div>
-                    </template>
-                    <template v-slot:error>
-                        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
-                            <v-icon :icon="mdiPodcast" size="64" color="grey"></v-icon>
-                        </div>
-                    </template>
-                </v-img>
+            <div class="podcast-header pa-4 pa-md-8 d-flex align-start">
+                <div class="d-flex flex-column mr-4 mr-md-8 flex-shrink-0" :style="$vuetify.display.smAndDown ? 'width: 100px' : ''">
+                    <v-img 
+                        :src="currentSub.image_url" 
+                        :width="$vuetify.display.smAndDown ? 100 : 240" 
+                        :max-width="$vuetify.display.smAndDown ? 100 : 240" 
+                        aspect-ratio="1" 
+                        cover 
+                        class="rounded-lg elevation-6 mb-2"
+                    >
+                        <template v-slot:placeholder>
+                            <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
+                                <v-icon :icon="mdiPodcast" size="64" color="grey"></v-icon>
+                            </div>
+                        </template>
+                        <template v-slot:error>
+                            <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
+                                <v-icon :icon="mdiPodcast" size="64" color="grey"></v-icon>
+                            </div>
+                        </template>
+                    </v-img>
+
+                    <!-- Episodes Count for Small Screen -->
+                    <div v-if="$vuetify.display.smAndDown && episodes.length > 0" class="text-caption text-center text-grey-darken-1 mt-1 font-weight-medium">
+                        {{ $t('podcast.episodesCount', { count: episodes.length }) }}
+                    </div>
+                </div>
                 
-                <div class="flex-grow-1 pt-2">
-                    <h1 class="text-h3 font-weight-bold mb-2">{{ currentSub.title }}</h1>
-                    <div class="text-h6 text-primary mb-4">{{ currentSub.author || currentSub.owner_name }}</div>
+                <div class="flex-grow-1 pt-1 pt-md-2" style="min-width: 0">
+                    <h1 :class="$vuetify.display.smAndDown ? 'text-h6' : 'text-h3'" class="font-weight-bold mb-1 mb-md-2 text-truncate">{{ currentSub.title }}</h1>
+                    <div :class="$vuetify.display.smAndDown ? 'text-subtitle-2' : 'text-h6'" class="text-primary mb-2 mb-md-4 text-truncate">{{ currentSub.author || currentSub.owner_name }}</div>
                     
-                    <div class="d-flex align-center mb-6">
-                        <v-btn color="primary" class="mr-4 px-6" rounded="pill" :prepend-icon="mdiPlay" size="large">
+                    <div class="d-flex align-center mb-3 mb-md-6 flex-wrap gap-2">
+                        <v-btn 
+                            color="primary" 
+                            class="mr-2 mr-md-4 mb-2 mb-md-0" 
+                            rounded="pill" 
+                            :prepend-icon="mdiPlay" 
+                            :size="$vuetify.display.smAndDown ? 'small' : 'large'"
+                            @click="playLatest"
+                            :disabled="episodes.length === 0"
+                        >
                             {{ $t('podcast.playLatest') }}
                         </v-btn>
                         <v-btn 
@@ -138,21 +153,60 @@
                             variant="tonal" 
                             color="primary" 
                             rounded="pill" 
-                            class="mr-4" 
+                            class="mr-2 mr-md-4 mb-2 mb-md-0" 
                             @click="scrollToPlaying"
                             :prepend-icon="mdiTarget"
+                            :size="$vuetify.display.smAndDown ? 'small' : 'default'"
                         >
                             {{ $t('podcast.locatePlaying') }}
                         </v-btn>
-                         <v-btn variant="outlined" color="grey-darken-1" rounded="pill" class="mr-2" @click="refreshSub(currentSub)" :loading="refreshLoading">
+                         <v-btn 
+                            variant="outlined" 
+                            color="grey-darken-1" 
+                            rounded="pill" 
+                            class="mr-2 mb-2 mb-md-0" 
+                            @click="refreshSub(currentSub)" 
+                            :loading="refreshLoading"
+                            :size="$vuetify.display.smAndDown ? 'small' : 'default'"
+                         >
                             {{ $t('common.refresh') }}
                         </v-btn>
-                        <v-btn icon variant="text" color="error" @click="unsubscribe(currentSub)">
+                        <v-btn 
+                            icon 
+                            variant="text" 
+                            color="error" 
+                            @click="unsubscribe(currentSub)"
+                            :size="$vuetify.display.smAndDown ? 'small' : 'default'"
+                            class="mb-2 mb-md-0"
+                        >
                             <v-icon :icon="mdiDelete"></v-icon>
                         </v-btn>
                     </div>
 
-                    <div class="d-flex align-center mb-4 flex-wrap">
+                    <!-- Categories for Small Screen (Moved here for better layout) -->
+                    <div class="d-flex flex-wrap align-center mb-2 gap-2" v-if="$vuetify.display.smAndDown">
+                        <v-chip 
+                            v-for="cat in currentSub.categories" 
+                            :key="cat"
+                            size="x-small" 
+                            variant="tonal" 
+                            class="mr-1 mb-1 text-capitalize"
+                            color="secondary"
+                        >
+                            {{ cat }}
+                        </v-chip>
+                        <v-chip 
+                            size="x-small" 
+                            variant="tonal" 
+                            class="mr-1 mb-1 text-capitalize" 
+                            color="secondary"
+                            v-if="currentSub.podcast_type"
+                        >
+                            {{ currentSub.podcast_type }}
+                        </v-chip>
+                    </div>
+
+                    <div class="d-flex align-center mb-2 mb-md-4 flex-wrap" v-if="!$vuetify.display.smAndDown">
                         <v-chip 
                             v-for="cat in currentSub.categories" 
                             :key="cat"
@@ -162,15 +216,25 @@
                         >
                             {{ cat }}
                         </v-chip>
-                        <v-chip size="small" variant="outlined" class="mr-2 mb-2 text-capitalize" v-if="currentSub.podcast_type">
+                        <v-chip 
+                            size="small" 
+                            variant="outlined" 
+                            class="mr-2 mb-2 text-capitalize" 
+                            v-if="currentSub.podcast_type"
+                        >
                             {{ currentSub.podcast_type }}
                         </v-chip>
-                        <v-chip size="small" variant="text" class="text-grey-darken-1 mb-2" v-if="episodes.length > 0">
+                        <v-chip 
+                            size="small" 
+                            variant="text" 
+                            class="text-grey-darken-1 mb-2" 
+                            v-if="episodes.length > 0"
+                        >
                             {{ $t('podcast.episodesCount', { count: episodes.length }) }}
                         </v-chip>
                     </div>
 
-                    <div class="text-body-1 text-grey-darken-1 description-clamp">
+                    <div class="text-body-2 text-md-body-1 text-grey-darken-1 description-clamp">
                         {{ currentSub.description }}
                     </div>
                 </div>
@@ -218,7 +282,10 @@
 
                             <!-- Hover Overlay for Show Notes -->
                             <div class="episode-overlay position-absolute top-0 left-0 w-100 h-100 rounded d-flex align-center justify-center bg-black-50 opacity-0 transition-opacity">
-                                <v-icon :icon="mdiArrowExpandAll" color="white" size="24" class="zoom-icon"></v-icon>
+                                <div class="d-flex align-center justify-center expand-arrows position-relative w-100 h-100">
+                                    <v-icon :icon="mdiArrowBottomLeft" color="white" size="40" class="arrow-bl position-absolute" style="bottom: 0; left: 0;"></v-icon>
+                                    <v-icon :icon="mdiArrowTopRight" color="white" size="40" class="arrow-tr position-absolute" style="top: 0; right: 0;"></v-icon>
+                                </div>
                             </div>
                         </div>
 
@@ -292,7 +359,7 @@
         width="900"
         temporary
         class="elevation-10 show-notes-drawer"
-        :style="{ 'max-width': '95vw' }"
+        :style="{ 'max-width': $vuetify.display.smAndDown ? '100vw' : '95vw', 'z-index': 9999 }"
     >
         <div v-if="currentShowNotesEpisode" class="fill-height position-relative">
             <!-- Blurred Background -->
@@ -315,9 +382,9 @@
                 <!-- Scrollable Area -->
                 <div class="flex-grow-1 overflow-y-auto">
                     <!-- Hero Header -->
-                    <div class="d-flex align-end pa-8 pt-16 pb-8 hero-header">
+                    <div class="d-flex align-end pa-6 pa-md-8 pt-16 pb-6 pb-md-8 hero-header" :class="{'flex-column align-start': $vuetify.display.smAndDown}">
                         <!-- Poster -->
-                        <div class="poster-container elevation-10 mr-8 flex-shrink-0" style="width: 200px; height: 200px;">
+                        <div class="poster-container elevation-10 mr-0 mr-md-8 mb-4 mb-md-0 flex-shrink-0" :style="$vuetify.display.smAndDown ? 'width: 140px; height: 140px;' : 'width: 200px; height: 200px;'">
                             <v-img
                                 :src="currentShowNotesEpisode.image_url || currentSub?.image_url"
                                 width="100%"
@@ -329,18 +396,25 @@
 
                         <!-- Info -->
                         <div class="flex-grow-1 pb-2">
-                            <h2 class="text-h4 font-weight-bold text-white mb-4 text-shadow-lg leading-tight" style="line-height: 1.2;">
+                            <h2 :class="$vuetify.display.smAndDown ? 'text-h5' : 'text-h4'" class="font-weight-bold text-white mb-2 mb-md-4 text-shadow-lg leading-tight" style="line-height: 1.2;">
                                 {{ currentShowNotesEpisode.title }}
                             </h2>
                             
-                            <div class="d-flex align-center text-white-70 mb-6">
+                            <div class="d-flex align-center text-white-70 mb-4 mb-md-6 flex-wrap">
                                 <v-icon :icon="mdiPodcast" size="small" class="mr-2"></v-icon>
-                                <span class="font-weight-bold mr-4">{{ currentShowNotesEpisode.podcast_name || currentSub?.title }}</span>
+                                <span class="font-weight-bold mr-4 text-truncate" style="max-width: 200px;">{{ currentShowNotesEpisode.podcast_name || currentSub?.title }}</span>
                                 
-                                <span class="mr-4">•</span>
-                                <span>{{ formatMonth(currentShowNotesEpisode.pub_date) }} {{ formatDay(currentShowNotesEpisode.pub_date) }}</span>
-                                <span class="mx-2">•</span>
-                                <span>{{ currentShowNotesEpisode.duration }}</span>
+                                <span class="mr-4 hidden-sm-and-down">•</span>
+                                <span class="d-none d-md-inline">{{ formatMonth(currentShowNotesEpisode.pub_date) }} {{ formatDay(currentShowNotesEpisode.pub_date) }}</span>
+                                <span class="mx-2 d-none d-md-inline">•</span>
+                                <span class="d-none d-md-inline">{{ currentShowNotesEpisode.duration }}</span>
+
+                                <!-- Mobile Meta -->
+                                <div v-if="$vuetify.display.smAndDown" class="w-100 mt-2 text-caption opacity-80">
+                                    <span>{{ formatMonth(currentShowNotesEpisode.pub_date) }} {{ formatDay(currentShowNotesEpisode.pub_date) }}</span>
+                                    <span class="mx-2">•</span>
+                                    <span>{{ currentShowNotesEpisode.duration }}</span>
+                                </div>
                             </div>
 
                             <v-btn 
@@ -358,10 +432,11 @@
                     </div>
 
                     <!-- Show Notes Content -->
-                    <div class="pa-8 pt-4">
-                        <div class="show-notes-container pa-8 rounded-xl" style="background: rgba(30,30,30,0.6); backdrop-filter: blur(20px);">
+                    <div class="pa-4 pa-md-8 pt-0 pt-md-4">
+                        <div class="show-notes-container pa-4 pa-md-8 rounded-xl" style="background: rgba(30,30,30,0.6); backdrop-filter: blur(20px);">
                             <EpisodeShowNotes 
                                 :content="currentShowNotesEpisode.show_notes"
+                                @seek="seekToTime"
                             />
                         </div>
                     </div>
@@ -381,7 +456,7 @@ import { ref, onMounted } from 'vue';
 import {
     mdiPodcast, mdiPlus, mdiDelete, mdiPlay, mdiClose, mdiPause,
     mdiChevronLeft, mdiMagnify, mdiFileXmlBox, mdiRefresh, mdiClockTimeFourOutline,
-    mdiTarget, mdiArrowExpandAll
+    mdiTarget, mdiArrowTopRight, mdiArrowBottomLeft
 } from '@mdi/js';
 import {
     getSubscriptions,
@@ -404,7 +479,7 @@ const singleEpisode = ref<PodcastEpisode | null>(null);
 
 import { useAudioPlayer } from '@/composables/useAudioPlayer';
 
-const { currentPlaying, currentPlayingSubUrl, isPaused, playEpisode: globalPlayEpisode, togglePlay: globalTogglePlay } = useAudioPlayer();
+const { currentPlaying, currentPlayingSubUrl, isPaused, playEpisode: globalPlayEpisode, togglePlay: globalTogglePlay, audioRef } = useAudioPlayer();
 
 // Navigation State
 const currentView = ref<'library' | 'detail'>('library');
@@ -460,6 +535,35 @@ async function selectSubscription(sub: PodcastSubscription) {
 function goBack() {
     currentView.value = 'library';
     currentSub.value = null;
+}
+
+function playLatest() {
+    if (episodes.value.length > 0) {
+        playEpisode(episodes.value[0]);
+    }
+}
+
+function seekToTime(seconds: number) {
+    if (!currentShowNotesEpisode.value) return;
+
+    // If currently playing this episode, just seek
+    if (currentPlaying.value?.audio_url === currentShowNotesEpisode.value.audio_url) {
+        if (audioRef.value) {
+            audioRef.value.currentTime = seconds;
+            if (isPaused.value) {
+                 audioRef.value.play().catch(e => console.error(e));
+            }
+        }
+    } else {
+        // If not playing, play it first
+        playEpisode(currentShowNotesEpisode.value);
+        // Attempt to seek after a short delay (once metadata likely loaded)
+        setTimeout(() => {
+            if (audioRef.value) {
+                audioRef.value.currentTime = seconds;
+            }
+        }, 500);
+    }
 }
 
 function playEpisode(ep: PodcastEpisode) {
@@ -716,13 +820,27 @@ function formatDay(dateStr?: string): string {
     opacity: 1 !important;
 }
 
-.zoom-icon {
-    transform: scale(0.8);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+.expand-arrows .arrow-bl,
+.expand-arrows .arrow-tr {
+    opacity: 0.9;
 }
 
-.episode-item:hover .zoom-icon {
-    transform: scale(1.2);
+.episode-item:hover .expand-arrows .arrow-bl {
+    animation: expand-bl 1.5s infinite ease-in-out;
+}
+
+.episode-item:hover .expand-arrows .arrow-tr {
+    animation: expand-tr 1.5s infinite ease-in-out;
+}
+
+@keyframes expand-bl {
+    0%, 100% { transform: translate(6px, -6px); }
+    50% { transform: translate(-2px, 2px); }
+}
+
+@keyframes expand-tr {
+    0%, 100% { transform: translate(-6px, 6px); }
+    50% { transform: translate(2px, -2px); }
 }
 
 /* Highlight Flash Animation */

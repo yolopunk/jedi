@@ -1,7 +1,7 @@
 <template>
   <div class="episode-show-notes">
-    <div class="d-flex align-center justify-space-between mb-2">
-      <h3 class="text-subtitle-1 font-weight-bold">Show Notes</h3>
+    <div class="d-flex align-center justify-space-between mb-4">
+      <h3 class="text-h6 font-weight-bold">Show Notes</h3>
       <v-btn
         v-if="collapsible"
         :icon="expanded ? mdiChevronUp : mdiChevronDown"
@@ -14,8 +14,8 @@
     <v-expand-transition>
       <div v-show="expanded || !collapsible">
         <div 
-          class="show-notes-content text-body-2" 
-          v-html="content"
+          class="show-notes-content text-body-1" 
+          v-html="formattedContent"
           @click="handleClick"
         ></div>
       </div>
@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js';
 import { open } from '@tauri-apps/plugin-shell';
 
@@ -43,10 +43,53 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['seek']);
+
 const expanded = ref(props.defaultExpanded);
+
+const formattedContent = computed(() => {
+  if (!props.content) return '';
+  
+  let content = props.content;
+  
+  // If content seems to be plain text (no html tags like <p>, <div, <br), convert newlines to <br>
+  if (!content.match(/<[a-z][\s\S]*>/i)) {
+      content = content.replace(/\n/g, '<br>');
+  }
+
+  // Highlight timestamps (e.g. 05:00, 12:30, 1:05:00)
+  // Wrap them in a span that we can style and click
+  content = content.replace(
+    /\b((?:\d{1,2}:)?\d{1,2}:\d{2})\b/g, 
+    '<span class="timestamp-link text-primary font-weight-bold cursor-pointer" data-timestamp="$1">$1</span>'
+  );
+  
+  return content;
+});
 
 function handleClick(event: MouseEvent) {
   const target = event.target as HTMLElement;
+  
+  // Handle Timestamp Clicks
+  if (target.classList.contains('timestamp-link')) {
+    const timeStr = target.dataset.timestamp;
+    if (timeStr) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Convert to seconds
+        const parts = timeStr.split(':').reverse();
+        let seconds = 0;
+        if (parts[0]) seconds += parseInt(parts[0]);
+        if (parts[1]) seconds += parseInt(parts[1]) * 60;
+        if (parts[2]) seconds += parseInt(parts[2]) * 3600;
+        
+        emit('seek', seconds);
+        return;
+    }
+  }
+
+  // Handle Links
   const link = target.closest('a');
   if (link) {
     event.preventDefault();
@@ -63,33 +106,65 @@ function handleClick(event: MouseEvent) {
 
 <style>
 .show-notes-content {
-  line-height: 1.6;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.9);
 }
 .show-notes-content img {
   max-width: 100%;
   height: auto;
-  border-radius: 8px;
-  margin: 8px 0;
+  border-radius: 12px;
+  margin: 16px 0;
   display: block;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 .show-notes-content a {
   color: rgb(var(--v-theme-primary));
   text-decoration: none;
+  border-bottom: 1px dotted rgba(var(--v-theme-primary), 0.5);
 }
 .show-notes-content a:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  border-bottom-style: solid;
 }
 .show-notes-content p {
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 .show-notes-content ul, .show-notes-content ol {
   padding-left: 1.5rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 .show-notes-content blockquote {
-  border-left: 4px solid rgba(var(--v-border-color), var(--v-border-opacity));
-  padding-left: 1rem;
-  margin: 1rem 0;
+  border-left: 4px solid rgba(var(--v-theme-primary), 0.5);
+  background: rgba(255,255,255,0.05);
+  padding: 1rem;
+  margin: 1.5rem 0;
+  border-radius: 0 8px 8px 0;
   font-style: italic;
+}
+.show-notes-content h1, 
+.show-notes-content h2, 
+.show-notes-content h3, 
+.show-notes-content h4 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+/* Timestamp styling */
+.timestamp-link {
+    display: inline-block;
+    padding: 0 4px;
+    margin: 0 2px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    background: rgba(var(--v-theme-primary), 0.1);
+}
+.timestamp-link:hover {
+    background: rgba(var(--v-theme-primary), 0.2);
+    transform: translateY(-1px);
+}
+.cursor-pointer {
+    cursor: pointer;
 }
 </style>

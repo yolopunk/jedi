@@ -151,8 +151,14 @@ const tableItems = computed(() => {
 
 // 处理打开域名
 function handleOpenDomain(domain: string) {
-  const message = openDomainLink(domain)
-  emit('open-domain', domain, message)
+  openDomainLink(domain)
+    .then((message) => {
+      emit('open-domain', domain, message)
+    })
+    .catch((error) => {
+      console.error('打开域名失败:', error)
+      emit('open-domain', domain, `打开域名失败: ${domain}`)
+    })
 }
 </script>
 

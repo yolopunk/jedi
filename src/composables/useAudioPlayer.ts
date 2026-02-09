@@ -1,5 +1,5 @@
-import { ref, computed } from 'vue';
-import type { PodcastEpisode, PodcastSubscription } from '@/api/podcast';
+import { ref } from 'vue';
+import type { PodcastEpisode } from '@/api/podcast';
 
 // Global state
 const currentPlaying = ref<PodcastEpisode | null>(null);

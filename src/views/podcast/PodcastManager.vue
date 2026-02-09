@@ -454,7 +454,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import {
-    mdiPodcast, mdiPlus, mdiDelete, mdiPlay, mdiClose, mdiPause,
+    mdiPodcast, mdiPlus, mdiDelete, mdiPlay, mdiClose,
     mdiChevronLeft, mdiMagnify, mdiFileXmlBox, mdiRefresh, mdiClockTimeFourOutline,
     mdiTarget, mdiArrowTopRight, mdiArrowBottomLeft
 } from '@mdi/js';
@@ -479,7 +479,7 @@ const singleEpisode = ref<PodcastEpisode | null>(null);
 
 import { useAudioPlayer } from '@/composables/useAudioPlayer';
 
-const { currentPlaying, currentPlayingSubUrl, isPaused, playEpisode: globalPlayEpisode, togglePlay: globalTogglePlay, audioRef } = useAudioPlayer();
+const { currentPlaying, currentPlayingSubUrl, isPaused, playEpisode: globalPlayEpisode, audioRef } = useAudioPlayer();
 
 // Navigation State
 const currentView = ref<'library' | 'detail'>('library');
@@ -577,10 +577,6 @@ function playEpisode(ep: PodcastEpisode) {
     }
     
     globalPlayEpisode(ep, currentSub.value?.rss_url);
-}
-
-function togglePlay() {
-    globalTogglePlay();
 }
 
 function getEpisodeId(url: string) {

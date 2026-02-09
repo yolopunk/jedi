@@ -1,6 +1,6 @@
 # Jedi Toolkit
 
-> A multi-functional development toolkit to enhance productivity, currently featuring a Hosts Manager module.
+> A multi-functional desktop toolkit for developers to boost productivity.
 
 English | [简体中文](README.md)
 
@@ -10,13 +10,13 @@ English | [简体中文](README.md)
 
 ## 📖 Introduction
 
-Jedi Toolkit is a cross-platform application built with Tauri v2 and Vue 3, designed to provide developers with a series of practical tools to improve development efficiency. The currently implemented Hosts Manager module helps developers easily create, edit, and switch between different hosts configuration groups, making development, testing, and deployment processes more efficient.
+Jedi Toolkit is a cross-platform desktop application built with Tauri v2, Vue 3 and Vuetify. It provides practical tools for daily development, including Hosts management, Knowledge Wall wallpapers, Xiaoyuzhou podcasts, system info, and settings.
 
 The name "Jedi" is inspired by the Jedi Knights from Star Wars, symbolizing how this tool helps developers master different development environment configurations with the ease of a Jedi.
 
 ## ✨ Features
 
-### Hosts Manager Module
+### Hosts Manager
 
 - **Group Management**: Create hosts configuration groups by project or environment
 - **One-Click Switching**: Quickly switch between different configurations
@@ -24,14 +24,27 @@ The name "Jedi" is inspired by the Jedi Knights from Star Wars, symbolizing how 
 - **Individual Entry Control**: Enable/disable specific hosts entries
 - **Quick Domain Access**: Directly open domains in browser with a click
 
-### System Features
+### Knowledge Wall
 
-- **System Tray**: Minimize to system tray, always available
-- **Cross-Platform Support**: Works on Windows, macOS, and Linux
-- **Modern Interface**: Beautiful UI based on Vuetify
-- **Lightweight**: Low resource usage, fast startup
-- **Dynamic Version**: Automatically reads version from Cargo.toml
-- **Open Source**: Completely open source and free to use
+- **Category & tag filtering**: Find wallpapers quickly
+- **Preview & set wallpaper**: Preview details and apply with one click
+- **Rich content view**: Read image/text content in detail
+
+### Xiaoyuzhou Podcast
+
+- **Subscription management**: Add, refresh, and unsubscribe
+- **OPML import**: Migrate subscriptions easily
+- **Playback control**: Play latest and locate current playing
+- **Show notes**: View notes with link handling
+
+### System & Experience
+
+- **System Info Bar**: CPU, memory, network and other key metrics
+- **Theme Modes**: Dark, light and system-following
+- **System Tray**: Minimize to tray, always available
+- **Multi-language**: Chinese and English UI
+- **Cross-Platform Support**: Windows, macOS, and Linux
+- **Modern Interface**: Consistent Vuetify-based UI
 
 ## 🚀 Installation
 
@@ -79,7 +92,7 @@ You can also download pre-compiled installation packages directly from the [GitH
 
 ## 🔧 Usage Guide
 
-### Hosts Manager Module
+### Hosts Manager
 
 1. **Add Group**: Click the "+" button to create a new hosts configuration group
 2. **Add Entry**: Click the "Add Entry" button in a group to add a new hosts entry
@@ -103,13 +116,17 @@ Jedi uses special format markers to manage content in the hosts file:
 
 Jedi only manages the content between these markers and does not modify other parts of the file.
 
-### Keyboard Shortcuts
+### Knowledge Wall
 
-- **Ctrl+N**: Create new group
-- **Ctrl+A**: Add entry
-- **Ctrl+S**: Save current configuration
-- **Ctrl+R**: Reload configuration
-- **F1**: Open help dialog
+1. **Browse & filter**: Use categories and tags to filter
+2. **Preview wallpaper**: Open a wallpaper card for full details
+3. **Set wallpaper**: Apply with one click
+
+### Xiaoyuzhou Podcast
+
+1. **Add subscriptions**: Input RSS or import OPML
+2. **Browse shows**: View and search in the library
+3. **Play & locate**: Play latest and locate the current playing
 
 ## 🔐 Permissions
 

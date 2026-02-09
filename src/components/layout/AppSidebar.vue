@@ -362,7 +362,7 @@ function toggleTheme() {
   justify-content: center;
   cursor: pointer;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 50%, #1e293b, #0f172a); /* Dark interior */
+  background: transparent; /* Removed dark background */
   overflow: hidden; /* Clip contents to circle */
   border: 1px solid rgba(255,255,255,0.05);
 }

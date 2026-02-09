@@ -3,6 +3,7 @@
  * 提供处理hosts文件的通用工具函数
  */
 
+import { open } from '@tauri-apps/plugin-shell'
 import { Group, HostEntry } from '@/types/hosts'
 
 /**
@@ -90,14 +91,19 @@ export function disableAllHosts(groups: Group[]): void {
  * @param domain 要打开的域名
  * @returns 通知消息
  */
-export function openDomainLink(domain: string): string {
-  // 根据域名构建 URL
-  let url = domain
-  if (!url.startsWith('http://') && !url.startsWith('https://')) {
-    url = 'http://' + url
-  }
+export async function openDomainLink(domain: string): Promise<string> {
+  try {
+    // 根据域名构建 URL
+    let url = domain
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'http://' + url
+    }
 
-  // 在新标签页中打开链接
-  window.open(url, '_blank')
-  return `正在打开: ${domain}`
+    // 在默认浏览器中打开链接
+    await open(url)
+    return `正在打开: ${domain}`
+  } catch (error) {
+    console.error('打开域名链接失败:', error)
+    throw new Error(`打开域名失败: ${domain}`)
+  }
 }

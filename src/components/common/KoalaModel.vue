@@ -1,28 +1,56 @@
 <script setup lang="ts">
+import { shallowRef, watch } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import { OrbitControls, GLTFModel } from '@tresjs/cientos'
-import { SRGBColorSpace, WebGLRenderer, ACESFilmicToneMapping } from 'three'
+import { SRGBColorSpace, WebGLRenderer, ACESFilmicToneMapping, Color } from 'three'
 
 const onCreated = ({ renderer, scene }: { renderer: WebGLRenderer; scene: any }) => {
-  // 诊断性设置：尝试半透明红色，确认 alpha 是否生效
-  renderer.setClearColor(0xff0000, 0.5)
-  renderer.setClearAlpha(0.5)
+  // 确保背景完全透明
+  renderer.setClearColor(new Color(0x000000), 0)
+  renderer.setClearAlpha(0)
   scene.background = null
+  scene.environment = null
   
   // 材质表现优化
   renderer.outputColorSpace = SRGBColorSpace
   renderer.toneMapping = ACESFilmicToneMapping
   renderer.toneMappingExposure = 1.2
 }
+
+const modelRef = shallowRef<any>(null)
+
+watch(modelRef, (model) => {
+  if (!model) return
+  model.traverse((child: any) => {
+    if (!child?.isMesh) return
+    const materials = Array.isArray(child.material) ? child.material : [child.material]
+    const hasTexture = materials.some((m: any) => !!m?.map)
+    const isPureBlack = materials.length > 0 && materials.every((m: any) => {
+      if (!m?.color) return false
+      return m.color.getHex() === 0x000000
+    })
+    if (!hasTexture && isPureBlack) {
+      child.visible = false
+      return
+    }
+    materials.forEach((m: any) => {
+      if (!m) return
+      m.transparent = true
+      if ('alphaTest' in m) m.alphaTest = 0.01
+      if ('depthWrite' in m) m.depthWrite = true
+      if ('opacity' in m) m.opacity = 1
+      if ('needsUpdate' in m) m.needsUpdate = true
+    })
+  })
+})
 </script>
 
 <template>
   <div class="koala-3d-container">
     <TresCanvas 
       shadows
-      alpha
+      :alpha="true"
       antialias
-      :premultiplied-alpha="false"
       @created="onCreated"
     >
       <TresPerspectiveCamera :position="[0, 1, 4]" :look-at="[0, 0, 0]" />
@@ -33,7 +61,7 @@ const onCreated = ({ renderer, scene }: { renderer: WebGLRenderer; scene: any })
       <TresDirectionalLight :position="[-2, 2, 5]" :intensity="1.5" />
       
       <Suspense>
-        <GLTFModel path="/koala-yoda.glb" :scale="3" :position="[0, -1.5, 0]" />
+        <GLTFModel ref="modelRef" path="/koala-yoda.glb" :scale="3" :position="[0, -1.5, 0]" />
       </Suspense>
     </TresCanvas>
   </div>

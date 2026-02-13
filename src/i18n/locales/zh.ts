@@ -85,6 +85,7 @@ export default {
       deleteBtn: '确认删除',
       groupNameLabel: '分组名称',
       groupNamePlaceholder: '例如: 开发环境',
+      renameGroupTitle: '重命名分组',
       useRemote: '使用远程配置',
       remoteUrlLabel: '远程配置URL',
       remoteUrlPlaceholder: '例如: https://example.com/hosts.json',
@@ -117,6 +118,7 @@ export default {
   common: {
     confirm: '确认',
     cancel: '取消',
+    rename: '重命名',
     save: '保存',
     delete: '删除',
     edit: '编辑',

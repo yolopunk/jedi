@@ -101,29 +101,18 @@ export function useHostsData(notify: NotifyFunction) {
     }
   }
 
-  async function debouncedUpdateHosts() {
-    pendingUpdates.value = true
-    
+  function debouncedUpdateHosts() {
     if (updateDebounceTimeout.value) {
       clearTimeout(updateDebounceTimeout.value)
     }
     
     return new Promise<void>((resolve, reject) => {
       updateDebounceTimeout.value = setTimeout(async () => {
-        if (pendingUpdates.value) {
-          try {
-            loading.value = true
-            await updateHostsWithGroups(groups.value)
-            pendingUpdates.value = false
-            resolve()
-          } catch (error) {
-            console.error('批量更新hosts失败', error)
-            reject(error)
-          } finally {
-            loading.value = false
-          }
-        } else {
+        try {
+          await updateHosts()
           resolve()
+        } catch (error) {
+          reject(error)
         }
       }, 500)
     })
@@ -166,6 +155,11 @@ export function useHostsData(notify: NotifyFunction) {
   // ===== CRUD 操作 =====
 
   async function addGroup(data: { name: string; isRemote: boolean; url?: string; hosts?: HostEntry[] }) {
+    if (groups.value.some(g => g.name === data.name)) {
+      notify('分组名称已存在', 'error')
+      return
+    }
+
     groups.value.push({
       name: data.name,
       hosts: data.hosts || []
@@ -179,6 +173,36 @@ export function useHostsData(notify: NotifyFunction) {
       console.error('添加分组失败', error)
       notify('添加失败: ' + (error as Error).message, 'error')
       groups.value.pop()
+    }
+  }
+
+  async function renameGroup(oldName: string, newName: string) {
+    if (oldName === newName) return
+
+    if (groups.value.some(g => g.name === newName)) {
+      notify('分组名称已存在', 'error')
+      return
+    }
+
+    const group = groups.value.find(g => g.name === oldName)
+    if (!group) {
+      notify('未找到对应分组', 'error')
+      return
+    }
+
+    group.name = newName
+
+    try {
+      await debouncedUpdateHosts()
+      if (selectedGroup.value === oldName) {
+        selectedGroup.value = newName
+      }
+      notify('分组重命名成功', 'success')
+    } catch (error) {
+      console.error('重命名分组失败', error)
+      notify('重命名失败: ' + (error as Error).message, 'error')
+      // Revert change
+      group.name = oldName
     }
   }
 
@@ -311,12 +335,11 @@ export function useHostsData(notify: NotifyFunction) {
     hostsResolveSwitch,
     loading,
     currentGroup,
-    
-    // Actions
     loadSystemHosts,
     handleHostsSwitch,
     initializeDefaultConfig,
     addGroup,
+    renameGroup,
     addHost,
     editHost,
     updateHostStatus,

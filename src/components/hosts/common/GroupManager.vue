@@ -19,8 +19,20 @@
         class="group-tab"
         @click="$emit('update:modelValue', group.name)"
       >
-        <v-icon :icon="mdiDomain" size="small" class="mr-1"></v-icon>
-        {{ group.name }}
+        <div class="d-flex align-center">
+          <v-icon :icon="mdiDomain" size="small" class="mr-1"></v-icon>
+          {{ group.name }}
+          <v-btn
+            icon
+            variant="text"
+            size="x-small"
+            class="ml-1 edit-btn"
+            @click.stop="$emit('rename-group', group.name)"
+            :title="$t('common.rename')"
+          >
+            <v-icon :icon="mdiPencil" size="14"></v-icon>
+          </v-btn>
+        </div>
       </v-tab>
 
       <!-- 添加分组按钮作为最后一个标签 -->
@@ -37,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { mdiDomain, mdiPlus } from '@mdi/js'
+import { mdiDomain, mdiPlus, mdiPencil } from '@mdi/js'
 import { Group } from '@/types/hosts'
 import { computed } from 'vue'
 
@@ -51,6 +63,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void;
   (e: 'add-group'): void;
+  (e: 'rename-group', groupName: string): void;
 }>()
 
 // 计算属性：当前选中的标签
@@ -94,6 +107,21 @@ const selectedTab = computed({
 .group-tab.v-tab--selected {
   color: var(--jedi-text-primary) !important;
   font-weight: 600;
+}
+
+.edit-btn {
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: var(--jedi-text-secondary);
+}
+
+.group-tab:hover .edit-btn,
+.group-tab.v-tab--selected .edit-btn {
+  opacity: 1;
+}
+
+.edit-btn:hover {
+  color: var(--jedi-accent);
 }
 
 .add-group-tab {

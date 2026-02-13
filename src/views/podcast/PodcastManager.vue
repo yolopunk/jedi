@@ -320,8 +320,8 @@
       </div>
 
     <!-- Add Subscription Dialog (Keep functionality) -->
-    <v-dialog v-model="showAddDialog" max-width="500" persistent>
-      <v-card class="rounded-xl">
+    <v-dialog v-model="showAddDialog" :max-width="showGuide ? 900 : 500" persistent class="transition-all">
+      <v-card class="rounded-xl transition-all">
         <v-card-title class="px-6 pt-6 pb-2 d-flex justify-space-between align-center">
             <span class="text-h6 font-weight-bold">{{ $t('podcast.importOpml') }}</span>
             <v-btn icon variant="text" @click="closeAddDialog" :disabled="addLoading">
@@ -342,6 +342,71 @@
                 show-size
                 rounded="lg"
             ></v-file-input>
+
+            <div class="mt-4">
+                <div 
+                    class="d-flex align-center cursor-pointer text-primary user-select-none" 
+                    @click="showGuide = !showGuide"
+                    v-ripple
+                >
+                    <span class="text-subtitle-2 font-weight-bold">如何从小宇宙导出 OPML？</span>
+                    <v-spacer></v-spacer>
+                    <v-icon :icon="showGuide ? mdiChevronUp : mdiChevronDown"></v-icon>
+                </div>
+
+                <v-expand-transition>
+                    <div v-if="showGuide" class="mt-4 pt-2 border-t">
+                                <v-row>
+                                    <v-col cols="12" v-for="(step, i) in guideSteps" :key="i">
+                                        <div class="d-flex align-start text-left">
+                                            <!-- Step Badge -->
+                                            <div class="mr-4 mt-1">
+                                                <v-avatar color="black" size="28" class="text-subtitle-2 font-weight-bold elevation-2 text-white">
+                                                    {{ i + 1 }}
+                                                </v-avatar>
+                                            </div>
+
+                                            <!-- Content -->
+                                            <div class="flex-grow-1">
+                                                <div class="text-subtitle-2 font-weight-bold text-grey-darken-3 mb-2">{{ step.desc }}</div>
+                                                <div 
+                                                    class="position-relative guide-card-container elevation-1 rounded-lg overflow-hidden cursor-pointer bg-grey-lighten-4 border"
+                                                    @click="step.image ? (previewImage = step.image, showPreview = true) : null"
+                                                    v-ripple
+                                                >
+                                                    <!-- Placeholder -->
+                                                    <v-sheet 
+                                                        v-if="!step.image"
+                                                        color="transparent" 
+                                                        class="d-flex align-center justify-center w-100"
+                                                        style="aspect-ratio: 9/19;"
+                                                    >
+                                                        <v-icon :icon="step.icon" size="48" color="grey-lighten-1"></v-icon>
+                                                    </v-sheet>
+
+                                                    <img
+                                                        v-else
+                                                        :src="step.image"
+                                                        style="width: 100%; height: auto; display: block;"
+                                                        class="bg-grey-lighten-4"
+                                                        alt="Step Image"
+                                                    />
+
+                                                    <!-- Hover Overlay -->
+                                                    <div class="guide-overlay position-absolute top-0 left-0 w-100 h-100 d-flex align-center justify-center bg-black-50 opacity-0 transition-opacity">
+                                                        <v-icon :icon="mdiMagnify" color="white" size="32"></v-icon>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </v-col>
+                                </v-row>
+                                <div class="text-caption text-grey text-center mt-4">
+                                    * 截图仅供参考，请以最新版小宇宙 App 界面为准
+                                </div>
+                            </div>
+                </v-expand-transition>
+            </div>
         </v-card-text>
         <v-card-actions class="px-6 pb-6">
             <v-spacer></v-spacer>
@@ -351,6 +416,31 @@
             </v-btn>
         </v-card-actions>
       </v-card>
+    </v-dialog>
+
+    <!-- Image Preview Dialog -->
+    <v-dialog v-model="showPreview" max-width="500">
+        <v-card class="rounded-xl overflow-hidden bg-transparent shadow-none" elevation="0">
+            <v-img 
+                :src="previewImage" 
+                width="100%" 
+                max-height="85vh" 
+                contain
+                class="bg-transparent"
+                @click="showPreview = false"
+            >
+                <template v-slot:placeholder>
+                    <div class="d-flex align-center justify-center fill-height">
+                        <v-progress-circular indeterminate color="white"></v-progress-circular>
+                    </div>
+                </template>
+            </v-img>
+            <div class="d-flex justify-center mt-2">
+                <v-btn icon variant="text" color="white" @click="showPreview = false">
+                    <v-icon :icon="mdiClose" size="large"></v-icon>
+                </v-btn>
+            </div>
+        </v-card>
     </v-dialog>
 
     <v-navigation-drawer
@@ -456,7 +546,8 @@ import { ref, onMounted } from 'vue';
 import {
     mdiPodcast, mdiPlus, mdiDelete, mdiPlay, mdiClose,
     mdiChevronLeft, mdiMagnify, mdiFileXmlBox, mdiRefresh, mdiClockTimeFourOutline,
-    mdiTarget, mdiArrowTopRight, mdiArrowBottomLeft
+    mdiTarget, mdiArrowTopRight, mdiArrowBottomLeft,
+    mdiAccount, mdiShareVariant, mdiFileExport, mdiChevronDown, mdiChevronUp
 } from '@mdi/js';
 import {
     getSubscriptions,
@@ -498,6 +589,16 @@ const currentShowNotesEpisode = ref<PodcastEpisode | null>(null);
 // OPML State
 const opmlFile = ref<File | File[] | null>(null);
 const opmlError = ref('');
+const showGuide = ref(false);
+const showPreview = ref(false);
+const previewImage = ref('');
+
+const guideSteps = [
+    { desc: '点击底部【订阅】', icon: mdiPodcast, image: '/images/opml-export-guide/1.png' },
+    { desc: '点击右上角【我的订阅】', icon: mdiAccount, image: '/images/opml-export-guide/2.png' },
+    { desc: '点击右上角分享按钮', icon: mdiShareVariant, image: '/images/opml-export-guide/3.png' },
+    { desc: '选择【导出OPML】', icon: mdiFileExport, image: '/images/opml-export-guide/4.png' }
+];
 
 // UI
 const snackbar = ref(false);
@@ -955,4 +1056,15 @@ function formatDay(dateStr?: string): string {
     100% { transform: rotate(360deg); }
 }
 
+.guide-card-container:hover .guide-overlay {
+    opacity: 1 !important;
+}
+
+.guide-card-container {
+    transition: transform 0.2s;
+}
+
+.guide-card-container:hover {
+    transform: scale(1.02);
+}
 </style>

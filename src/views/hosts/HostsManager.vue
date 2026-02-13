@@ -7,6 +7,7 @@
       v-model="selectedGroup"
       :groups="groups"
       @add-group="dialogs.addGroup = true"
+      @rename-group="openRenameGroupDialog"
       class="fade-in"
     />
 
@@ -41,6 +42,12 @@
     v-model="dialogs.addGroup"
     @add="addGroup"
     @error="showNotification($event, 'error')"
+  />
+
+  <rename-group-dialog
+    v-model="dialogs.renameGroup"
+    :group-name="currentRenameGroupName"
+    @rename="renameGroup"
   />
 
   <add-host-dialog
@@ -86,6 +93,7 @@ import GroupManager from '@/components/hosts/common/GroupManager.vue'
 import HostsTable from '@/components/hosts/tables/HostsTable.vue'
 import EmptyState from '@/components/hosts/common/EmptyState.vue'
 import AddGroupDialog from '@/components/hosts/dialogs/AddGroupDialog.vue'
+import RenameGroupDialog from '@/components/hosts/dialogs/RenameGroupDialog.vue'
 import AddHostDialog from '@/components/hosts/dialogs/AddHostDialog.vue'
 import EditHostDialog from '@/components/hosts/dialogs/EditHostDialog.vue'
 import DeleteConfirmDialog from '@/components/hosts/dialogs/DeleteConfirmDialog.vue'
@@ -97,12 +105,14 @@ import { useHostsData } from '@/composables/useHostsData'
 
 const dialogs = ref({
   addGroup: false,
+  renameGroup: false,
   addHost: false,
   editHost: false,
   deleteConfirm: false
 })
 
 const currentAddGroupName = ref('')
+const currentRenameGroupName = ref('')
 const currentEditHost = ref<HostEntry | null>(null)
 const hostToDelete = ref<HostEntry | null>(null)
 
@@ -128,11 +138,17 @@ const {
   handleHostsSwitch,
   initializeDefaultConfig,
   addGroup,
+  renameGroup,
   addHost,
   editHost,
   updateHostStatus,
   confirmDeleteHost
 } = useHostsData(showNotification)
+
+function openRenameGroupDialog(groupName: string) {
+  currentRenameGroupName.value = groupName
+  dialogs.value.renameGroup = true
+}
 
 function openAddHostDialog(groupName: string) {
   currentAddGroupName.value = groupName

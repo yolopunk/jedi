@@ -14,7 +14,29 @@
       "Bash(npm run tauri:*)",
       "Bash(powershell:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore\\(release\\): bump version to 0.2.0\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore\\(release\\): bump version to 0.2.0\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add group rename functionality and OPML export guide\n\n- Add rename group dialog with validation and error handling\n- Show rename button on group tabs with hover effects\n- Add OPML export guide with step-by-step screenshots for Xiaoyuzhou\n- Increase default window width from 900 to 980\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push)",
+      "Bash(cd:*)",
+      "Bash(git remote:*)",
+      "Bash(pnpm build)",
+      "Bash(pnpm add:*)",
+      "Bash(cargo doc:*)",
+      "Bash(cargo tree:*)",
+      "Bash(ls:*)",
+      "Bash(cargo metadata:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.rs)",
+      "Bash(cargo expand:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(rustc:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo rustc:*)",
+      "Bash(pnpm tauri:*)",
+      "Bash(cargo search:*)",
+      "Bash(cargo fetch:*)",
+      "Bash(cargo clean:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

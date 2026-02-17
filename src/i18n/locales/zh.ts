@@ -51,6 +51,12 @@ export default {
     wpFrequency: '更新频率 (天)',
     wpCategories: '偏好分类',
     wpLastUpdate: '上次更新: {time}',
+    checkUpdate: '检查更新',
+    updateChecking: '检查中...',
+    updateAvailable: '发现新版本 {version}',
+    updateLatest: '已是最新版本',
+    lastCheckTime: '上次检查: {time}',
+    never: '从未',
   },
   hosts: {
     globalSwitch: {
@@ -73,6 +79,7 @@ export default {
     dialog: {
       editTitle: '编辑条目',
       addTitle: '新增条目',
+      renameGroupTitle: '重命名分组',
       deleteTitle: '确认删除',
       addGroupTitle: '添加分组',
       ipLabel: 'IP地址',
@@ -85,7 +92,6 @@ export default {
       deleteBtn: '确认删除',
       groupNameLabel: '分组名称',
       groupNamePlaceholder: '例如: 开发环境',
-      renameGroupTitle: '重命名分组',
       useRemote: '使用远程配置',
       remoteUrlLabel: '远程配置URL',
       remoteUrlPlaceholder: '例如: https://example.com/hosts.json',
@@ -118,7 +124,6 @@ export default {
   common: {
     confirm: '确认',
     cancel: '取消',
-    rename: '重命名',
     save: '保存',
     delete: '删除',
     edit: '编辑',
@@ -137,5 +142,14 @@ export default {
     setSuccess: '壁纸设置成功！',
     setError: '设置壁纸失败，请重试',
     loadError: '加载壁纸列表失败',
+  },
+  update: {
+    title: '发现新版本',
+    currentVersion: '当前版本',
+    newVersion: '新版本',
+    releaseNotes: '更新内容',
+    downloadAndInstall: '下载并安装',
+    downloading: '下载中...',
+    installing: '安装中...',
   }
 }

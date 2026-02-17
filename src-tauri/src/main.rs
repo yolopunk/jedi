@@ -29,6 +29,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_autostart::Builder::new().build())
     .plugin(tauri_plugin_store::Builder::default().build())
+    .plugin(tauri_plugin_updater::Builder::new().build())
+    .plugin(tauri_plugin_process::init())
     .manage(SystemState {
       system: Mutex::new(System::new_all()),
       networks: Mutex::new(Networks::new_with_refreshed_list()),
@@ -79,9 +81,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       refresh_subscription,
       fetch_rss_channel,
       fetch_episodes,
-      import_opml,
-      resolve_xiaoyuzhou_podcast
-    ])
+  import_opml,
+  resolve_xiaoyuzhou_podcast
+])
     .build(tauri::generate_context!())?;
 
   let _app_handle = app.handle();

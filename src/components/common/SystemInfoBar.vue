@@ -5,6 +5,40 @@
       <div class="app-info d-flex align-center px-4 h-100 border-right">
         <span class="text-caption font-weight-black text-disabled mr-2 ls-1">JEDI</span>
         <span class="text-caption text-medium-emphasis">v{{ appVersion }}</span>
+
+        <!-- Update Indicator -->
+        <v-btn
+          v-if="hasUpdate"
+          variant="text"
+          size="x-small"
+          density="compact"
+          class="ml-2 px-1 update-btn"
+          @click="showUpdateDialog = true"
+        >
+          <v-icon :icon="mdiDownload" size="16" class="text-error"></v-icon>
+          <v-tooltip activator="parent" location="top">
+            {{ $t('update.title') }}: {{ updateInfo?.version }}
+          </v-tooltip>
+        </v-btn>
+
+        <!-- Checking Indicator -->
+        <v-btn
+          v-if="isChecking"
+          variant="text"
+          size="x-small"
+          density="compact"
+          class="ml-2 px-1"
+        >
+          <v-progress-circular
+            :size="16"
+            :width="2"
+            indeterminate
+            class="text-primary"
+          ></v-progress-circular>
+          <v-tooltip activator="parent" location="top">
+            {{ $t('settings.updateChecking') }}
+          </v-tooltip>
+        </v-btn>
       </div>
 
       <v-spacer></v-spacer>
@@ -86,6 +120,15 @@
         </div>
       </div>
     </div>
+
+    <!-- Update Dialog -->
+    <UpdateDialog
+      v-if="updateInfo"
+      v-model="showUpdateDialog"
+      :update-info="updateInfo"
+      :is-installing="isInstalling"
+      @install="handleInstallUpdate"
+    ></UpdateDialog>
   </v-footer>
 </template>
 
@@ -97,16 +140,39 @@ import {
   mdiCpu64Bit,
   mdiMemory,
   mdiArrowDownThin,
-  mdiArrowUpThin
+  mdiArrowUpThin,
+  mdiDownload
 } from '@mdi/js'
 import { getOsInfo } from '@/api/hosts'
 import { OsInfo } from '@/types/os'
+import { useUpdate } from '@/composables/useUpdate'
+import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
 import pkg from '../../../package.json'
 
 const appVersion = pkg.version
 
 // Connection status simulation
 const isConnected = ref(true)
+
+// Update composable
+const {
+  hasUpdate,
+  updateInfo,
+  isChecking,
+  isInstalling,
+  installUpdate
+} = useUpdate()
+
+const showUpdateDialog = ref(false)
+
+const handleInstallUpdate = async () => {
+  try {
+    await installUpdate()
+    showUpdateDialog.value = false
+  } catch (error) {
+    console.error('Failed to install update:', error)
+  }
+}
 
 // 系统信息
 const osInfo = ref<OsInfo | null>(null)

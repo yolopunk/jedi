@@ -84,10 +84,53 @@
                 </template>
                 <v-list-item-title>自动检查更新</v-list-item-title>
                 <template v-slot:append>
-                  <v-switch color="var(--jedi-accent)" hide-details></v-switch>
+                  <v-switch
+                    v-model="autoUpdateEnabled"
+                    color="var(--jedi-accent)"
+                    hide-details
+                    @update:model-value="handleAutoUpdateChange"
+                  ></v-switch>
+                </template>
+              </v-list-item>
+
+              <v-list-item>
+                <template v-slot:prepend>
+                  <v-icon :icon="mdiRefresh" color="var(--jedi-primary)" class="mr-3"></v-icon>
+                </template>
+                <v-list-item-title>{{ $t('settings.checkUpdate') }}</v-list-item-title>
+                <v-list-item-subtitle v-if="hasUpdate">
+                  {{ $t('settings.updateAvailable', { version: updateInfo?.version }) }}
+                </v-list-item-subtitle>
+                <v-list-item-subtitle v-else-if="updateLoading">
+                  {{ $t('settings.updateChecking') }}
+                </v-list-item-subtitle>
+                <v-list-item-subtitle v-else>
+                  {{ formatLastCheckTime() }}
+                </v-list-item-subtitle>
+                <template v-slot:append>
+                  <v-btn
+                    color="var(--jedi-accent)"
+                    variant="tonal"
+                    size="small"
+                    rounded="sm"
+                    :loading="updateLoading"
+                    :disabled="updateLoading"
+                    @click="handleManualCheck"
+                  >
+                    {{ $t('settings.checkUpdate') }}
+                  </v-btn>
                 </template>
               </v-list-item>
             </v-list>
+
+            <!-- Update Dialog -->
+            <UpdateDialog
+              v-if="updateInfo"
+              v-model="showUpdateDialog"
+              :update-info="updateInfo"
+              :is-installing="isInstalling"
+              @install="handleInstallUpdate"
+            ></UpdateDialog>
           </v-window-item>
 
           <!-- 壁纸设置 -->
@@ -203,7 +246,8 @@
         <v-btn variant="text" @click="dialogModel = false" rounded="sm" class="mr-2">
           取消
         </v-btn>
-        <v-btn color="var(--jedi-accent)" variant="elevated" @click="dialogModel = false" rounded="sm">
+        <v-btn variant="text" class="save-btn" rounded="sm">
+          <v-icon :icon="mdiContentSave" class="mr-1" size="small"></v-icon>
           保存
         </v-btn>
       </v-card-actions>
@@ -225,11 +269,14 @@ import {
   mdiBackupRestore,
   mdiRefresh,
   mdiTranslate,
-  mdiWallpaper
+  mdiWallpaper,
+  mdiContentSave
 } from '@mdi/js'
 import { enableAutostart, disableAutostart, isAutostartEnabled } from '@/api/app'
 import { useWallpaper } from '@/composables/useWallpaper'
 import { getWallpapers } from '@/api/wallpaper'
+import { useUpdate } from '@/composables/useUpdate'
+import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
 
 // 定义组件属性
 const props = defineProps<{
@@ -274,6 +321,42 @@ const settingsTab = ref('general')
 // 自启动相关状态
 const autostartEnabled = ref(false)
 const autostartLoading = ref(false)
+
+// Update composable
+const {
+  hasUpdate,
+  updateInfo,
+  isChecking: updateLoading,
+  isInstalling,
+  autoUpdateEnabled,
+  checkForUpdate,
+  installUpdate,
+  formatLastCheckTime
+} = useUpdate()
+
+const showUpdateDialog = ref(false)
+
+const handleAutoUpdateChange = (value: boolean | null) => {
+  if (value !== null) {
+    autoUpdateEnabled.value = value
+  }
+}
+
+const handleManualCheck = async () => {
+  await checkForUpdate()
+  if (hasUpdate.value) {
+    showUpdateDialog.value = true
+  }
+}
+
+const handleInstallUpdate = async () => {
+  try {
+    await installUpdate()
+    showUpdateDialog.value = false
+  } catch (error) {
+    console.error('Failed to install update:', error)
+  }
+}
 
 // 切换自启动状态
 async function toggleAutostart(value: boolean | null) {
@@ -324,3 +407,15 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+/* Save button matching sidebar style */
+.save-btn {
+  transition: all 0.2s;
+}
+
+.save-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+  transform: scale(1.05);
+}
+</style>

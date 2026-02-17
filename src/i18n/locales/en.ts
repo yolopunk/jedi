@@ -51,6 +51,21 @@ export default {
     wpFrequency: 'Update Frequency (Days)',
     wpCategories: 'Preferred Categories',
     wpLastUpdate: 'Last Update: {time}',
+    checkUpdate: 'Check Now',
+    updateChecking: 'Checking...',
+    updateAvailable: 'New version {version} available',
+    updateLatest: 'Already up to date',
+    lastCheckTime: 'Last check: {time}',
+    never: 'Never',
+  },
+  update: {
+    title: 'New Version Available',
+    currentVersion: 'Current Version',
+    newVersion: 'New Version',
+    releaseNotes: 'Release Notes',
+    downloadAndInstall: 'Download & Install',
+    downloading: 'Downloading...',
+    installing: 'Installing...',
   },
   hosts: {
     globalSwitch: {

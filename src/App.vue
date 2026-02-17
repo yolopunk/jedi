@@ -53,6 +53,7 @@ import { open } from '@tauri-apps/plugin-shell'
 import { initTheme } from '@/composables/useTheme'
 import { useWallpaper } from '@/composables/useWallpaper'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
+import { useUpdate } from '@/composables/useUpdate'
 
 const { locale } = useI18n()
 const { getItem } = useStorage()
@@ -111,10 +112,14 @@ const sendEmail = async () => {
 onMounted(async () => {
   initTheme()
   await initLanguage()
-  
+
   // Check and run wallpaper auto-update
   const { startAutoUpdateCheck } = useWallpaper()
   startAutoUpdateCheck()
+
+  // Initialize auto-update check
+  const { startAutoCheck } = useUpdate()
+  startAutoCheck()
 })
 </script>
 

@@ -104,48 +104,33 @@
         <!-- Detail View: Podcast Info & Episodes -->
         <div v-else-if="currentView === 'detail' && currentSub" class="fill-height">
             <!-- Podcast Header -->
-            <div class="podcast-header pa-4 pa-md-8 d-flex align-start">
-                <div class="d-flex flex-column mr-4 mr-md-8 flex-shrink-0" :style="$vuetify.display.smAndDown ? 'width: 100px' : ''">
-                    <v-img 
-                        :src="currentSub.image_url" 
-                        :width="$vuetify.display.smAndDown ? 100 : 240" 
-                        :max-width="$vuetify.display.smAndDown ? 100 : 240" 
-                        aspect-ratio="1" 
-                        cover 
-                        class="rounded-lg elevation-6 mb-2"
-                    >
-                        <template v-slot:placeholder>
-                            <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
-                                <v-icon :icon="mdiPodcast" size="64" color="grey"></v-icon>
-                            </div>
-                        </template>
-                        <template v-slot:error>
-                            <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
-                                <v-icon :icon="mdiPodcast" size="64" color="grey"></v-icon>
-                            </div>
-                        </template>
-                    </v-img>
-
-                    <!-- Episodes Count for Small Screen -->
-                    <div v-if="$vuetify.display.smAndDown && episodes.length > 0" class="text-caption text-center text-grey-darken-1 mt-1 font-weight-medium">
-                        {{ $t('podcast.episodesCount', { count: episodes.length }) }}
-                    </div>
-                </div>
+            <div class="podcast-header pa-8 d-flex flex-column flex-md-row align-start">
+                 <v-img 
+                    :src="currentSub.image_url" 
+                    width="240" 
+                    max-width="240" 
+                    aspect-ratio="1" 
+                    cover 
+                    class="rounded-lg elevation-6 mr-md-8 mb-4 mb-md-0 flex-shrink-0"
+                >
+                    <template v-slot:placeholder>
+                        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
+                            <v-icon :icon="mdiPodcast" size="64" color="grey"></v-icon>
+                        </div>
+                    </template>
+                    <template v-slot:error>
+                        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
+                            <v-icon :icon="mdiPodcast" size="64" color="grey"></v-icon>
+                        </div>
+                    </template>
+                </v-img>
                 
-                <div class="flex-grow-1 pt-1 pt-md-2" style="min-width: 0">
-                    <h1 :class="$vuetify.display.smAndDown ? 'text-h6' : 'text-h3'" class="font-weight-bold mb-1 mb-md-2 text-truncate">{{ currentSub.title }}</h1>
-                    <div :class="$vuetify.display.smAndDown ? 'text-subtitle-2' : 'text-h6'" class="text-primary mb-2 mb-md-4 text-truncate">{{ currentSub.author || currentSub.owner_name }}</div>
+                <div class="flex-grow-1 pt-2">
+                    <h1 class="text-h3 font-weight-bold mb-2">{{ currentSub.title }}</h1>
+                    <div class="text-h6 text-primary mb-4">{{ currentSub.author || currentSub.owner_name }}</div>
                     
-                    <div class="d-flex align-center mb-3 mb-md-6 flex-wrap gap-2">
-                        <v-btn 
-                            color="primary" 
-                            class="mr-2 mr-md-4 mb-2 mb-md-0" 
-                            rounded="pill" 
-                            :prepend-icon="mdiPlay" 
-                            :size="$vuetify.display.smAndDown ? 'small' : 'large'"
-                            @click="playLatest"
-                            :disabled="episodes.length === 0"
-                        >
+                    <div class="d-flex align-center mb-6">
+                        <v-btn color="primary" class="mr-4 px-6" rounded="pill" :prepend-icon="mdiPlay" size="large">
                             {{ $t('podcast.playLatest') }}
                         </v-btn>
                         <v-btn 
@@ -153,60 +138,21 @@
                             variant="tonal" 
                             color="primary" 
                             rounded="pill" 
-                            class="mr-2 mr-md-4 mb-2 mb-md-0" 
+                            class="mr-4" 
                             @click="scrollToPlaying"
                             :prepend-icon="mdiTarget"
-                            :size="$vuetify.display.smAndDown ? 'small' : 'default'"
                         >
                             {{ $t('podcast.locatePlaying') }}
                         </v-btn>
-                         <v-btn 
-                            variant="outlined" 
-                            color="grey-darken-1" 
-                            rounded="pill" 
-                            class="mr-2 mb-2 mb-md-0" 
-                            @click="refreshSub(currentSub)" 
-                            :loading="refreshLoading"
-                            :size="$vuetify.display.smAndDown ? 'small' : 'default'"
-                         >
+                         <v-btn variant="outlined" color="grey-darken-1" rounded="pill" class="mr-2" @click="refreshSub(currentSub)" :loading="refreshLoading">
                             {{ $t('common.refresh') }}
                         </v-btn>
-                        <v-btn 
-                            icon 
-                            variant="text" 
-                            color="error" 
-                            @click="unsubscribe(currentSub)"
-                            :size="$vuetify.display.smAndDown ? 'small' : 'default'"
-                            class="mb-2 mb-md-0"
-                        >
+                        <v-btn icon variant="text" color="error" @click="unsubscribe(currentSub)">
                             <v-icon :icon="mdiDelete"></v-icon>
                         </v-btn>
                     </div>
 
-                    <!-- Categories for Small Screen (Moved here for better layout) -->
-                    <div class="d-flex flex-wrap align-center mb-2 gap-2" v-if="$vuetify.display.smAndDown">
-                        <v-chip 
-                            v-for="cat in currentSub.categories" 
-                            :key="cat"
-                            size="x-small" 
-                            variant="tonal" 
-                            class="mr-1 mb-1 text-capitalize"
-                            color="secondary"
-                        >
-                            {{ cat }}
-                        </v-chip>
-                        <v-chip 
-                            size="x-small" 
-                            variant="tonal" 
-                            class="mr-1 mb-1 text-capitalize" 
-                            color="secondary"
-                            v-if="currentSub.podcast_type"
-                        >
-                            {{ currentSub.podcast_type }}
-                        </v-chip>
-                    </div>
-
-                    <div class="d-flex align-center mb-2 mb-md-4 flex-wrap" v-if="!$vuetify.display.smAndDown">
+                    <div class="d-flex align-center mb-4 flex-wrap">
                         <v-chip 
                             v-for="cat in currentSub.categories" 
                             :key="cat"
@@ -216,25 +162,15 @@
                         >
                             {{ cat }}
                         </v-chip>
-                        <v-chip 
-                            size="small" 
-                            variant="outlined" 
-                            class="mr-2 mb-2 text-capitalize" 
-                            v-if="currentSub.podcast_type"
-                        >
+                        <v-chip size="small" variant="outlined" class="mr-2 mb-2 text-capitalize" v-if="currentSub.podcast_type">
                             {{ currentSub.podcast_type }}
                         </v-chip>
-                        <v-chip 
-                            size="small" 
-                            variant="text" 
-                            class="text-grey-darken-1 mb-2" 
-                            v-if="episodes.length > 0"
-                        >
+                        <v-chip size="small" variant="text" class="text-grey-darken-1 mb-2" v-if="episodes.length > 0">
                             {{ $t('podcast.episodesCount', { count: episodes.length }) }}
                         </v-chip>
                     </div>
 
-                    <div class="text-body-2 text-md-body-1 text-grey-darken-1 description-clamp">
+                    <div class="text-body-1 text-grey-darken-1 description-clamp">
                         {{ currentSub.description }}
                     </div>
                 </div>
@@ -252,7 +188,7 @@
 
                  <v-list v-else lines="three" bg-color="transparent" class="pa-0">
                     <div 
-                        v-for="ep in episodes" 
+                        v-for="ep in visibleEpisodes" 
                         :key="ep.audio_url" 
                         :id="getEpisodeId(ep.audio_url)"
                         class="d-flex align-center py-3 px-4 rounded-lg mb-1 episode-item group position-relative"
@@ -282,10 +218,7 @@
 
                             <!-- Hover Overlay for Show Notes -->
                             <div class="episode-overlay position-absolute top-0 left-0 w-100 h-100 rounded d-flex align-center justify-center bg-black-50 opacity-0 transition-opacity">
-                                <div class="d-flex align-center justify-center expand-arrows position-relative w-100 h-100">
-                                    <v-icon :icon="mdiArrowBottomLeft" color="white" size="40" class="arrow-bl position-absolute" style="bottom: 0; left: 0;"></v-icon>
-                                    <v-icon :icon="mdiArrowTopRight" color="white" size="40" class="arrow-tr position-absolute" style="top: 0; right: 0;"></v-icon>
-                                </div>
+                                <v-icon :icon="mdiArrowExpandAll" color="white" size="24" class="zoom-icon"></v-icon>
                             </div>
                         </div>
 
@@ -312,6 +245,7 @@
                         </div>
                     </div>
                  </v-list>
+                 <div ref="episodesLoadMoreTrigger"></div>
             </div>
         </div>
 
@@ -320,8 +254,8 @@
       </div>
 
     <!-- Add Subscription Dialog (Keep functionality) -->
-    <v-dialog v-model="showAddDialog" :max-width="showGuide ? 900 : 500" persistent class="transition-all">
-      <v-card class="rounded-xl transition-all">
+    <v-dialog v-model="showAddDialog" max-width="500" persistent>
+      <v-card class="rounded-xl">
         <v-card-title class="px-6 pt-6 pb-2 d-flex justify-space-between align-center">
             <span class="text-h6 font-weight-bold">{{ $t('podcast.importOpml') }}</span>
             <v-btn icon variant="text" @click="closeAddDialog" :disabled="addLoading">
@@ -342,71 +276,6 @@
                 show-size
                 rounded="lg"
             ></v-file-input>
-
-            <div class="mt-4">
-                <div 
-                    class="d-flex align-center cursor-pointer text-primary user-select-none" 
-                    @click="showGuide = !showGuide"
-                    v-ripple
-                >
-                    <span class="text-subtitle-2 font-weight-bold">如何从小宇宙导出 OPML？</span>
-                    <v-spacer></v-spacer>
-                    <v-icon :icon="showGuide ? mdiChevronUp : mdiChevronDown"></v-icon>
-                </div>
-
-                <v-expand-transition>
-                    <div v-if="showGuide" class="mt-4 pt-2 border-t">
-                                <v-row>
-                                    <v-col cols="12" v-for="(step, i) in guideSteps" :key="i">
-                                        <div class="d-flex align-start text-left">
-                                            <!-- Step Badge -->
-                                            <div class="mr-4 mt-1">
-                                                <v-avatar color="black" size="28" class="text-subtitle-2 font-weight-bold elevation-2 text-white">
-                                                    {{ i + 1 }}
-                                                </v-avatar>
-                                            </div>
-
-                                            <!-- Content -->
-                                            <div class="flex-grow-1">
-                                                <div class="text-subtitle-2 font-weight-bold text-grey-darken-3 mb-2">{{ step.desc }}</div>
-                                                <div 
-                                                    class="position-relative guide-card-container elevation-1 rounded-lg overflow-hidden cursor-pointer bg-grey-lighten-4 border"
-                                                    @click="step.image ? (previewImage = step.image, showPreview = true) : null"
-                                                    v-ripple
-                                                >
-                                                    <!-- Placeholder -->
-                                                    <v-sheet 
-                                                        v-if="!step.image"
-                                                        color="transparent" 
-                                                        class="d-flex align-center justify-center w-100"
-                                                        style="aspect-ratio: 9/19;"
-                                                    >
-                                                        <v-icon :icon="step.icon" size="48" color="grey-lighten-1"></v-icon>
-                                                    </v-sheet>
-
-                                                    <img
-                                                        v-else
-                                                        :src="step.image"
-                                                        style="width: 100%; height: auto; display: block;"
-                                                        class="bg-grey-lighten-4"
-                                                        alt="Step Image"
-                                                    />
-
-                                                    <!-- Hover Overlay -->
-                                                    <div class="guide-overlay position-absolute top-0 left-0 w-100 h-100 d-flex align-center justify-center bg-black-50 opacity-0 transition-opacity">
-                                                        <v-icon :icon="mdiMagnify" color="white" size="32"></v-icon>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </v-col>
-                                </v-row>
-                                <div class="text-caption text-grey text-center mt-4">
-                                    * 截图仅供参考，请以最新版小宇宙 App 界面为准
-                                </div>
-                            </div>
-                </v-expand-transition>
-            </div>
         </v-card-text>
         <v-card-actions class="px-6 pb-6">
             <v-spacer></v-spacer>
@@ -418,122 +287,133 @@
       </v-card>
     </v-dialog>
 
-    <!-- Image Preview Dialog -->
-    <v-dialog v-model="showPreview" max-width="500">
-        <v-card class="rounded-xl overflow-hidden bg-transparent shadow-none" elevation="0">
-            <v-img 
-                :src="previewImage" 
-                width="100%" 
-                max-height="85vh" 
-                contain
-                class="bg-transparent"
-                @click="showPreview = false"
-            >
-                <template v-slot:placeholder>
-                    <div class="d-flex align-center justify-center fill-height">
-                        <v-progress-circular indeterminate color="white"></v-progress-circular>
-                    </div>
-                </template>
-            </v-img>
-            <div class="d-flex justify-center mt-2">
-                <v-btn icon variant="text" color="white" @click="showPreview = false">
-                    <v-icon :icon="mdiClose" size="large"></v-icon>
-                </v-btn>
-            </div>
-        </v-card>
-    </v-dialog>
-
-    <v-navigation-drawer
-        v-model="showShowNotesDialog"
-        location="right"
-        width="900"
-        temporary
-        class="elevation-10 show-notes-drawer"
-        :style="{ 'max-width': $vuetify.display.smAndDown ? '100vw' : '95vw', 'z-index': 9999 }"
+    <v-dialog
+      v-model="showShowNotesDialog"
+      fullscreen
+      persistent
+      class="show-notes-dialog"
+      transition="dialog-bottom-transition"
     >
-        <div v-if="currentShowNotesEpisode" class="fill-height position-relative">
-            <!-- Blurred Background -->
-            <div 
-                class="absolute-background"
-                :style="`background-image: url(${currentShowNotesEpisode.image_url || currentSub?.image_url});`"
+      <div
+        v-if="currentShowNotesEpisode"
+        class="position-relative d-flex flex-column fill-height w-100 overflow-hidden"
+      >
+        <!-- Background Layer -->
+        <div class="position-absolute top-0 left-0 w-100 h-100" style="z-index: 0;">
+            <div
+                class="w-100 h-100"
+                :style="`background-image: url(${currentShowNotesEpisode.image_url || currentSub?.image_url}); background-size: cover; background-position: center; filter: blur(20px) saturate(180%); opacity: 0.6;`"
             ></div>
-            <div class="glass-overlay"></div>
-
-            <!-- Content Container -->
-            <div class="position-relative d-flex flex-column fill-height w-100" style="z-index: 2;">
-                
-                <!-- Close Button (Fixed) -->
-                <div class="position-absolute top-0 right-0 ma-6" style="z-index: 10;">
-                    <v-btn icon variant="tonal" color="white" class="glass-btn" @click="showShowNotesDialog = false">
-                        <v-icon :icon="mdiClose"></v-icon>
-                    </v-btn>
-                </div>
-
-                <!-- Scrollable Area -->
-                <div class="flex-grow-1 overflow-y-auto">
-                    <!-- Hero Header -->
-                    <div class="d-flex align-end pa-6 pa-md-8 pt-16 pb-6 pb-md-8 hero-header" :class="{'flex-column align-start': $vuetify.display.smAndDown}">
-                        <!-- Poster -->
-                        <div class="poster-container elevation-10 mr-0 mr-md-8 mb-4 mb-md-0 flex-shrink-0" :style="$vuetify.display.smAndDown ? 'width: 140px; height: 140px;' : 'width: 200px; height: 200px;'">
-                            <v-img
-                                :src="currentShowNotesEpisode.image_url || currentSub?.image_url"
-                                width="100%"
-                                height="100%"
-                                cover
-                                class="rounded-lg"
-                            ></v-img>
-                        </div>
-
-                        <!-- Info -->
-                        <div class="flex-grow-1 pb-2">
-                            <h2 :class="$vuetify.display.smAndDown ? 'text-h5' : 'text-h4'" class="font-weight-bold text-white mb-2 mb-md-4 text-shadow-lg leading-tight" style="line-height: 1.2;">
-                                {{ currentShowNotesEpisode.title }}
-                            </h2>
-                            
-                            <div class="d-flex align-center text-white-70 mb-4 mb-md-6 flex-wrap">
-                                <v-icon :icon="mdiPodcast" size="small" class="mr-2"></v-icon>
-                                <span class="font-weight-bold mr-4 text-truncate" style="max-width: 200px;">{{ currentShowNotesEpisode.podcast_name || currentSub?.title }}</span>
-                                
-                                <span class="mr-4 hidden-sm-and-down">•</span>
-                                <span class="d-none d-md-inline">{{ formatMonth(currentShowNotesEpisode.pub_date) }} {{ formatDay(currentShowNotesEpisode.pub_date) }}</span>
-                                <span class="mx-2 d-none d-md-inline">•</span>
-                                <span class="d-none d-md-inline">{{ currentShowNotesEpisode.duration }}</span>
-
-                                <!-- Mobile Meta -->
-                                <div v-if="$vuetify.display.smAndDown" class="w-100 mt-2 text-caption opacity-80">
-                                    <span>{{ formatMonth(currentShowNotesEpisode.pub_date) }} {{ formatDay(currentShowNotesEpisode.pub_date) }}</span>
-                                    <span class="mx-2">•</span>
-                                    <span>{{ currentShowNotesEpisode.duration }}</span>
-                                </div>
-                            </div>
-
-                            <v-btn 
-                                color="white" 
-                                variant="flat"
-                                rounded="pill" 
-                                size="large"
-                                class="font-weight-bold text-primary px-8"
-                                :prepend-icon="mdiPlay"
-                                @click="playEpisode(currentShowNotesEpisode)"
-                            >
-                                {{ $t('podcast.play') }}
-                            </v-btn>
-                        </div>
-                    </div>
-
-                    <!-- Show Notes Content -->
-                    <div class="pa-4 pa-md-8 pt-0 pt-md-4">
-                        <div class="show-notes-container pa-4 pa-md-8 rounded-xl" style="background: rgba(30,30,30,0.6); backdrop-filter: blur(20px);">
-                            <EpisodeShowNotes 
-                                :content="currentShowNotesEpisode.show_notes"
-                                @seek="seekToTime"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div
+                class="position-absolute top-0 left-0 w-100 h-100"
+                style="background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(var(--v-theme-surface), 0.95)); backdrop-filter: blur(10px);"
+            ></div>
         </div>
-    </v-navigation-drawer>
+
+        <!-- Fixed Top Bar -->
+        <div class="position-absolute top-0 right-0 w-100 d-flex justify-end pa-6 pointer-events-none" style="z-index: 20;">
+            <v-btn
+              icon
+              variant="tonal"
+              color="white"
+              class="glass-btn pointer-events-auto"
+              @click="showShowNotesDialog = false"
+            >
+              <v-icon :icon="mdiClose"></v-icon>
+            </v-btn>
+        </div>
+
+        <!-- Fixed Header Area -->
+        <div class="flex-shrink-0 position-relative" style="z-index: 10;">
+          <div class="d-flex align-end pa-8 pt-16 pb-4 hero-header show-notes-inner">
+              <div
+                class="poster-container elevation-10 mr-8 flex-shrink-0"
+                style="width: 200px; height: 200px;"
+              >
+                <v-img
+                  :src="currentShowNotesEpisode.image_url || currentSub?.image_url"
+                  width="100%"
+                  height="100%"
+                  cover
+                  class="rounded-lg"
+                ></v-img>
+              </div>
+
+              <div class="flex-grow-1 pb-2 text-white">
+                <h2
+                  class="text-h4 font-weight-bold mb-4 text-shadow-lg"
+                  style="line-height: 1.2;"
+                >
+                  {{ currentShowNotesEpisode.title }}
+                </h2>
+
+                <div class="d-flex align-center text-white-70 mb-3">
+                  <v-icon :icon="mdiPodcast" size="small" class="mr-2"></v-icon>
+                  <span class="font-weight-bold mr-4">
+                    {{ currentShowNotesEpisode.podcast_name || currentSub?.title }}
+                  </span>
+                  <span class="mr-4">•</span>
+                  <span>
+                    {{ formatMonth(currentShowNotesEpisode.pub_date) }}
+                    {{ formatDay(currentShowNotesEpisode.pub_date) }}
+                  </span>
+                  <span class="mx-2">•</span>
+                  <span>{{ currentShowNotesEpisode.duration }}</span>
+                  <span
+                    v-if="currentShowNotesEpisode.chapters && currentShowNotesEpisode.chapters.length"
+                    class="mx-2"
+                  >•</span>
+                  <span
+                    v-if="currentShowNotesEpisode.chapters && currentShowNotesEpisode.chapters.length"
+                  >
+                    章节：{{ currentShowNotesEpisode.chapters.length }}
+                  </span>
+                </div>
+
+                <div class="d-flex align-center">
+                  <v-btn
+                    variant="tonal"
+                    color="white"
+                    rounded="pill"
+                    class="mr-3 text-body-2 font-weight-medium px-5"
+                    @click="showShowNotesDialog = false"
+                  >
+                    <v-icon :icon="mdiChevronLeft" size="small" class="mr-2"></v-icon>
+                    {{ $t('common.back') }}
+                  </v-btn>
+                  <v-btn
+                    color="white"
+                    variant="flat"
+                    rounded="pill"
+                    size="large"
+                    class="font-weight-bold text-primary px-8"
+                    :prepend-icon="mdiPlay"
+                    @click="playEpisode(currentShowNotesEpisode)"
+                  >
+                    {{ $t('podcast.play') }}
+                  </v-btn>
+                </div>
+              </div>
+          </div>
+        </div>
+
+        <!-- Scrollable Content -->
+        <div class="d-flex flex-column flex-grow-1 w-100 overflow-y-auto scroll-smooth position-relative" style="z-index: 10;">
+          <div class="show-notes-page h-100">
+            <div class="pa-8 pt-2 show-notes-inner h-100">
+              <div
+                class="show-notes-container pa-8 rounded-xl"
+                style="background: rgba(30,30,30,0.6); backdrop-filter: blur(20px);"
+              >
+                <EpisodeShowNotes
+                  :content="currentShowNotesEpisode.show_notes"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </v-dialog>
 
     <v-snackbar v-model="snackbar" :color="snackbarColor" rounded="pill">
       {{ snackbarText }}
@@ -542,12 +422,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import {
     mdiPodcast, mdiPlus, mdiDelete, mdiPlay, mdiClose,
     mdiChevronLeft, mdiMagnify, mdiFileXmlBox, mdiRefresh, mdiClockTimeFourOutline,
-    mdiTarget, mdiArrowTopRight, mdiArrowBottomLeft,
-    mdiAccount, mdiShareVariant, mdiFileExport, mdiChevronDown, mdiChevronUp
+    mdiTarget, mdiArrowExpandAll
 } from '@mdi/js';
 import {
     getSubscriptions,
@@ -568,9 +447,17 @@ const episodesLoading = ref(false);
 
 const singleEpisode = ref<PodcastEpisode | null>(null);
 
+const EPISODES_PAGE_SIZE = 30;
+const visibleEpisodeCount = ref(EPISODES_PAGE_SIZE);
+const visibleEpisodes = computed(() =>
+  episodes.value.slice(0, visibleEpisodeCount.value)
+);
+const episodesLoadMoreTrigger = ref<HTMLElement | null>(null);
+let episodesObserver: IntersectionObserver | null = null;
+
 import { useAudioPlayer } from '@/composables/useAudioPlayer';
 
-const { currentPlaying, currentPlayingSubUrl, isPaused, playEpisode: globalPlayEpisode, audioRef } = useAudioPlayer();
+const { currentPlaying, currentPlayingSubUrl, playEpisode: globalPlayEpisode } = useAudioPlayer();
 
 // Navigation State
 const currentView = ref<'library' | 'detail'>('library');
@@ -589,16 +476,6 @@ const currentShowNotesEpisode = ref<PodcastEpisode | null>(null);
 // OPML State
 const opmlFile = ref<File | File[] | null>(null);
 const opmlError = ref('');
-const showGuide = ref(false);
-const showPreview = ref(false);
-const previewImage = ref('');
-
-const guideSteps = [
-    { desc: '点击底部【订阅】', icon: mdiPodcast, image: '/images/opml-export-guide/1.png' },
-    { desc: '点击右上角【我的订阅】', icon: mdiAccount, image: '/images/opml-export-guide/2.png' },
-    { desc: '点击右上角分享按钮', icon: mdiShareVariant, image: '/images/opml-export-guide/3.png' },
-    { desc: '选择【导出OPML】', icon: mdiFileExport, image: '/images/opml-export-guide/4.png' }
-];
 
 // UI
 const snackbar = ref(false);
@@ -607,6 +484,13 @@ const snackbarColor = ref('error');
 
 onMounted(async () => {
     await loadSubscriptions();
+});
+
+onBeforeUnmount(() => {
+    if (episodesObserver) {
+        episodesObserver.disconnect();
+        episodesObserver = null;
+    }
 });
 
 async function loadSubscriptions() {
@@ -623,9 +507,12 @@ async function selectSubscription(sub: PodcastSubscription) {
     singleEpisode.value = null;
     episodesLoading.value = true;
     episodes.value = []; // Clear previous episodes
+    visibleEpisodeCount.value = EPISODES_PAGE_SIZE;
     
     try {
         episodes.value = await fetchEpisodes(sub.rss_url);
+        await nextTick();
+        setupEpisodesObserver();
     } catch (e: any) {
         showMsg('Failed to load episodes: ' + e, 'error');
     } finally {
@@ -636,34 +523,9 @@ async function selectSubscription(sub: PodcastSubscription) {
 function goBack() {
     currentView.value = 'library';
     currentSub.value = null;
-}
-
-function playLatest() {
-    if (episodes.value.length > 0) {
-        playEpisode(episodes.value[0]);
-    }
-}
-
-function seekToTime(seconds: number) {
-    if (!currentShowNotesEpisode.value) return;
-
-    // If currently playing this episode, just seek
-    if (currentPlaying.value?.audio_url === currentShowNotesEpisode.value.audio_url) {
-        if (audioRef.value) {
-            audioRef.value.currentTime = seconds;
-            if (isPaused.value) {
-                 audioRef.value.play().catch(e => console.error(e));
-            }
-        }
-    } else {
-        // If not playing, play it first
-        playEpisode(currentShowNotesEpisode.value);
-        // Attempt to seek after a short delay (once metadata likely loaded)
-        setTimeout(() => {
-            if (audioRef.value) {
-                audioRef.value.currentTime = seconds;
-            }
-        }, 500);
+    if (episodesObserver) {
+        episodesObserver.disconnect();
+        episodesObserver = null;
     }
 }
 
@@ -830,6 +692,30 @@ function formatDay(dateStr?: string): string {
     const date = new Date(dateStr);
     return date.getDate().toString();
 }
+
+function setupEpisodesObserver() {
+    if (episodesObserver) {
+        episodesObserver.disconnect();
+    }
+
+    episodesObserver = new IntersectionObserver(entries => {
+        const entry = entries[0];
+        if (!entry.isIntersecting) {
+            return;
+        }
+        if (visibleEpisodeCount.value >= episodes.value.length) {
+            return;
+        }
+        visibleEpisodeCount.value = Math.min(
+            visibleEpisodeCount.value + EPISODES_PAGE_SIZE,
+            episodes.value.length
+        );
+    });
+
+    if (episodesLoadMoreTrigger.value) {
+        episodesObserver.observe(episodesLoadMoreTrigger.value);
+    }
+}
 </script>
 
 <style scoped>
@@ -917,27 +803,13 @@ function formatDay(dateStr?: string): string {
     opacity: 1 !important;
 }
 
-.expand-arrows .arrow-bl,
-.expand-arrows .arrow-tr {
-    opacity: 0.9;
+.zoom-icon {
+    transform: scale(0.8);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.episode-item:hover .expand-arrows .arrow-bl {
-    animation: expand-bl 1.5s infinite ease-in-out;
-}
-
-.episode-item:hover .expand-arrows .arrow-tr {
-    animation: expand-tr 1.5s infinite ease-in-out;
-}
-
-@keyframes expand-bl {
-    0%, 100% { transform: translate(6px, -6px); }
-    50% { transform: translate(-2px, 2px); }
-}
-
-@keyframes expand-tr {
-    0%, 100% { transform: translate(-6px, 6px); }
-    50% { transform: translate(2px, -2px); }
+.episode-item:hover .zoom-icon {
+    transform: scale(1.2);
 }
 
 /* Highlight Flash Animation */
@@ -951,34 +823,12 @@ function formatDay(dateStr?: string): string {
 }
 
 /* Show Notes Glassmorphism */
-.show-notes-drawer {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
 
-.absolute-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-size: cover;
-    background-position: center;
-    filter: blur(20px) saturate(180%);
-    opacity: 0.6;
-    z-index: 0;
+.pointer-events-none {
+    pointer-events: none !important;
 }
-
-.glass-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(var(--v-theme-surface), 0.95));
-    z-index: 1;
-    backdrop-filter: blur(10px);
+.pointer-events-auto {
+    pointer-events: auto !important;
 }
 
 .text-shadow-lg {
@@ -1022,14 +872,6 @@ function formatDay(dateStr?: string): string {
 }
 
 /* Ensure content readability in the dark glass drawer */
-.show-notes-drawer .show-notes-content {
-    color: rgba(255, 255, 255, 0.9) !important;
-}
-
-.show-notes-drawer .show-notes-content a {
-    color: #90caf9 !important; /* Light Blue 200 for better contrast on dark */
-}
-
 .highlight-flash {
     animation: flash-highlight 2s ease-out;
 }
@@ -1056,15 +898,32 @@ function formatDay(dateStr?: string): string {
     100% { transform: rotate(360deg); }
 }
 
-.guide-card-container:hover .guide-overlay {
-    opacity: 1 !important;
+.show-notes-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    width: 100%;
 }
 
-.guide-card-container {
-    transition: transform 0.2s;
+
+
+.show-notes-container {
+    background-clip: padding-box;
+}
+</style>
+
+<style>
+/* Unscoped styles for dialog content to ensure scrolling works */
+.show-notes-dialog .v-overlay__content {
+    max-height: 100vh;
+    overflow: hidden !important; /* Disable dialog scroll, handle internally */
+    width: 100%;
+    margin: 0;
+    pointer-events: auto;
+    display: flex; /* Flex layout */
+    flex-direction: column;
 }
 
-.guide-card-container:hover {
-    transform: scale(1.02);
+.show-notes-dialog {
+    background: transparent !important;
 }
 </style>

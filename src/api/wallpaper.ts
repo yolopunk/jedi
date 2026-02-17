@@ -50,9 +50,22 @@ export async function syncWallpapers(): Promise<void> {
  */
 export async function setDesktopWallpaper(url: string): Promise<void> {
   try {
-    await invoke('set_desktop_wallpaper', { url });
+    await invoke('set_desktop_wallpaper', { url })
   } catch (error) {
     console.error('Failed to set desktop wallpaper:', error);
     throw error;
+  }
+}
+
+/**
+ * 获取当前壁纸
+ * @returns 当前壁纸的 URL 或路径，如果没有壁纸则返回 null
+ */
+export async function getCurrentWallpaper(): Promise<string | null> {
+  try {
+    return await invoke<string | null>('get_current_wallpaper')
+  } catch (error) {
+    console.error('Failed to get current wallpaper:', error)
+    return null
   }
 }

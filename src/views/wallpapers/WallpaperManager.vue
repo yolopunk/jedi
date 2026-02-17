@@ -406,9 +406,9 @@ onUnmounted(() => {
   border-radius: 12px;
   overflow: hidden;
 }
-.wallpaper-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.12) !important;
+.wallpaper-card.is-current {
+  border: 2px solid rgb(var(--v-theme-primary)) !important;
+  box-shadow: 0 0 20px rgba(var(--v-theme-primary), 0.3) !important;
 }
 
 .image-viewer-card {

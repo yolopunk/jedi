@@ -44,11 +44,35 @@
     @error="showNotification($event, 'error')"
   />
 
-  <rename-group-dialog
-    v-model="dialogs.renameGroup"
-    :group-name="currentRenameGroupName"
-    @rename="renameGroup"
-  />
+  <v-dialog v-model="dialogs.renameGroup" max-width="400">
+    <v-card>
+      <v-card-title>{{ $t('hosts.dialog.renameGroupTitle') }}</v-card-title>
+      <v-card-text>
+        <v-text-field
+          v-model="renameGroupName"
+          :label="$t('hosts.dialog.groupNameLabel')"
+          variant="outlined"
+        />
+      </v-card-text>
+      <v-card-actions>
+        <v-spacer />
+        <v-btn
+          variant="text"
+          color="grey-darken-1"
+          @click="dialogs.renameGroup = false"
+        >
+          {{ $t('common.cancel') }}
+        </v-btn>
+        <v-btn
+          color="primary"
+          variant="elevated"
+          @click="handleConfirmRenameGroup"
+        >
+          {{ $t('common.save') }}
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 
   <add-host-dialog
     v-model="dialogs.addHost"
@@ -93,7 +117,6 @@ import GroupManager from '@/components/hosts/common/GroupManager.vue'
 import HostsTable from '@/components/hosts/tables/HostsTable.vue'
 import EmptyState from '@/components/hosts/common/EmptyState.vue'
 import AddGroupDialog from '@/components/hosts/dialogs/AddGroupDialog.vue'
-import RenameGroupDialog from '@/components/hosts/dialogs/RenameGroupDialog.vue'
 import AddHostDialog from '@/components/hosts/dialogs/AddHostDialog.vue'
 import EditHostDialog from '@/components/hosts/dialogs/EditHostDialog.vue'
 import DeleteConfirmDialog from '@/components/hosts/dialogs/DeleteConfirmDialog.vue'
@@ -105,16 +128,17 @@ import { useHostsData } from '@/composables/useHostsData'
 
 const dialogs = ref({
   addGroup: false,
-  renameGroup: false,
   addHost: false,
   editHost: false,
-  deleteConfirm: false
+  deleteConfirm: false,
+  renameGroup: false
 })
 
 const currentAddGroupName = ref('')
-const currentRenameGroupName = ref('')
 const currentEditHost = ref<HostEntry | null>(null)
 const hostToDelete = ref<HostEntry | null>(null)
+const renameGroupOriginalName = ref('')
+const renameGroupName = ref('')
 
 const showSnackbar = ref(false)
 const snackbarText = ref('')
@@ -138,17 +162,12 @@ const {
   handleHostsSwitch,
   initializeDefaultConfig,
   addGroup,
-  renameGroup,
   addHost,
   editHost,
   updateHostStatus,
-  confirmDeleteHost
+  confirmDeleteHost,
+  renameGroup
 } = useHostsData(showNotification)
-
-function openRenameGroupDialog(groupName: string) {
-  currentRenameGroupName.value = groupName
-  dialogs.value.renameGroup = true
-}
 
 function openAddHostDialog(groupName: string) {
   currentAddGroupName.value = groupName
@@ -169,6 +188,22 @@ function handleOpenDomain(_domain: string, message: string) {
   showNotification(message, 'info')
 }
 
+function openRenameGroupDialog(name: string) {
+  renameGroupOriginalName.value = name
+  renameGroupName.value = name
+  dialogs.value.renameGroup = true
+}
+
+async function handleConfirmRenameGroup() {
+  const trimmed = renameGroupName.value.trim()
+  if (!trimmed) {
+    showNotification('分组名称不能为空', 'error')
+    return
+  }
+  await renameGroup(renameGroupOriginalName.value, trimmed)
+  dialogs.value.renameGroup = false
+}
+
 onMounted(async () => {
   await getOsInfo()
   await loadSystemHosts()
@@ -185,9 +220,13 @@ onMounted(async () => {
 }
 
 .main-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  min-height: 0;
 }
 </style>

@@ -101,18 +101,29 @@ export function useHostsData(notify: NotifyFunction) {
     }
   }
 
-  function debouncedUpdateHosts() {
+  async function debouncedUpdateHosts() {
+    pendingUpdates.value = true
+    
     if (updateDebounceTimeout.value) {
       clearTimeout(updateDebounceTimeout.value)
     }
     
     return new Promise<void>((resolve, reject) => {
       updateDebounceTimeout.value = setTimeout(async () => {
-        try {
-          await updateHosts()
+        if (pendingUpdates.value) {
+          try {
+            loading.value = true
+            await updateHostsWithGroups(groups.value)
+            pendingUpdates.value = false
+            resolve()
+          } catch (error) {
+            console.error('批量更新hosts失败', error)
+            reject(error)
+          } finally {
+            loading.value = false
+          }
+        } else {
           resolve()
-        } catch (error) {
-          reject(error)
         }
       }, 500)
     })
@@ -155,11 +166,6 @@ export function useHostsData(notify: NotifyFunction) {
   // ===== CRUD 操作 =====
 
   async function addGroup(data: { name: string; isRemote: boolean; url?: string; hosts?: HostEntry[] }) {
-    if (groups.value.some(g => g.name === data.name)) {
-      notify('分组名称已存在', 'error')
-      return
-    }
-
     groups.value.push({
       name: data.name,
       hosts: data.hosts || []
@@ -173,36 +179,6 @@ export function useHostsData(notify: NotifyFunction) {
       console.error('添加分组失败', error)
       notify('添加失败: ' + (error as Error).message, 'error')
       groups.value.pop()
-    }
-  }
-
-  async function renameGroup(oldName: string, newName: string) {
-    if (oldName === newName) return
-
-    if (groups.value.some(g => g.name === newName)) {
-      notify('分组名称已存在', 'error')
-      return
-    }
-
-    const group = groups.value.find(g => g.name === oldName)
-    if (!group) {
-      notify('未找到对应分组', 'error')
-      return
-    }
-
-    group.name = newName
-
-    try {
-      await debouncedUpdateHosts()
-      if (selectedGroup.value === oldName) {
-        selectedGroup.value = newName
-      }
-      notify('分组重命名成功', 'success')
-    } catch (error) {
-      console.error('重命名分组失败', error)
-      notify('重命名失败: ' + (error as Error).message, 'error')
-      // Revert change
-      group.name = oldName
     }
   }
 
@@ -328,6 +304,60 @@ export function useHostsData(notify: NotifyFunction) {
     }
   }
 
+  async function renameGroup(oldName: string, newName: string) {
+    const trimmed = newName.trim()
+    if (!trimmed) {
+      notify('分组名称不能为空', 'error')
+      return
+    }
+
+    if (oldName === trimmed) {
+      return
+    }
+
+    const existing = groups.value.find((g: Group) => g.name === trimmed)
+    if (existing) {
+      notify('已存在同名分组', 'error')
+      return
+    }
+
+    const group = groups.value.find((g: Group) => g.name === oldName)
+    if (!group) {
+      notify('未找到对应分组', 'error')
+      return
+    }
+
+    const previousName = group.name
+    group.name = trimmed
+
+    if (selectedGroup.value === oldName) {
+      selectedGroup.value = trimmed
+    }
+
+    try {
+      await debouncedUpdateHosts()
+      const result = await readSystemHosts()
+      if (Array.isArray(result) && result.length > 0) {
+        groups.value = result
+        const target = result.find((g: Group) => g.name === trimmed)
+        if (target) {
+          selectedGroup.value = target.name
+        } else {
+          selectedGroup.value = result[0].name
+        }
+        updateGlobalSwitchState(result)
+      }
+      notify('分组重命名成功', 'success')
+    } catch (error) {
+      console.error('重命名分组失败', error)
+      notify('重命名失败: ' + (error as Error).message, 'error')
+      group.name = previousName
+      if (selectedGroup.value === trimmed) {
+        selectedGroup.value = previousName
+      }
+    }
+  }
+
   return {
     // State
     groups,
@@ -335,14 +365,16 @@ export function useHostsData(notify: NotifyFunction) {
     hostsResolveSwitch,
     loading,
     currentGroup,
+    
+    // Actions
     loadSystemHosts,
     handleHostsSwitch,
     initializeDefaultConfig,
     addGroup,
-    renameGroup,
     addHost,
     editHost,
     updateHostStatus,
-    confirmDeleteHost
+    confirmDeleteHost,
+    renameGroup
   }
 }

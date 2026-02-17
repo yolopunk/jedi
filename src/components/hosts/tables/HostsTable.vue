@@ -25,7 +25,7 @@
     </div>
 
     <!-- Table -->
-    <v-data-table
+    <v-data-table-virtual
       :headers="headers"
       :items="tableItems"
       :search="searchModel"
@@ -33,6 +33,7 @@
       density="compact"
       hover
       fixed-header
+      height="100%"
       class="flex-grow-1 jedi-data-table"
     >
       <!-- IP Column -->
@@ -93,7 +94,7 @@
           </v-btn>
         </div>
       </template>
-    </v-data-table>
+    </v-data-table-virtual>
   </div>
 </template>
 

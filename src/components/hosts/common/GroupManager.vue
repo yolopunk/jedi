@@ -19,20 +19,17 @@
         class="group-tab"
         @click="$emit('update:modelValue', group.name)"
       >
-        <div class="d-flex align-center">
-          <v-icon :icon="mdiDomain" size="small" class="mr-1"></v-icon>
-          {{ group.name }}
-          <v-btn
-            icon
-            variant="text"
-            size="x-small"
-            class="ml-1 edit-btn"
-            @click.stop="$emit('rename-group', group.name)"
-            :title="$t('common.rename')"
-          >
-            <v-icon :icon="mdiPencil" size="14"></v-icon>
-          </v-btn>
-        </div>
+        <v-icon :icon="mdiDomain" size="small" class="mr-1"></v-icon>
+        <span class="group-name">{{ group.name }}</span>
+        <v-btn
+          icon
+          size="x-small"
+          variant="text"
+          class="ml-1 group-rename-btn"
+          @click.stop="$emit('rename-group', group.name)"
+        >
+          <v-icon :icon="mdiPencil" size="x-small"></v-icon>
+        </v-btn>
       </v-tab>
 
       <!-- 添加分组按钮作为最后一个标签 -->
@@ -63,7 +60,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void;
   (e: 'add-group'): void;
-  (e: 'rename-group', groupName: string): void;
+  (e: 'rename-group', value: string): void;
 }>()
 
 // 计算属性：当前选中的标签
@@ -104,24 +101,24 @@ const selectedTab = computed({
   color: var(--jedi-text-secondary) !important;
 }
 
-.group-tab.v-tab--selected {
-  color: var(--jedi-text-primary) !important;
-  font-weight: 600;
+.group-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.edit-btn {
+.group-rename-btn {
   opacity: 0;
-  transition: opacity 0.2s;
-  color: var(--jedi-text-secondary);
 }
 
-.group-tab:hover .edit-btn,
-.group-tab.v-tab--selected .edit-btn {
+.group-tab:hover .group-rename-btn {
   opacity: 1;
 }
 
-.edit-btn:hover {
-  color: var(--jedi-accent);
+.group-tab.v-tab--selected {
+  color: var(--jedi-text-primary) !important;
+  font-weight: 600;
 }
 
 .add-group-tab {

@@ -102,84 +102,127 @@
         </div>
 
         <!-- Detail View: Podcast Info & Episodes -->
-        <div v-else-if="currentView === 'detail' && currentSub" class="fill-height">
-            <!-- Podcast Header -->
-            <div class="podcast-header pa-8 d-flex flex-column flex-md-row align-start">
-                 <v-img 
-                    :src="currentSub.image_url" 
-                    width="240" 
-                    max-width="240" 
-                    aspect-ratio="1" 
-                    cover 
-                    class="rounded-lg elevation-6 mr-md-8 mb-4 mb-md-0 flex-shrink-0"
-                >
-                    <template v-slot:placeholder>
-                        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
-                            <v-icon :icon="mdiPodcast" size="64" color="grey"></v-icon>
-                        </div>
-                    </template>
-                    <template v-slot:error>
-                        <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
-                            <v-icon :icon="mdiPodcast" size="64" color="grey"></v-icon>
-                        </div>
-                    </template>
-                </v-img>
-                
-                <div class="flex-grow-1 pt-2">
-                    <h1 class="text-h3 font-weight-bold mb-2">{{ currentSub.title }}</h1>
-                    <div class="text-h6 text-primary mb-4">{{ currentSub.author || currentSub.owner_name }}</div>
+        <div v-else-if="currentView === 'detail' && currentSub" class="fill-height d-flex flex-column overflow-hidden">
+            <!-- Podcast Header (Fixed) -->
+            <div class="podcast-header position-relative pa-6 flex-shrink-0 bg-surface border-b overflow-hidden">
+                <!-- Blurred Background -->
+                <div 
+                    class="position-absolute top-0 left-0 w-100 h-100" 
+                    :style="`background-image: url(${currentSub.image_url}); background-size: cover; background-position: center; filter: blur(60px) saturate(180%); opacity: 0.1; z-index: 0; transform: scale(1.2);`"
+                ></div>
+
+                <div class="d-flex flex-column flex-md-row align-start position-relative z-index-1">
+                     <v-img 
+                        :src="currentSub.image_url" 
+                        width="140" 
+                        max-width="140" 
+                        aspect-ratio="1" 
+                        cover 
+                        class="rounded-lg elevation-4 mr-md-6 mb-4 mb-md-0 flex-shrink-0"
+                    >
+                        <template v-slot:placeholder>
+                            <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
+                                <v-icon :icon="mdiPodcast" size="48" color="grey"></v-icon>
+                            </div>
+                        </template>
+                        <template v-slot:error>
+                            <div class="d-flex align-center justify-center fill-height bg-grey-lighten-2">
+                                <v-icon :icon="mdiPodcast" size="48" color="grey"></v-icon>
+                            </div>
+                        </template>
+                    </v-img>
                     
-                    <div class="d-flex align-center mb-6">
-                        <v-btn color="primary" class="mr-4 px-6" rounded="pill" :prepend-icon="mdiPlay" size="large">
-                            {{ $t('podcast.playLatest') }}
-                        </v-btn>
-                        <v-btn 
-                            v-if="currentPlaying && currentPlayingSubUrl === currentSub.rss_url"
-                            variant="tonal" 
-                            color="primary" 
-                            rounded="pill" 
-                            class="mr-4" 
-                            @click="scrollToPlaying"
-                            :prepend-icon="mdiTarget"
-                        >
-                            {{ $t('podcast.locatePlaying') }}
-                        </v-btn>
-                         <v-btn variant="outlined" color="grey-darken-1" rounded="pill" class="mr-2" @click="refreshSub(currentSub)" :loading="refreshLoading">
-                            {{ $t('common.refresh') }}
-                        </v-btn>
-                        <v-btn icon variant="text" color="error" @click="unsubscribe(currentSub)">
-                            <v-icon :icon="mdiDelete"></v-icon>
-                        </v-btn>
+                    <div class="flex-grow-1 pt-1 overflow-hidden mr-4">
+                        <h1 class="text-h5 font-weight-bold mb-1 text-truncate">{{ currentSub.title }}</h1>
+                        <div class="text-subtitle-2 text-primary mb-3 text-truncate">{{ currentSub.author || currentSub.owner_name }}</div>
+                        
+                        <div class="d-flex align-center mb-3">
+                            <v-btn color="primary" class="mr-3 px-4" rounded="pill" :prepend-icon="mdiPlay" size="small" @click="playLatestEpisode">
+                                {{ $t('podcast.playLatest') }}
+                            </v-btn>
+                            <v-btn 
+                                v-if="currentPlaying && currentPlayingSubUrl === currentSub.rss_url"
+                                variant="tonal" 
+                                color="primary" 
+                                rounded="pill" 
+                                class="mr-3" 
+                                size="small"
+                                @click="scrollToPlaying"
+                                :prepend-icon="mdiTarget"
+                            >
+                                {{ $t('podcast.locatePlaying') }}
+                            </v-btn>
+                        </div>
+
+                        <div class="d-flex align-center mb-2 flex-wrap">
+                            <v-chip 
+                                v-for="cat in currentSub.categories.slice(0, 3)" 
+                                :key="cat"
+                                size="x-small" 
+                                variant="outlined" 
+                                class="mr-2 mb-1 text-capitalize"
+                            >
+                                {{ cat }}
+                            </v-chip>
+                        </div>
                     </div>
 
-                    <div class="d-flex align-center mb-4 flex-wrap">
-                        <v-chip 
-                            v-for="cat in currentSub.categories" 
-                            :key="cat"
-                            size="small" 
-                            variant="outlined" 
-                            class="mr-2 mb-2 text-capitalize"
-                        >
-                            {{ cat }}
-                        </v-chip>
-                        <v-chip size="small" variant="outlined" class="mr-2 mb-2 text-capitalize" v-if="currentSub.podcast_type">
-                            {{ currentSub.podcast_type }}
-                        </v-chip>
-                        <v-chip size="small" variant="text" class="text-grey-darken-1 mb-2" v-if="episodes.length > 0">
-                            {{ $t('podcast.episodesCount', { count: episodes.length }) }}
-                        </v-chip>
-                    </div>
+                    <!-- Right Side Stats & Actions -->
+                    <div class="d-flex flex-column align-end justify-space-between pl-6 ml-auto" style="min-width: 140px; border-left: 1px solid rgba(0,0,0,0.05); height: 140px;">
+                        <div class="d-flex align-center">
+                            <v-tooltip :text="$t('common.refresh')" location="top">
+                                <template v-slot:activator="{ props }">
+                                    <v-btn 
+                                        v-bind="props" 
+                                        icon 
+                                        variant="text" 
+                                        size="small" 
+                                        color="grey-darken-1" 
+                                        class="mr-1" 
+                                        @click="refreshSub(currentSub)" 
+                                        :loading="refreshLoading"
+                                    >
+                                        <v-icon :icon="mdiRefresh"></v-icon>
+                                    </v-btn>
+                                </template>
+                            </v-tooltip>
+                            <v-tooltip :text="$t('common.delete')" location="top">
+                                <template v-slot:activator="{ props }">
+                                    <v-btn 
+                                        v-bind="props" 
+                                        icon 
+                                        variant="text" 
+                                        size="small" 
+                                        color="error" 
+                                        @click="unsubscribe(currentSub)"
+                                    >
+                                        <v-icon :icon="mdiDelete"></v-icon>
+                                    </v-btn>
+                                </template>
+                            </v-tooltip>
+                        </div>
 
-                    <div class="text-body-1 text-grey-darken-1 description-clamp">
-                        {{ currentSub.description }}
+                        <div class="text-right mt-auto pb-1">
+                            <div class="text-h3 font-weight-black text-primary" style="line-height: 1;">
+                                {{ episodes.length }}
+                            </div>
+                            <div class="text-overline font-weight-bold text-grey-darken-1 mt-1" style="letter-spacing: 2px !important; line-height: 1;">
+                                EPISODES
+                            </div>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Full Width Description -->
+                <div class="mt-4 position-relative z-index-1">
+                     <div class="text-body-2 text-grey-darken-1" style="line-height: 1.6;">
+                         {{ currentSub.description }}
+                     </div>
                 </div>
             </div>
 
-            <v-divider></v-divider>
-
-            <!-- Episodes List -->
-            <div class="pa-4">
+            <!-- Episodes List (Scrollable) -->
+            <div class="flex-grow-1 overflow-y-auto scroll-smooth pa-4">
                  <div class="text-h5 font-weight-bold px-4 mb-2">{{ $t('podcast.episodes') }}</div>
                  
                  <div v-if="episodesLoading" class="d-flex justify-center pa-8">
@@ -217,8 +260,18 @@
                             </div>
 
                             <!-- Hover Overlay for Show Notes -->
-                            <div class="episode-overlay position-absolute top-0 left-0 w-100 h-100 rounded d-flex align-center justify-center bg-black-50 opacity-0 transition-opacity">
-                                <v-icon :icon="mdiArrowExpandAll" color="white" size="24" class="zoom-icon"></v-icon>
+                            <div class="episode-overlay position-absolute top-0 left-0 w-100 h-100 rounded d-flex align-center justify-center">
+                                <div class="overlay-bg position-absolute w-100 h-100 bg-black-50"></div>
+                                <v-btn
+                                    icon
+                                    variant="flat"
+                                    color="white"
+                                    size="x-small"
+                                    class="zoom-icon elevation-2"
+                                    density="comfortable"
+                                >
+                                    <v-icon :icon="mdiArrowExpandAll" color="black" size="small"></v-icon>
+                                </v-btn>
                             </div>
                         </div>
 
@@ -325,10 +378,10 @@
 
         <!-- Fixed Header Area -->
         <div class="flex-shrink-0 position-relative" style="z-index: 10;">
-          <div class="d-flex align-end pa-8 pt-16 pb-4 hero-header show-notes-inner">
+          <div class="d-flex align-end px-6 pt-12 pb-4 hero-header show-notes-inner">
               <div
-                class="poster-container elevation-10 mr-8 flex-shrink-0"
-                style="width: 200px; height: 200px;"
+                class="poster-container elevation-10 mr-6 flex-shrink-0"
+                style="width: 120px; height: 120px;"
               >
                 <v-img
                   :src="currentShowNotesEpisode.image_url || currentSub?.image_url"
@@ -339,30 +392,30 @@
                 ></v-img>
               </div>
 
-              <div class="flex-grow-1 pb-2 text-white">
+              <div class="flex-grow-1 pb-1 text-white">
                 <h2
-                  class="text-h4 font-weight-bold mb-4 text-shadow-lg"
+                  class="text-h5 font-weight-bold mb-2 text-shadow-lg"
                   style="line-height: 1.2;"
                 >
                   {{ currentShowNotesEpisode.title }}
                 </h2>
 
-                <div class="d-flex align-center text-white-70 mb-3">
+                <div class="d-flex align-center flex-wrap text-white-70 mb-2 text-body-2">
                   <v-icon :icon="mdiPodcast" size="small" class="mr-2"></v-icon>
-                  <span class="font-weight-bold mr-4">
+                  <span class="font-weight-bold mr-3">
                     {{ currentShowNotesEpisode.podcast_name || currentSub?.title }}
                   </span>
-                  <span class="mr-4">•</span>
-                  <span>
+                  <span class="mr-3 opacity-60">|</span>
+                  <span class="mr-3">
                     {{ formatMonth(currentShowNotesEpisode.pub_date) }}
                     {{ formatDay(currentShowNotesEpisode.pub_date) }}
                   </span>
-                  <span class="mx-2">•</span>
-                  <span>{{ currentShowNotesEpisode.duration }}</span>
+                  <span class="mr-3 opacity-60">|</span>
+                  <span class="mr-3">{{ currentShowNotesEpisode.duration }}</span>
                   <span
                     v-if="currentShowNotesEpisode.chapters && currentShowNotesEpisode.chapters.length"
-                    class="mx-2"
-                  >•</span>
+                    class="mr-3 opacity-60"
+                  >|</span>
                   <span
                     v-if="currentShowNotesEpisode.chapters && currentShowNotesEpisode.chapters.length"
                   >
@@ -370,44 +423,60 @@
                   </span>
                 </div>
 
-                <div class="d-flex align-center">
+                <div class="d-flex align-center w-100">
                   <v-btn
                     variant="tonal"
                     color="white"
                     rounded="pill"
-                    class="mr-3 text-body-2 font-weight-medium px-5"
+                    size="small"
+                    class="mr-3 text-body-2 font-weight-medium px-4"
                     @click="showShowNotesDialog = false"
                   >
-                    <v-icon :icon="mdiChevronLeft" size="small" class="mr-2"></v-icon>
+                    <v-icon :icon="mdiChevronLeft" size="small" class="mr-1"></v-icon>
                     {{ $t('common.back') }}
                   </v-btn>
                   <v-btn
                     color="white"
                     variant="flat"
                     rounded="pill"
-                    size="large"
-                    class="font-weight-bold text-primary px-8"
+                    size="small"
+                    class="font-weight-bold text-primary px-6"
                     :prepend-icon="mdiPlay"
                     @click="playEpisode(currentShowNotesEpisode)"
                   >
                     {{ $t('podcast.play') }}
                   </v-btn>
+                  
+                  <v-spacer></v-spacer>
+
+                  <!-- Bold Typographic Show Notes Label -->
+                  <div class="position-relative d-flex align-center">
+                    <span 
+                        class="text-h1 font-weight-black text-uppercase position-absolute right-0 opacity-10 pointer-events-none text-no-wrap"
+                        style="font-size: 8rem !important; letter-spacing: -4px !important; color: white; transform: translateY(-5px);"
+                    >
+                        Show Notes
+                    </span>
+                  </div>
                 </div>
               </div>
           </div>
         </div>
 
         <!-- Scrollable Content -->
-        <div class="d-flex flex-column flex-grow-1 w-100 overflow-y-auto scroll-smooth position-relative" style="z-index: 10;">
+        <div class="d-flex flex-column flex-grow-1 w-100 overflow-hidden position-relative" style="z-index: 10;">
           <div class="show-notes-page h-100">
-            <div class="pa-8 pt-2 show-notes-inner h-100">
+            <div class="px-6 pt-4 pb-10 show-notes-inner h-100 d-flex flex-column">
               <div
-                class="show-notes-container pa-8 rounded-xl"
-                style="background: rgba(30,30,30,0.6); backdrop-filter: blur(20px);"
+                class="show-notes-container rounded-xl overflow-hidden d-flex flex-column flex-grow-1"
+                style="background: rgba(30,30,30,0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08);"
               >
-                <EpisodeShowNotes
-                  :content="currentShowNotesEpisode.show_notes"
-                />
+                <!-- Show Notes Content -->
+                <div class="flex-grow-1 overflow-y-auto px-6 pt-6 pb-16 custom-scrollbar">
+                    <EpisodeShowNotes
+                      :content="currentShowNotesEpisode.show_notes"
+                    />
+                </div>
               </div>
             </div>
           </div>
@@ -426,7 +495,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import {
     mdiPodcast, mdiPlus, mdiDelete, mdiPlay, mdiClose,
     mdiChevronLeft, mdiMagnify, mdiFileXmlBox, mdiRefresh, mdiClockTimeFourOutline,
-    mdiTarget, mdiArrowExpandAll
+    mdiTarget, mdiArrowExpandAll, mdiNoteText
 } from '@mdi/js';
 import {
     getSubscriptions,
@@ -526,6 +595,12 @@ function goBack() {
     if (episodesObserver) {
         episodesObserver.disconnect();
         episodesObserver = null;
+    }
+}
+
+function playLatestEpisode() {
+    if (episodes.value.length > 0) {
+        playEpisode(episodes.value[0]);
     }
 }
 
@@ -799,17 +874,37 @@ function setupEpisodesObserver() {
 }
 
 /* Episode Image Hover Effects */
+.episode-overlay {
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    z-index: 2;
+}
+
 .episode-item:hover .episode-overlay {
     opacity: 1 !important;
 }
 
+.overlay-bg {
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.episode-item:hover .overlay-bg {
+    opacity: 1;
+}
+
 .zoom-icon {
-    transform: scale(0.8);
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: scale(0.5) translateY(10px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 3;
 }
 
 .episode-item:hover .zoom-icon {
-    transform: scale(1.2);
+    transform: scale(2) translateY(0);
+    opacity: 1;
 }
 
 /* Highlight Flash Animation */
@@ -925,5 +1020,38 @@ function setupEpisodesObserver() {
 
 .show-notes-dialog {
     background: transparent !important;
+}
+
+.text-white-70 {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.text-white-90 {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.letter-spacing-1 {
+    letter-spacing: 1px;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    margin: 8px 0;
+    border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 </style>

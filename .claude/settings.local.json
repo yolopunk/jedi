@@ -36,7 +36,15 @@
       "Bash(cargo search:*)",
       "Bash(cargo fetch:*)",
       "Bash(cargo clean:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(nslookup:*)",
+      "Bash(tee:*)",
+      "Bash(curl:*)",
+      "Bash(tasklist:*)",
+      "Bash(git config:*)",
+      "Bash(netsh winhttp:*)",
+      "Bash(timeout:*)",
+      "Bash(echo:*)"
     ]
   }
 }

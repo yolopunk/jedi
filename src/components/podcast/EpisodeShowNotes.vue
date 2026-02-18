@@ -1,9 +1,8 @@
 <template>
   <div class="episode-show-notes">
-    <div class="d-flex align-center justify-space-between mb-4">
+    <div v-if="collapsible" class="d-flex align-center justify-space-between mb-4">
       <h3 class="text-h6 font-weight-bold">Show Notes</h3>
       <v-btn
-        v-if="collapsible"
         :icon="expanded ? mdiChevronUp : mdiChevronDown"
         variant="text"
         density="compact"

@@ -79,3 +79,16 @@ export async function getCurrentWallpaper(): Promise<string | null> {
     return null
   }
 }
+
+/**
+ * 在文件管理器中显示壁纸文件
+ * @param path 壁纸路径
+ */
+export async function showInFolder(path: string): Promise<void> {
+  try {
+    await invoke('show_in_folder', { path })
+  } catch (error) {
+    console.error('Failed to show in folder:', error)
+    throw error
+  }
+}

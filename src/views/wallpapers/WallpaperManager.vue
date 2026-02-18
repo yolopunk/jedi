@@ -22,9 +22,8 @@
           density="compact"
           hide-details
           :prepend-inner-icon="mdiMagnify"
-          bg-color="surface-variant"
-          class="search-field flex-shrink-1"
-          :style="{ minWidth: '100px', width: smAndDown ? '120px' : '200px' }"
+          class="search-field flex-shrink-1 flex-grow-1"
+          style="min-width: 200px; max-width: 400px;"
           rounded="lg"
         ></v-text-field>
 
@@ -108,6 +107,17 @@
             </v-list-item>
           </v-list>
         </v-menu>
+
+        <v-btn
+          icon
+          variant="text"
+          color="medium-emphasis"
+          @click="checkCurrentWallpaper"
+          v-tooltip:bottom="$t('wallpapers.getCurrent')"
+          class="flex-shrink-0"
+        >
+          <v-icon :icon="mdiImageSearch"></v-icon>
+        </v-btn>
 
         <v-btn
           icon
@@ -238,22 +248,19 @@
           <div class="position-relative">
             <v-img
               :src="currentPreview.url"
-              height="240"
+              height="160"
               cover
               class="bg-surface-variant"
               @click="showImageViewer = true"
               style="cursor: zoom-in;"
             >
-              <div class="fill-height d-flex align-end pa-4" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);">
-                 <h2 class="text-h5 font-weight-bold text-white text-shadow">{{ currentPreview.title }}</h2>
-              </div>
             </v-img>
             <v-btn
               icon
               variant="flat"
               color="surface"
               size="small"
-              class="position-absolute top-0 right-0 ma-3 elevation-2"
+              class="position-absolute top-0 right-0 ma-2 elevation-2"
               @click="drawer = false"
             >
               <v-icon :icon="mdiClose" size="20"></v-icon>
@@ -263,7 +270,7 @@
               variant="flat"
               color="surface"
               size="small"
-              class="position-absolute top-0 left-0 ma-3 elevation-2"
+              class="position-absolute top-0 left-0 ma-2 elevation-2"
               @click="showImageViewer = true"
             >
               <v-icon :icon="mdiMagnify" size="20"></v-icon>
@@ -271,9 +278,11 @@
           </div>
 
           <!-- Drawer Content -->
-          <div class="flex-grow-1 overflow-y-auto pa-5 custom-scrollbar">
+          <div class="flex-grow-1 overflow-y-auto pa-4 custom-scrollbar pb-16">
             
-            <div class="d-flex align-center flex-wrap gap-2 mb-4">
+            <h2 class="text-h6 font-weight-bold mb-2">{{ currentPreview.title }}</h2>
+
+            <div class="d-flex align-center flex-wrap gap-2 mb-3">
               <v-chip
                 color="primary"
                 variant="flat"
@@ -301,25 +310,39 @@
             <v-divider class="mb-6"></v-divider>
 
             <div class="markdown-body text-high-emphasis" v-html="renderMarkdown(currentPreview.content || '')"></div>
+            
+            <!-- Bottom spacing for FAB -->
+            <div class="height-64"></div>
           </div>
 
-          <!-- Drawer Footer -->
-          <div class="pa-4 border-t bg-surface-variant">
+          <!-- Floating Action Button -->
+          <div class="position-absolute bottom-0 right-0 ma-4 d-flex flex-column align-end gap-2">
             <v-btn
-              block
+              v-if="isCurrentWallpaper"
+              icon
+              color="secondary"
+              class="elevation-3"
+              @click="openWallpaperFolder"
+              v-tooltip:left="$t('wallpapers.openFolder')"
+            >
+              <v-icon :icon="mdiFolderOpen"></v-icon>
+            </v-btn>
+
+            <v-btn
+              icon
               color="primary"
-              size="large"
-              rounded="lg"
-              class="text-none font-weight-bold elevation-2"
-              :prepend-icon="mdiMonitorScreenshot"
+              class="elevation-4"
               @click="setWallpaper(currentPreview)"
               :loading="settingId === currentPreview.id"
             >
-              {{ $t('wallpapers.setDesktop') }}
+              <v-icon :icon="mdiMonitorScreenshot"></v-icon>
+              <v-tooltip activator="parent" location="left">
+                <div class="d-flex flex-column align-center">
+                  <span>{{ $t('wallpapers.setDesktop') }}</span>
+                  <span class="text-caption text-medium-emphasis">({{ currentModeLabel }})</span>
+                </div>
+              </v-tooltip>
             </v-btn>
-            <div class="text-caption text-center mt-2 text-medium-emphasis">
-              当前模式: {{ currentModeLabel }}
-            </div>
           </div>
         </div>
       </v-navigation-drawer>
@@ -375,9 +398,9 @@ import {
   mdiWallpaper, mdiRefresh, mdiMonitorScreenshot, mdiClose, mdiMagnify, 
   mdiFilterVariant, mdiViewGrid, mdiLabelOutline, mdiMonitorDashboard,
   mdiInformationVariant, mdiCheckCircle, mdiAlertCircle,
-  mdiCheckboxMarked, mdiCheckboxBlankOutline
+  mdiCheckboxMarked, mdiCheckboxBlankOutline, mdiImageSearch, mdiFolderOpen, mdiDotsVertical
 } from '@mdi/js'
-import { getWallpapers, syncWallpapers, setDesktopWallpaper, type WallpaperItem, WallpaperMode } from '@/api/wallpaper'
+import { getWallpapers, syncWallpapers, setDesktopWallpaper, getCurrentWallpaper, showInFolder, type WallpaperItem, WallpaperMode } from '@/api/wallpaper'
 import { useI18n } from 'vue-i18n'
 import MarkdownIt from 'markdown-it'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
@@ -408,6 +431,7 @@ const selectedCategories = ref<string[]>(['All'])
 const searchQuery = ref('')
 const drawer = ref(false)
 const currentPreview = ref<WallpaperItem | null>(null)
+const currentSystemWallpaperPath = ref<string | null>(null)
 const selectedMode = ref<WallpaperMode>(WallpaperMode.Crop)
 const snackbar = ref({
   show: false,
@@ -502,6 +526,42 @@ async function setWallpaper(wp: WallpaperItem) {
     showSnackbar(t('wallpapers.setError'), 'error')
   } finally {
     settingId.value = null
+  }
+}
+
+const isCurrentWallpaper = computed(() => {
+  if (!currentPreview.value || !currentSystemWallpaperPath.value) return false
+  const filename = currentSystemWallpaperPath.value.split(/[\\/]/).pop()
+  return currentPreview.value.url.endsWith(filename || '')
+})
+
+async function checkCurrentWallpaper() {
+  const path = await getCurrentWallpaper()
+  if (path) {
+    currentSystemWallpaperPath.value = path
+    // 尝试从路径中匹配已知的壁纸
+    const filename = path.split(/[\\/]/).pop()
+    const matched = wallpapers.value.find(w => w.url.endsWith(filename || ''))
+    
+    if (matched) {
+      showSnackbar(`${t('wallpapers.currentWallpaper')}: ${matched.title}`, 'success')
+      previewWallpaper(matched)
+    } else {
+      showSnackbar(`${t('wallpapers.currentWallpaper')}: ${path}`, 'info')
+    }
+  } else {
+    showSnackbar(t('wallpapers.getCurrentError'), 'warning')
+  }
+}
+
+async function openWallpaperFolder() {
+  if (currentSystemWallpaperPath.value) {
+    try {
+      await showInFolder(currentSystemWallpaperPath.value)
+    } catch (error) {
+      console.error(error)
+      showSnackbar(t('wallpapers.openFolderError'), 'error')
+    }
   }
 }
 

@@ -11,6 +11,7 @@
         hide-details
         class="search-field"
         style="max-width: 300px;"
+        rounded="lg"
       ></v-text-field>
 
       <v-btn

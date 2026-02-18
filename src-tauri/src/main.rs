@@ -6,7 +6,7 @@ use crate::api::app::{
 };
 use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
 use crate::api::os::{get_os_info, SystemState};
-use crate::api::wallpapers::{get_wallpapers, set_desktop_wallpaper, sync_wallpapers};
+use crate::api::wallpapers::{get_wallpapers, set_desktop_wallpaper, sync_wallpapers, get_current_wallpaper, show_in_folder};
 use crate::api::podcast::{
   fetch_episodes, fetch_rss_channel, get_subscriptions, import_opml,
   refresh_subscription, remove_subscription, save_subscription, resolve_xiaoyuzhou_podcast,
@@ -75,6 +75,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       get_wallpapers,
       set_desktop_wallpaper,
       sync_wallpapers,
+      get_current_wallpaper,
+      show_in_folder,
       get_subscriptions,
       save_subscription,
       remove_subscription,

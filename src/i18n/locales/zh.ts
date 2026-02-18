@@ -142,6 +142,11 @@ export default {
     setSuccess: '壁纸设置成功！',
     setError: '设置壁纸失败，请重试',
     loadError: '加载壁纸列表失败',
+    getCurrent: '获取当前壁纸',
+    currentWallpaper: '当前壁纸',
+    getCurrentError: '无法获取当前壁纸信息',
+    openFolder: '打开文件位置',
+    openFolderError: '打开文件位置失败',
   },
   update: {
     title: '发现新版本',

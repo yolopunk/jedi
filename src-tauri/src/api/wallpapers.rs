@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tokio::task;
 use futures::stream::{self, StreamExt};
@@ -327,6 +328,46 @@ pub async fn set_desktop_wallpaper<R: Runtime>(
     .map_err(|e| format!("Failed to set wallpaper: {}", e))?;
 
     Ok(())
+}
+
+#[tauri::command]
+pub async fn get_current_wallpaper() -> Result<String, String> {
+    task::spawn_blocking(|| {
+        wallpaper::get().map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| format!("Task join error: {}", e))?
+}
+
+#[tauri::command]
+pub async fn show_in_folder(path: String) -> Result<(), String> {
+  #[cfg(target_os = "windows")]
+  {
+    Command::new("explorer")
+      .args(["/select,", &path])
+      .spawn()
+      .map_err(|e| e.to_string())?;
+  }
+
+  #[cfg(target_os = "macos")]
+  {
+    Command::new("open")
+      .args(["-R", &path])
+      .spawn()
+      .map_err(|e| e.to_string())?;
+  }
+
+  #[cfg(target_os = "linux")]
+  {
+    let path_buf = PathBuf::from(&path);
+    let parent = path_buf.parent().unwrap_or(&path_buf);
+    Command::new("xdg-open")
+      .arg(parent)
+      .spawn()
+      .map_err(|e| e.to_string())?;
+  }
+
+  Ok(())
 }
 
 fn fix_relative_paths(content: &str, base_url: &str) -> String {

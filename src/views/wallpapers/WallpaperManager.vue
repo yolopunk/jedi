@@ -1,208 +1,333 @@
 <template>
-  <div class="wallpaper-manager">
-    <!-- Header Area -->
-    <v-card class="jedi-card mb-4 rounded-lg" elevation="0">
-      <div class="d-flex align-center justify-space-between px-4 pt-4 pb-2">
-        <div class="d-flex align-center">
-          <v-icon :icon="mdiWallpaper" color="primary" class="mr-3" size="32"></v-icon>
-          <div>
-            <h2 class="text-h6 font-weight-bold">{{ $t('wallpapers.title') }}</h2>
-            <div class="text-caption text-secondary">{{ $t('wallpapers.subtitle') }}</div>
+  <div class="wallpaper-manager fill-height d-flex flex-column bg-background">
+    <!-- Top Toolbar -->
+    <div
+      class="bg-surface px-4 py-2 flex-grow-0 elevation-1 d-flex flex-column border-b"
+      style="z-index: 10;"
+    >
+      <div class="d-flex align-center mb-2">
+        <v-icon :icon="mdiWallpaper" color="primary" size="28" class="mr-3"></v-icon>
+        <div>
+          <div class="text-subtitle-1 font-weight-bold text-no-wrap text-high-emphasis">{{ $t('wallpapers.title') }}</div>
+          <div class="text-caption text-medium-emphasis text-no-wrap">{{ $t('wallpapers.subtitle') }}</div>
+        </div>
+      </div>
+
+      <!-- Search & Filter -->
+      <div class="d-flex align-center gap-2 flex-nowrap overflow-x-auto hide-scrollbar" style="max-width: 100%;">
+        <v-text-field
+          v-model="searchQuery"
+          :placeholder="smAndDown ? '' : $t('common.search')"
+          variant="outlined"
+          density="compact"
+          hide-details
+          :prepend-inner-icon="mdiMagnify"
+          bg-color="surface-variant"
+          class="search-field flex-shrink-1"
+          :style="{ minWidth: '100px', width: smAndDown ? '120px' : '200px' }"
+          rounded="lg"
+        ></v-text-field>
+
+        <v-menu location="bottom end" :close-on-content-click="false">
+          <template v-slot:activator="{ props }">
+             <v-btn
+              v-bind="props"
+              variant="outlined"
+              color="medium-emphasis"
+              class="text-none flex-shrink-0"
+              rounded="lg"
+              border
+              :min-width="smAndDown ? 0 : undefined"
+              :class="{'px-2': smAndDown}"
+            >
+              <v-icon :icon="mdiFilterVariant" :class="{'mr-2': !smAndDown}"></v-icon>
+              <span v-if="!smAndDown">
+                {{ selectedCategories.includes('All') ? $t('wallpapers.all') : selectedCategories.join(', ') }}
+              </span>
+            </v-btn>
+          </template>
+          <v-list density="compact" class="py-0" min-width="240" rounded="lg" elevation="4" bg-color="surface">
+            <v-list-item
+              value="All"
+              @click="toggleCategory('All')"
+              :active="selectedCategories.includes('All')"
+              color="primary"
+              class="px-2"
+            >
+              <div class="d-flex align-center w-100">
+                <v-icon :icon="selectedCategories.includes('All') ? mdiCheckboxMarked : mdiCheckboxBlankOutline" size="small" class="mr-2 flex-shrink-0"></v-icon>
+                <div class="text-wrap">{{ $t('wallpapers.all') }}</div>
+              </div>
+            </v-list-item>
+            <v-divider class="my-1"></v-divider>
+            <v-list-item
+              v-for="cat in categories"
+              :key="cat"
+              :value="cat"
+              @click="toggleCategory(cat)"
+              :active="selectedCategories.includes(cat)"
+              color="primary"
+              class="px-2"
+            >
+              <div class="d-flex align-center w-100">
+                <v-icon :icon="selectedCategories.includes(cat) ? mdiCheckboxMarked : mdiCheckboxBlankOutline" size="small" class="mr-2 flex-shrink-0"></v-icon>
+                <div class="text-wrap">{{ cat }}</div>
+              </div>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+
+        <v-menu location="bottom end">
+          <template v-slot:activator="{ props }">
+            <v-btn
+              v-bind="props"
+              variant="outlined"
+              color="medium-emphasis"
+              class="text-none flex-shrink-0"
+              rounded="lg"
+              border
+              :min-width="smAndDown ? 0 : undefined"
+              :class="{'px-2': smAndDown}"
+            >
+              <v-icon :icon="mdiMonitorDashboard" :class="{'mr-2': !smAndDown}"></v-icon>
+              <span v-if="!smAndDown">{{ currentModeLabel }}</span>
+            </v-btn>
+          </template>
+          <v-list density="compact" min-width="240" rounded="lg" elevation="4" bg-color="surface">
+            <v-list-subheader class="text-caption font-weight-bold text-uppercase">壁纸模式</v-list-subheader>
+            <v-list-item
+              v-for="mode in modeOptions"
+              :key="mode.value"
+              :value="mode.value"
+              @click="selectedMode = mode.value"
+              :active="selectedMode === mode.value"
+              color="primary"
+            >
+              <v-list-item-title class="text-body-2 text-wrap">{{ mode.label }}</v-list-item-title>
+              <v-list-item-subtitle class="text-caption text-wrap" style="white-space: normal;">{{ mode.description }}</v-list-item-subtitle>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+
+        <v-btn
+          icon
+          variant="text"
+          color="medium-emphasis"
+          @click="loadWallpapers"
+          :loading="loading"
+          class="flex-shrink-0"
+        >
+          <v-icon :icon="mdiRefresh"></v-icon>
+        </v-btn>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="d-flex flex-grow-1 overflow-hidden position-relative">
+      
+      <!-- Wallpapers Grid (Scrollable) -->
+      <div class="flex-grow-1 overflow-y-auto pa-6 custom-scrollbar">
+        
+        <v-row v-if="loading && !wallpapers.length">
+          <v-col v-for="i in 8" :key="i" cols="12" sm="6" md="4" lg="3" xl="2">
+            <v-skeleton-loader type="image, list-item-two-line" class="rounded-lg" elevation="0"></v-skeleton-loader>
+          </v-col>
+        </v-row>
+
+        <div v-else-if="filteredWallpapers.length" class="wallpaper-grid">
+           <div 
+            v-for="wp in filteredWallpapers" 
+            :key="wp.id" 
+            class="wallpaper-item"
+            @click="previewWallpaper(wp)"
+          >
+            <div class="wallpaper-card-inner elevation-1 rounded-lg overflow-hidden bg-surface">
+              <div class="image-wrapper position-relative">
+                <v-img
+                  :src="wp.url"
+                  aspect-ratio="1.6"
+                  cover
+                  class="bg-surface-variant transition-swing"
+                >
+                  <template v-slot:placeholder>
+                    <div class="d-flex align-center justify-center fill-height">
+                      <v-progress-circular indeterminate color="medium-emphasis"></v-progress-circular>
+                    </div>
+                  </template>
+                </v-img>
+                
+                <!-- Overlay Actions -->
+                <div class="overlay d-flex align-center justify-center gap-2">
+                  <v-btn
+                    icon
+                    variant="flat"
+                    color="surface"
+                    size="small"
+                    class="elevation-2"
+                    @click.stop="setWallpaper(wp)"
+                    :loading="settingId === wp.id"
+                    v-tooltip:top="$t('wallpapers.setDesktop')"
+                  >
+                    <v-icon :icon="mdiMonitorScreenshot" size="18" color="primary"></v-icon>
+                  </v-btn>
+                   <v-btn
+                    icon
+                    variant="flat"
+                    color="surface"
+                    size="small"
+                    class="elevation-2"
+                    @click.stop="previewWallpaper(wp)"
+                    v-tooltip:top="'查看详情'"
+                  >
+                    <v-icon :icon="mdiInformationVariant" size="18" color="medium-emphasis"></v-icon>
+                  </v-btn>
+                </div>
+              </div>
+
+              <div class="pa-3">
+                <div class="text-subtitle-2 font-weight-bold text-truncate mb-1 text-high-emphasis">
+                  {{ wp.title }}
+                </div>
+                <div class="d-flex align-center justify-space-between">
+                  <v-chip
+                    size="x-small"
+                    color="primary"
+                    variant="tonal"
+                    label
+                    class="font-weight-medium px-2"
+                  >
+                    {{ wp.category }}
+                  </v-chip>
+                  <div class="text-caption text-medium-emphasis" v-if="wp.tags.length">
+                    #{{ wp.tags[0] }}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <div class="d-flex align-center" style="gap: 12px; width: 300px;">
-          <v-text-field
-            v-model="searchQuery"
-            placeholder="搜索..."
-            density="compact"
-            variant="outlined"
-            hide-details
-            :prepend-inner-icon="mdiMagnify"
-            bg-color="surface"
-            single-line
-          ></v-text-field>
-          
+
+        <div v-else class="fill-height d-flex flex-column align-center justify-center text-medium-emphasis pb-16">
+          <v-icon :icon="mdiWallpaper" size="64" class="mb-4 text-disabled"></v-icon>
+          <div class="text-h6 text-medium-emphasis">{{ t('common.noData') }}</div>
           <v-btn
-            icon
-            variant="text"
+            variant="flat"
+            color="primary"
+            class="mt-4 text-none px-6"
+            rounded="lg"
             @click="loadWallpapers"
             :loading="loading"
-            color="primary"
           >
-            <v-icon :icon="mdiRefresh"></v-icon>
+            {{ t('common.refresh') }}
           </v-btn>
         </div>
       </div>
-      
-      <v-divider class="mx-4"></v-divider>
-      
-      <!-- Category Tabs -->
-      <v-tabs
-        v-model="selectedCategory"
-        show-arrows
-        color="primary"
-        align-tabs="start"
-        class="px-2"
-        density="compact"
+
+      <!-- Detail Drawer (Right Side) -->
+      <v-navigation-drawer
+        v-model="drawer"
+        location="right"
+        width="400"
+        temporary
+        elevation="4"
+        class="detail-drawer"
+        scrim="rgba(0,0,0,0.3)"
       >
-        <v-tab value="All" class="text-body-2 text-capitalize">{{ $t('wallpapers.all') }}</v-tab>
-        <v-tab 
-          v-for="cat in categories" 
-          :key="cat" 
-          :value="cat"
-          class="text-body-2 text-capitalize"
-        >
-          {{ cat }}
-        </v-tab>
-      </v-tabs>
-    </v-card>
-
-    <!-- Wallpapers Grid -->
-    <v-row v-if="loading && !wallpapers.length">
-      <v-col v-for="i in 6" :key="i" cols="12" md="4" lg="3">
-        <v-skeleton-loader type="image, article" height="250"></v-skeleton-loader>
-      </v-col>
-    </v-row>
-
-    <v-row v-else-if="filteredWallpapers.length">
-      <v-col v-for="wp in filteredWallpapers" :key="wp.id" cols="12" md="4" lg="3">
-        <v-card class="wallpaper-card h-100 d-flex flex-column" hover @click="previewWallpaper(wp)">
-          <v-img
-            :src="wp.url"
-            height="180"
-            cover
-            class="align-end"
-            gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.7)"
-          >
-            <v-card-title class="text-white text-body-2 font-weight-bold pb-2 pl-3">
-              {{ wp.title }}
-            </v-card-title>
-          </v-img>
-          
-          <v-card-text class="pt-3 pb-0 flex-grow-1">
-            <div class="d-flex flex-wrap gap-1 mb-2">
-              <v-chip size="x-small" color="primary" variant="flat" class="mr-1">
-                {{ wp.category }}
-              </v-chip>
-              <v-chip 
-                v-for="tag in wp.tags.slice(0, 2)" 
-                :key="tag"
-                size="x-small" 
-                variant="outlined" 
-                class="mr-1"
-              >
-                {{ tag }}
-              </v-chip>
-              <v-chip v-if="wp.tags.length > 2" size="x-small" variant="text" class="px-1">
-                +{{ wp.tags.length - 2 }}
-              </v-chip>
-            </div>
-            <div class="text-caption text-medium-emphasis text-truncate-2">
-              {{ wp.description }}
-            </div>
-          </v-card-text>
-          
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn
-              size="small"
-              variant="text"
-              color="primary"
-              :prepend-icon="mdiMonitorScreenshot"
-              @click.stop="setWallpaper(wp)"
-              :loading="settingId === wp.id"
+        <div v-if="currentPreview" class="d-flex flex-column fill-height bg-surface">
+          <!-- Drawer Header -->
+          <div class="position-relative">
+            <v-img
+              :src="currentPreview.url"
+              height="240"
+              cover
+              class="bg-surface-variant"
+              @click="showImageViewer = true"
+              style="cursor: zoom-in;"
             >
-              {{ $t('wallpapers.setDesktop') }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <div v-else class="d-flex flex-column align-center justify-center py-12 text-medium-emphasis">
-      <v-icon :icon="mdiWallpaper" size="64" class="mb-4" color="grey-lighten-1"></v-icon>
-      <div class="text-h6">{{ t('common.noData') }}</div>
-      <v-btn variant="text" color="primary" class="mt-2" @click="loadWallpapers" :loading="loading">
-        {{ t('common.refresh') }}
-      </v-btn>
-    </div>
-
-    <!-- Preview Dialog -->
-    <v-dialog v-model="showPreview" fullscreen transition="dialog-bottom-transition">
-      <v-card v-if="currentPreview" class="rounded-0">
-        <v-toolbar color="surface" density="compact" class="border-b">
-          <v-toolbar-title class="text-subtitle-1 font-weight-bold ml-4">{{ currentPreview.title }}</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <v-toolbar-items>
+              <div class="fill-height d-flex align-end pa-4" style="background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);">
+                 <h2 class="text-h5 font-weight-bold text-white text-shadow">{{ currentPreview.title }}</h2>
+              </div>
+            </v-img>
             <v-btn
-              variant="text"
+              icon
+              variant="flat"
+              color="surface"
+              size="small"
+              class="position-absolute top-0 right-0 ma-3 elevation-2"
+              @click="drawer = false"
+            >
+              <v-icon :icon="mdiClose" size="20"></v-icon>
+            </v-btn>
+             <v-btn
+              icon
+              variant="flat"
+              color="surface"
+              size="small"
+              class="position-absolute top-0 left-0 ma-3 elevation-2"
+              @click="showImageViewer = true"
+            >
+              <v-icon :icon="mdiMagnify" size="20"></v-icon>
+            </v-btn>
+          </div>
+
+          <!-- Drawer Content -->
+          <div class="flex-grow-1 overflow-y-auto pa-5 custom-scrollbar">
+            
+            <div class="d-flex align-center flex-wrap gap-2 mb-4">
+              <v-chip
+                color="primary"
+                variant="flat"
+                size="small"
+                label
+                class="font-weight-bold"
+              >
+                {{ currentPreview.category }}
+              </v-chip>
+               <v-chip
+                v-for="tag in currentPreview.tags"
+                :key="tag"
+                variant="tonal"
+                size="small"
+                color="medium-emphasis"
+              >
+                #{{ tag }}
+              </v-chip>
+            </div>
+
+            <div v-if="currentPreview.description" class="text-body-1 text-medium-emphasis mb-6 font-italic border-s-4 pl-4 py-1 border-primary bg-surface-variant rounded-e">
+              {{ currentPreview.description }}
+            </div>
+
+            <v-divider class="mb-6"></v-divider>
+
+            <div class="markdown-body text-high-emphasis" v-html="renderMarkdown(currentPreview.content || '')"></div>
+          </div>
+
+          <!-- Drawer Footer -->
+          <div class="pa-4 border-t bg-surface-variant">
+            <v-btn
+              block
               color="primary"
+              size="large"
+              rounded="lg"
+              class="text-none font-weight-bold elevation-2"
               :prepend-icon="mdiMonitorScreenshot"
               @click="setWallpaper(currentPreview)"
               :loading="settingId === currentPreview.id"
             >
               {{ $t('wallpapers.setDesktop') }}
             </v-btn>
-          </v-toolbar-items>
-          <v-btn icon @click="showPreview = false" class="mr-2">
-            <v-icon :icon="mdiClose"></v-icon>
-          </v-btn>
-        </v-toolbar>
-        
-        <v-container class="fill-height align-start overflow-y-auto" style="max-width: 900px">
-          <v-row>
-            <v-col cols="12">
-              <v-card class="mb-6 rounded-lg elevation-2 position-relative overflow-hidden group">
-                <v-img 
-                  :src="currentPreview.url" 
-                  cover 
-                  max-height="500"
-                  class="bg-grey-lighten-2"
-                ></v-img>
-                <div class="position-absolute top-0 right-0 pa-4">
-                  <v-btn
-                    icon
-                    color="surface"
-                    variant="flat"
-                    @click="showImageViewer = true"
-                  >
-                    <v-icon :icon="mdiMagnify"></v-icon>
-                  </v-btn>
-                </div>
-              </v-card>
-              
-              <div class="d-flex align-center flex-wrap gap-2 mb-6">
-                <v-chip color="primary" label variant="flat" size="small" class="font-weight-bold">{{ currentPreview.category }}</v-chip>
-                <v-chip 
-                  v-for="tag in currentPreview.tags" 
-                  :key="tag" 
-                  variant="tonal" 
-                  size="small"
-                  color="secondary"
-                  class="text-body-2"
-                >
-                  #{{ tag }}
-                </v-chip>
-              </div>
+            <div class="text-caption text-center mt-2 text-medium-emphasis">
+              当前模式: {{ currentModeLabel }}
+            </div>
+          </div>
+        </div>
+      </v-navigation-drawer>
 
-              <div class="text-h4 font-weight-bold mb-4">{{ currentPreview.title }}</div>
-              
-              <div v-if="currentPreview.description" class="text-body-1 text-medium-emphasis mb-6 font-italic">
-                {{ currentPreview.description }}
-              </div>
-              
-              <v-divider class="mb-6"></v-divider>
-              
-              <div class="markdown-body" v-html="renderMarkdown(currentPreview.content || '')"></div>
-            </v-col>
-          </v-row>
-        </v-container>
-      </v-card>
-    </v-dialog>
+    </div>
 
     <!-- Image Viewer Dialog -->
-    <v-dialog v-model="showImageViewer" fullscreen z-index="2500" class="image-viewer-dialog">
+    <v-dialog v-model="showImageViewer" fullscreen z-index="2500" class="image-viewer-dialog" transition="fade-transition">
       <v-card class="d-flex align-center justify-center rounded-0 image-viewer-card" width="100%" height="100%">
         <v-btn
           icon
@@ -218,8 +343,8 @@
         <v-img
           v-if="currentPreview"
           :src="currentPreview.url"
-          max-height="90vh"
-          max-width="90vw"
+          max-height="95vh"
+          max-width="95vw"
           width="auto"
           height="auto"
           contain
@@ -232,19 +357,32 @@
       :color="snackbar.color"
       timeout="3000"
       location="top"
+      rounded="pill"
+      elevation="4"
     >
-      {{ snackbar.text }}
+      <div class="d-flex align-center">
+        <v-icon :icon="snackbar.color === 'success' ? mdiCheckCircle : mdiAlertCircle" class="mr-2"></v-icon>
+        {{ snackbar.text }}
+      </div>
     </v-snackbar>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { mdiWallpaper, mdiRefresh, mdiMonitorScreenshot, mdiClose, mdiMagnify } from '@mdi/js'
-import { getWallpapers, syncWallpapers, setDesktopWallpaper, type WallpaperItem } from '@/api/wallpaper'
+import { useDisplay } from 'vuetify'
+import { 
+  mdiWallpaper, mdiRefresh, mdiMonitorScreenshot, mdiClose, mdiMagnify, 
+  mdiFilterVariant, mdiViewGrid, mdiLabelOutline, mdiMonitorDashboard,
+  mdiInformationVariant, mdiCheckCircle, mdiAlertCircle,
+  mdiCheckboxMarked, mdiCheckboxBlankOutline
+} from '@mdi/js'
+import { getWallpapers, syncWallpapers, setDesktopWallpaper, type WallpaperItem, WallpaperMode } from '@/api/wallpaper'
 import { useI18n } from 'vue-i18n'
 import MarkdownIt from 'markdown-it'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+
+const { mobile, smAndDown } = useDisplay()
 
 const md = new MarkdownIt({
   html: true,
@@ -252,23 +390,13 @@ const md = new MarkdownIt({
   typographer: true
 })
 
-// Custom render rule to hide the first image if it duplicates the main image
-// Since we can't easily check equality in the render rule, we'll just use a CSS class approach or
-// preprocess the content. Preprocessing is safer.
 function renderMarkdown(content: string) {
   if (!content) return ''
-  
-  // Simple heuristic: if the content starts with an image tag, remove it
-  // Regex for ![alt](url) or <img src="url">
-  // We'll strip the first image if it appears within the first few lines
   let processedContent = content.trim()
-  
-  // Check if it starts with an image
   const mdImageRegex = /^!\[.*?\]\(.*?\)/
   if (mdImageRegex.test(processedContent)) {
     processedContent = processedContent.replace(mdImageRegex, '').trim()
   }
-  
   return md.render(processedContent)
 }
 
@@ -276,14 +404,28 @@ const { t } = useI18n()
 const loading = ref(false)
 const settingId = ref<string | null>(null)
 const wallpapers = ref<WallpaperItem[]>([])
-const selectedCategory = ref('All')
+const selectedCategories = ref<string[]>(['All'])
 const searchQuery = ref('')
-const showPreview = ref(false)
+const drawer = ref(false)
 const currentPreview = ref<WallpaperItem | null>(null)
+const selectedMode = ref<WallpaperMode>(WallpaperMode.Crop)
 const snackbar = ref({
   show: false,
   text: '',
   color: 'success'
+})
+
+const modeOptions = [
+  { value: WallpaperMode.Center, label: '居中 (Center)', description: '图片居中，不缩放，周围留空' },
+  { value: WallpaperMode.Crop, label: '裁剪/填充 (Crop)', description: '图片按比例放大填满屏幕，多余部分裁剪' },
+  { value: WallpaperMode.Fit, label: '适应 (Fit)', description: '图片按比例缩放完整显示，可能有黑边' },
+  { value: WallpaperMode.Span, label: '跨屏 (Span)', description: '图片跨越所有显示器' },
+  { value: WallpaperMode.Stretch, label: '拉伸 (Stretch)', description: '图片强制拉伸填满屏幕，会变形' },
+  { value: WallpaperMode.Tile, label: '平铺 (Tile)', description: '图片按原大小重复平铺' },
+]
+
+const currentModeLabel = computed(() => {
+  return modeOptions.find(m => m.value === selectedMode.value)?.label || '模式'
 })
 
 const showImageViewer = ref(false)
@@ -298,8 +440,8 @@ const categories = computed(() => {
 const filteredWallpapers = computed(() => {
   let result = wallpapers.value
   
-  if (selectedCategory.value !== 'All') {
-    result = result.filter(w => w.category === selectedCategory.value)
+  if (!selectedCategories.value.includes('All')) {
+    result = result.filter(w => selectedCategories.value.includes(w.category))
   }
   
   if (searchQuery.value) {
@@ -314,22 +456,35 @@ const filteredWallpapers = computed(() => {
   return result
 })
 
+function toggleCategory(cat: string) {
+  if (cat === 'All') {
+    selectedCategories.value = ['All']
+  } else {
+    const index = selectedCategories.value.indexOf(cat)
+    if (index > -1) {
+      selectedCategories.value.splice(index, 1)
+      if (selectedCategories.value.length === 0) {
+        selectedCategories.value = ['All']
+      }
+    } else {
+      const allIndex = selectedCategories.value.indexOf('All')
+      if (allIndex > -1) {
+        selectedCategories.value.splice(allIndex, 1)
+      }
+      selectedCategories.value.push(cat)
+    }
+  }
+}
+
 async function loadWallpapers() {
   loading.value = true
-  console.log('Loading wallpapers...')
   try {
-    // 1. Load from cache first (fast)
     const cachedData = await getWallpapers()
     if (cachedData && cachedData.length > 0) {
-      console.log('Loaded from cache:', cachedData.length)
       wallpapers.value = cachedData
-      loading.value = false // Show immediately
+      loading.value = false
     }
-    
-    // 2. Trigger background sync
-    console.log('Starting background sync...')
     await syncWallpapers()
-    
   } catch (error) {
     console.error(error)
     showSnackbar(t('wallpapers.loadError'), 'error')
@@ -340,20 +495,19 @@ async function loadWallpapers() {
 async function setWallpaper(wp: WallpaperItem) {
   settingId.value = wp.id
   try {
-    await setDesktopWallpaper(wp.url)
+    await setDesktopWallpaper(wp.url, selectedMode.value)
     showSnackbar(t('wallpapers.setSuccess'), 'success')
   } catch (error) {
     console.error(error)
     showSnackbar(t('wallpapers.setError'), 'error')
   } finally {
     settingId.value = null
-    showPreview.value = false // Close dialog if setting from there
   }
 }
 
 function previewWallpaper(wp: WallpaperItem) {
   currentPreview.value = wp
-  showPreview.value = true
+  drawer.value = true
 }
 
 function showSnackbar(text: string, color: string) {
@@ -361,11 +515,9 @@ function showSnackbar(text: string, color: string) {
 }
 
 onMounted(async () => {
-  // Setup event listeners
   unlistenBatch = await listen<WallpaperItem[]>('wallpaper-batch', (event) => {
     const newItems = event.payload
     const currentIds = new Set(wallpapers.value.map(w => w.id))
-    
     let hasNew = false
     for (const item of newItems) {
       if (!currentIds.has(item.id)) {
@@ -374,7 +526,6 @@ onMounted(async () => {
         hasNew = true
       }
     }
-    
     if (hasNew && loading.value) {
       loading.value = false
     }
@@ -394,123 +545,130 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.text-truncate-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
+.wallpaper-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.wallpaper-item {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wallpaper-card-inner {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.wallpaper-item:hover .wallpaper-card-inner {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -10px rgba(0,0,0,0.15) !important;
+  border-color: rgba(var(--v-theme-primary), 0.2);
+}
+
+.image-wrapper {
   overflow: hidden;
 }
-.wallpaper-card {
-  transition: transform 0.2s, box-shadow 0.2s;
-  border-radius: 12px;
-  overflow: hidden;
-}
-.wallpaper-card.is-current {
-  border: 2px solid rgb(var(--v-theme-primary)) !important;
-  box-shadow: 0 0 20px rgba(var(--v-theme-primary), 0.3) !important;
+
+.image-wrapper .v-img {
+  transition: transform 0.5s ease;
 }
 
-.image-viewer-card {
-  background-color: rgba(0, 0, 0, 0.9) !important;
-  backdrop-filter: blur(10px);
+.wallpaper-item:hover .v-img {
+  transform: scale(1.05);
 }
 
-.markdown-body {
-  font-size: 16px;
-  line-height: 1.6;
-  color: rgba(var(--v-theme-on-surface), 0.87);
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.3);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.markdown-body :deep(h1),
-.markdown-body :deep(h2),
-.markdown-body :deep(h3) {
-  margin-top: 24px;
-  margin-bottom: 16px;
-  font-weight: 600;
-  line-height: 1.25;
+.wallpaper-item:hover .overlay {
+  opacity: 1;
 }
 
-.markdown-body :deep(h1) {
-  font-size: 2em;
-  padding-bottom: 0.3em;
-  border-bottom: 1px solid rgba(var(--v-border-color), 0.2);
+.detail-drawer {
+  border-left: 1px solid rgba(0,0,0,0.05);
 }
 
-.markdown-body :deep(h2) {
-  font-size: 1.5em;
-  padding-bottom: 0.3em;
-  border-bottom: 1px solid rgba(var(--v-border-color), 0.2);
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.2) transparent;
 }
 
-.markdown-body :deep(p) {
-  margin-bottom: 16px;
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
 }
 
-.markdown-body :deep(ul),
-.markdown-body :deep(ol) {
-  padding-left: 2em;
-  margin-bottom: 16px;
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 3px;
+}
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 .markdown-body :deep(img) {
   max-width: 100%;
   border-radius: 8px;
   margin: 16px 0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.markdown-body :deep(h1), 
+.markdown-body :deep(h2), 
+.markdown-body :deep(h3) {
+  margin-top: 24px;
+  margin-bottom: 12px;
+  font-weight: 700;
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.markdown-body :deep(p) {
+  margin-bottom: 16px;
+  line-height: 1.7;
+  color: rgb(var(--v-theme-on-surface));
 }
 
 .markdown-body :deep(pre) {
-  background-color: rgba(var(--v-theme-surface-variant), 0.5);
+  background-color: rgb(var(--v-theme-surface-variant));
   padding: 16px;
   border-radius: 8px;
-  overflow: auto;
+  overflow-x: auto;
   margin-bottom: 16px;
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-.markdown-body :deep(code) {
-  background-color: rgba(var(--v-theme-surface-variant), 0.5);
-  padding: 0.2em 0.4em;
-  border-radius: 4px;
+.image-viewer-dialog {
+  background-color: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
 }
 
-.markdown-body :deep(pre) :deep(code) {
-  background-color: transparent;
-  padding: 0;
+.image-viewer-card {
+  background-color: transparent !important;
+  box-shadow: none !important;
 }
 
-.markdown-body :deep(blockquote) {
-  margin: 0 0 16px;
-  padding: 0 1em;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  border-left: 0.25em solid rgba(var(--v-border-color), 0.5);
+.gap-2 { gap: 8px; }
+.gap-4 { gap: 16px; }
+
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
 }
 
-.markdown-body :deep(a) {
-  color: rgb(var(--v-theme-primary));
-  text-decoration: none;
-}
-
-.markdown-body :deep(a:hover) {
-  text-decoration: underline;
-}
-
-.markdown-body :deep(table) {
-  border-spacing: 0;
-  border-collapse: collapse;
-  margin-bottom: 16px;
-  width: 100%;
-  overflow: auto;
-  display: block;
-}
-
-.markdown-body :deep(table) th,
-.markdown-body :deep(table) td {
-  padding: 6px 13px;
-  border: 1px solid rgba(var(--v-border-color), 0.2);
-}
-
-.markdown-body :deep(table) tr:nth-child(2n) {
-  background-color: rgba(var(--v-theme-surface-variant), 0.1);
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
 }
 </style>

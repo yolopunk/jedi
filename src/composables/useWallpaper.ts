@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { useStorage } from '@/composables/useStorage'
-import { getWallpapers, setDesktopWallpaper } from '@/api/wallpaper'
+import { getWallpapers, setDesktopWallpaper, WallpaperMode } from '@/api/wallpaper'
 
 const { getItem, setItem } = useStorage()
 
@@ -9,13 +9,15 @@ export interface WallpaperSettings {
   frequencyDays: number
   selectedCategories: string[]
   lastUpdate: number
+  mode: WallpaperMode
 }
 
 const defaultSettings: WallpaperSettings = {
   autoUpdate: false,
   frequencyDays: 1,
   selectedCategories: [],
-  lastUpdate: 0
+  lastUpdate: 0,
+  mode: WallpaperMode.Crop
 }
 
 // Global state
@@ -68,7 +70,7 @@ export function useWallpaper() {
 
         if (candidates.length > 0) {
           const random = candidates[Math.floor(Math.random() * candidates.length)]
-          await setDesktopWallpaper(random.url)
+          await setDesktopWallpaper(random.url, settings.value.mode)
 
           // Update timestamp
           settings.value.lastUpdate = now

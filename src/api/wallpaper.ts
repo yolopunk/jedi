@@ -13,6 +13,15 @@ export interface WallpaperItem {
   content: string;
 }
 
+export enum WallpaperMode {
+  Center = 'Center',
+  Crop = 'Crop',
+  Fit = 'Fit',
+  Span = 'Span',
+  Stretch = 'Stretch',
+  Tile = 'Tile'
+}
+
 export interface WallpaperConfig {
   auto_update: boolean;
   frequency_hours: number;
@@ -47,10 +56,11 @@ export async function syncWallpapers(): Promise<void> {
 /**
  * 设置桌面壁纸
  * @param url 图片URL
+ * @param mode 壁纸模式 (可选，默认为 Crop)
  */
-export async function setDesktopWallpaper(url: string): Promise<void> {
+export async function setDesktopWallpaper(url: string, mode?: WallpaperMode): Promise<void> {
   try {
-    await invoke('set_desktop_wallpaper', { url })
+    await invoke('set_desktop_wallpaper', { url, mode })
   } catch (error) {
     console.error('Failed to set desktop wallpaper:', error);
     throw error;

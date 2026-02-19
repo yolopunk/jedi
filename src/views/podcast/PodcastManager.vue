@@ -329,6 +329,7 @@
                 show-size
                 rounded="lg"
             ></v-file-input>
+            <OpmlExportGuide />
         </v-card-text>
         <v-card-actions class="px-6 pb-6">
             <v-spacer></v-spacer>
@@ -495,7 +496,7 @@ import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
 import {
     mdiPodcast, mdiPlus, mdiDelete, mdiPlay, mdiClose,
     mdiChevronLeft, mdiMagnify, mdiFileXmlBox, mdiRefresh, mdiClockTimeFourOutline,
-    mdiTarget, mdiArrowExpandAll, mdiNoteText
+    mdiTarget, mdiArrowExpandAll
 } from '@mdi/js';
 import {
     getSubscriptions,
@@ -507,6 +508,7 @@ import {
     type PodcastSubscription
 } from '@/api/podcast';
 import EpisodeShowNotes from '@/components/podcast/EpisodeShowNotes.vue';
+import OpmlExportGuide from '@/components/podcast/OpmlExportGuide.vue';
 
 // State
 const subscriptions = ref<PodcastSubscription[]>([]);

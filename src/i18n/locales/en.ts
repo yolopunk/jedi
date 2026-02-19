@@ -84,7 +84,6 @@ export default {
       useDefault: 'Use Default',
     },
     table: {
-      searchPlaceholder: 'Search hosts...',
       addHost: 'Add Host',
     },
     dialog: {
@@ -128,6 +127,12 @@ export default {
     selectOpml: 'Select an OPML file to import your subscriptions.',
     chooseFile: 'Choose File',
     shows: 'Shows',
+    howToExportOpml: 'How to export OPML?',
+    exportGuide: 'OPML Export Guide',
+    exportGuideStep1: '1. Tap the [Subscriptions] menu at the bottom',
+    exportGuideStep2: '2. Tap the [My Subscriptions] button at the top right',
+    exportGuideStep3: '3. Tap the share button at the top right',
+    exportGuideStep4: '4. Select podcasts and tap [Export OPML] at the bottom',
   },
   common: {
     confirm: 'Confirm',

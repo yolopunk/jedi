@@ -73,7 +73,6 @@ export default {
       useDefault: '使用默认配置',
     },
     table: {
-      searchPlaceholder: '搜索 hosts...',
       addHost: '添加条目',
     },
     dialog: {
@@ -120,6 +119,12 @@ export default {
     shows: '节目',
     locatePlaying: '定位播放',
     play: '播放',
+    howToExportOpml: '如何导出 OPML？',
+    exportGuide: 'OPML 导出指南',
+    exportGuideStep1: '1. 点击app 底部菜单栏【订阅】菜单',
+    exportGuideStep2: '2. 点击右上角【我的订阅】按钮',
+    exportGuideStep3: '3. 点击【我的订阅】页面右上角的分享按钮',
+    exportGuideStep4: '4. 选择要订阅的播客，然后点击底部的【导出OPML】按钮',
   },
   common: {
     confirm: '确认',

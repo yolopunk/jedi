@@ -17,7 +17,7 @@
       <div class="d-flex align-center gap-2 flex-nowrap overflow-x-auto hide-scrollbar" style="max-width: 100%;">
         <v-text-field
           v-model="searchQuery"
-          :placeholder="smAndDown ? '' : $t('common.search')"
+          :label="$t('common.search')"
           variant="outlined"
           density="compact"
           hide-details
@@ -339,7 +339,7 @@
               <v-tooltip activator="parent" location="left">
                 <div class="d-flex flex-column align-center">
                   <span>{{ $t('wallpapers.setDesktop') }}</span>
-                  <span class="text-caption text-medium-emphasis">({{ currentModeLabel }})</span>
+                  <span class="text-caption" style="opacity: 0.8">({{ currentModeLabel }})</span>
                 </div>
               </v-tooltip>
             </v-btn>

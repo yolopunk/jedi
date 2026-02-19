@@ -4,7 +4,7 @@
     <div class="d-flex justify-space-between align-center mb-4">
       <v-text-field
         v-model="searchModel"
-        :placeholder="$t('hosts.table.searchPlaceholder')"
+        :label="$t('common.search')"
         :prepend-inner-icon="mdiMagnify"
         variant="outlined"
         density="compact"

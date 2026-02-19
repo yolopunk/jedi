@@ -1,4 +1,3 @@
-use reqwest;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use tauri::AppHandle;
@@ -26,28 +25,23 @@ pub struct GroupHosts {
 
 pub fn load_local_config(_app: &AppHandle) -> Result<Vec<GroupHosts>, Box<dyn Error>> {
   // 不再从文件读取，直接返回默认配置
-  let mut default_hosts = Vec::new();
-
-  // localhost
-  default_hosts.push(HostEntry {
-    ip: "127.0.0.1".to_string(),
-    domain: "localhost".to_string(),
-    disabled: false,
-  });
-
-  // localhost IPv6
-  default_hosts.push(HostEntry {
-    ip: "::1".to_string(),
-    domain: "localhost".to_string(),
-    disabled: false,
-  });
-
-  // 常用的测试域名
-  default_hosts.push(HostEntry {
-    ip: "127.0.0.1".to_string(),
-    domain: "example.test".to_string(),
-    disabled: false,
-  });
+  let default_hosts = vec![
+    HostEntry {
+      ip: "127.0.0.1".to_string(),
+      domain: "localhost".to_string(),
+      disabled: false,
+    },
+    HostEntry {
+      ip: "::1".to_string(),
+      domain: "localhost".to_string(),
+      disabled: false,
+    },
+    HostEntry {
+      ip: "127.0.0.1".to_string(),
+      domain: "example.test".to_string(),
+      disabled: false,
+    },
+  ];
 
   let default_group = GroupHosts {
     name: "开发环境".to_string(),
@@ -86,28 +80,23 @@ pub async fn update_hosts_with_groups(
     }
   } else if source == "default" {
     // 创建默认的分组和条目
-    let mut default_hosts = Vec::new();
-
-    // localhost
-    default_hosts.push(HostEntry {
-      ip: "127.0.0.1".to_string(),
-      domain: "localhost".to_string(),
-      disabled: false,
-    });
-
-    // localhost IPv6
-    default_hosts.push(HostEntry {
-      ip: "::1".to_string(),
-      domain: "localhost".to_string(),
-      disabled: false,
-    });
-
-    // 常用的测试域名
-    default_hosts.push(HostEntry {
-      ip: "127.0.0.1".to_string(),
-      domain: "example.test".to_string(),
-      disabled: false,
-    });
+    let default_hosts = vec![
+      HostEntry {
+        ip: "127.0.0.1".to_string(),
+        domain: "localhost".to_string(),
+        disabled: false,
+      },
+      HostEntry {
+        ip: "::1".to_string(),
+        domain: "localhost".to_string(),
+        disabled: false,
+      },
+      HostEntry {
+        ip: "127.0.0.1".to_string(),
+        domain: "example.test".to_string(),
+        disabled: false,
+      },
+    ];
 
     let default_group = GroupHosts {
       name: "开发环境".to_string(),
@@ -459,8 +448,8 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
         let ip = parts[0].to_string();
 
         // 支持一行多个域名 (Aliases)
-        for i in 1..parts.len() {
-          let domain = parts[i].to_string();
+        for part in parts.iter().skip(1) {
+          let domain = part.to_string();
           // 跳过注释部分（如果在行尾有注释）
           if domain.starts_with('#') {
             break;
@@ -490,9 +479,30 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
     }
   }
 
-  // 不再需要处理默认分组，因为我们不再创建它
-  // 无论是否找到Jedi管理的部分，都直接返回当前的result
-  // 如果没有找到Jedi管理的部分，则result为空数组
+  if result.is_empty() {
+    let default_hosts = vec![
+      HostEntry {
+        ip: "127.0.0.1".to_string(),
+        domain: "localhost".to_string(),
+        disabled: false,
+      },
+      HostEntry {
+        ip: "255.255.255.255".to_string(),
+        domain: "broadcasthost".to_string(),
+        disabled: false,
+      },
+      HostEntry {
+        ip: "::1".to_string(),
+        domain: "localhost".to_string(),
+        disabled: false,
+      },
+    ];
+
+    result.push(GroupHosts {
+      name: "System Default".to_string(),
+      hosts: default_hosts,
+    });
+  }
 
   Ok(result)
 }

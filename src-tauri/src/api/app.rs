@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use tauri::AppHandle;
 use tauri_plugin_autostart::ManagerExt;
-use dirs;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AppInfo {

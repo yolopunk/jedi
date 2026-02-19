@@ -396,16 +396,16 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDisplay } from 'vuetify'
 import { 
   mdiWallpaper, mdiRefresh, mdiMonitorScreenshot, mdiClose, mdiMagnify, 
-  mdiFilterVariant, mdiViewGrid, mdiLabelOutline, mdiMonitorDashboard,
+  mdiFilterVariant, mdiMonitorDashboard,
   mdiInformationVariant, mdiCheckCircle, mdiAlertCircle,
-  mdiCheckboxMarked, mdiCheckboxBlankOutline, mdiImageSearch, mdiFolderOpen, mdiDotsVertical
+  mdiCheckboxMarked, mdiCheckboxBlankOutline, mdiImageSearch, mdiFolderOpen
 } from '@mdi/js'
 import { getWallpapers, syncWallpapers, setDesktopWallpaper, getCurrentWallpaper, showInFolder, type WallpaperItem, WallpaperMode } from '@/api/wallpaper'
 import { useI18n } from 'vue-i18n'
 import MarkdownIt from 'markdown-it'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 
-const { mobile, smAndDown } = useDisplay()
+const { smAndDown } = useDisplay()
 
 const md = new MarkdownIt({
   html: true,

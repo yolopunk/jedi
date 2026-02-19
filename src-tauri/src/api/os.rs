@@ -109,7 +109,7 @@ pub async fn get_os_info(state: State<'_, SystemState>) -> Result<OsInfo, String
   };
 
   let mut cpu_infos = Vec::new();
-  for cpu in sys.cpus() {
+  if let Some(cpu) = sys.cpus().first() {
     let cpu_info = CpuInfo {
       name: cpu.name().to_string(),
       brand: cpu.brand().to_string(),
@@ -119,7 +119,6 @@ pub async fn get_os_info(state: State<'_, SystemState>) -> Result<OsInfo, String
     };
 
     cpu_infos.push(cpu_info);
-    break;
   }
   metrics.cpu_usage = sys.global_cpu_usage();
 

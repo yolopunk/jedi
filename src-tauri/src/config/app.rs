@@ -71,18 +71,18 @@ pub fn load_tray_config(app: &App) {
 
       _ => {}
     })
-    .on_tray_icon_event(|tray, event| match event {
-      TrayIconEvent::Click {
+    .on_tray_icon_event(|tray, event| {
+      if let TrayIconEvent::Click {
         button: MouseButton::Left,
         button_state: MouseButtonState::Up,
         ..
-      } => {
+      } = event
+      {
         if let Some(window) = tray.app_handle().get_webview_window("main") {
           let _ = window.show();
           let _ = window.set_focus();
         }
       }
-      _ => {}
     })
     .icon_as_template(true)
     .build(app);

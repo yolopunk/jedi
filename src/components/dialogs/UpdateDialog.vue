@@ -73,6 +73,7 @@ import { computed } from 'vue'
 import { mdiDownload, mdiClose } from '@mdi/js'
 import { UpdateInfo } from '@/api/update'
 import pkg from '../../../package.json'
+import MarkdownIt from 'markdown-it'
 
 // Define props
 const props = defineProps<{
@@ -88,6 +89,11 @@ const emit = defineEmits<{
 }>()
 
 const currentVersion = pkg.version
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  breaks: true
+})
 
 // Dialog model
 const dialogModel = computed({
@@ -95,30 +101,10 @@ const dialogModel = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
-// Format release notes (convert newlines to HTML)
+// Format release notes (convert markdown to HTML)
 const formattedReleaseNotes = computed(() => {
   if (!props.updateInfo.body) return ''
-  return props.updateInfo.body
-    .split('\n')
-    .map(line => {
-      // Handle markdown-style headers
-      if (line.startsWith('##')) {
-        return `<h3 class="text-subtitle-2 font-weight-bold mt-3 mb-2">${line.replace('## ', '')}</h3>`
-      }
-      if (line.startsWith('#')) {
-        return `<h2 class="text-h6 font-weight-bold mt-4 mb-2">${line.replace('# ', '')}</h2>`
-      }
-      // Handle bullet points
-      if (line.trim().startsWith('-')) {
-        return `<div class="ml-4 my-1">• ${line.trim().replace('- ', '')}</div>`
-      }
-      // Handle empty lines
-      if (!line.trim()) {
-        return '<div class="my-1"></div>'
-      }
-      return `<div class="my-1">${line}</div>`
-    })
-    .join('')
+  return md.render(props.updateInfo.body)
 })
 
 const handleInstall = () => {
@@ -131,8 +117,26 @@ const handleInstall = () => {
   line-height: 1.6;
 }
 
-.release-notes :deep(h3) {
+.release-notes :deep(h1),
+.release-notes :deep(h2),
+.release-notes :deep(h3),
+.release-notes :deep(h4) {
   margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.release-notes :deep(h1) { font-size: 1.5rem; }
+.release-notes :deep(h2) { font-size: 1.25rem; }
+.release-notes :deep(h3) { font-size: 1.1rem; }
+
+.release-notes :deep(ul),
+.release-notes :deep(ol) {
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.release-notes :deep(p) {
   margin-bottom: 0.5rem;
 }
 

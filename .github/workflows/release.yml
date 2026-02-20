@@ -24,7 +24,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 9
           run_install: false
 
       - name: Install Rust stable
@@ -58,7 +58,7 @@ jobs:
       # 为不同平台配置不同的构建参数
       - name: Build the app (macOS)
         if: matrix.platform == 'macos-latest'
-        uses: tauri-apps/tauri-action@v0.5.20
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -76,7 +76,7 @@ jobs:
       # 为Windows和Linux构建
       - name: Build the app (Windows & Linux)
         if: matrix.platform != 'macos-latest'
-        uses: tauri-apps/tauri-action@v0.5.20
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}

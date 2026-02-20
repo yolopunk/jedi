@@ -50,9 +50,6 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version "^2.5.0"
-
       # 为macOS添加额外的目标架构
       - name: Add macOS target architectures
         if: matrix.platform == 'macos-latest'

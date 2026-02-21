@@ -4,6 +4,7 @@ import { execSync } from 'child_process';
 import readline from 'readline';
 import { fileURLToPath } from 'url';
 
+// ESM dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -77,6 +78,19 @@ const args = process.argv.slice(2);
 let newVersion = null;
 
 if (args.length > 0) {
+  // Check for help flag
+  if (args[0] === '--help' || args[0] === '-h') {
+    console.log(`
+Usage: pnpm release [major|minor|patch|x.y.z]
+
+Examples:
+  pnpm release patch   # 0.2.1 -> 0.2.2
+  pnpm release minor   # 0.2.1 -> 0.3.0
+  pnpm release 1.0.0   # Set specific version
+`);
+    process.exit(0);
+  }
+
   if (['major', 'minor', 'patch'].includes(args[0])) {
     newVersion = incrementVersion(currentVersion, args[0]);
   } else if (/^[0-9]+\.[0-9]+\.[0-9]+$/.test(args[0])) {
@@ -85,6 +99,7 @@ if (args.length > 0) {
 }
 
 if (newVersion) {
+  rl.close(); // Close RL if we already have the version
   runRelease(newVersion);
 } else {
   rl.question('Enter new version (or major/minor/patch): ', (answer) => {
@@ -94,25 +109,26 @@ if (newVersion) {
       newVersion = answer.trim();
     }
     
+    rl.close(); // Close RL before running release
+    
     if (newVersion) {
       runRelease(newVersion);
     } else {
       console.error('Invalid version or release type.');
       process.exit(1);
     }
-    rl.close();
   });
 }
 
 function runRelease(version) {
   console.log(`\nReleasing version: v${version}...\n`);
   
-  // 1. Update files
-  for (const file of filesToUpdate) {
-    updateFile(file.path, file.regex, file.replacement, version);
-  }
-  
   try {
+    // 1. Update files
+    for (const file of filesToUpdate) {
+      updateFile(file.path, file.regex, file.replacement, version);
+    }
+  
     // 2. Sync Cargo.lock
     console.log('Syncing Cargo.lock...');
     execSync('cd src-tauri && cargo update -p Jedi', { stdio: 'inherit' });
@@ -121,6 +137,12 @@ function runRelease(version) {
     console.log('Committing and tagging...');
     execSync('git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock', { stdio: 'inherit' });
     execSync(`git commit -m "chore: release v${version}"`, { stdio: 'inherit' });
+    
+    // Check if tag exists locally and delete it if so (for retries)
+    try {
+      execSync(`git tag -d v${version}`, { stdio: 'ignore' });
+    } catch (e) {}
+    
     execSync(`git tag v${version}`, { stdio: 'inherit' });
     
     console.log(`\nSuccess! Version v${version} created.`);

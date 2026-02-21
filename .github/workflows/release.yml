@@ -68,12 +68,6 @@ jobs:
           TAURI_BUNDLER_DMG_IGNORE_CI: true
           # 对于 Ubuntu 平台的额外环境变量
           TAURI_LINUX_WEBKIT2GTK: true
-      
-      - name: Debug Secrets
-        if: failure()
-        run: |
-          if [ -n "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" ]; then echo "TAURI_SIGNING_PRIVATE_KEY is set"; else echo "TAURI_SIGNING_PRIVATE_KEY is NOT set"; fi
-          if [ -n "${{ secrets.TAURI_PRIVATE_KEY }}" ]; then echo "TAURI_PRIVATE_KEY is set"; else echo "TAURI_PRIVATE_KEY is NOT set"; fi
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Jedi ${{ github.ref_name }}'
@@ -82,3 +76,9 @@ jobs:
           prerelease: false
           args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin --verbose' || '--verbose' }}
           tauriScript: pnpm tauri
+      
+      - name: Debug Secrets
+        if: failure()
+        run: |
+          if [ -n "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" ]; then echo "TAURI_SIGNING_PRIVATE_KEY is set"; else echo "TAURI_SIGNING_PRIVATE_KEY is NOT set"; fi
+          if [ -n "${{ secrets.TAURI_PRIVATE_KEY }}" ]; then echo "TAURI_PRIVATE_KEY is set"; else echo "TAURI_PRIVATE_KEY is NOT set"; fi

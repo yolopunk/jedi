@@ -1,13 +1,14 @@
 {
   "name": "jedi",
   "private": true,
-  "version": "0.2.1",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "release": "node scripts/release.js"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",

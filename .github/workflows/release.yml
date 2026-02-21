@@ -57,32 +57,14 @@ jobs:
         if: matrix.platform == 'macos-latest'
         run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
-      # 为不同平台配置不同的构建参数
-      - name: Build the app (macOS)
-        if: matrix.platform == 'macos-latest'
+      # 构建应用 (使用 tauri-action)
+      - name: Build the app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
           TAURI_BUNDLER_DMG_IGNORE_CI: true
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Jedi v${{ github.ref_name }}'
-          releaseBody: 'See the assets to download and install this version.'
-          releaseDraft: false
-          prerelease: false
-          args: --target universal-apple-darwin --verbose
-          tauriScript: pnpm tauri
-
-      # 为Windows和Linux构建
-      - name: Build the app (Windows & Linux)
-        if: matrix.platform != 'macos-latest'
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD }}
           # 对于 Ubuntu 平台的额外环境变量
           TAURI_LINUX_WEBKIT2GTK: true
         with:
@@ -91,5 +73,5 @@ jobs:
           releaseBody: 'See the assets to download and install this version.'
           releaseDraft: false
           prerelease: false
+          args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin --verbose' || '--verbose' }}
           tauriScript: pnpm tauri
-          args: --verbose

@@ -57,14 +57,25 @@ jobs:
         if: matrix.platform == 'macos-latest'
         run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
 
+      - name: Debug Secrets
+        if: always()
+        shell: bash
+        run: |
+          echo "Checking secret availability..."
+          if [ -n "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" ]; then echo "TAURI_SIGNING_PRIVATE_KEY is set (length: ${#SECRETS_TAURI_SIGNING_PRIVATE_KEY})"; else echo "TAURI_SIGNING_PRIVATE_KEY is NOT set"; fi
+          if [ -n "${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}" ]; then echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD is set (length: ${#SECRETS_TAURI_SIGNING_PRIVATE_KEY_PASSWORD})"; else echo "TAURI_SIGNING_PRIVATE_KEY_PASSWORD is NOT set"; fi
+        env:
+          SECRETS_TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          SECRETS_TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
       # 构建应用 (使用 tauri-action)
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # 尝试兼容不同的 Secret 命名习惯
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY || secrets.TAURI_PRIVATE_KEY }}
-          TAURI_SIGNING_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_KEY_PASSWORD || secrets.TAURI_KEY_PASSWORD }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           TAURI_BUNDLER_DMG_IGNORE_CI: true
           # 对于 Ubuntu 平台的额外环境变量
           TAURI_LINUX_WEBKIT2GTK: true
@@ -76,9 +87,3 @@ jobs:
           prerelease: false
           args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin --verbose' || '--verbose' }}
           tauriScript: pnpm tauri
-      
-      - name: Debug Secrets
-        if: failure()
-        run: |
-          if [ -n "${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}" ]; then echo "TAURI_SIGNING_PRIVATE_KEY is set"; else echo "TAURI_SIGNING_PRIVATE_KEY is NOT set"; fi
-          if [ -n "${{ secrets.TAURI_PRIVATE_KEY }}" ]; then echo "TAURI_PRIVATE_KEY is set"; else echo "TAURI_PRIVATE_KEY is NOT set"; fi

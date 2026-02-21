@@ -1,6 +1,6 @@
 {
   "productName": "Jedi",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "identifier": "io.jedi",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -31,10 +31,14 @@
         "https://github.com/yolopunk/jedi/releases/latest/download/latest.json"
       ],
       "dialog": false,
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQxMjE1RDlCREI5RkJGQ0IKUldUTHY1L2JtMTBoMGE2TUNOak9Eb2kyWkcySlBmS3ZWbDNtK3RlREwveGdIRW1rbDdMcTE0aEIK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE3QjFCMUUxNjg0RkQyN0QKUldSOTBrOW80Ykd4cHlxS2Z4Y2dOaWk0ZHJBamtkK1JzYWE5Q3ZDVUJRMElvc1ZmbkVFdm1QTHkK"
+    },
+    "windows": {
+      "installMode": "passive"
     }
   },
   "bundle": {
+    "createUpdaterArtifacts": true,
     "active": true,
     "targets": "all",
     "icon": [
@@ -45,6 +49,11 @@
       "icons/icon.ico"
     ],
     "resources": [],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico"
+      }
+    },
     "macOS": {
       "frameworks": [],
       "minimumSystemVersion": "10.13.0"

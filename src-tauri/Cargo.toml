@@ -1,6 +1,6 @@
 [package]
 name = "Jedi"
-version = "0.2.3"
+version = "0.2.4"
 description = "A multi-functional development toolkit to enhance productivity."
 authors = ["yolo"]
 license = ""
@@ -46,3 +46,4 @@ custom-protocol = ["tauri/custom-protocol"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = "2"
+tauri-plugin-updater = "2"

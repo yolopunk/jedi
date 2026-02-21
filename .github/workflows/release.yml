@@ -69,7 +69,7 @@ jobs:
           TAURI_LINUX_WEBKIT2GTK: true
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Jedi v${{ github.ref_name }}'
+          releaseName: 'Jedi ${{ github.ref_name }}'
           releaseBody: 'See the assets to download and install this version.'
           releaseDraft: false
           prerelease: false

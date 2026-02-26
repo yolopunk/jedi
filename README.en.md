@@ -4,9 +4,28 @@
 
 English | [简体中文](README.md)
 
-## 📷 Screenshot
+## 📷 Screenshots
 
-![Jedi Toolkit Screenshot](public/screenshot.png)
+### Main Interface - Hosts Manager
+![Hosts Manager Interface](public/images/screenshots/hosts-main.png)
+
+### Knowledge Wall Gallery
+![Knowledge Wall Gallery](public/images/screenshots/wallpapers-grid.png)
+
+### Wallpaper Preview
+![Wallpaper Preview](public/images/screenshots/wallpapers-preview.png)
+
+### Podcast Library
+![Podcast Library](public/images/screenshots/podcastic-library.png)
+
+### Playing Podcast
+![Playing Podcast](public/images/screenshots/podcastic-playing.png)
+
+### App Settings
+![App Settings](public/images/screenshots/settings-general.png)
+
+### Dark Theme
+![Dark Theme](public/images/screenshots/dark-theme-view.png)
 
 ## 📖 Introduction
 
@@ -18,33 +37,49 @@ The name "Jedi" is inspired by the Jedi Knights from Star Wars, symbolizing how 
 
 ### Hosts Manager
 
-- **Group Management**: Create hosts configuration groups by project or environment
-- **One-Click Switching**: Quickly switch between different configurations
-- **Global Toggle**: Enable/disable all hosts configurations with one click
-- **Individual Entry Control**: Enable/disable specific hosts entries
-- **Quick Domain Access**: Directly open domains in browser with a click
+- **Group Management**: Create hosts configuration groups by project or environment, keep your configs organized
+- **One-Click Switching**: Quickly switch between different environments, say goodbye to manual editing
+- **Global Toggle**: Enable/disable all hosts configurations with one click, fast mode switching
+- **Individual Entry Control**: Precise control over each hosts entry, flexible for any scenario
+- **Quick Domain Access**: Click to open domains directly in browser, save your time
 
 ### Knowledge Wall
 
-- **Category & tag filtering**: Find wallpapers quickly
-- **Preview & set wallpaper**: Preview details and apply with one click
-- **Rich content view**: Read image/text content in detail
+- **Category & tag filtering**: Quickly find your favorite wallpaper themes, discover beauty
+- **Preview & set wallpaper**: Preview details and apply with one click, refresh your desktop
+- **Rich content view**: Read and view image/text content in detail
 
 ### Xiaoyuzhou Podcast
 
-- **Subscription management**: Add, refresh, and unsubscribe
-- **OPML import**: Migrate subscriptions easily
-- **Playback control**: Play latest and locate current playing
-- **Show notes**: View notes with link handling
+- **Subscription management**: Easily add, refresh, and unsubscribe from podcasts
+- **OPML import**: One-click import existing subscriptions, seamless migration
+- **Playback control**: Play latest episodes and quickly locate current playback position
+- **Show notes**: Complete show notes display with one-click link navigation
 
 ### System & Experience
 
-- **System Info Bar**: CPU, memory, network and other key metrics
-- **Theme Modes**: Dark, light and system-following
-- **System Tray**: Minimize to tray, always available
-- **Multi-language**: Chinese and English UI
-- **Cross-Platform Support**: Windows, macOS, and Linux
-- **Modern Interface**: Consistent Vuetify-based UI
+- **System Info Bar**: Real-time monitoring of CPU, memory, network and other key metrics
+- **Theme Modes**: Support for dark, light, and system-following themes
+- **System Tray**: Minimize to tray for quick access anytime
+- **Multi-language**: Switch between Chinese and English UI freely
+- **Cross-Platform Support**: Full support for Windows, macOS, and Linux
+- **Modern Interface**: Consistent visual design and smooth interactions based on Vuetify 3
+
+## ⚡ Quick Start
+
+1. **Download & Install**: Download the installer for your platform from [GitHub Releases](https://github.com/yolopunk/jedi/releases)
+2. **Run & Enjoy**: Launch the app immediately after installation, no configuration needed
+3. **Get Started**:
+   - Add your development environment configs in Hosts Manager
+   - Browse Knowledge Wall to find your favorite desktop background
+   - Import OPML to start subscribing to podcasts
+
+### Who is it for?
+
+- **Frontend Developers**: Frequently switch hosts between local/test/production environments
+- **Full-stack Engineers**: Need to manage domain resolution for multiple projects
+- **Podcast Enthusiasts**: Love listening to tech podcasts on Xiaoyuzhou
+- **Efficiency Seekers**: Want one tool to handle multiple development tasks
 
 ## 🚀 Installation
 

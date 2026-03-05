@@ -3,3 +3,12 @@
 
 pub(crate) mod audit_log;
 pub(crate) mod keyring;
+
+// 重新导出审计日志相关类型
+pub use audit_log::{
+  AuditLogFilter,
+  AuditLogger,
+  OperationResult,
+  SecurityEvent,
+  SecurityEventType,
+};

@@ -3,3 +3,14 @@
 
 pub(crate) mod models;
 pub(crate) mod sessions;
+pub(crate) mod security;
+
+// 重新导出安全相关类型和 commands
+pub use security::{
+  AuditLoggerState,
+  LogSecurityEventRequest,
+  QuerySecurityLogsRequest,
+  SecurityEventResponse,
+  log_security_event,
+  query_security_logs,
+};

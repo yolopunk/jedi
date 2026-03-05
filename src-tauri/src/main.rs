@@ -13,6 +13,9 @@ use crate::api::podcast::{
 use crate::api::wallpapers::{
   get_current_wallpaper, get_wallpapers, set_desktop_wallpaper, show_in_folder, sync_wallpapers,
 };
+use crate::api::ai_chat::{
+  log_security_event, query_security_logs, AuditLoggerState,
+};
 use crate::utils::logger;
 use std::sync::Mutex;
 use sysinfo::{Networks, System};
@@ -26,6 +29,10 @@ mod utils;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   let _logger_guard = logger::init();
 
+  // 初始化审计日志记录器状态
+  let audit_logger_state = AuditLoggerState::new()
+    .expect("Failed to initialize audit logger");
+
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_shell::init())
@@ -37,6 +44,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       system: Mutex::new(System::new_all()),
       networks: Mutex::new(Networks::new_with_refreshed_list()),
     })
+    .manage(audit_logger_state)
     .setup(|app| {
       config::app::load_tray_config(app);
 
@@ -86,7 +94,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       fetch_rss_channel,
       fetch_episodes,
       import_opml,
-      resolve_xiaoyuzhou_podcast
+      resolve_xiaoyuzhou_podcast,
+      // AI Chat 安全审计日志 commands
+      log_security_event,
+      query_security_logs
     ])
     .build(tauri::generate_context!())?;
 

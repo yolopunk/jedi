@@ -44,7 +44,10 @@
       "Bash(git config:*)",
       "Bash(netsh winhttp:*)",
       "Bash(timeout:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "WebFetch(domain:www.anthropic.com)",
+      "Bash(osascript:*)",
+      "Bash(screencapture:*)"
     ]
   }
 }

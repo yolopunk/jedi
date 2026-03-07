@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import HostsManager from '@/views/hosts/HostsManager.vue'
 import WallpaperManager from '@/views/wallpapers/WallpaperManager.vue'
 import PodcastManager from '@/views/podcast/PodcastManager.vue'
+import AiChat from '@/views/AiChat/index.vue'
 
 const routes: Array<RouteRecordRaw> = [
     {
@@ -30,6 +31,14 @@ const routes: Array<RouteRecordRaw> = [
         component: PodcastManager,
         meta: {
             title: 'Podcast'
+        }
+    },
+    {
+        path: '/ai-chat',
+        name: 'AiChat',
+        component: AiChat,
+        meta: {
+            title: 'AI Chat'
         }
     }
 ]

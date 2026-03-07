@@ -131,6 +131,21 @@
         </template>
         <v-list-item-title class="font-weight-medium">{{ $t('sidebar.podcast') }}</v-list-item-title>
       </v-list-item>
+
+      <v-list-item
+        to="/ai-chat"
+        rounded="lg"
+        class="mb-2 sidebar-item"
+        color="primary"
+        active-class="v-list-item--active"
+      >
+        <template v-slot:prepend>
+          <div class="sidebar-icon-container mr-3">
+            <v-icon :icon="mdiRobot" size="20"></v-icon>
+          </div>
+        </template>
+        <v-list-item-title class="font-weight-medium">AI Chat</v-list-item-title>
+      </v-list-item>
     </v-list>
 
     <!-- Footer Area: Jedi Control Deck -->
@@ -196,7 +211,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import KoalaModel from '../common/KoalaModel.vue'
-import { mdiDns, mdiWallpaper, mdiPodcast, mdiCog, mdiGithub, mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark, mdiPlay, mdiPause, mdiRewind15, mdiFastForward15, mdiStop } from '@mdi/js'
+import { mdiDns, mdiWallpaper, mdiPodcast, mdiRobot, mdiCog, mdiGithub, mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark, mdiPlay, mdiPause, mdiRewind15, mdiFastForward15, mdiStop } from '@mdi/js'
 import { useTheme } from '@/composables/useTheme'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 

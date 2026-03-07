@@ -5,6 +5,7 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
+  base: './',  // Tauri 需要相对路径
   plugins: [
     vue(),
     vuetify({

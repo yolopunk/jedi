@@ -1,13 +1,18 @@
 // AI Chat 安全审计日志 API
 // Phase 1: 安全审计日志 Tauri commands
+// Phase 1: API Key 密钥链 Tauri commands
+// Phase 1: 输入验证和输出编码 Tauri commands
 
 use crate::utils::security::{
-  AuditLogFilter, AuditLogger, OperationResult, SecurityEvent, SecurityEventType,
+  ApiKey, ApiKeyValidation, AuditLogFilter, AuditLogger, ChatMessageValidation, KeyringManager,
+  ModelProvider, OperationResult, SecurityEvent, SecurityEventType, ValidationResult,
+  encode_html, sanitize_html, validate_api_key, validate_chat_message, validate_endpoint,
+  validate_user_input,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use tauri::State;
 use std::sync::Mutex;
+use tauri::State;
 
 /// 审计日志记录器状态
 pub struct AuditLoggerState {
@@ -19,6 +24,20 @@ impl AuditLoggerState {
     let logger = AuditLogger::new()?;
     Ok(Self {
       logger: Mutex::new(logger),
+    })
+  }
+}
+
+/// 密钥链管理器状态
+pub struct KeyringManagerState {
+  manager: Mutex<KeyringManager>,
+}
+
+impl KeyringManagerState {
+  pub fn new() -> Result<Self, String> {
+    let manager = KeyringManager::new()?;
+    Ok(Self {
+      manager: Mutex::new(manager),
     })
   }
 }
@@ -203,4 +222,201 @@ pub async fn query_security_logs(
   let events = logger.query_events(filter)?;
 
   Ok(events.into_iter().map(SecurityEventResponse::from).collect())
+}
+
+// ========== API Key 管理相关 ==========
+
+/// 存储 API Key 的请求
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StoreApiKeyRequest {
+  /// 提供商
+  pub provider: String,
+  /// API Key
+  pub key: String,
+  /// API 端点（可选，用于自定义提供商）
+  pub endpoint: Option<String>,
+}
+
+/// API Key 信息响应（不包含实际 Key）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiKeyInfoResponse {
+  /// 提供商
+  pub provider: String,
+  /// 脱敏显示的 Key
+  pub masked_key: String,
+  /// API 端点
+  pub endpoint: Option<String>,
+}
+
+/// 提供商信息响应
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProviderInfoResponse {
+  /// 提供商
+  pub provider: String,
+  /// 是否已配置 API Key
+  pub has_key: bool,
+}
+
+/// 解析提供商字符串
+fn parse_provider(s: &str) -> Result<ModelProvider, String> {
+  match s.to_lowercase().as_str() {
+    "openai" | "open_ai" => Ok(ModelProvider::OpenAi),
+    "anthropic" => Ok(ModelProvider::Anthropic),
+    "ollama" => Ok(ModelProvider::Ollama),
+    s if s.starts_with("custom:") => {
+      let name = s.strip_prefix("custom:").unwrap_or_default().to_string();
+      if name.is_empty() {
+        Err("Custom provider name cannot be empty".to_string())
+      } else {
+        Ok(ModelProvider::Custom(name))
+      }
+    }
+    _ => Err(format!("Invalid provider: {}", s)),
+  }
+}
+
+/// Tauri command: 存储 API Key
+#[tauri::command]
+pub async fn store_api_key(
+  state: State<'_, KeyringManagerState>,
+  request: StoreApiKeyRequest,
+) -> Result<(), String> {
+  let provider = parse_provider(&request.provider)?;
+  let api_key = ApiKey::new(provider, request.key, request.endpoint);
+
+  let manager = state.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+  manager.store_api_key(api_key)
+}
+
+/// Tauri command: 获取 API Key 信息（不返回实际 Key）
+#[tauri::command]
+pub async fn get_api_key_info(
+  state: State<'_, KeyringManagerState>,
+  provider: String,
+) -> Result<Option<ApiKeyInfoResponse>, String> {
+  let provider_enum = parse_provider(&provider)?;
+
+  let manager = state.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+  let api_key = manager.get_api_key(provider_enum)?;
+
+  Ok(api_key.map(|key| ApiKeyInfoResponse {
+    provider: key.provider().to_string(),
+    masked_key: key.mask_key(),
+    endpoint: key.endpoint().map(|s| s.to_string()),
+  }))
+}
+
+/// Tauri command: 删除 API Key
+#[tauri::command]
+pub async fn delete_api_key(
+  state: State<'_, KeyringManagerState>,
+  provider: String,
+) -> Result<(), String> {
+  let provider_enum = parse_provider(&provider)?;
+
+  let manager = state.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+  manager.delete_api_key(provider_enum)
+}
+
+/// Tauri command: 检查 API Key 是否存在
+#[tauri::command]
+pub async fn has_api_key(
+  state: State<'_, KeyringManagerState>,
+  provider: String,
+) -> Result<bool, String> {
+  let provider_enum = parse_provider(&provider)?;
+
+  let manager = state.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+  manager.has_api_key(provider_enum)
+}
+
+/// Tauri command: 列出所有已配置的提供商
+#[tauri::command]
+pub async fn list_api_key_providers(
+  state: State<'_, KeyringManagerState>,
+) -> Result<Vec<ProviderInfoResponse>, String> {
+  let manager = state.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+  let providers = manager.list_providers()?;
+
+  // 对于每个提供商，检查是否有 Key（实际上 list_providers 只返回有 Key 的）
+  Ok(
+    providers
+      .into_iter()
+      .map(|provider| ProviderInfoResponse {
+        provider: provider.to_string(),
+        has_key: true,
+      })
+      .collect(),
+  )
+}
+
+// ========== 输入验证和输出编码相关 ==========
+
+/// 验证用户输入的请求
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidateUserInputRequest {
+  pub input: String,
+  pub max_length: Option<usize>,
+}
+
+/// 验证 API Key 的请求
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidateApiKeyRequest {
+  pub key: String,
+  pub provider: Option<String>,
+}
+
+/// 验证聊天消息的请求
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidateChatMessageRequest {
+  pub content: String,
+  pub is_user: Option<bool>,
+}
+
+/// 清理 HTML 的请求
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SanitizeHtmlRequest {
+  pub html: String,
+}
+
+/// Tauri command: 验证用户输入
+#[tauri::command]
+pub async fn validate_input(request: ValidateUserInputRequest) -> Result<ValidationResult, String> {
+  let opts = request.max_length.map(|len| {
+    crate::utils::security::ValidationOptions {
+      max_length: len,
+      ..Default::default()
+    }
+  });
+  Ok(validate_user_input(&request.input, opts.as_ref()))
+}
+
+/// Tauri command: 验证 API Key
+#[tauri::command]
+pub async fn validate_key(request: ValidateApiKeyRequest) -> Result<ApiKeyValidation, String> {
+  Ok(validate_api_key(&request.key, request.provider.as_deref(), None))
+}
+
+/// Tauri command: 验证端点 URL
+#[tauri::command]
+pub async fn validate_url(url: String) -> Result<ValidationResult, String> {
+  Ok(validate_endpoint(&url, None))
+}
+
+/// Tauri command: 验证聊天消息
+#[tauri::command]
+pub async fn validate_message(request: ValidateChatMessageRequest) -> Result<ChatMessageValidation, String> {
+  Ok(validate_chat_message(&request.content, request.is_user.unwrap_or(true)))
+}
+
+/// Tauri command: 清理 HTML
+#[tauri::command]
+pub async fn sanitize(request: SanitizeHtmlRequest) -> Result<String, String> {
+  Ok(sanitize_html(&request.html))
+}
+
+/// Tauri command: HTML 实体编码
+#[tauri::command]
+pub async fn encode_html_entities(text: String) -> Result<String, String> {
+  Ok(encode_html(&text))
 }

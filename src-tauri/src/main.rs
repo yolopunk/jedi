@@ -14,7 +14,19 @@ use crate::api::wallpapers::{
   get_current_wallpaper, get_wallpapers, set_desktop_wallpaper, show_in_folder, sync_wallpapers,
 };
 use crate::api::ai_chat::{
-  log_security_event, query_security_logs, AuditLoggerState,
+  delete_api_key, encode_html_entities, get_api_key_info, has_api_key, list_api_key_providers,
+  log_security_event, query_security_logs, sanitize, store_api_key, validate_input,
+  validate_key, validate_message, validate_url, AuditLoggerState, KeyringManagerState,
+  // Phase 2: 模型和会话管理
+  send_chat_message,
+  send_chat_message_stream,
+  create_session,
+  list_sessions,
+  get_session,
+  delete_session,
+  append_message,
+  ChatSessionManagerState,
+  ModelProviderManagerState,
 };
 use crate::utils::logger;
 use std::sync::Mutex;
@@ -33,6 +45,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let audit_logger_state = AuditLoggerState::new()
     .expect("Failed to initialize audit logger");
 
+  // 初始化密钥链管理器状态
+  let keyring_manager_state = KeyringManagerState::new()
+    .expect("Failed to initialize keyring manager");
+
+  // Phase 2: 初始化会话管理器状态
+  use crate::utils::security::AuditLogger;
+  use crate::api::ai_chat::sessions::ChatSessionManager;
+  let audit_logger_for_sessions = AuditLogger::new()
+    .expect("Failed to initialize audit logger for sessions");
+  let chat_session_manager = ChatSessionManager::new(audit_logger_for_sessions);
+  let chat_session_manager_state = ChatSessionManagerState::new(chat_session_manager);
+
+  // Phase 2: 初始化模型提供商管理器状态
+  let keyring_manager_for_models = crate::utils::security::KeyringManager::new()
+    .expect("Failed to initialize keyring manager for models");
+  let model_provider_manager_state = ModelProviderManagerState::new(keyring_manager_for_models);
+
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_shell::init())
@@ -45,6 +74,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       networks: Mutex::new(Networks::new_with_refreshed_list()),
     })
     .manage(audit_logger_state)
+    .manage(keyring_manager_state)
+    // Phase 2: 管理新增状态
+    .manage(chat_session_manager_state)
+    .manage(model_provider_manager_state)
     .setup(|app| {
       config::app::load_tray_config(app);
 
@@ -97,7 +130,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       resolve_xiaoyuzhou_podcast,
       // AI Chat 安全审计日志 commands
       log_security_event,
-      query_security_logs
+      query_security_logs,
+      // AI Chat API Key 管理 commands
+      store_api_key,
+      get_api_key_info,
+      delete_api_key,
+      has_api_key,
+      list_api_key_providers,
+      // AI Chat 输入验证 commands
+      validate_input,
+      validate_key,
+      validate_url,
+      validate_message,
+      sanitize,
+      encode_html_entities,
+      // Phase 2: AI Chat 模型和会话管理 commands
+      send_chat_message,
+      send_chat_message_stream,
+      create_session,
+      list_sessions,
+      get_session,
+      delete_session,
+      append_message
     ])
     .build(tauri::generate_context!())?;
 

@@ -36,6 +36,7 @@ use tauri::{Manager, RunEvent};
 
 mod api;
 mod config;
+mod mcp;
 mod utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

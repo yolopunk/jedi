@@ -40,11 +40,13 @@
 //! ```
 
 pub mod protocol;
+pub mod servers;
 pub mod transport;
 pub mod types;
 
 // 重新导出常用类型
 pub use protocol::{ClientState, McpClient, McpClientBuilder, McpClientConfig};
+pub use servers::{HostsMcpServer};
 pub use transport::{StdioTransport, TransportConfig};
 pub use types::{
   // 基础类型

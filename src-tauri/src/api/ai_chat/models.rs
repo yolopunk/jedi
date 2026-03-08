@@ -11,6 +11,7 @@ use tauri::Emitter;
 
 /// 消息角色
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum MessageRole {
     /// 系统消息
     System,

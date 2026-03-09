@@ -1,12 +1,13 @@
 // MCP 协议处理
 // Phase 3: MCP 客户端实现 - 协议层
 
-use crate::mcp::types::*;
 use crate::mcp::transport::{StdioTransport, TransportConfig};
+use crate::mcp::types::*;
 use std::collections::HashMap;
 use tracing::{debug, info, warn};
 
 /// MCP 客户端状态
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClientState {
   /// 未初始化
@@ -20,6 +21,7 @@ pub enum ClientState {
 }
 
 /// MCP 客户端配置
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct McpClientConfig {
   /// 客户端名称
@@ -43,6 +45,7 @@ impl Default for McpClientConfig {
   }
 }
 
+#[allow(dead_code)]
 impl McpClientConfig {
   /// 创建新配置
   pub fn new(name: impl Into<String>, version: impl Into<String>) -> Self {
@@ -67,8 +70,9 @@ impl McpClientConfig {
 }
 
 /// MCP 客户端
-/// 
+///
 /// 提供 MCP 协议的高级接口
+#[allow(dead_code)]
 pub struct McpClient {
   /// 配置
   config: McpClientConfig,
@@ -84,6 +88,7 @@ pub struct McpClient {
   request_id_counter: u64,
 }
 
+#[allow(dead_code)]
 impl McpClient {
   /// 创建新的 MCP 客户端
   pub fn new(config: McpClientConfig) -> Self {
@@ -121,11 +126,11 @@ impl McpClient {
   /// 生成下一个请求 ID
   fn next_request_id(&mut self) -> RequestId {
     self.request_id_counter += 1;
-    RequestId::Number(self.request_id_counter)
+    RequestId::Number(self.request_id_counter as i64)
   }
 
   /// 启动客户端
-  /// 
+  ///
   /// 启动传输层并初始化连接
   pub fn start(&mut self) -> Result<(), McpError> {
     if self.state != ClientState::Uninitialized {
@@ -148,7 +153,7 @@ impl McpClient {
   }
 
   /// 停止客户端
-  /// 
+  ///
   /// 关闭连接并停止传输层
   pub fn stop(&mut self) -> Result<(), McpError> {
     if self.state == ClientState::Closed {
@@ -171,17 +176,15 @@ impl McpClient {
   }
 
   /// 执行初始化握手
-  /// 
+  ///
   /// 发送 initialize 请求并处理响应
   fn initialize(&mut self) -> Result<(), McpError> {
     self.state = ClientState::Initializing;
 
     // 构建初始化参数
-    let params = InitializeParams::new(Implementation::new(
-      &self.config.name,
-      &self.config.version,
-    ))
-    .with_capabilities(self.config.capabilities.clone());
+    let params =
+      InitializeParams::new(Implementation::new(&self.config.name, &self.config.version))
+        .with_capabilities(self.config.capabilities.clone());
 
     // 发送初始化请求
     let request = JsonRpcRequest::new(self.next_request_id(), "initialize")
@@ -223,7 +226,7 @@ impl McpClient {
   }
 
   /// 获取工具列表
-  /// 
+  ///
   /// 获取服务器提供的所有工具
   pub fn list_tools(&mut self) -> Result<Vec<Tool>, McpError> {
     self.ensure_initialized()?;
@@ -247,7 +250,7 @@ impl McpClient {
   }
 
   /// 调用工具
-  /// 
+  ///
   /// 调用服务器上的工具
   pub fn call_tool(
     &mut self,
@@ -281,7 +284,7 @@ impl McpClient {
   }
 
   /// 获取资源列表
-  /// 
+  ///
   /// 获取服务器提供的所有资源
   pub fn list_resources(&mut self) -> Result<Vec<Resource>, McpError> {
     self.ensure_initialized()?;
@@ -305,7 +308,7 @@ impl McpClient {
   }
 
   /// 读取资源
-  /// 
+  ///
   /// 读取指定资源的内容
   pub fn read_resource(&mut self, uri: &str) -> Result<Vec<ResourceContents>, McpError> {
     self.ensure_initialized()?;
@@ -332,7 +335,7 @@ impl McpClient {
   }
 
   /// 获取提示列表
-  /// 
+  ///
   /// 获取服务器提供的所有提示
   pub fn list_prompts(&mut self) -> Result<Vec<Prompt>, McpError> {
     self.ensure_initialized()?;
@@ -356,7 +359,7 @@ impl McpClient {
   }
 
   /// 获取提示
-  /// 
+  ///
   /// 获取指定提示的内容
   pub fn get_prompt(
     &mut self,
@@ -388,7 +391,7 @@ impl McpClient {
   }
 
   /// 设置日志级别
-  /// 
+  ///
   /// 设置服务器的日志级别
   pub fn set_log_level(&mut self, level: LogLevel) -> Result<(), McpError> {
     self.ensure_initialized()?;
@@ -407,7 +410,7 @@ impl McpClient {
   }
 
   /// 完成请求
-  /// 
+  ///
   /// 请求服务器完成一个值
   pub fn complete(
     &mut self,
@@ -416,10 +419,7 @@ impl McpClient {
   ) -> Result<CompleteResult, McpError> {
     self.ensure_initialized()?;
 
-    let params = CompleteParams {
-      r#ref,
-      argument,
-    };
+    let params = CompleteParams { r#ref, argument };
 
     let request = JsonRpcRequest::new(self.next_request_id(), "completion/complete")
       .with_params(serde_json::to_value(params)?);
@@ -496,10 +496,12 @@ impl Drop for McpClient {
 // ============================================================================
 
 /// MCP 客户端构建器
+#[allow(dead_code)]
 pub struct McpClientBuilder {
   config: McpClientConfig,
 }
 
+#[allow(dead_code)]
 impl McpClientBuilder {
   /// 创建新构建器
   pub fn new() -> Self {
@@ -573,7 +575,7 @@ mod tests {
   #[test]
   fn test_mcp_client_config() {
     let config = McpClientConfig::new("test-client", "1.0.0");
-    
+
     assert_eq!(config.name, "test-client");
     assert_eq!(config.version, "1.0.0");
   }

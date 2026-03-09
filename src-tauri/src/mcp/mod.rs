@@ -1,9 +1,9 @@
 // MCP 客户端模块
 // Phase 3: MCP 客户端实现
-// 
+//
 // Model Context Protocol (MCP) 客户端实现
 // 协议版本: 2024-11-05
-// 
+//
 // 参考文档: https://modelcontextprotocol.io/specification
 
 //! MCP 客户端实现
@@ -45,65 +45,69 @@ pub mod transport;
 pub mod types;
 
 // 重新导出常用类型
+#[allow(unused_imports)]
 pub use protocol::{ClientState, McpClient, McpClientBuilder, McpClientConfig};
-pub use servers::{HostsMcpServer};
+#[allow(unused_imports)]
+pub use servers::HostsMcpServer;
+#[allow(unused_imports)]
 pub use transport::{StdioTransport, TransportConfig};
+#[allow(unused_imports)]
 pub use types::{
-  // 基础类型
-  Content,
-  Implementation,
-  JsonRpcError,
-  JsonRpcNotification,
-  JsonRpcRequest,
-  JsonRpcResponse,
-  McpError,
-  RequestId,
+  // 通知相关
+  notifications,
   // 工具相关
   CallToolParams,
   CallToolResult,
-  ListToolsParams,
-  ListToolsResult,
-  Tool,
-  ToolInputSchema,
-  // 资源相关
-  ListResourcesParams,
-  ListResourcesResult,
-  ReadResourceParams,
-  ReadResourceResult,
-  Resource,
-  ResourceContents,
-  // 提示相关
-  GetPromptParams,
-  GetPromptResult,
-  ListPromptsParams,
-  ListPromptsResult,
-  Prompt,
-  PromptArgument,
-  PromptMessage,
-  PromptMessageRole,
+  CancelledParams,
   // 初始化相关
   ClientCapabilities,
-  InitializeParams,
-  InitializeResult,
-  ServerCapabilities,
-  // 日志相关
-  LogLevel,
-  SetLevelParams,
   // 完成相关
   CompleteArgument,
   CompleteParams,
   CompleteResult,
   CompleteValues,
-  Reference,
-  // 通知相关
-  notifications,
-  CancelledParams,
+  // 基础类型
+  Content,
+  // 提示相关
+  GetPromptParams,
+  GetPromptResult,
+  Implementation,
+  InitializeParams,
+  InitializeResult,
+  JsonRpcError,
+  JsonRpcNotification,
+  JsonRpcRequest,
+  JsonRpcResponse,
+  ListPromptsParams,
+  ListPromptsResult,
+  // 资源相关
+  ListResourcesParams,
+  ListResourcesResult,
+  ListToolsParams,
+  ListToolsResult,
+  // 日志相关
+  LogLevel,
   LoggingMessageParams,
+  McpError,
   ProgressParams,
+  Prompt,
+  PromptArgument,
+  PromptMessage,
+  PromptMessageRole,
+  ReadResourceParams,
+  ReadResourceResult,
+  Reference,
+  RequestId,
+  Resource,
+  ResourceContents,
   ResourceUpdatedParams,
+  ServerCapabilities,
+  SetLevelParams,
+  Tool,
+  ToolInputSchema,
+  JSONRPC_VERSION,
   // 常量
   MCP_VERSION,
-  JSONRPC_VERSION,
 };
 
 // ============================================================================
@@ -129,10 +133,10 @@ mod tests {
     // 测试主要类型是否正确导出
     let _ = MCP_VERSION;
     let _ = JSONRPC_VERSION;
-    
+
     // 测试构建器
     let _builder = McpClientBuilder::new();
-    
+
     // 测试类型创建
     let _request = JsonRpcRequest::new(RequestId::Number(1), "test");
     let _notification = JsonRpcNotification::new("test");

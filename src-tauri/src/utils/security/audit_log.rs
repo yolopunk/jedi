@@ -76,10 +76,7 @@ pub struct SecurityEvent {
 
 impl SecurityEvent {
   /// 创建新的安全事件
-  pub fn new(
-    event_type: SecurityEventType,
-    result: OperationResult,
-  ) -> Self {
+  pub fn new(event_type: SecurityEventType, result: OperationResult) -> Self {
     Self {
       timestamp: Utc::now(),
       event_type,
@@ -164,30 +161,29 @@ impl AuditLogger {
   /// 创建新的审计日志记录器
   pub fn new() -> Result<Self, String> {
     let log_path = Self::get_log_file_path()?;
-    
+
     // 确保父目录存在
     if let Some(parent) = log_path.parent() {
-      std::fs::create_dir_all(parent).map_err(|e| {
-        format!("Failed to create log directory: {}", e)
-      })?;
+      std::fs::create_dir_all(parent)
+        .map_err(|e| format!("Failed to create log directory: {}", e))?;
     }
-    
+
     Ok(Self {
       log_file_path: log_path,
     })
   }
 
   /// 使用指定路径创建审计日志记录器（用于测试）
+  #[allow(dead_code)]
   pub fn new_with_path(log_dir: impl AsRef<std::path::Path>) -> Result<Self, String> {
     let log_path = log_dir.as_ref().join("security-audit.log");
-    
+
     // 确保父目录存在
     if let Some(parent) = log_path.parent() {
-      std::fs::create_dir_all(parent).map_err(|e| {
-        format!("Failed to create log directory: {}", e)
-      })?;
+      std::fs::create_dir_all(parent)
+        .map_err(|e| format!("Failed to create log directory: {}", e))?;
     }
-    
+
     Ok(Self {
       log_file_path: log_path,
     })
@@ -202,20 +198,20 @@ impl AuditLogger {
   /// 记录安全事件
   pub fn log_event(&self, event: SecurityEvent) -> Result<(), String> {
     debug!("Logging security event: {:?}", event);
-    
+
     let mut file = OpenOptions::new()
       .create(true)
       .append(true)
       .open(&self.log_file_path)
       .map_err(|e| format!("Failed to open log file: {}", e))?;
 
-    let json_line = serde_json::to_string(&event)
-      .map_err(|e| format!("Failed to serialize event: {}", e))?;
+    let json_line =
+      serde_json::to_string(&event).map_err(|e| format!("Failed to serialize event: {}", e))?;
 
-    writeln!(file, "{}", json_line)
-      .map_err(|e| format!("Failed to write to log file: {}", e))?;
+    writeln!(file, "{}", json_line).map_err(|e| format!("Failed to write to log file: {}", e))?;
 
-    file.flush()
+    file
+      .flush()
       .map_err(|e| format!("Failed to flush log file: {}", e))?;
 
     info!("Security event logged successfully");
@@ -225,7 +221,7 @@ impl AuditLogger {
   /// 查询安全事件
   pub fn query_events(&self, filter: AuditLogFilter) -> Result<Vec<SecurityEvent>, String> {
     debug!("Querying security events with filter: {:?}", filter);
-    
+
     let file = match File::open(&self.log_file_path) {
       Ok(f) => f,
       Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -243,9 +239,7 @@ impl AuditLogger {
     let limit = filter.limit.unwrap_or(usize::MAX);
 
     for (line_num, line) in reader.lines().enumerate() {
-      let line = line.map_err(|e| {
-        format!("Failed to read line {}: {}", line_num, e)
-      })?;
+      let line = line.map_err(|e| format!("Failed to read line {}: {}", line_num, e))?;
 
       if line.trim().is_empty() {
         continue;
@@ -263,7 +257,7 @@ impl AuditLogger {
       if Self::matches_filter(&event, &filter) {
         events.push(event);
         count += 1;
-        
+
         if count >= limit {
           break;
         }
@@ -272,7 +266,7 @@ impl AuditLogger {
 
     // 按时间倒序排列（最新的在前）
     events.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-    
+
     info!("Queried {} security events", events.len());
     Ok(events)
   }
@@ -332,18 +326,15 @@ impl Default for AuditLogger {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use tempfile::tempdir;
   use std::fs;
+  use tempfile::tempdir;
 
   #[test]
   fn test_security_event_creation() {
-    let event = SecurityEvent::new(
-      SecurityEventType::Authentication,
-      OperationResult::Success,
-    )
-    .with_user_id("test-user")
-    .with_resource("api/login")
-    .with_action("login");
+    let event = SecurityEvent::new(SecurityEventType::Authentication, OperationResult::Success)
+      .with_user_id("test-user")
+      .with_resource("api/login")
+      .with_action("login");
 
     assert_eq!(event.event_type, SecurityEventType::Authentication);
     assert_eq!(event.result, OperationResult::Success);
@@ -354,25 +345,19 @@ mod tests {
 
   #[test]
   fn test_event_serialization() {
-    let event = SecurityEvent::new(
-      SecurityEventType::ApiCall,
-      OperationResult::Success,
-    );
-    
+    let event = SecurityEvent::new(SecurityEventType::ApiCall, OperationResult::Success);
+
     let json = serde_json::to_string(&event).unwrap();
     assert!(!json.is_empty());
-    
+
     let parsed: SecurityEvent = serde_json::from_str(&json).unwrap();
     assert_eq!(parsed.event_type, SecurityEventType::ApiCall);
   }
 
   #[test]
   fn test_filter_matching() {
-    let event = SecurityEvent::new(
-      SecurityEventType::DataAccess,
-      OperationResult::Success,
-    )
-    .with_user_id("user123");
+    let event = SecurityEvent::new(SecurityEventType::DataAccess, OperationResult::Success)
+      .with_user_id("user123");
 
     // 匹配的过滤器
     let matching_filter = AuditLogFilter {
@@ -401,19 +386,16 @@ mod tests {
     // 创建临时目录
     let temp_dir = tempdir().unwrap();
     let _log_path = temp_dir.path().join("test-audit.log");
-    
+
     // 创建测试事件
-    let event = SecurityEvent::new(
-      SecurityEventType::ConfigChange,
-      OperationResult::Success,
-    )
-    .with_user_id("test-user")
-    .with_resource("test-resource")
-    .with_action("test-action");
+    let event = SecurityEvent::new(SecurityEventType::ConfigChange, OperationResult::Success)
+      .with_user_id("test-user")
+      .with_resource("test-resource")
+      .with_action("test-action");
 
     // 使用临时文件路径测试（通过直接测试内部方法）
     let logger = AuditLogger::new().unwrap();
-    
+
     // 测试日志记录
     let result = logger.log_event(event.clone());
     assert!(result.is_ok());
@@ -424,7 +406,7 @@ mod tests {
       limit: Some(10),
       ..Default::default()
     };
-    
+
     let _events = logger.query_events(filter);
     assert!(_events.is_ok());
   }
@@ -432,19 +414,13 @@ mod tests {
   #[test]
   fn test_query_with_multiple_filters() {
     let logger = AuditLogger::new().unwrap();
-    
+
     // 创建多个测试事件
-    let event1 = SecurityEvent::new(
-      SecurityEventType::Authentication,
-      OperationResult::Success,
-    )
-    .with_user_id("user1");
-    
-    let event2 = SecurityEvent::new(
-      SecurityEventType::ApiCall,
-      OperationResult::Failure,
-    )
-    .with_user_id("user2");
+    let event1 = SecurityEvent::new(SecurityEventType::Authentication, OperationResult::Success)
+      .with_user_id("user1");
+
+    let event2 = SecurityEvent::new(SecurityEventType::ApiCall, OperationResult::Failure)
+      .with_user_id("user2");
 
     // 记录事件
     let _ = logger.log_event(event1);
@@ -457,7 +433,7 @@ mod tests {
     };
     let _events = logger.query_events(filter).unwrap();
     // 可能有之前的测试数据，我们只验证过滤逻辑
-    
+
     // 测试按结果过滤
     let filter = AuditLogFilter {
       result: Some(OperationResult::Failure),
@@ -473,11 +449,8 @@ mod tests {
       "number": 42
     });
 
-    let event = SecurityEvent::new(
-      SecurityEventType::SystemError,
-      OperationResult::Failure,
-    )
-    .with_metadata(metadata.clone());
+    let event = SecurityEvent::new(SecurityEventType::SystemError, OperationResult::Failure)
+      .with_metadata(metadata.clone());
 
     assert_eq!(event.metadata, Some(metadata));
   }
@@ -486,10 +459,10 @@ mod tests {
   fn test_empty_file_query() {
     let temp_dir = tempdir().unwrap();
     let log_path = temp_dir.path().join("empty.log");
-    
+
     // 确保文件不存在
     let _ = fs::remove_file(&log_path);
-    
+
     // 创建 logger 并查询（应该返回空列表）
     let logger = AuditLogger::new().unwrap();
     let filter = AuditLogFilter::default();
@@ -500,17 +473,11 @@ mod tests {
   #[test]
   fn test_event_ordering() {
     let logger = AuditLogger::new().unwrap();
-    
+
     // 创建不同时间的事件（通过立即记录）
-    let event1 = SecurityEvent::new(
-      SecurityEventType::DataAccess,
-      OperationResult::Success,
-    );
-    
-    let event2 = SecurityEvent::new(
-      SecurityEventType::DataAccess,
-      OperationResult::Success,
-    );
+    let event1 = SecurityEvent::new(SecurityEventType::DataAccess, OperationResult::Success);
+
+    let event2 = SecurityEvent::new(SecurityEventType::DataAccess, OperationResult::Success);
 
     let _ = logger.log_event(event1);
     std::thread::sleep(std::time::Duration::from_millis(10));
@@ -522,7 +489,7 @@ mod tests {
       limit: Some(2),
       ..Default::default()
     };
-    
+
     let events = logger.query_events(filter).unwrap();
     if events.len() >= 2 {
       assert!(events[0].timestamp >= events[1].timestamp);

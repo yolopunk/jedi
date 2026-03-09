@@ -5,9 +5,11 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// MCP 协议版本
+#[allow(dead_code)]
 pub const MCP_VERSION: &str = "2024-11-05";
 
 /// JSON-RPC 版本
+#[allow(dead_code)]
 pub const JSONRPC_VERSION: &str = "2.0";
 
 // ============================================================================
@@ -15,6 +17,7 @@ pub const JSONRPC_VERSION: &str = "2.0";
 // ============================================================================
 
 /// JSON-RPC 请求 ID
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(untagged)]
 pub enum RequestId {
@@ -49,6 +52,7 @@ impl From<&str> for RequestId {
 }
 
 /// JSON-RPC 请求
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcRequest {
   /// JSON-RPC 版本
@@ -62,6 +66,7 @@ pub struct JsonRpcRequest {
   pub params: Option<serde_json::Value>,
 }
 
+#[allow(dead_code)]
 impl JsonRpcRequest {
   /// 创建新的 JSON-RPC 请求
   pub fn new(id: RequestId, method: impl Into<String>) -> Self {
@@ -81,6 +86,7 @@ impl JsonRpcRequest {
 }
 
 /// JSON-RPC 响应
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcResponse {
   /// JSON-RPC 版本
@@ -95,6 +101,7 @@ pub struct JsonRpcResponse {
   pub error: Option<JsonRpcError>,
 }
 
+#[allow(dead_code)]
 impl JsonRpcResponse {
   /// 创建成功响应
   pub fn success(id: RequestId, result: serde_json::Value) -> Self {
@@ -123,6 +130,7 @@ impl JsonRpcResponse {
 }
 
 /// JSON-RPC 错误
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcError {
   /// 错误码
@@ -134,6 +142,7 @@ pub struct JsonRpcError {
   pub data: Option<serde_json::Value>,
 }
 
+#[allow(dead_code)]
 impl JsonRpcError {
   /// 解析错误
   pub const PARSE_ERROR: i64 = -32700;
@@ -191,6 +200,7 @@ impl JsonRpcError {
 }
 
 /// JSON-RPC 通知（无 ID）
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JsonRpcNotification {
   /// JSON-RPC 版本
@@ -202,6 +212,7 @@ pub struct JsonRpcNotification {
   pub params: Option<serde_json::Value>,
 }
 
+#[allow(dead_code)]
 impl JsonRpcNotification {
   /// 创建新通知
   pub fn new(method: impl Into<String>) -> Self {
@@ -495,6 +506,7 @@ pub enum Content {
   },
 }
 
+#[allow(dead_code)]
 impl Content {
   /// 创建文本内容
   pub fn text(text: impl Into<String>) -> Self {
@@ -768,6 +780,7 @@ pub struct CompleteValues {
 // ============================================================================
 
 /// 通知方法名
+#[allow(dead_code)]
 pub mod notifications {
   /// 工具列表变更通知
   pub const TOOLS_LIST_CHANGED: &str = "notifications/tools/list_changed";
@@ -788,6 +801,7 @@ pub mod notifications {
 }
 
 /// 日志通知参数
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LoggingMessageParams {
   /// 日志级别
@@ -800,6 +814,7 @@ pub struct LoggingMessageParams {
 }
 
 /// 进度通知参数
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProgressParams {
   /// 进度令牌
@@ -812,6 +827,7 @@ pub struct ProgressParams {
 }
 
 /// 取消通知参数
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CancelledParams {
   /// 请求 ID
@@ -822,6 +838,7 @@ pub struct CancelledParams {
 }
 
 /// 资源更新通知参数
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceUpdatedParams {
   /// 资源 URI
@@ -833,6 +850,7 @@ pub struct ResourceUpdatedParams {
 // ============================================================================
 
 /// MCP 错误
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum McpError {
   /// 传输错误
@@ -853,6 +871,8 @@ pub enum McpError {
   InvalidResponse(String),
   /// 方法未找到
   MethodNotFound(String),
+  /// 无效参数
+  InvalidParams(String),
 }
 
 impl std::fmt::Display for McpError {
@@ -867,6 +887,7 @@ impl std::fmt::Display for McpError {
       McpError::NotInitialized => write!(f, "Client not initialized"),
       McpError::InvalidResponse(msg) => write!(f, "Invalid response: {}", msg),
       McpError::MethodNotFound(method) => write!(f, "Method not found: {}", method),
+      McpError::InvalidParams(msg) => write!(f, "Invalid params: {}", msg),
     }
   }
 }
@@ -903,7 +924,7 @@ mod tests {
   fn test_json_rpc_request() {
     let request = JsonRpcRequest::new(RequestId::Number(1), "initialize")
       .with_params(serde_json::json!({"protocol_version": MCP_VERSION}));
-    
+
     assert_eq!(request.jsonrpc, JSONRPC_VERSION);
     assert_eq!(request.id, RequestId::Number(1));
     assert_eq!(request.method, "initialize");
@@ -912,11 +933,9 @@ mod tests {
 
   #[test]
   fn test_json_rpc_response_success() {
-    let response = JsonRpcResponse::success(
-      RequestId::Number(1),
-      serde_json::json!({"status": "ok"}),
-    );
-    
+    let response =
+      JsonRpcResponse::success(RequestId::Number(1), serde_json::json!({"status": "ok"}));
+
     assert!(response.is_success());
     assert!(response.result.is_some());
     assert!(response.error.is_none());
@@ -928,7 +947,7 @@ mod tests {
       RequestId::Number(1),
       JsonRpcError::method_not_found("unknown"),
     );
-    
+
     assert!(!response.is_success());
     assert!(response.result.is_none());
     assert!(response.error.is_some());
@@ -937,7 +956,7 @@ mod tests {
   #[test]
   fn test_initialize_params() {
     let params = InitializeParams::new(Implementation::new("test-client", "1.0.0"));
-    
+
     assert_eq!(params.protocol_version, MCP_VERSION);
     assert_eq!(params.client_info.name, "test-client");
     assert_eq!(params.client_info.version, "1.0.0");
@@ -946,11 +965,12 @@ mod tests {
   #[test]
   fn test_tool_input_schema() {
     let schema = ToolInputSchema::new()
-      .with_properties(HashMap::from([
-        ("query".to_string(), serde_json::json!({"type": "string"})),
-      ]))
+      .with_properties(HashMap::from([(
+        "query".to_string(),
+        serde_json::json!({"type": "string"}),
+      )]))
       .with_required(vec!["query".to_string()]);
-    
+
     assert_eq!(schema.schema_type, "object");
     assert!(schema.properties.is_some());
     assert!(schema.required.is_some());
@@ -959,7 +979,7 @@ mod tests {
   #[test]
   fn test_content_text() {
     let content = Content::text("Hello, world!");
-    
+
     match content {
       Content::Text { text } => assert_eq!(text, "Hello, world!"),
       _ => panic!("Expected Text content"),

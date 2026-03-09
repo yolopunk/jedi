@@ -6,9 +6,10 @@ use std::io::{BufRead, BufReader, Write};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info, warn};
 
 /// MCP 传输层配置
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct TransportConfig {
   /// MCP 服务器命令
@@ -35,6 +36,7 @@ impl Default for TransportConfig {
   }
 }
 
+#[allow(dead_code)]
 impl TransportConfig {
   /// 创建新配置
   pub fn new(command: impl Into<String>) -> Self {
@@ -70,8 +72,9 @@ impl TransportConfig {
 }
 
 /// Stdio 传输层
-/// 
+///
 /// 通过子进程的 stdin/stdout 与 MCP 服务器通信
+#[allow(dead_code)]
 pub struct StdioTransport {
   /// 配置
   config: TransportConfig,
@@ -87,6 +90,7 @@ pub struct StdioTransport {
   pending_responses: Mutex<Vec<(u64, Option<JsonRpcResponse>)>>,
 }
 
+#[allow(dead_code)]
 impl StdioTransport {
   /// 创建新的 Stdio 传输层
   pub fn new(config: TransportConfig) -> Self {
@@ -101,7 +105,7 @@ impl StdioTransport {
   }
 
   /// 启动传输层
-  /// 
+  ///
   /// 启动 MCP 服务器子进程
   pub fn start(&mut self) -> Result<(), McpError> {
     if self.process.is_some() {
@@ -123,23 +127,26 @@ impl StdioTransport {
     }
 
     // 设置标准输入输出
-    cmd.stdin(Stdio::piped())
+    cmd
+      .stdin(Stdio::piped())
       .stdout(Stdio::piped())
       .stderr(Stdio::piped());
 
     // 启动进程
-    let mut process = cmd.spawn().map_err(|e| {
-      McpError::Transport(format!("Failed to start MCP server: {}", e))
-    })?;
+    let mut process = cmd
+      .spawn()
+      .map_err(|e| McpError::Transport(format!("Failed to start MCP server: {}", e)))?;
 
     // 获取标准输入输出
-    let stdin = process.stdin.take().ok_or_else(|| {
-      McpError::Transport("Failed to get stdin".to_string())
-    })?;
+    let stdin = process
+      .stdin
+      .take()
+      .ok_or_else(|| McpError::Transport("Failed to get stdin".to_string()))?;
 
-    let stdout = process.stdout.take().ok_or_else(|| {
-      McpError::Transport("Failed to get stdout".to_string())
-    })?;
+    let stdout = process
+      .stdout
+      .take()
+      .ok_or_else(|| McpError::Transport("Failed to get stdout".to_string()))?;
 
     self.stdin = Some(stdin);
     self.stdout = Some(BufReader::new(stdout));
@@ -151,16 +158,16 @@ impl StdioTransport {
   }
 
   /// 停止传输层
-  /// 
+  ///
   /// 终止 MCP 服务器子进程
   pub fn stop(&mut self) -> Result<(), McpError> {
     if let Some(mut process) = self.process.take() {
       debug!("Stopping MCP server process");
 
       // 尝试优雅终止
-      process.kill().map_err(|e| {
-        McpError::Transport(format!("Failed to kill MCP server: {}", e))
-      })?;
+      process
+        .kill()
+        .map_err(|e| McpError::Transport(format!("Failed to kill MCP server: {}", e)))?;
 
       self.stdin = None;
       self.stdout = None;
@@ -182,7 +189,7 @@ impl StdioTransport {
   }
 
   /// 发送请求
-  /// 
+  ///
   /// 发送 JSON-RPC 请求并等待响应
   pub fn send_request(&mut self, request: JsonRpcRequest) -> Result<JsonRpcResponse, McpError> {
     if !self.is_running() {
@@ -207,7 +214,7 @@ impl StdioTransport {
   }
 
   /// 发送通知
-  /// 
+  ///
   /// 发送 JSON-RPC 通知（不等待响应）
   pub fn send_notification(&mut self, notification: JsonRpcNotification) -> Result<(), McpError> {
     if !self.is_running() {
@@ -241,7 +248,7 @@ impl StdioTransport {
     if let Some(ref mut stdout) = self.stdout {
       let mut line = String::new();
       let bytes_read = stdout.read_line(&mut line)?;
-      
+
       if bytes_read == 0 {
         return Err(McpError::Transport("EOF reached".to_string()));
       }
@@ -255,13 +262,13 @@ impl StdioTransport {
   }
 
   /// 读取通知
-  /// 
+  ///
   /// 尝试读取一个通知（非阻塞）
   pub fn try_read_notification(&mut self) -> Result<Option<JsonRpcNotification>, McpError> {
     if let Some(ref mut stdout) = self.stdout {
       let mut line = String::new();
       let bytes_read = stdout.read_line(&mut line)?;
-      
+
       if bytes_read == 0 {
         return Err(McpError::Transport("EOF reached".to_string()));
       }
@@ -299,25 +306,29 @@ impl Drop for StdioTransport {
 // ============================================================================
 
 /// 异步传输层 trait
-/// 
+///
 /// 为将来支持异步传输预留接口
-#[cfg(feature = "async")]
-#[async_trait::async_trait]
-pub trait AsyncTransport: Send + Sync {
-  /// 启动传输层
-  async fn start(&mut self) -> Result<(), McpError>;
-  
-  /// 停止传输层
-  async fn stop(&mut self) -> Result<(), McpError>;
-  
-  /// 发送请求
-  async fn send_request(&mut self, request: JsonRpcRequest) -> Result<JsonRpcResponse, McpError>;
-  
-  /// 发送通知
-  async fn send_notification(&mut self, notification: JsonRpcNotification) -> Result<(), McpError>;
-  
-  /// 检查是否运行中
-  fn is_running(&self) -> bool;
+#[allow(dead_code)]
+mod async_transport {
+  use super::*;
+
+  #[async_trait::async_trait]
+  pub trait AsyncTransport: Send + Sync {
+    /// 启动传输层
+    async fn start(&mut self) -> Result<(), McpError>;
+
+    /// 停止传输层
+    async fn stop(&mut self) -> Result<(), McpError>;
+
+    /// 发送请求
+    async fn send_request(&mut self, request: JsonRpcRequest) -> Result<JsonRpcResponse, McpError>;
+
+    /// 发送通知
+    async fn send_notification(&mut self, notification: JsonRpcNotification) -> Result<(), McpError>;
+
+    /// 检查是否运行中
+    fn is_running(&self) -> bool;
+  }
 }
 
 // ============================================================================

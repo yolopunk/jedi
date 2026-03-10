@@ -9,10 +9,48 @@ export interface ProviderInfo {
   has_key: boolean
 }
 
+// Model 接口
+export interface Model {
+  id: string
+  name: string
+  provider: string
+  contextLength?: number
+}
+
+// MCP Server 接口
+export interface McpServer {
+  id: string
+  name: string
+  description?: string
+  enabled: boolean
+  icon?: string
+}
+
 // 消息格式（后端期望格式）
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
+  timestamp?: number
+  isStreaming?: boolean
+  error?: string
+}
+
+// 兼容旧组件的类型导出
+export interface Message extends ChatMessage { }
+
+// 兼容旧组件的Provider类型
+export interface Provider {
+  id: string
+  name: string
+  provider?: string
+  providerId?: string
+  apiKey?: string
+  endpoint?: string
+  baseUrl?: string
+  enabled: boolean
+  isActive?: boolean
+  type?: string
+  models?: any[]
 }
 
 // 会话格式
@@ -27,24 +65,47 @@ export interface Session {
 }
 
 // 预定义的提供商配置
-export const PROVIDER_CONFIGS = {
+export const PROVIDER_CONFIGS: Record<string, { name: string; models: Model[] }> = {
   openai: {
     name: 'OpenAI',
-    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    models: [
+      { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', contextLength: 128000 },
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai', contextLength: 128000 },
+      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'openai', contextLength: 128000 },
+      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'openai', contextLength: 16384 },
+    ],
   },
   anthropic: {
     name: 'Anthropic',
-    models: ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'],
+    models: [
+      { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'anthropic', contextLength: 200000 },
+      { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', provider: 'anthropic', contextLength: 200000 },
+      { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', provider: 'anthropic', contextLength: 200000 },
+    ],
   },
   google: {
     name: 'Google (Gemini)',
-    models: ['gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-1.5-flash'],
+    models: [
+      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'google', contextLength: 1048576 },
+      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'google', contextLength: 1048576 },
+      { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'google', contextLength: 1048576 },
+    ],
   },
   deepseek: {
     name: 'DeepSeek',
-    models: ['deepseek-chat', 'deepseek-coder'],
+    models: [
+      { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'deepseek', contextLength: 64000 },
+      { id: 'deepseek-coder', name: 'DeepSeek Coder', provider: 'deepseek', contextLength: 128000 },
+    ],
   },
-} as const
+}
+
+// 预定义的MCP服务器
+export const DEFAULT_MCP_SERVERS: McpServer[] = [
+  { id: 'hosts', name: 'Hosts Manager', description: '管理系统Hosts文件', enabled: false, icon: 'mdi-dns' },
+  { id: 'filesystem', name: 'Filesystem', description: '文件系统操作', enabled: false, icon: 'mdi-folder' },
+  { id: 'browser', name: 'Browser', description: '网页浏览和搜索', enabled: false, icon: 'mdi-web' },
+]
 
 export const useAiChatStore = defineStore('aiChat', () => {
   // State
@@ -55,20 +116,58 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const error = ref<string | null>(null)
   const streamingContent = ref<string>('')
 
+  // UI State
+  const selectedModelId = ref<string | null>(null)
+  const selectedProvider = ref<string>('openai')
+  const enabledMcpServers = ref<string[]>([])
+  const mcpServers = ref<McpServer[]>([...DEFAULT_MCP_SERVERS])
+
+  // Chat settings
+  const temperature = ref<number>(0.7)
+  const maxTokens = ref<number>(4096)
+  const streamEnabled = ref<boolean>(true)
+
   // Computed
-  const currentSession = computed(() => 
+  const currentSession = computed(() =>
     sessions.value.find(s => s.id === currentSessionId.value) || null
   )
 
-  const configuredProviders = computed(() => 
+  const configuredProviders = computed(() =>
     providers.value.filter(p => p.has_key)
   )
+
+  const availableModels = computed(() => {
+    const models: (Model & { providerName: string })[] = []
+    for (const provider of configuredProviders.value) {
+      const config = PROVIDER_CONFIGS[provider.provider]
+      if (config) {
+        config.models.forEach(model => {
+          models.push({ ...model, providerName: config.name })
+        })
+      }
+    }
+    return models
+  })
+
+  const selectedModel = computed(() => {
+    if (!selectedModelId.value) return null
+    return availableModels.value.find(m => m.id === selectedModelId.value) || null
+  })
+
+  // Initialize with default model
+  function initializeDefaultModel() {
+    if (availableModels.value.length > 0 && !selectedModelId.value) {
+      selectedModelId.value = availableModels.value[0].id
+      selectedProvider.value = availableModels.value[0].provider
+    }
+  }
 
   // Actions
   async function loadProviders() {
     try {
       providers.value = await invoke('list_api_key_providers')
       error.value = null
+      initializeDefaultModel()
     } catch (e) {
       error.value = `加载提供商失败: ${e}`
       console.error('Failed to load providers:', e)
@@ -77,12 +176,12 @@ export const useAiChatStore = defineStore('aiChat', () => {
 
   async function saveApiKey(provider: string, key: string, endpoint?: string) {
     try {
-      await invoke('store_api_key', { 
-        request: { 
-          provider, 
-          key, 
-          endpoint: endpoint || null 
-        } 
+      await invoke('store_api_key', {
+        request: {
+          provider,
+          key,
+          endpoint: endpoint || null
+        }
       })
       await loadProviders()
       error.value = null
@@ -115,17 +214,20 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
-  async function createSession(title: string = '新对话', provider: string = 'openai', model: string = 'gpt-4o-mini') {
+  async function createSession(title: string = '新对话', provider?: string, model?: string) {
+    const useProvider = provider || selectedProvider.value
+    const useModel = model || selectedModelId.value || 'gpt-4o-mini'
+
     try {
-      const session = await invoke('create_session', { 
-        title, 
-        provider, 
-        model 
+      const session = await invoke('create_session', {
+        title,
+        provider: useProvider,
+        model: useModel
       })
-      sessions.value.unshift(session)
-      currentSessionId.value = session.id
+      sessions.value.unshift(session as Session)
+      currentSessionId.value = (session as Session).id
       error.value = null
-      return session
+      return session as Session
     } catch (e) {
       error.value = `创建会话失败: ${e}`
       console.error('Failed to create session:', e)
@@ -148,30 +250,43 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
-  async function sendMessage(content: string, options?: { 
+  async function sendMessage(content: string, options?: {
     stream?: boolean
     temperature?: number
-    maxTokens?: number 
+    maxTokens?: number
   }) {
     if (!currentSession.value) {
-      throw new Error('没有活动的会话')
+      // Create a new session if none exists
+      await createSession()
+      if (!currentSession.value) {
+        throw new Error('没有活动的会话')
+      }
     }
 
     const session = currentSession.value
-    const userMessage: ChatMessage = { role: 'user', content }
-    
+    const userMessage: ChatMessage = { role: 'user', content, timestamp: Date.now() }
+
+    // Update session with selected model and provider
+    if (selectedModelId.value) {
+      session.model = selectedModelId.value
+    }
+    if (selectedProvider.value) {
+      session.provider = selectedProvider.value
+    }
+
     // 添加用户消息
     session.messages.push(userMessage)
-    
+
     isLoading.value = true
     streamingContent.value = ''
     error.value = null
 
     try {
-      if (options?.stream !== false) {
+      const useStream = options?.stream ?? streamEnabled.value
+      if (useStream) {
         // 流式响应
         const requestId = `req-${Date.now()}`
-        
+
         // 监听流式事件
         const unlisten = await listen<string>('chat-stream-chunk', (event) => {
           streamingContent.value += event.payload
@@ -182,14 +297,15 @@ export const useAiChatStore = defineStore('aiChat', () => {
             provider: session.provider,
             model: session.model,
             messages: session.messages,
-            temperature: options?.temperature,
-            maxTokens: options?.maxTokens,
+            temperature: options?.temperature ?? temperature.value,
+            maxTokens: options?.maxTokens ?? maxTokens.value,
             requestId,
           })
-          
-          const assistantMessage: ChatMessage = { 
-            role: 'assistant', 
-            content: response as string 
+
+          const assistantMessage: ChatMessage = {
+            role: 'assistant',
+            content: response as string,
+            timestamp: Date.now()
           }
           session.messages.push(assistantMessage)
         } finally {
@@ -201,13 +317,14 @@ export const useAiChatStore = defineStore('aiChat', () => {
           provider: session.provider,
           model: session.model,
           messages: session.messages,
-          temperature: options?.temperature,
-          maxTokens: options?.maxTokens,
+          temperature: options?.temperature ?? temperature.value,
+          maxTokens: options?.maxTokens ?? maxTokens.value,
         })
-        
-        const assistantMessage: ChatMessage = { 
-          role: 'assistant', 
-          content: response as string 
+
+        const assistantMessage: ChatMessage = {
+          role: 'assistant',
+          content: response as string,
+          timestamp: Date.now()
         }
         session.messages.push(assistantMessage)
       }
@@ -230,6 +347,70 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
+  // Toggle MCP server
+  function toggleMcpServer(serverId: string) {
+    const server = mcpServers.value.find(s => s.id === serverId)
+    if (server) {
+      server.enabled = !server.enabled
+      if (server.enabled) {
+        if (!enabledMcpServers.value.includes(serverId)) {
+          enabledMcpServers.value.push(serverId)
+        }
+      } else {
+        enabledMcpServers.value = enabledMcpServers.value.filter(id => id !== serverId)
+      }
+    }
+  }
+
+  // Set selected model
+  function setSelectedModel(modelId: string) {
+    selectedModelId.value = modelId
+    const model = availableModels.value.find(m => m.id === modelId)
+    if (model) {
+      selectedProvider.value = model.provider
+    }
+  }
+
+  // Load settings from localStorage
+  function loadSettings() {
+    try {
+      const saved = localStorage.getItem('chat-settings')
+      if (saved) {
+        const settings = JSON.parse(saved)
+        if (settings.temperature !== undefined) temperature.value = settings.temperature
+        if (settings.maxTokens !== undefined) maxTokens.value = settings.maxTokens
+        if (settings.streamEnabled !== undefined) streamEnabled.value = settings.streamEnabled
+        if (settings.selectedModelId) selectedModelId.value = settings.selectedModelId
+        if (settings.selectedProvider) selectedProvider.value = settings.selectedProvider
+        if (settings.enabledMcpServers) enabledMcpServers.value = settings.enabledMcpServers
+
+        // Sync MCP server enabled states
+        mcpServers.value.forEach(server => {
+          server.enabled = enabledMcpServers.value.includes(server.id)
+        })
+      }
+    } catch (e) {
+      console.error('Failed to load AI chat settings:', e)
+    }
+  }
+
+  // Save settings to localStorage
+  function saveSettings() {
+    try {
+      const settings = {
+        temperature: temperature.value,
+        maxTokens: maxTokens.value,
+        streamEnabled: streamEnabled.value,
+        selectedModelId: selectedModelId.value,
+        selectedProvider: selectedProvider.value,
+        enabledMcpServers: enabledMcpServers.value,
+      }
+      localStorage.setItem('chat-settings', JSON.stringify(settings))
+    } catch (e) {
+      console.error('Failed to save AI chat settings:', e)
+    }
+  }
+
   return {
     // State
     providers,
@@ -238,11 +419,20 @@ export const useAiChatStore = defineStore('aiChat', () => {
     isLoading,
     error,
     streamingContent,
-    
+    selectedModelId,
+    selectedProvider,
+    enabledMcpServers,
+    mcpServers,
+    temperature,
+    maxTokens,
+    streamEnabled,
+
     // Computed
     currentSession,
     configuredProviders,
-    
+    availableModels,
+    selectedModel,
+
     // Actions
     loadProviders,
     saveApiKey,
@@ -251,5 +441,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
     createSession,
     deleteSession,
     sendMessage,
+    toggleMcpServer,
+    setSelectedModel,
+    loadSettings,
+    saveSettings,
   }
 })

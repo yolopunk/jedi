@@ -1,6 +1,33 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use crate::api::ai_chat::{
+  append_message,
+  create_session,
+  delete_api_key,
+  delete_session,
+  encode_html_entities,
+  get_api_key_info,
+  get_session,
+  has_api_key,
+  list_api_key_providers,
+  list_sessions,
+  log_security_event,
+  query_security_logs,
+  sanitize,
+  // Phase 2: 模型和会话管理
+  send_chat_message,
+  send_chat_message_stream,
+  store_api_key,
+  validate_input,
+  validate_key,
+  validate_message,
+  validate_url,
+  AuditLoggerState,
+  ChatSessionManagerState,
+  KeyringManagerState,
+  ModelProviderManagerState,
+};
 use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
 };
@@ -12,21 +39,6 @@ use crate::api::podcast::{
 };
 use crate::api::wallpapers::{
   get_current_wallpaper, get_wallpapers, set_desktop_wallpaper, show_in_folder, sync_wallpapers,
-};
-use crate::api::ai_chat::{
-  delete_api_key, encode_html_entities, get_api_key_info, has_api_key, list_api_key_providers,
-  log_security_event, query_security_logs, sanitize, store_api_key, validate_input,
-  validate_key, validate_message, validate_url, AuditLoggerState, KeyringManagerState,
-  // Phase 2: 模型和会话管理
-  send_chat_message,
-  send_chat_message_stream,
-  create_session,
-  list_sessions,
-  get_session,
-  delete_session,
-  append_message,
-  ChatSessionManagerState,
-  ModelProviderManagerState,
 };
 use crate::utils::logger;
 use std::sync::Mutex;
@@ -43,18 +55,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let _logger_guard = logger::init();
 
   // 初始化审计日志记录器状态
-  let audit_logger_state = AuditLoggerState::new()
-    .expect("Failed to initialize audit logger");
+  let audit_logger_state = AuditLoggerState::new().expect("Failed to initialize audit logger");
 
   // 初始化密钥链管理器状态
-  let keyring_manager_state = KeyringManagerState::new()
-    .expect("Failed to initialize keyring manager");
+  let keyring_manager_state =
+    KeyringManagerState::new().expect("Failed to initialize keyring manager");
 
   // Phase 2: 初始化会话管理器状态
-  use crate::utils::security::AuditLogger;
   use crate::api::ai_chat::sessions::ChatSessionManager;
-  let audit_logger_for_sessions = AuditLogger::new()
-    .expect("Failed to initialize audit logger for sessions");
+  use crate::utils::security::AuditLogger;
+  let audit_logger_for_sessions =
+    AuditLogger::new().expect("Failed to initialize audit logger for sessions");
   let chat_session_manager = ChatSessionManager::new(audit_logger_for_sessions);
   let chat_session_manager_state = ChatSessionManagerState::new(chat_session_manager);
 

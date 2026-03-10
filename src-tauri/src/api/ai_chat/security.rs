@@ -4,10 +4,10 @@
 // Phase 1: 输入验证和输出编码 Tauri commands
 
 use crate::utils::security::{
-  ApiKey, ApiKeyValidation, AuditLogFilter, AuditLogger, ChatMessageValidation, KeyringManager,
-  ModelProvider, OperationResult, SecurityEvent, SecurityEventType, ValidationResult,
   encode_html, sanitize_html, validate_api_key, validate_chat_message, validate_endpoint,
-  validate_user_input,
+  validate_user_input, ApiKey, ApiKeyValidation, AuditLogFilter, AuditLogger,
+  ChatMessageValidation, KeyringManager, ModelProvider, OperationResult, SecurityEvent,
+  SecurityEventType, ValidationResult,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -175,7 +175,10 @@ pub async fn log_security_event(
     event = event.with_metadata(metadata);
   }
 
-  let logger = state.logger.lock().map_err(|e| format!("Lock error: {}", e))?;
+  let logger = state
+    .logger
+    .lock()
+    .map_err(|e| format!("Lock error: {}", e))?;
   logger.log_event(event)
 }
 
@@ -218,10 +221,18 @@ pub async fn query_security_logs(
 
   filter.limit = request.limit;
 
-  let logger = state.logger.lock().map_err(|e| format!("Lock error: {}", e))?;
+  let logger = state
+    .logger
+    .lock()
+    .map_err(|e| format!("Lock error: {}", e))?;
   let events = logger.query_events(filter)?;
 
-  Ok(events.into_iter().map(SecurityEventResponse::from).collect())
+  Ok(
+    events
+      .into_iter()
+      .map(SecurityEventResponse::from)
+      .collect(),
+  )
 }
 
 // ========== API Key 管理相关 ==========
@@ -284,7 +295,10 @@ pub async fn store_api_key(
   let provider = parse_provider(&request.provider)?;
   let api_key = ApiKey::new(provider, request.key, request.endpoint);
 
-  let manager = state.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+  let manager = state
+    .manager
+    .lock()
+    .map_err(|e| format!("Lock error: {}", e))?;
   manager.store_api_key(api_key)
 }
 
@@ -296,7 +310,10 @@ pub async fn get_api_key_info(
 ) -> Result<Option<ApiKeyInfoResponse>, String> {
   let provider_enum = parse_provider(&provider)?;
 
-  let manager = state.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+  let manager = state
+    .manager
+    .lock()
+    .map_err(|e| format!("Lock error: {}", e))?;
   let api_key = manager.get_api_key(provider_enum)?;
 
   Ok(api_key.map(|key| ApiKeyInfoResponse {
@@ -314,7 +331,10 @@ pub async fn delete_api_key(
 ) -> Result<(), String> {
   let provider_enum = parse_provider(&provider)?;
 
-  let manager = state.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+  let manager = state
+    .manager
+    .lock()
+    .map_err(|e| format!("Lock error: {}", e))?;
   manager.delete_api_key(provider_enum)
 }
 
@@ -326,7 +346,10 @@ pub async fn has_api_key(
 ) -> Result<bool, String> {
   let provider_enum = parse_provider(&provider)?;
 
-  let manager = state.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+  let manager = state
+    .manager
+    .lock()
+    .map_err(|e| format!("Lock error: {}", e))?;
   manager.has_api_key(provider_enum)
 }
 
@@ -335,7 +358,10 @@ pub async fn has_api_key(
 pub async fn list_api_key_providers(
   state: State<'_, KeyringManagerState>,
 ) -> Result<Vec<ProviderInfoResponse>, String> {
-  let manager = state.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+  let manager = state
+    .manager
+    .lock()
+    .map_err(|e| format!("Lock error: {}", e))?;
   let providers = manager.list_providers()?;
 
   // 对于每个提供商，检查是否有 Key（实际上 list_providers 只返回有 Key 的）
@@ -382,19 +408,23 @@ pub struct SanitizeHtmlRequest {
 /// Tauri command: 验证用户输入
 #[tauri::command]
 pub async fn validate_input(request: ValidateUserInputRequest) -> Result<ValidationResult, String> {
-  let opts = request.max_length.map(|len| {
-    crate::utils::security::ValidationOptions {
+  let opts = request
+    .max_length
+    .map(|len| crate::utils::security::ValidationOptions {
       max_length: len,
       ..Default::default()
-    }
-  });
+    });
   Ok(validate_user_input(&request.input, opts.as_ref()))
 }
 
 /// Tauri command: 验证 API Key
 #[tauri::command]
 pub async fn validate_key(request: ValidateApiKeyRequest) -> Result<ApiKeyValidation, String> {
-  Ok(validate_api_key(&request.key, request.provider.as_deref(), None))
+  Ok(validate_api_key(
+    &request.key,
+    request.provider.as_deref(),
+    None,
+  ))
 }
 
 /// Tauri command: 验证端点 URL
@@ -405,8 +435,13 @@ pub async fn validate_url(url: String) -> Result<ValidationResult, String> {
 
 /// Tauri command: 验证聊天消息
 #[tauri::command]
-pub async fn validate_message(request: ValidateChatMessageRequest) -> Result<ChatMessageValidation, String> {
-  Ok(validate_chat_message(&request.content, request.is_user.unwrap_or(true)))
+pub async fn validate_message(
+  request: ValidateChatMessageRequest,
+) -> Result<ChatMessageValidation, String> {
+  Ok(validate_chat_message(
+    &request.content,
+    request.is_user.unwrap_or(true),
+  ))
 }
 
 /// Tauri command: 清理 HTML

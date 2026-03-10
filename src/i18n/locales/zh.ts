@@ -58,6 +58,68 @@ export default {
     lastCheckTime: '上次检查: {time}',
     never: '从未',
   },
+  chat: {
+    title: '对话',
+    newChat: '新对话',
+    history: '历史记录',
+    noHistory: '暂无对话记录',
+    inputPlaceholder: '输入消息...',
+    send: '发送',
+    stop: '停止生成',
+    copy: '复制',
+    regenerate: '重新生成',
+    delete: '删除',
+    rename: '重命名',
+    export: '导出',
+    clearContext: '清除上下文',
+    mcp: 'MCP',
+    welcome: {
+      title: '今天我能帮您什么？',
+      subtitle: '选择一个模型开始对话',
+    },
+    prompts: {
+      explain: {
+        title: '解释',
+        hint: '解释复杂的概念',
+      },
+      code: {
+        title: '代码',
+        hint: '生成或优化代码',
+      },
+      summarize: {
+        title: '摘要',
+        hint: '总结文本或文章',
+      },
+      brainstorm: {
+        title: '头脑风暴',
+        hint: '激发创意灵感',
+      },
+    },
+    roles: {
+      user: '你',
+      assistant: 'AI',
+    },
+    dialog: {
+      renameTitle: '重命名对话',
+      renamePlaceholder: '输入新名称',
+      cancel: '取消',
+      save: '保存',
+    },
+    confirm: {
+        delete: '确定要删除此对话吗？',
+        clear: '确定要清除当前对话历史吗？',
+    },
+    time: {
+        justNow: '刚刚',
+        minutesAgo: '{n}分钟前',
+        hoursAgo: '{n}小时前',
+        daysAgo: '{n}天前',
+    },
+    error: {
+      providerConfig: '请在设置中配置 AI 提供商...'
+    },
+    inputHint: '按 Enter 发送，Shift+Enter 换行'
+  },
   hosts: {
     globalSwitch: {
       enabled: '已启用',

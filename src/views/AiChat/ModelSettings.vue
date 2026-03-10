@@ -73,7 +73,7 @@
                   <div class="d-flex align-center pa-4">
                     <div class="provider-icon mr-4">
                       <v-avatar :color="provider.isActive ? 'primary' : 'surface-variant'" size="48">
-                        <v-icon :icon="getProviderIcon(provider.type)" />
+                        <v-icon :icon="getProviderIcon(provider.type || 'custom')" />
                       </v-avatar>
                     </div>
 
@@ -90,7 +90,7 @@
                         </v-chip>
                       </div>
                       <p class="text-body-2 text-medium-emphasis mb-0">
-                        {{ provider.type }} · {{ provider.models.length }} models
+                        {{ provider.type }} · {{ (provider.models || []).length }} models
                       </p>
                     </div>
 

@@ -266,7 +266,10 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import type { Provider, Model } from '@/stores/aiChat'
+import type { Provider } from '@/stores/aiChat'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Model = any
 
 const props = defineProps<{
   modelValue: boolean
@@ -371,11 +374,11 @@ watch(() => props.provider, (provider) => {
     form.value = {
       id: provider.id,
       name: provider.name,
-      type: provider.type,
-      baseUrl: provider.baseUrl,
+      type: provider.type || 'openai',
+      baseUrl: provider.baseUrl || '',
       apiKey: provider.apiKey || '',
-      isActive: provider.isActive,
-      models: provider.models.map(m => ({ ...m, enabled: true })),
+      isActive: provider.isActive ?? true,
+      models: (provider.models || []).map(m => ({ ...m, enabled: true })),
     }
   } else {
     resetForm()

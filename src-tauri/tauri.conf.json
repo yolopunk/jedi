@@ -3,7 +3,7 @@
   "version": "0.2.4",
   "identifier": "io.jedi",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "pnpm dev:prepare && pnpm dev",
     "devUrl": "http://localhost:31420",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
@@ -11,7 +11,8 @@
   "app": {
     "windows": [
       {
-        "decorations": true,
+        "decorations": false,
+        "transparent": true,
         "resizable": true,
         "title": "Jedi",
         "width": 980,

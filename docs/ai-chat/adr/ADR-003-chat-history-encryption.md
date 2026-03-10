@@ -76,7 +76,7 @@ src-tauri/src/security/
 
 ### 存储结构
 ```
-$DOCUMENT/jedi/ai-chat/
+$DOCUMENT/jedi/chat/
 ├── history.json.enc    # 加密的历史记录
 └── history.salt        # Salt（明文）
 ```

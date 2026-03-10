@@ -16,4 +16,4 @@ export * from './wallpaper';
 export * from './podcast';
 
 // 导出AI Chat API
-export * from './ai-chat';
+export * from './chat';

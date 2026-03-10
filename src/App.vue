@@ -1,26 +1,67 @@
 <template>
-  <v-app>
-    <app-sidebar
-      @open-github="openGithubRepo"
-      @open-website="openProjectWebsite"
-      @open-email="sendEmail"
-      @show-help="showHelpDialog = true"
-      @show-settings="showSettingsDialog = true"
-      @show-about="showAboutDialog = true"
-    />
+  <v-app :class="platformClass">
+    <div class="app-layout">
+      <!-- Full Width Title Bar -->
+      <app-header
+        :sidebar-collapsed="sidebarCollapsed"
+        @toggle-sidebar="toggleSidebar"
+        @open-github="openGithubRepo"
+        @show-settings="showSettingsDialog = true"
+        class="full-width-titlebar"
+      />
 
-    <v-main class="jedi-main-content">
-      <v-container class="py-6 px-6" height="100%">
-        <router-view v-slot="{ Component }">
-          <component :is="Component" />
-        </router-view>
-      </v-container>
-    </v-main>
+      <div class="content-wrapper">
+        <!-- Sidebar -->
+        <app-sidebar
+          :collapsed="sidebarCollapsed"
+          @update:width="onSidebarWidthUpdate"
+          @open-github="openGithubRepo"
+          @open-website="openProjectWebsite"
+          @open-email="sendEmail"
+          @show-help="showHelpDialog = true"
+          @show-settings="showSettingsDialog = true"
+          @show-about="showAboutDialog = true"
+        />
 
-    <!-- 系统信息栏 (Global Status Bar) -->
-    <system-info-bar class="system-bar-override"></system-info-bar>
+        <!-- Main Content Area -->
+        <div class="main-area">
+          <!-- Content -->
+          <v-main class="jedi-main-content">
+            <v-container class="py-2 px-2" height="100%" fluid>
+              <router-view v-slot="{ Component }">
+                <component :is="Component" @open-settings="showSettingsDialog = true" />
+              </router-view>
+            </v-container>
+          </v-main>
+        </div>
+      </div>
 
-    <!-- 对话框组件 -->
+      <!-- Full Width Bottom Status Bar -->
+      <div class="bottom-status-bar">
+        <div class="status-bar-left" data-tauri-no-drag>
+          <v-btn
+            icon
+            size="x-small"
+            variant="text"
+            @click="toggleSidebar"
+            class="sidebar-toggle-btn"
+          >
+            <v-icon :icon="sidebarCollapsed ? mdiMenu : mdiMenuOpen" size="16" />
+            <v-tooltip activator="parent" location="top">
+              {{ sidebarCollapsed ? '展开侧边栏' : '收起侧边栏' }}
+            </v-tooltip>
+          </v-btn>
+        </div>
+        <div class="status-bar-center" data-tauri-drag-region>
+          <system-info-bar></system-info-bar>
+        </div>
+        <div class="status-bar-right" data-tauri-no-drag>
+          <!-- Right side can have additional controls -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Dialog Components -->
     <help-dialog v-model="showHelpDialog" />
     <settings-dialog v-model="showSettingsDialog" />
     <about-dialog
@@ -31,9 +72,9 @@
     />
 
     <!-- Global Audio Element -->
-    <audio 
+    <audio
       ref="audioEl"
-      class="d-none" 
+      class="d-none"
       :src="currentPlaying?.audio_url"
       autoplay
     ></audio>
@@ -46,6 +87,7 @@ import { useI18n } from 'vue-i18n'
 import { useStorage } from '@/composables/useStorage'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppHeader from '@/components/layout/AppHeader.vue'
 import HelpDialog from '@/components/dialogs/HelpDialog.vue'
 import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
 import AboutDialog from '@/components/dialogs/AboutDialog.vue'
@@ -54,17 +96,25 @@ import { initTheme } from '@/composables/useTheme'
 import { useWallpaper } from '@/composables/useWallpaper'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useUpdate } from '@/composables/useUpdate'
+import { mdiMenu, mdiMenuOpen } from '@mdi/js'
 
 const { locale } = useI18n()
-const { getItem } = useStorage()
+const { getItem, setItem } = useStorage()
 const { currentPlaying, setAudioRef } = useAudioPlayer()
 
 const audioEl = ref<HTMLAudioElement | null>(null)
 
-// 对话框状态
+// Dialog states
 const showHelpDialog = ref(false)
 const showSettingsDialog = ref(false)
 const showAboutDialog = ref(false)
+
+// Platform detection
+const platformClass = ref('')
+
+// Sidebar state
+const sidebarCollapsed = ref(false)
+const sidebarWidth = ref(260)
 
 // Initialize Audio Player
 watch(audioEl, (el) => {
@@ -73,7 +123,7 @@ watch(audioEl, (el) => {
   }
 })
 
-// 初始化语言
+// Initialize language
 const initLanguage = async () => {
   const savedLang = await getItem<string>('language')
   if (savedLang) {
@@ -81,7 +131,17 @@ const initLanguage = async () => {
   }
 }
 
-// 打开GitHub仓库
+// Toggle sidebar
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+// Sidebar width update
+const onSidebarWidthUpdate = (width: number) => {
+  sidebarWidth.value = width
+}
+
+// Open GitHub repo
 const openGithubRepo = async () => {
   try {
     await open('https://github.com/yolopunk/jedi')
@@ -90,7 +150,7 @@ const openGithubRepo = async () => {
   }
 }
 
-// 打开项目网站
+// Open project website
 const openProjectWebsite = async () => {
   try {
     await open('https://yolopunk.github.io/jedi')
@@ -99,7 +159,7 @@ const openProjectWebsite = async () => {
   }
 }
 
-// 发送邮件
+// Send email
 const sendEmail = async () => {
   try {
     await open('mailto:cynosurech@gmail.com')
@@ -108,10 +168,23 @@ const sendEmail = async () => {
   }
 }
 
-// 初始化主题
+// Load sidebar state from storage
+const loadSidebarState = async () => {
+  const savedCollapsed = await getItem<boolean>('sidebar-collapsed')
+  if (savedCollapsed !== undefined && savedCollapsed !== null) {
+    sidebarCollapsed.value = savedCollapsed
+  }
+}
+
+// Save sidebar state to storage
+watch(sidebarCollapsed, async (newVal) => {
+  await setItem('sidebar-collapsed', newVal)
+})
+
 onMounted(async () => {
   initTheme()
   await initLanguage()
+  await loadSidebarState()
 
   // Check and run wallpaper auto-update
   const { startAutoUpdateCheck } = useWallpaper()
@@ -120,16 +193,139 @@ onMounted(async () => {
   // Initialize auto-update check
   const { startAutoCheck } = useUpdate()
   startAutoCheck()
+
+  // Detect Platform
+  const ua = navigator.userAgent.toLowerCase()
+  if (ua.includes('mac') || ua.includes('darwin')) {
+    platformClass.value = 'os-macos'
+  } else if (ua.includes('win')) {
+    platformClass.value = 'os-windows'
+  }
 })
 </script>
 
 <style scoped>
-.jedi-main-content {
-  background-color: rgb(var(--v-theme-background));
-  min-height: 100vh;
+/* Platform Specific Styles */
+:global(.os-macos) {
+  background: transparent !important;
 }
 
-.system-bar-override {
-  z-index: 100;
+:global(.os-macos) .app-layout {
+  border-radius: 12px;
+  overflow: hidden;
+  /* Add a subtle border/shadow to define the window */
+  box-shadow: 0 0 0 1px rgba(var(--v-theme-on-surface), 0.12), 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+/* Ensure background is applied to the layout container for transparency support */
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background-color: rgb(var(--v-theme-background));
+}
+
+.full-width-titlebar {
+  flex-shrink: 0;
+}
+
+.content-wrapper {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.jedi-main-content {
+  background-color: rgb(var(--v-theme-background));
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.jedi-main-content > .v-container {
+  flex: 1;
+  overflow: hidden;
+  padding-bottom: 0 !important; /* Remove padding to allow full height apps */
+  display: flex;
+  flex-direction: column;
+}
+
+.bottom-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  background: linear-gradient(
+    180deg,
+    rgba(var(--v-theme-surface), 0.92) 0%,
+    rgba(var(--v-theme-surface), 0.98) 100%
+  );
+  backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  flex-shrink: 0;
+  user-select: none;
+  font-size: 0.75rem; /* Smaller font for narrow bar */
+}
+
+.status-bar-left {
+  display: flex;
+  align-items: center;
+  padding: 0 4px;
+  min-width: 48px;
+}
+
+.status-bar-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.status-bar-center :deep(.system-bar-override) {
+  position: static;
+  width: 100%;
+}
+
+.status-bar-right {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  min-width: 48px;
+  justify-content: flex-end;
+}
+
+.sidebar-toggle-btn {
+  border-radius: 4px;
+  height: 20px !important;
+  width: 20px !important;
+  min-width: 20px !important;
+  padding: 0 !important;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.sidebar-toggle-btn:hover {
+  background: rgba(var(--v-theme-primary), 0.1);
+  transform: scale(1.05);
+}
+
+.sidebar-toggle-btn .v-icon {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.sidebar-toggle-btn:hover .v-icon {
+  opacity: 1;
 }
 </style>

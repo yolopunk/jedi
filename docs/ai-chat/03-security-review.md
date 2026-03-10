@@ -50,13 +50,13 @@
 use keyring::Entry;
 
 fn store_api_key(provider: &str, api_key: &str) -> Result<(), Box<dyn Error>> {
-    let entry = Entry::new("jedi-ai-chat", &format!("api-key-{}", provider))?;
+    let entry = Entry::new("jedi-chat", &format!("api-key-{}", provider))?;
     entry.set_password(api_key)?;
     Ok(())
 }
 
 fn get_api_key(provider: &str) -> Result<String, Box<dyn Error>> {
-    let entry = Entry::new("jedi-ai-chat", &format!("api-key-{}", provider))?;
+    let entry = Entry::new("jedi-chat", &format!("api-key-{}", provider))?;
     let password = entry.get_password()?;
     Ok(password)
 }
@@ -136,7 +136,7 @@ fn get_api_key(provider: &str) -> Result<String, Box<dyn Error>> {
   "plugins": {
     "fs": {
       "scope": [
-        "$DOCUMENT/jedi/ai-chat/*",
+        "$DOCUMENT/jedi/chat/*",
         "$CONFIG/jedi/*"
       ]
     },

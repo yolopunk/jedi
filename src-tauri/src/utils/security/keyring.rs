@@ -6,9 +6,7 @@ use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-use super::audit_log::{
-  AuditLogger, OperationResult, SecurityEvent, SecurityEventType,
-};
+use super::audit_log::{AuditLogger, OperationResult, SecurityEvent, SecurityEventType};
 
 /// 模型提供商类型
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -48,11 +46,7 @@ pub struct ApiKey {
 
 impl ApiKey {
   /// 创建新的 API Key
-  pub fn new(
-    provider: ModelProvider,
-    key: impl Into<String>,
-    endpoint: Option<String>,
-  ) -> Self {
+  pub fn new(provider: ModelProvider, key: impl Into<String>, endpoint: Option<String>) -> Self {
     Self {
       provider,
       key: SecretString::new(key.into()),
@@ -105,7 +99,7 @@ impl KeyringManager {
   pub fn new() -> Result<Self, String> {
     let audit_logger = AuditLogger::new()?;
     Ok(Self {
-      service_name: "jedi-ai-chat".to_string(),
+      service_name: "jedi-chat".to_string(),
       audit_logger,
     })
   }
@@ -118,14 +112,11 @@ impl KeyringManager {
   /// 存储 API Key
   pub fn store_api_key(&self, api_key: ApiKey) -> Result<(), String> {
     let entry_name = self.get_entry_name(&api_key.provider);
-    
+
     // 记录审计事件
-    let mut event = SecurityEvent::new(
-      SecurityEventType::ConfigChange,
-      OperationResult::Success,
-    )
-    .with_resource(format!("api-key/{}", api_key.provider))
-    .with_action("store");
+    let mut event = SecurityEvent::new(SecurityEventType::ConfigChange, OperationResult::Success)
+      .with_resource(format!("api-key/{}", api_key.provider))
+      .with_action("store");
 
     let result = (|| {
       let entry = Entry::new(&self.service_name, &entry_name)
@@ -162,14 +153,11 @@ impl KeyringManager {
   /// 读取 API Key
   pub fn get_api_key(&self, provider: ModelProvider) -> Result<Option<ApiKey>, String> {
     let entry_name = self.get_entry_name(&provider);
-    
+
     // 记录审计事件
-    let mut event = SecurityEvent::new(
-      SecurityEventType::DataAccess,
-      OperationResult::Success,
-    )
-    .with_resource(format!("api-key/{}", provider))
-    .with_action("read");
+    let mut event = SecurityEvent::new(SecurityEventType::DataAccess, OperationResult::Success)
+      .with_resource(format!("api-key/{}", provider))
+      .with_action("read");
 
     let result = (|| {
       let entry = match Entry::new(&self.service_name, &entry_name) {
@@ -213,14 +201,11 @@ impl KeyringManager {
   /// 删除 API Key
   pub fn delete_api_key(&self, provider: ModelProvider) -> Result<(), String> {
     let entry_name = self.get_entry_name(&provider);
-    
+
     // 记录审计事件
-    let mut event = SecurityEvent::new(
-      SecurityEventType::ConfigChange,
-      OperationResult::Success,
-    )
-    .with_resource(format!("api-key/{}", provider))
-    .with_action("delete");
+    let mut event = SecurityEvent::new(SecurityEventType::ConfigChange, OperationResult::Success)
+      .with_resource(format!("api-key/{}", provider))
+      .with_action("delete");
 
     let result = (|| {
       // 删除主密钥
@@ -295,11 +280,7 @@ mod tests {
 
   #[test]
   fn test_api_key_creation() {
-    let api_key = ApiKey::new(
-      ModelProvider::OpenAi,
-      "sk-test1234",
-      None,
-    );
+    let api_key = ApiKey::new(ModelProvider::OpenAi, "sk-test1234", None);
 
     assert_eq!(api_key.provider(), &ModelProvider::OpenAi);
     assert_eq!(api_key.endpoint(), None);
@@ -307,11 +288,7 @@ mod tests {
 
   #[test]
   fn test_api_key_masking() {
-    let api_key = ApiKey::new(
-      ModelProvider::OpenAi,
-      "sk-abcdefghijklmnop",
-      None,
-    );
+    let api_key = ApiKey::new(ModelProvider::OpenAi, "sk-abcdefghijklmnop", None);
 
     let masked = api_key.mask_key();
     assert_eq!(masked, "****mnop");
@@ -319,11 +296,7 @@ mod tests {
 
   #[test]
   fn test_short_api_key_masking() {
-    let api_key = ApiKey::new(
-      ModelProvider::OpenAi,
-      "1234",
-      None,
-    );
+    let api_key = ApiKey::new(ModelProvider::OpenAi, "1234", None);
 
     let masked = api_key.mask_key();
     assert_eq!(masked, "****");

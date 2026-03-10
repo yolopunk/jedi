@@ -1,9 +1,9 @@
 <template>
-  <v-footer app class="system-info-bar py-0 px-0">
+  <div class="system-info-bar py-0 px-0">
     <div class="d-flex align-center w-100 h-100">
       <!-- Left Section: App Info -->
-      <div class="app-info d-flex align-center px-4 h-100 border-right">
-        <span class="text-caption font-weight-black text-disabled mr-2 ls-1">JEDI</span>
+      <div class="app-info d-flex align-center px-2 h-100 border-right">
+        <span class="text-caption font-weight-black text-disabled mr-1 ls-1">JEDI</span>
         <span class="text-caption text-medium-emphasis">v{{ appVersion }}</span>
 
         <!-- Update Indicator -->
@@ -12,10 +12,10 @@
           variant="text"
           size="x-small"
           density="compact"
-          class="ml-2 px-1 update-btn"
+          class="ml-1 px-1 update-btn"
           @click="showUpdateDialog = true"
         >
-          <v-icon :icon="mdiDownload" size="16" class="text-error"></v-icon>
+          <v-icon :icon="mdiDownload" size="14" class="text-error"></v-icon>
           <v-tooltip activator="parent" location="top">
             {{ $t('update.title') }}: {{ updateInfo?.version }}
           </v-tooltip>
@@ -27,10 +27,10 @@
           variant="text"
           size="x-small"
           density="compact"
-          class="ml-2 px-1"
+          class="ml-1 px-1"
         >
           <v-progress-circular
-            :size="16"
+            :size="14"
             :width="2"
             indeterminate
             class="text-primary"
@@ -45,57 +45,56 @@
 
       <!-- Right Section: System Info Modules -->
       <div class="d-flex align-center h-100">
-        
-        <!-- Module: Network -->
-        <div class="info-module d-flex align-center px-3 h-100 border-left">
-          <v-icon :icon="mdiEthernet" size="16" class="mr-3 text-medium-emphasis"></v-icon>
-          <div class="d-flex flex-column text-caption" style="line-height: 1.1;">
-            <div class="d-flex align-center">
-              <v-icon :icon="mdiArrowDownThin" size="10" class="mr-1 text-success"></v-icon>
-              {{ formatNetworkSpeed(osInfo?.metrics?.network_received) }}
-            </div>
-            <div class="d-flex align-center">
-              <v-icon :icon="mdiArrowUpThin" size="10" class="mr-1 text-info"></v-icon>
-              {{ formatNetworkSpeed(osInfo?.metrics?.network_transmitted) }}
-            </div>
+
+        <!-- Module: Network (Compact) -->
+        <div class="info-module d-flex align-center px-2 h-100 border-left">
+          <!-- Download -->
+          <div class="d-flex align-center mr-3">
+            <v-icon :icon="mdiDownload" size="14" class="mr-1 text-success"></v-icon>
+            <span class="network-speed mono-font text-caption">{{ formatNetworkSpeed(osInfo?.metrics?.network_received) }}</span>
+          </div>
+          <!-- Upload -->
+          <div class="d-flex align-center">
+            <v-icon :icon="mdiUpload" size="14" class="mr-1 text-info"></v-icon>
+            <span class="network-speed mono-font text-caption">{{ formatNetworkSpeed(osInfo?.metrics?.network_transmitted) }}</span>
           </div>
         </div>
 
         <!-- Module: Performance (CPU/MEM) -->
-        <div class="info-module d-flex align-center px-3 h-100 border-left">
+        <div class="info-module d-flex align-center px-2 h-100 border-left">
           <!-- CPU -->
-          <div class="d-flex align-center mr-4 icon-module" style="width: 80px;">
-            <v-icon :icon="mdiCpu64Bit" size="18" class="mr-2 text-medium-emphasis icon-hover"></v-icon>
+          <div class="d-flex align-center mr-2 icon-module" style="width: 65px;">
+            <v-icon :icon="mdiCpu64Bit" size="14" class="mr-1 text-medium-emphasis icon-hover"></v-icon>
             <v-progress-linear
               :model-value="osInfo?.metrics?.cpu_usage || 0"
               color="primary"
-              height="4"
+              height="3"
               rounded
               class="flex-grow-1 opacity-80"
             ></v-progress-linear>
             <v-tooltip activator="parent" location="top" content-class="jedi-tooltip">
               <div class="d-flex flex-column align-center">
                 <span class="font-weight-bold mb-1">{{ $t('system.cpuUsage') }}</span>
-                <span>{{ formatPercentage(osInfo?.metrics?.cpu_usage) }}</span>
+                <span class="mono-font">{{ formatPercentage(osInfo?.metrics?.cpu_usage) }}</span>
               </div>
             </v-tooltip>
           </div>
 
           <!-- Memory -->
-          <div class="d-flex align-center icon-module" style="width: 80px;">
-            <v-icon :icon="mdiMemory" size="18" class="mr-2 text-medium-emphasis icon-hover"></v-icon>
+          <div class="d-flex align-center icon-module" style="width: 65px;">
+            <v-icon :icon="mdiMemory" size="14" class="mr-1 text-medium-emphasis icon-hover"></v-icon>
             <v-progress-linear
               :model-value="getMemoryUsagePercentage()"
               color="warning"
-              height="4"
+              height="3"
               rounded
               class="flex-grow-1 opacity-80"
             ></v-progress-linear>
             <v-tooltip activator="parent" location="top" content-class="jedi-tooltip">
               <div class="d-flex flex-column align-center">
                 <span class="font-weight-bold mb-1">{{ $t('system.memory') }}</span>
-                <span class="mb-1">{{ formatPercentage(getMemoryUsagePercentage()) }}</span>
-                <span class="text-caption text-high-emphasis" style="font-size: 10px; opacity: 0.9;">
+                <span class="mb-1 mono-font">{{ formatPercentage(getMemoryUsagePercentage()) }}</span>
+                <span class="text-caption text-high-emphasis mono-font" style="font-size: 10px; opacity: 0.9;">
                   {{ formatDataSize(osInfo?.metrics?.memory_used) }} / {{ formatDataSize(osInfo?.metrics?.memory_total) }}
                 </span>
               </div>
@@ -104,8 +103,8 @@
         </div>
 
         <!-- Module: Host Info -->
-        <div class="info-module d-flex align-center px-3 h-100 border-left hide-on-mobile">
-          <v-icon :icon="mdiServer" size="16" class="text-medium-emphasis icon-hover"></v-icon>
+        <div class="info-module d-flex align-center px-2 h-100 border-left hide-on-mobile">
+          <v-icon :icon="mdiServer" size="14" class="text-medium-emphasis icon-hover"></v-icon>
           <v-tooltip activator="parent" location="top">
             <div class="d-flex flex-column align-center">
               <span class="font-weight-bold mb-1">{{ osInfo?.host_name || 'Localhost' }}</span>
@@ -115,8 +114,8 @@
         </div>
 
         <!-- Module: Time -->
-        <div class="info-module d-flex align-center px-4 h-100 border-left bg-surface-variant-opt">
-          <span class="text-caption font-weight-bold">{{ currentTime }}</span>
+        <div class="info-module d-flex align-center px-3 h-100 border-left bg-surface-variant-opt ml-auto">
+          <span class="text-caption font-weight-bold mono-font">{{ currentTime }}</span>
         </div>
       </div>
     </div>
@@ -129,7 +128,7 @@
       :is-installing="isInstalling"
       @install="handleInstallUpdate"
     ></UpdateDialog>
-  </v-footer>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -139,9 +138,8 @@ import {
   mdiServer,
   mdiCpu64Bit,
   mdiMemory,
-  mdiArrowDownThin,
-  mdiArrowUpThin,
-  mdiDownload
+  mdiDownload,
+  mdiUpload
 } from '@mdi/js'
 import { getOsInfo } from '@/api/hosts'
 import { OsInfo } from '@/types/os'
@@ -198,157 +196,119 @@ function formatPercentage(value?: number): string {
 // 格式化网络速率
 function formatNetworkSpeed(bytes?: number): string {
   if (bytes === undefined) return '0 B/s'
-  const speed = bytes / (REFRESH_INTERVAL / 1000)
-  return formatDataSize(speed) + '/s'
+  
+  if (bytes < 1024) {
+    return `${bytes}B/s`
+  } else if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(0)}K/s`
+  } else {
+    return `${(bytes / (1024 * 1024)).toFixed(1)}M/s`
+  }
 }
 
 // 格式化数据大小
 function formatDataSize(bytes?: number): string {
   if (bytes === undefined) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB', 'TB']
-  let size = bytes
-  let unitIndex = 0
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024
-    unitIndex++
-  }
-  return `${size.toFixed(unitIndex > 0 ? 1 : 0)}${units[unitIndex]}`
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
-// 计算内存使用百分比
 function getMemoryUsagePercentage(): number {
   if (!osInfo.value?.metrics) return 0
-  const { memory_total, memory_used } = osInfo.value.metrics
+  const { memory_used, memory_total } = osInfo.value.metrics
   if (!memory_total) return 0
   return (memory_used / memory_total) * 100
 }
 
-// 加载系统信息
-async function loadSystemInfo() {
-  try {
-    osInfo.value = await getOsInfo() as OsInfo
-  } catch (error) {
-    console.error('加载系统信息失败:', error)
-    isConnected.value = false
-  }
-}
+async function refreshOsInfo() {
+      try {
+        const info = await getOsInfo()
+        osInfo.value = info as any
+      } catch (error) {
+        console.error('Failed to get OS info:', error)
+      }
+    }
 
-// 组件挂载时
 onMounted(async () => {
-  await loadSystemInfo()
-  refreshTimer = window.setInterval(loadSystemInfo, REFRESH_INTERVAL)
+  await refreshOsInfo()
+  
+  refreshTimer = window.setInterval(refreshOsInfo, REFRESH_INTERVAL)
+  
   timeTimer = window.setInterval(() => {
     now.value = new Date()
   }, 1000)
 })
 
-// 组件卸载时
 onUnmounted(() => {
-  if (refreshTimer !== null) {
-    clearInterval(refreshTimer)
-    refreshTimer = null
-  }
-  if (timeTimer !== null) {
-    clearInterval(timeTimer)
-    timeTimer = null
-  }
+  if (refreshTimer) clearInterval(refreshTimer)
+  if (timeTimer) clearInterval(timeTimer)
 })
 </script>
 
 <style scoped>
 .system-info-bar {
-  height: 36px !important;
-  border-top: 1px solid var(--jedi-border) !important;
-  background-color: rgba(var(--v-theme-surface), 0.95) !important;
-  backdrop-filter: blur(10px);
-  z-index: 100;
-  font-family: var(--jedi-font-ui);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-size: 11px; /* Ensure base font size is small enough */
 }
 
 .border-right {
-  border-right: 1px solid var(--jedi-border);
+  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .border-left {
-  border-left: 1px solid var(--jedi-border);
-}
-
-.info-module {
-  transition: background-color 0.2s;
-}
-
-.info-module:hover {
-  background-color: rgba(var(--v-theme-on-surface), 0.03);
-}
-
-.bg-surface-variant-opt {
-  background-color: rgba(var(--v-theme-surface-variant), 0.05);
-}
-
-.icon-hover {
-  transition: all 0.2s;
-  cursor: help;
-}
-
-.icon-hover:hover {
-  color: rgb(var(--v-theme-primary)) !important;
-  transform: scale(1.1);
-  opacity: 1 !important;
+  border-left: 1px solid rgba(var(--v-theme-on-surface), 0.08);
 }
 
 .ls-1 {
   letter-spacing: 1px;
 }
 
-/* Pulsing Dot Animation */
-.pulsing-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #ff5252;
-  box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7);
-  transition: all 0.3s;
+.info-module {
+  white-space: nowrap;
+  transition: background-color 0.2s;
 }
 
-.pulsing-dot.online {
-  background-color: #4caf50;
-  box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-  animation: pulse-green 2s infinite;
+.info-module:hover {
+  background-color: rgba(var(--v-theme-on-surface), 0.04);
 }
 
-@keyframes pulse-green {
-  0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
-  }
-  70% {
-    transform: scale(1);
-    box-shadow: 0 0 0 4px rgba(76, 175, 80, 0);
-  }
-  100% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
-  }
+.bg-surface-variant-opt {
+  background-color: rgba(var(--v-theme-on-surface), 0.03);
 }
 
-@media (max-width: 700px) {
+.icon-module {
+  position: relative;
+}
+
+.icon-hover {
+  transition: color 0.2s;
+}
+
+.icon-module:hover .icon-hover {
+  color: rgb(var(--v-theme-primary)) !important;
+}
+
+/* Monospace font for numbers to prevent jitter */
+.mono-font {
+  font-family: 'SF Mono', 'Roboto Mono', 'Menlo', monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+.network-speed {
+  display: inline-block;
+  min-width: 54px; /* Fixed width for stability */
+  text-align: right;
+}
+
+/* Hide non-critical info on mobile/small screens */
+@media (max-width: 600px) {
   .hide-on-mobile {
     display: none !important;
   }
-}
-</style>
-
-<style>
-/* Global tooltip style override */
-.jedi-tooltip {
-  background-color: rgba(15, 23, 42, 0.95) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-}
-
-.jedi-tooltip .text-high-emphasis {
-  color: #ffffff !important;
 }
 </style>

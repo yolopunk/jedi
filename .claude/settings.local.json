@@ -47,7 +47,12 @@
       "Bash(echo:*)",
       "WebFetch(domain:www.anthropic.com)",
       "Bash(osascript:*)",
-      "Bash(screencapture:*)"
+      "Bash(screencapture:*)",
+      "Bash(rustup:*)",
+      "Bash(/Users/cynosure/.cargo/bin/rustc:*)",
+      "Bash(export:*)",
+      "Bash(git push:*)",
+      "WebFetch(domain:tauri.app)"
     ]
   }
 }

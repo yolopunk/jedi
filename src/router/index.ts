@@ -7,7 +7,7 @@ import AiChat from '@/views/AiChat/index.vue'
 const routes: Array<RouteRecordRaw> = [
     {
         path: '/',
-        redirect: '/hosts'
+        redirect: '/chat'
     },
     {
         path: '/hosts',
@@ -34,11 +34,11 @@ const routes: Array<RouteRecordRaw> = [
         }
     },
     {
-        path: '/ai-chat',
+        path: '/chat',
         name: 'AiChat',
         component: AiChat,
         meta: {
-            title: 'AI Chat'
+            title: 'Chat'
         }
     }
 ]

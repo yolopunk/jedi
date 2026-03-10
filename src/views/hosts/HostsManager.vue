@@ -1,6 +1,6 @@
 <template>
   <div class="hosts-container fade-in-up">
-    <v-card class="main-card">
+    <v-card class="main-card d-flex flex-column h-100">
     <!-- 分组管理区域 -->
     <group-manager
       v-if="groups.length"
@@ -8,22 +8,24 @@
       :groups="groups"
       @add-group="dialogs.addGroup = true"
       @rename-group="openRenameGroupDialog"
-      class="fade-in"
+      class="fade-in flex-shrink-0"
     />
 
     <!-- 数据展示区域 -->
     <template v-if="loading || currentGroup">
-      <hosts-table
-        :current-group="currentGroup || { name: '', hosts: [] }"
-        v-model:search="search"
-        :loading="loading"
-        @update-status="updateHostStatus"
-        @edit-host="openEditHostDialog"
-        @delete-host="removeHost"
-        @add-host="openAddHostDialog"
-        @open-domain="handleOpenDomain"
-        class="fade-in-scale"
-      />
+      <div class="flex-grow-1 overflow-hidden d-flex flex-column">
+        <hosts-table
+          :current-group="currentGroup || { name: '', hosts: [] }"
+          v-model:search="search"
+          :loading="loading"
+          @update-status="updateHostStatus"
+          @edit-host="openEditHostDialog"
+          @delete-host="removeHost"
+          @add-host="openAddHostDialog"
+          @open-domain="handleOpenDomain"
+          class="fade-in-scale h-100"
+        />
+      </div>
     </template>
 
     <!-- 空状态显示 -->
@@ -31,7 +33,7 @@
       <empty-state
         @add-group="dialogs.addGroup = true"
         @use-default="initializeDefaultConfig"
-        class="fade-in-scale"
+        class="fade-in-scale h-100"
       />
     </template>
   </v-card>
@@ -215,7 +217,8 @@ onMounted(async () => {
 .hosts-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0; /* Crucial for nested flex scrolling */
   overflow: hidden;
 }
 

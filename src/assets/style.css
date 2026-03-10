@@ -7,7 +7,16 @@
    Utility Classes
    ========================================= */
 
-body, .v-application {
+html,
+body {
+  overflow: hidden !important;
+  /* Disable global scrollbar */
+  height: 100vh;
+  width: 100vw;
+}
+
+body,
+.v-application {
   font-family: var(--jedi-font-ui) !important;
 }
 
@@ -56,4 +65,28 @@ body, .v-application {
 
 .border-bottom {
   border-bottom: 1px solid var(--jedi-border) !important;
+}
+
+/* Global No Transition Class */
+.no-transition * {
+  transition: none !important;
+}
+
+/* Custom Scrollbar for Webkit (Chrome/Safari/Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(var(--v-theme-on-surface), 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--v-theme-on-surface), 0.4);
 }

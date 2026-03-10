@@ -65,7 +65,7 @@
               {{ session.title || 'New Chat' }}
             </div>
             <div class="session-meta">
-              <span class="session-date">{{ formatDate(session.updatedAt) }}</span>
+              <span class="session-date">{{ formatDate(session.updated_at) }}</span>
               <span v-if="session.messages.length" class="session-count">
                 {{ session.messages.length }} messages
               </span>
@@ -175,10 +175,10 @@ function getSessionIcon(session: Session): string {
   return 'mdi-forum'
 }
 
-function formatDate(timestamp: number): string {
-  const date = dayjs(timestamp)
+function formatDate(dateStr: string): string {
+  const date = dayjs(dateStr)
   const now = dayjs()
-  
+
   if (now.diff(date, 'day') < 1) {
     return date.fromNow()
   } else if (now.diff(date, 'day') < 7) {

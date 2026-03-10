@@ -67,6 +67,68 @@ export default {
     downloading: 'Downloading...',
     installing: 'Installing...',
   },
+  chat: {
+    title: 'Chat',
+    newChat: 'New Chat',
+    history: 'History',
+    noHistory: 'No conversations yet',
+    inputPlaceholder: 'Type a message...',
+    send: 'Send',
+    stop: 'Stop generating',
+    copy: 'Copy',
+    regenerate: 'Regenerate',
+    delete: 'Delete',
+    rename: 'Rename',
+    export: 'Export',
+    clearContext: 'Clear Context',
+    mcp: 'MCP',
+    welcome: {
+      title: 'How can I help you today?',
+      subtitle: 'Select a model and start chatting',
+    },
+    prompts: {
+      explain: {
+        title: 'Explain',
+        hint: 'Explain a complex concept',
+      },
+      code: {
+        title: 'Code',
+        hint: 'Generate or optimize code',
+      },
+      summarize: {
+        title: 'Summarize',
+        hint: 'Summarize text or article',
+      },
+      brainstorm: {
+        title: 'Brainstorm',
+        hint: 'Generate creative ideas',
+      },
+    },
+    roles: {
+      user: 'You',
+      assistant: 'AI',
+    },
+    dialog: {
+      renameTitle: 'Rename Chat',
+      renamePlaceholder: 'Enter new name',
+      cancel: 'Cancel',
+      save: 'Save',
+    },
+    confirm: {
+        delete: 'Are you sure you want to delete this chat?',
+        clear: 'Clear current conversation history?',
+    },
+    time: {
+        justNow: 'Just now',
+        minutesAgo: '{n}m ago',
+        hoursAgo: '{n}h ago',
+        daysAgo: '{n}d ago',
+    },
+    error: {
+      providerConfig: 'Please configure AI provider in settings...'
+    },
+    inputHint: 'Press Enter to send, Shift+Enter for new line'
+  },
   hosts: {
     globalSwitch: {
       enabledTooltip: 'Enabled - Click to disable',

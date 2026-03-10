@@ -175,7 +175,7 @@ pub struct KeyringManager {
 impl KeyringManager {
     pub fn new() -> Self {
         KeyringManager {
-            service_name: "jedi-ai-chat".to_string(),
+            service_name: "jedi-chat".to_string(),
         }
     }
 
@@ -783,9 +783,9 @@ pub fn log_security_event(event: SecurityEvent) {
   "plugins": {
     "fs": {
       "scope": [
-        "$DOCUMENT/jedi/ai-chat/*",
+        "$DOCUMENT/jedi/chat/*",
         "$CONFIG/jedi/*",
-        "!$DOCUMENT/jedi/ai-chat/sensitive/*"
+        "!$DOCUMENT/jedi/chat/sensitive/*"
       ]
     },
     "shell": {

@@ -48,15 +48,16 @@
 
         <!-- Module: Network (Compact) -->
         <div class="info-module d-flex align-center px-2 h-100 border-left">
+          <v-icon :icon="mdiEthernet" size="14" class="mr-2 text-medium-emphasis"></v-icon>
           <!-- Download -->
           <div class="d-flex align-center mr-3">
-            <v-icon :icon="mdiDownload" size="14" class="mr-1 text-success"></v-icon>
             <span class="network-speed mono-font text-caption">{{ formatNetworkSpeed(osInfo?.metrics?.network_received) }}</span>
+            <v-icon :icon="mdiDownload" size="14" class="ml-1 text-success"></v-icon>
           </div>
           <!-- Upload -->
           <div class="d-flex align-center">
-            <v-icon :icon="mdiUpload" size="14" class="mr-1 text-info"></v-icon>
             <span class="network-speed mono-font text-caption">{{ formatNetworkSpeed(osInfo?.metrics?.network_transmitted) }}</span>
+            <v-icon :icon="mdiUpload" size="14" class="ml-1 text-info"></v-icon>
           </div>
         </div>
 
@@ -114,7 +115,7 @@
         </div>
 
         <!-- Module: Time -->
-        <div class="info-module d-flex align-center px-3 h-100 border-left bg-surface-variant-opt ml-auto">
+        <div class="info-module d-flex align-center justify-end px-3 h-100 border-left bg-surface-variant-opt" style="min-width: 80px;">
           <span class="text-caption font-weight-bold mono-font">{{ currentTime }}</span>
         </div>
       </div>

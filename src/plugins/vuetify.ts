@@ -37,7 +37,7 @@ export const vuetify = createVuetify({
       dark: {
         dark: true,
         colors: {
-          background: '#09090b', // Zinc-950
+          background: '#111113', // Slightly lighter for better visibility
           surface: '#18181b',    // Zinc-900
           primary: '#60a5fa',    // Blue-400
           secondary: '#a1a1aa',  // Zinc-400

@@ -360,22 +360,36 @@ onUnmounted(() => {
 }
 
 /* Ensure icons center in collapsed mode */
+.sidebar-item.justify-center :deep(.v-list-item) {
+  justify-content: center !important;
+  padding-inline: 0 !important;
+}
+
 .sidebar-item.justify-center :deep(.v-list-item__content) {
   display: flex;
   justify-content: center;
-  margin-left: 0 !important; /* Reset margin */
-  width: 100%; /* Ensure full width for centering */
+  align-items: center;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-inline: 0 !important;
+  width: 100%;
 }
 
 .sidebar-item.justify-center :deep(.v-list-item__prepend) {
   margin-inline-end: 0 !important;
+  margin-inline-start: 0 !important;
   display: flex;
   justify-content: center;
+  align-items: center;
   width: 100%;
 }
 
 .sidebar-item.justify-center .sidebar-icon-container {
-  margin-right: 0 !important; /* Force remove margin */
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Resize Handle */

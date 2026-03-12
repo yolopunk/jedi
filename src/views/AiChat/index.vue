@@ -1,8 +1,6 @@
 <template>
   <div class="chat-page">
     <div class="chat-layout">
-      <!-- Session Sidebar (Removed, functionality moved to History Dialog) -->
-
       <!-- Main Chat Area -->
       <div class="chat-area">
         <!-- Chat Header -->
@@ -12,21 +10,21 @@
               icon
               size="small"
               variant="text"
-              class="mr-2"
+              class="mr-2 history-btn"
               @click="showHistoryDialog = true"
             >
               <v-icon :icon="mdiHistory" />
               <v-tooltip activator="parent" location="bottom">{{ t('chat.history') }}</v-tooltip>
             </v-btn>
-            
+
             <div class="model-selector-wrapper">
-               <v-select
+              <v-select
                 v-model="store.selectedModelId"
                 :items="modelOptions"
                 item-title="name"
                 item-value="id"
                 density="compact"
-                variant="plain"
+                variant="outlined"
                 hide-details
                 class="model-selector"
                 :menu-props="{ contentClass: 'model-dropdown rounded-lg' }"
@@ -34,14 +32,12 @@
                 @update:model-value="onModelChange"
               >
                 <template v-slot:prepend-inner>
-                   <v-avatar size="24" color="primary" variant="tonal" class="mr-2">
-                     <v-icon :icon="mdiRobot" size="14" />
-                   </v-avatar>
+                  <v-icon :icon="mdiStar" size="16" class="mr-2" color="primary" />
                 </template>
                 <template v-slot:item="{ item, props }">
                   <v-list-item v-bind="props" density="compact">
                     <template v-slot:append>
-                       <span class="text-caption text-medium-emphasis">{{ (item as any).raw.providerName }}</span>
+                      <span class="text-caption text-medium-emphasis">{{ (item as any).raw.providerName }}</span>
                     </template>
                   </v-list-item>
                 </template>
@@ -55,10 +51,21 @@
               icon
               size="small"
               variant="text"
-              color="medium-emphasis"
+              class="ml-1"
+              @click="handleNewSession"
+            >
+              <v-icon :icon="mdiPlus" />
+              <v-tooltip activator="parent" location="bottom">{{ t('chat.newChat') }}</v-tooltip>
+            </v-btn>
+            <v-btn
+              v-if="store.currentSession && store.currentSession.messages.length > 0"
+              icon
+              size="small"
+              variant="text"
+              class="ml-1"
               @click="handleClearChat"
             >
-              <v-icon :icon="mdiDeleteSweep" />
+              <v-icon :icon="mdiDeleteOutline" />
               <v-tooltip activator="parent" location="bottom">{{ t('chat.clearContext') }}</v-tooltip>
             </v-btn>
           </div>
@@ -68,13 +75,13 @@
         <div ref="messagesContainer" class="messages-container" @scroll="handleScroll">
           <!-- Welcome Screen -->
           <div v-if="!store.currentSession || store.currentSession.messages.length === 0" class="welcome-screen">
-            <div class="welcome-content text-center">
-              <div class="welcome-logo mb-6">
-                <v-avatar size="80" color="primary" variant="tonal" class="mb-4">
-                  <v-icon :icon="mdiRobot" size="40" />
+            <div class="welcome-content">
+              <div class="welcome-logo text-center">
+                <v-avatar size="56" color="primary" variant="tonal" class="mb-4">
+                  <v-icon :icon="mdiRobot" size="28" />
                 </v-avatar>
-                <h1 class="text-h4 font-weight-bold mb-2">{{ t('chat.welcome.title') }}</h1>
-                <p class="text-body-1 text-medium-emphasis">{{ t('chat.welcome.subtitle') }}</p>
+                <h1 class="text-h5 font-weight-bold mb-2">{{ t('chat.welcome.title') }}</h1>
+                <p class="text-body-2 text-medium-emphasis">{{ t('chat.welcome.subtitle') }}</p>
               </div>
 
               <!-- Quick Prompts -->
@@ -85,12 +92,10 @@
                   class="prompt-card"
                   @click="handleQuickPrompt(prompt)"
                 >
-                  <div class="d-flex align-start">
-                    <v-icon :icon="prompt.icon" class="prompt-icon mt-1 mr-3" color="primary" />
-                    <div class="text-left">
-                      <div class="font-weight-bold mb-1">{{ prompt.title }}</div>
-                      <div class="text-caption text-medium-emphasis">{{ prompt.hint }}</div>
-                    </div>
+                  <v-icon :icon="prompt.icon" class="prompt-icon mb-2" size="20" color="primary" />
+                  <div class="text-left">
+                    <div class="font-weight-medium prompt-title">{{ prompt.title }}</div>
+                    <div class="text-caption text-medium-emphasis prompt-hint">{{ prompt.hint }}</div>
                   </div>
                 </div>
               </div>
@@ -107,27 +112,29 @@
             >
               <div class="message-container">
                 <div class="message-avatar">
-                   <v-avatar size="32" :color="message.role === 'user' ? 'secondary' : 'primary'" variant="tonal">
-                     <v-icon :icon="message.role === 'user' ? mdiAccount : mdiRobot" size="18" />
-                   </v-avatar>
+                  <v-avatar
+                    :size="message.role === 'user' ? 28 : 32"
+                    :color="message.role === 'user' ? 'secondary' : 'primary'"
+                    variant="tonal"
+                  >
+                    <v-icon :icon="message.role === 'user' ? mdiAccount : mdiRobot" :size="message.role === 'user' ? 16 : 18" />
+                  </v-avatar>
                 </div>
-                
+
                 <div class="message-content-wrapper">
-                  <div class="message-meta mb-1">
-                    <span class="font-weight-bold text-caption mr-2">{{ message.role === 'user' ? t('chat.roles.user') : t('chat.roles.assistant') }}</span>
-                    <span v-if="message.timestamp" class="text-caption text-disabled">{{ formatTime(message.timestamp) }}</span>
+                  <div class="message-meta" v-if="message.role === 'assistant'">
+                    <span class="font-weight-medium text-caption">{{ t('chat.roles.assistant') }}</span>
                   </div>
-                  
+
                   <div class="message-bubble">
                     <div class="markdown-body" v-html="renderMessage(message.content)"></div>
                   </div>
-                  
-                  <div v-if="message.role === 'assistant'" class="message-actions mt-1">
+
+                  <div v-if="message.role === 'assistant'" class="message-actions">
                     <v-btn
                       icon
                       size="x-small"
                       variant="text"
-                      color="medium-emphasis"
                       @click="handleCopyMessage(message.content)"
                     >
                       <v-icon :icon="mdiContentCopy" size="14" />
@@ -138,7 +145,6 @@
                       icon
                       size="x-small"
                       variant="text"
-                      color="medium-emphasis"
                       @click="handleRegenerate"
                     >
                       <v-icon :icon="mdiRefresh" size="14" />
@@ -153,13 +159,13 @@
             <div v-if="store.isLoading" class="message-wrapper assistant">
               <div class="message-container">
                 <div class="message-avatar">
-                   <v-avatar size="32" color="primary" variant="tonal">
-                     <v-icon :icon="mdiRobot" size="18" />
-                   </v-avatar>
+                  <v-avatar size="32" color="primary" variant="tonal">
+                    <v-icon :icon="mdiRobot" size="18" />
+                  </v-avatar>
                 </div>
                 <div class="message-content-wrapper">
-                  <div class="message-meta mb-1">
-                    <span class="font-weight-bold text-caption">{{ t('chat.roles.assistant') }}</span>
+                  <div class="message-meta">
+                    <span class="font-weight-medium text-caption">{{ t('chat.roles.assistant') }}</span>
                   </div>
                   <div class="message-bubble">
                     <div class="streaming-content">
@@ -170,11 +176,11 @@
                 </div>
               </div>
             </div>
-            
-            <div style="height: 100px;"></div> <!-- Spacer for bottom input -->
+
+            <div style="height: 24px;"></div>
           </div>
         </div>
-        
+
         <!-- Scroll to bottom button -->
         <v-scale-transition>
           <v-btn
@@ -192,32 +198,43 @@
 
         <!-- Input Area -->
         <div class="input-area-wrapper">
-          <div class="input-container elevation-3">
-             <v-textarea
+          <div class="input-container">
+            <v-textarea
               ref="inputRef"
               v-model="inputText"
               :placeholder="placeholder"
-              variant="none"
+              variant="outlined"
               auto-grow
               rows="1"
               max-rows="8"
               hide-details
               class="chat-input"
+              rounded="lg"
               @keydown="handleKeydown"
             >
+              <template v-slot:prepend-inner>
+                <v-btn
+                  icon
+                  size="small"
+                  variant="text"
+                  class="attachment-btn"
+                  @click="store.toggleMcpServer('default')"
+                >
+                  <v-icon :icon="mdiPuzzle" size="18" />
+                </v-btn>
+              </template>
               <template v-slot:append-inner>
                 <div class="input-actions d-flex align-center">
-                   <v-btn
+                  <v-btn
                     v-if="!store.isLoading"
                     icon
                     size="small"
-                    variant="text"
                     color="primary"
                     :disabled="!inputText.trim()"
                     class="send-btn"
                     @click="handleSend"
                   >
-                    <v-icon :icon="mdiSend" size="20" />
+                    <v-icon :icon="mdiSend" size="18" />
                   </v-btn>
                   <v-btn
                     v-else
@@ -228,53 +245,42 @@
                     class="stop-btn"
                     @click="handleStop"
                   >
-                    <v-icon :icon="mdiStop" size="20" />
+                    <v-icon :icon="mdiStop" size="18" />
                   </v-btn>
                 </div>
               </template>
-             </v-textarea>
-             
-             <div class="input-footer px-3 pb-2 pt-0 d-flex justify-space-between align-center">
-                <div class="d-flex align-center">
-                   <v-btn
-                      variant="text"
-                      size="x-small"
-                      density="compact"
-                      class="text-caption text-medium-emphasis"
-                      @click="store.toggleMcpServer('default')" 
-                    >
-                      <v-icon :icon="mdiPuzzle" size="14" class="mr-1" />
-                      {{ t('chat.mcp') }} {{ enabledMcpCount > 0 ? `(${enabledMcpCount})` : '' }}
-                    </v-btn>
-                </div>
-                <div class="text-caption text-disabled" style="font-size: 10px;">
-                  {{ t('chat.inputHint') }}
-                </div>
-             </div>
+            </v-textarea>
+
+            <div class="input-footer">
+              <div class="text-caption text-disabled input-hint">
+                {{ t('chat.inputHint') }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- History Dialog -->
+    <!-- History Drawer -->
     <v-navigation-drawer
       v-model="showHistoryDialog"
       location="left"
       temporary
-      width="300"
+      width="280"
       class="history-drawer"
     >
       <div class="drawer-header pa-4 d-flex align-center justify-space-between border-bottom">
         <div class="text-h6 font-weight-bold">{{ t('chat.history') }}</div>
         <v-btn
-          variant="tonal"
+          variant="flat"
           color="primary"
           size="small"
           class="new-chat-btn"
           @click="handleNewSessionAndClose"
+          icon
         >
-          <v-icon :icon="mdiPlus" start />
-          {{ t('chat.newChat') }}
+          <v-icon :icon="mdiPlus" />
+          <v-tooltip activator="parent" location="bottom">{{ t('chat.newChat') }}</v-tooltip>
         </v-btn>
       </div>
 
@@ -283,7 +289,7 @@
           <v-icon :icon="mdiChatOutline" size="48" class="mb-2 opacity-50" />
           <div class="text-body-2">{{ t('chat.noHistory') }}</div>
         </div>
-        
+
         <div v-else class="session-list pa-2">
           <div
             v-for="session in store.sessions"
@@ -298,7 +304,7 @@
                 <span class="session-date">{{ formatDate(session.updated_at) }}</span>
               </div>
             </div>
-            
+
             <div class="session-actions px-2">
               <v-menu location="bottom end">
                 <template v-slot:activator="{ props }">
@@ -374,9 +380,9 @@ import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
 import {
   mdiPlus, mdiChatOutline, mdiDotsVertical, mdiPencil, mdiDownload, mdiDelete,
-  mdiMenu, mdiRobot, mdiDeleteSweep, mdiAccount, mdiContentCopy, mdiRefresh,
+  mdiMenu, mdiRobot, mdiDeleteOutline, mdiAccount, mdiContentCopy, mdiRefresh,
   mdiChevronDown, mdiSend, mdiStop, mdiPuzzle, mdiLightbulb, mdiCodeBraces,
-  mdiTextBoxMultiple, mdiLightningBolt, mdiHistory
+  mdiTextBoxMultiple, mdiLightningBolt, mdiHistory, mdiStar
 } from '@mdi/js'
 
 // Component Props/Emits
@@ -388,7 +394,6 @@ const { t } = useI18n()
 const store = useAiChatStore()
 
 // UI State
-const sidebarCollapsed = ref(false)
 const showHistoryDialog = ref(false)
 const showRenameDialog = ref(false)
 const renameTitle = ref('')
@@ -424,7 +429,6 @@ const quickPrompts = computed(() => [
 
 // Computed
 const modelOptions = computed(() => store.availableModels)
-const enabledMcpCount = computed(() => store.enabledMcpServers.length)
 
 const placeholder = computed(() => {
   if (store.availableModels.length === 0) {
@@ -455,10 +459,6 @@ function formatDate(dateStr: string) {
   if (diff < 604800000) return t('chat.time.daysAgo', { n: Math.floor(diff / 86400000) })
 
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
-}
-
-function formatTime(timestamp: number) {
-  return new Date(timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
 }
 
 function handleNewSessionAndClose() {
@@ -629,25 +629,298 @@ onMounted(() => {
   height: 100%;
 }
 
-/* Sidebar */
-.session-sidebar {
-  width: 260px;
-  background-color: rgba(var(--v-theme-surface-variant), 0.3);
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+/* Chat Area */
+.chat-area {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  transition: width 0.3s ease;
+  position: relative;
+  min-width: 0;
+  height: 100%;
+}
+
+.chat-header {
+  height: 56px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.history-btn {
+  border-radius: 8px;
+}
+
+.model-selector-wrapper {
+  min-width: 180px;
+}
+
+.model-selector {
+  min-width: 180px;
+}
+
+.model-selector :deep(.v-field) {
+  border-radius: 12px;
+}
+
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  scroll-behavior: smooth;
+}
+
+.messages-list {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+
+/* Welcome Screen */
+.welcome-screen {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.welcome-content {
+  max-width: 700px;
+  width: 100%;
+}
+
+.welcome-logo {
+  margin-bottom: 32px;
+}
+
+.quick-prompts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.prompt-card {
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: rgba(var(--v-theme-surface), 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.prompt-card:hover {
+  background-color: rgba(var(--v-theme-surface), 0.8);
+  border-color: rgba(var(--v-theme-primary), 0.3);
+  transform: translateY(-2px);
+}
+
+.prompt-title {
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.prompt-hint {
+  line-height: 1.4;
+}
+
+/* Message Styles */
+.message-wrapper {
+  margin-bottom: 24px;
+}
+
+.message-wrapper.user {
+  margin-bottom: 32px;
+}
+
+.message-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.message-wrapper.user .message-container {
+  flex-direction: row-reverse;
+  gap: 12px;
+}
+
+.message-avatar {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.message-content-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.message-wrapper.user .message-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.message-meta {
+  margin-bottom: 6px;
+}
+
+.message-wrapper.user .message-meta {
+  display: none;
+}
+
+.message-bubble {
+  position: relative;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.message-wrapper.user .message-bubble {
+  background-color: rgba(var(--v-theme-surface), 0.8);
+  border-radius: 16px;
+  padding: 10px 16px;
+  max-width: 80%;
+  width: fit-content;
+}
+
+.message-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.message-wrapper:hover .message-actions {
+  opacity: 1;
+}
+
+/* Markdown Styles */
+.markdown-body {
+  color: rgb(var(--v-theme-on-surface));
+}
+
+.markdown-body :deep(pre) {
+  background-color: rgba(var(--v-theme-surface), 0.8) !important;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.markdown-body :deep(code) {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  background-color: rgba(var(--v-theme-on-surface), 0.08);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.markdown-body :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
+}
+
+.markdown-body :deep(p) {
+  margin-bottom: 12px;
+}
+
+.markdown-body :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+/* Input Area */
+.input-area-wrapper {
+  padding: 16px 20px 20px;
+  background: linear-gradient(to top, rgb(var(--v-theme-background)) 60%, transparent);
   flex-shrink: 0;
 }
 
-.session-sidebar.collapsed {
-  width: 0;
-  overflow: hidden;
-  border: none;
+.input-container {
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.sidebar-header {
-  padding: 16px;
+.chat-input :deep(.v-field) {
+  border-radius: 16px !important;
+  background-color: rgba(var(--v-theme-surface), 0.6) !important;
+}
+
+.chat-input :deep(.v-field__input) {
+  padding: 12px 12px !important;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  max-height: 200px;
+}
+
+.attachment-btn {
+  border-radius: 8px;
+}
+
+.send-btn {
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+}
+
+.stop-btn {
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+}
+
+.input-footer {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.input-hint {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+/* Scroll Button */
+.scroll-bottom-btn {
+  position: absolute;
+  bottom: 140px;
+  right: 24px;
+  z-index: 10;
+  border-radius: 50%;
+}
+
+/* Animations */
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background-color: currentColor;
+  margin-left: 2px;
+  animation: blink 1s step-end infinite;
+  vertical-align: text-bottom;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* History Drawer */
+.history-drawer :deep(.v-navigation-drawer__content) {
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-header {
+  flex-shrink: 0;
 }
 
 .session-list-container {
@@ -666,17 +939,17 @@ onMounted(() => {
 
 .session-list-container:hover::-webkit-scrollbar-thumb {
   background: rgba(var(--v-theme-on-surface), 0.1);
+  border-radius: 2px;
 }
 
 .session-item {
-  padding: 10px 16px;
+  padding: 8px 12px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   transition: all 0.2s;
-  border-left: 3px solid transparent;
-  position: relative;
+  border-radius: 8px;
 }
 
 .session-item:hover {
@@ -684,8 +957,7 @@ onMounted(() => {
 }
 
 .session-item.active {
-  background-color: rgba(var(--v-theme-primary), 0.08);
-  border-left-color: rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.1);
 }
 
 .session-item-content {
@@ -716,200 +988,22 @@ onMounted(() => {
   opacity: 1;
 }
 
-/* Chat Area */
-.chat-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  min-width: 0;
-  background-color: rgb(var(--v-theme-background));
-}
+/* Responsive */
+@media (max-width: 640px) {
+  .quick-prompts-grid {
+    grid-template-columns: 1fr;
+  }
 
-.chat-header {
-  height: 56px;
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  /* border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.05); */
-  z-index: 10;
-}
+  .chat-header {
+    padding: 0 12px;
+  }
 
-.messages-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px 0;
-  scroll-behavior: smooth;
-}
+  .messages-list {
+    padding: 16px 12px;
+  }
 
-.messages-list {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-/* Message Styles */
-.message-wrapper {
-  margin-bottom: 24px;
-}
-
-.message-container {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.message-content-wrapper {
-  flex: 1;
-  min-width: 0;
-}
-
-.message-bubble {
-  position: relative;
-  line-height: 1.6;
-  font-size: 0.95rem;
-}
-
-.message-wrapper.user .message-bubble {
-  /* User message style override if needed */
-}
-
-/* Markdown Styles */
-.markdown-body {
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.markdown-body :deep(pre) {
-  background-color: rgba(0, 0, 0, 0.3) !important;
-  border-radius: 8px;
-  padding: 12px;
-  margin: 12px 0;
-  overflow-x: auto;
-}
-
-.markdown-body :deep(code) {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.85em;
-  background-color: rgba(var(--v-theme-on-surface), 0.1);
-  padding: 2px 4px;
-  border-radius: 4px;
-}
-
-.markdown-body :deep(pre code) {
-  background-color: transparent;
-  padding: 0;
-  color: inherit;
-}
-
-.markdown-body :deep(p) {
-  margin-bottom: 12px;
-}
-
-.markdown-body :deep(p:last-child) {
-  margin-bottom: 0;
-}
-
-/* Welcome Screen */
-.welcome-screen {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.welcome-content {
-  max-width: 600px;
-  width: 100%;
-}
-
-.quick-prompts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
-  margin-top: 32px;
-}
-
-.prompt-card {
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
-  border-radius: 12px;
-  padding: 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: rgba(var(--v-theme-surface), 0.5);
-}
-
-.prompt-card:hover {
-  background-color: rgba(var(--v-theme-surface), 0.8);
-  border-color: rgba(var(--v-theme-primary), 0.5);
-  transform: translateY(-2px);
-}
-
-/* Input Area */
-.input-area-wrapper {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 20px;
-  background: linear-gradient(to top, rgb(var(--v-theme-background)) 70%, transparent);
-  display: flex;
-  justify-content: center;
-  z-index: 20;
-}
-
-.input-container {
-  width: 100%;
-  max-width: 800px;
-  background-color: rgb(var(--v-theme-surface));
-  border-radius: 16px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
-  overflow: hidden;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.input-container:focus-within {
-  border-color: rgba(var(--v-theme-primary), 0.5);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.chat-input :deep(.v-field__input) {
-  padding: 12px 16px !important;
-  font-size: 0.95rem;
-  line-height: 1.5;
-}
-
-/* Scroll Button */
-.scroll-bottom-btn {
-  position: absolute;
-  bottom: 100px;
-  right: 20px;
-  z-index: 10;
-}
-
-/* Animations */
-.cursor {
-  display: inline-block;
-  width: 2px;
-  height: 1em;
-  background-color: currentColor;
-  margin-left: 2px;
-  animation: blink 1s step-end infinite;
-  vertical-align: text-bottom;
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-/* Dark mode specific tweaks */
-:global(.v-theme--dark) .session-sidebar {
-  background-color: #1e1e1e;
-}
-
-:global(.v-theme--dark) .input-container {
-  background-color: #252525;
+  .input-area-wrapper {
+    padding: 12px;
+  }
 }
 </style>

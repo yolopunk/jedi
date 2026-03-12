@@ -1,7 +1,7 @@
 <template>
-  <div class="hosts-table-container pa-4 d-flex flex-column flex-grow-1" style="min-height: 0;">
+  <div class="hosts-table-container pa-4 d-flex flex-column flex-grow-1" style="min-height: 0; height: 100%;">
     <!-- Toolbar -->
-    <div class="d-flex justify-space-between align-center mb-4">
+    <div class="d-flex justify-space-between align-center mb-4 flex-shrink-0">
       <v-text-field
         v-model="searchModel"
         :label="$t('common.search')"
@@ -26,17 +26,18 @@
     </div>
 
     <!-- Table -->
-    <v-data-table-virtual
-      :headers="headers"
-      :items="tableItems"
-      :search="searchModel"
-      :loading="loading"
-      density="compact"
-      hover
-      fixed-header
-      height="100%"
-      class="flex-grow-1 jedi-data-table"
-    >
+    <div class="table-wrapper flex-grow-1" style="min-height: 0; overflow: hidden;">
+      <v-data-table-virtual
+        :headers="headers"
+        :items="tableItems"
+        :search="searchModel"
+        :loading="loading"
+        density="compact"
+        hover
+        fixed-header
+        height="100%"
+        class="jedi-data-table"
+      >
       <!-- IP Column -->
       <template v-slot:item.ip="{ item }">
         <span class="jedi-table-ip">{{ item.ip }}</span>
@@ -95,7 +96,8 @@
           </v-btn>
         </div>
       </template>
-    </v-data-table-virtual>
+      </v-data-table-virtual>
+    </div>
   </div>
 </template>
 
@@ -165,6 +167,23 @@ function handleOpenDomain(domain: string) {
 </script>
 
 <style scoped>
+.hosts-table-container {
+  height: 100%;
+  min-height: 0;
+}
+
+.table-wrapper {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Ensure data table handles scrolling properly */
+.table-wrapper :deep(.v-data-table-wrapper) {
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
 /* Jedi Switch Styling */
 :deep(.jedi-switch) {
   display: flex;

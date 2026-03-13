@@ -130,6 +130,9 @@ export default {
     inputHint: 'Press Enter to send, Shift+Enter for new line'
   },
   hosts: {
+    validation: {
+      groupNameRequired: 'Group name cannot be empty',
+    },
     globalSwitch: {
       enabledTooltip: 'Enabled - Click to disable',
       disabledTooltip: 'Disabled - Click to enable',
@@ -147,6 +150,11 @@ export default {
     },
     table: {
       addHost: 'Add Host',
+      ip: 'IP Address',
+      domain: 'Domain',
+      status: 'Status',
+      actions: 'Actions',
+      noMore: 'No more data',
     },
     dialog: {
       editTitle: 'Edit Entry',
@@ -189,6 +197,7 @@ export default {
     selectOpml: 'Select an OPML file to import your subscriptions.',
     chooseFile: 'Choose File',
     shows: 'Shows',
+    chapters: 'Chapters: ',
     howToExportOpml: 'How to export OPML?',
     exportGuide: 'OPML Export Guide',
     exportGuideStep1: '1. Tap the [Subscriptions] menu at the bottom',
@@ -217,5 +226,39 @@ export default {
     setSuccess: 'Wallpaper set successfully!',
     setError: 'Failed to set wallpaper',
     loadError: 'Failed to load wallpapers',
+    getCurrent: 'Get Current Wallpaper',
+    currentWallpaper: 'Current Wallpaper',
+    getCurrentError: 'Unable to get current wallpaper info',
+    openFolder: 'Open File Location',
+    openFolderError: 'Failed to open file location',
+    viewDetails: 'View Details',
+    mode: 'Mode',
+    wallpaperMode: 'Wallpaper Mode',
+    modes: {
+      center: {
+        label: 'Center',
+        description: 'Center the image without scaling, leave space around'
+      },
+      crop: {
+        label: 'Crop/Fill',
+        description: 'Scale image to fill screen, crop excess'
+      },
+      fit: {
+        label: 'Fit',
+        description: 'Scale image to fit entirely, may have black bars'
+      },
+      span: {
+        label: 'Span',
+        description: 'Span image across all displays'
+      },
+      stretch: {
+        label: 'Stretch',
+        description: 'Force image to fill screen, may distort'
+      },
+      tile: {
+        label: 'Tile',
+        description: 'Repeat image at original size'
+      }
+    }
   }
 }

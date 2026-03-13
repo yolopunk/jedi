@@ -121,6 +121,9 @@ export default {
     inputHint: '按 Enter 发送，Shift+Enter 换行'
   },
   hosts: {
+    validation: {
+      groupNameRequired: '分组名称不能为空',
+    },
     globalSwitch: {
       enabled: '已启用',
       disabled: '已禁用',
@@ -136,6 +139,11 @@ export default {
     },
     table: {
       addHost: '添加条目',
+      ip: 'IP地址',
+      domain: '域名',
+      status: '状态',
+      actions: '操作',
+      noMore: '没有更多数据了',
     },
     dialog: {
       editTitle: '编辑条目',
@@ -181,6 +189,7 @@ export default {
     shows: '节目',
     locatePlaying: '定位播放',
     play: '播放',
+    chapters: '章节：',
     howToExportOpml: '如何导出 OPML？',
     exportGuide: 'OPML 导出指南',
     exportGuideStep1: '1. 点击app 底部菜单栏【订阅】菜单',
@@ -214,6 +223,35 @@ export default {
     getCurrentError: '无法获取当前壁纸信息',
     openFolder: '打开文件位置',
     openFolderError: '打开文件位置失败',
+    viewDetails: '查看详情',
+    mode: '模式',
+    wallpaperMode: '壁纸模式',
+    modes: {
+      center: {
+        label: '居中 (Center)',
+        description: '图片居中，不缩放，周围留空'
+      },
+      crop: {
+        label: '裁剪/填充 (Crop)',
+        description: '图片按比例放大填满屏幕，多余部分裁剪'
+      },
+      fit: {
+        label: '适应 (Fit)',
+        description: '图片按比例缩放完整显示，可能有黑边'
+      },
+      span: {
+        label: '跨屏 (Span)',
+        description: '图片跨越所有显示器'
+      },
+      stretch: {
+        label: '拉伸 (Stretch)',
+        description: '图片强制拉伸填满屏幕，会变形'
+      },
+      tile: {
+        label: '平铺 (Tile)',
+        description: '图片按原大小重复平铺'
+      }
+    }
   },
   update: {
     title: '发现新版本',

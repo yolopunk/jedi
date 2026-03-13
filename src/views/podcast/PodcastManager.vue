@@ -420,7 +420,7 @@
                   <span
                     v-if="currentShowNotesEpisode.chapters && currentShowNotesEpisode.chapters.length"
                   >
-                    章节：{{ currentShowNotesEpisode.chapters.length }}
+                    {{ $t('podcast.chapters') }}{{ currentShowNotesEpisode.chapters.length }}
                   </span>
                 </div>
 

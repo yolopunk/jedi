@@ -1,5 +1,5 @@
 <template>
-  <div class="hosts-table-container pa-4 d-flex flex-column flex-grow-1" style="min-height: 0; height: 100%;">
+  <div class="hosts-table-container pa-4 d-flex flex-column flex-grow-1">
     <!-- Toolbar -->
     <div class="d-flex justify-space-between align-center mb-4 flex-shrink-0">
       <v-text-field
@@ -26,17 +26,18 @@
     </div>
 
     <!-- Table -->
-    <div class="table-wrapper flex-grow-1" style="min-height: 0; overflow: hidden;">
-      <v-data-table-virtual
+    <div class="table-wrapper flex-grow-1" ref="tableWrapperRef">
+      <v-data-table
         :headers="headers"
-        :items="tableItems"
+        :items="displayItems"
         :search="searchModel"
         :loading="loading"
         density="compact"
         hover
         fixed-header
-        height="100%"
         class="jedi-data-table"
+        :items-per-page="-1"
+        hide-default-footer
       >
       <!-- IP Column -->
       <template v-slot:item.ip="{ item }">
@@ -96,13 +97,28 @@
           </v-btn>
         </div>
       </template>
-      </v-data-table-virtual>
+
+      <!-- Progress indicator at bottom -->
+      <template v-slot:body.append>
+        <tr v-if="hasMore && !loading" class="load-more-row">
+          <td :colspan="headers.length" class="text-center py-4">
+            <v-progress-circular indeterminate size="24" color="primary"></v-progress-circular>
+          </td>
+        </tr>
+        <tr v-else-if="!hasMore && filteredItems.length > 0" class="load-more-row">
+          <td :colspan="headers.length" class="text-center py-4 text-medium-emphasis">
+            {{ $t('hosts.table.noMore') }}
+          </td>
+        </tr>
+      </template>
+      </v-data-table>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   mdiMagnify,
   mdiPlus,
@@ -112,6 +128,8 @@ import {
 } from '@mdi/js'
 import { getHostsAsItems, openDomainLink } from '@/utils/hostsUtils'
 import { Group } from '@/types/hosts'
+
+const { t } = useI18n()
 
 // 定义组件属性
 const props = defineProps<{
@@ -130,13 +148,17 @@ const emit = defineEmits<{
   (e: 'open-domain', domain: string, message: string): void;
 }>()
 
+const tableWrapperRef = ref<HTMLElement | null>(null)
+const itemsPerPage = 20
+const currentDisplayCount = ref(itemsPerPage)
+
 // 表格列配置
-const headers = [
-  { title: 'IP地址', key: 'ip', sortable: true },
-  { title: '域名', key: 'domain', sortable: true },
-  { title: '状态', key: 'enabled', sortable: false },
-  { title: '操作', key: 'actions', sortable: false }
-]
+const headers = computed(() => [
+  { title: t('hosts.table.ip'), key: 'ip', sortable: true },
+  { title: t('hosts.table.domain'), key: 'domain', sortable: true },
+  { title: t('hosts.table.status'), key: 'enabled', sortable: false },
+  { title: t('hosts.table.actions'), key: 'actions', sortable: false }
+])
 
 // 搜索模型
 const searchModel = computed({
@@ -144,13 +166,77 @@ const searchModel = computed({
   set: (value) => emit('update:search', value)
 })
 
-// 表格数据
-const tableItems = computed(() => {
+// 过滤后的所有数据
+const filteredItems = computed(() => {
   // 如果在加载状态且没有currentGroup，返回空数组
   if (props.loading && (!props.currentGroup || !props.currentGroup.hosts)) {
     return []
   }
   return getHostsAsItems(props.currentGroup.hosts)
+})
+
+// 当前显示的数据
+const displayItems = computed(() => {
+  return filteredItems.value.slice(0, currentDisplayCount.value)
+})
+
+// 是否还有更多数据
+const hasMore = computed(() => {
+  return currentDisplayCount.value < filteredItems.value.length
+})
+
+// 重置显示数量当数据变化时
+watch(filteredItems, () => {
+  currentDisplayCount.value = itemsPerPage
+})
+
+// 加载更多
+function loadMore() {
+  if (hasMore.value) {
+    currentDisplayCount.value += itemsPerPage
+  }
+}
+
+// 滚动监听
+let scrollHandler: (() => void) | null = null
+
+function setupScrollListener() {
+  if (!tableWrapperRef.value) return
+
+  const wrapper = tableWrapperRef.value
+  const tableWrapper = wrapper.querySelector('.v-data-table__wrapper')
+
+  if (tableWrapper) {
+    scrollHandler = () => {
+      const { scrollTop, scrollHeight, clientHeight } = tableWrapper as HTMLElement
+      // 当滚动到底部附近时加载更多
+      if (scrollTop + clientHeight >= scrollHeight - 100) {
+        loadMore()
+      }
+    }
+    tableWrapper.addEventListener('scroll', scrollHandler)
+  }
+}
+
+function removeScrollListener() {
+  if (!tableWrapperRef.value || !scrollHandler) return
+
+  const wrapper = tableWrapperRef.value
+  const tableWrapper = wrapper.querySelector('.v-data-table__wrapper')
+
+  if (tableWrapper) {
+    tableWrapper.removeEventListener('scroll', scrollHandler)
+  }
+  scrollHandler = null
+}
+
+onMounted(() => {
+  // 延迟设置滚动监听器，确保表格已渲染
+  setTimeout(setupScrollListener, 100)
+})
+
+onUnmounted(() => {
+  removeScrollListener()
 })
 
 // 处理打开域名
@@ -168,20 +254,30 @@ function handleOpenDomain(domain: string) {
 
 <style scoped>
 .hosts-table-container {
-  height: 100%;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
+  height: 100%;
 }
 
 .table-wrapper {
-  height: 100%;
+  flex-grow: 1;
   min-height: 0;
   overflow: hidden;
 }
 
 /* Ensure data table handles scrolling properly */
-.table-wrapper :deep(.v-data-table-wrapper) {
-  height: 100% !important;
-  max-height: 100% !important;
+.table-wrapper :deep(.v-data-table) {
+  height: 100%;
+}
+
+.table-wrapper :deep(.v-data-table__wrapper) {
+  max-height: calc(100vh - 300px);
+  overflow-y: auto;
+}
+
+.load-more-row {
+  background-color: transparent;
 }
 
 /* Jedi Switch Styling */

@@ -93,7 +93,7 @@
             </v-btn>
           </template>
           <v-list density="compact" min-width="240" rounded="lg" elevation="4" bg-color="surface">
-            <v-list-subheader class="text-caption font-weight-bold text-uppercase">壁纸模式</v-list-subheader>
+            <v-list-subheader class="text-caption font-weight-bold text-uppercase">{{ $t('wallpapers.wallpaperMode') }}</v-list-subheader>
             <v-list-item
               v-for="mode in modeOptions"
               :key="mode.value"
@@ -187,7 +187,7 @@
                     size="small"
                     class="elevation-2"
                     @click.stop="previewWallpaper(wp)"
-                    v-tooltip:top="'查看详情'"
+                    v-tooltip:top="$t('wallpapers.viewDetails')"
                   >
                     <v-icon :icon="mdiInformationVariant" size="18" color="medium-emphasis"></v-icon>
                   </v-btn>
@@ -439,17 +439,17 @@ const snackbar = ref({
   color: 'success'
 })
 
-const modeOptions = [
-  { value: WallpaperMode.Center, label: '居中 (Center)', description: '图片居中，不缩放，周围留空' },
-  { value: WallpaperMode.Crop, label: '裁剪/填充 (Crop)', description: '图片按比例放大填满屏幕，多余部分裁剪' },
-  { value: WallpaperMode.Fit, label: '适应 (Fit)', description: '图片按比例缩放完整显示，可能有黑边' },
-  { value: WallpaperMode.Span, label: '跨屏 (Span)', description: '图片跨越所有显示器' },
-  { value: WallpaperMode.Stretch, label: '拉伸 (Stretch)', description: '图片强制拉伸填满屏幕，会变形' },
-  { value: WallpaperMode.Tile, label: '平铺 (Tile)', description: '图片按原大小重复平铺' },
-]
+const modeOptions = computed(() => [
+  { value: WallpaperMode.Center, label: t('wallpapers.modes.center.label'), description: t('wallpapers.modes.center.description') },
+  { value: WallpaperMode.Crop, label: t('wallpapers.modes.crop.label'), description: t('wallpapers.modes.crop.description') },
+  { value: WallpaperMode.Fit, label: t('wallpapers.modes.fit.label'), description: t('wallpapers.modes.fit.description') },
+  { value: WallpaperMode.Span, label: t('wallpapers.modes.span.label'), description: t('wallpapers.modes.span.description') },
+  { value: WallpaperMode.Stretch, label: t('wallpapers.modes.stretch.label'), description: t('wallpapers.modes.stretch.description') },
+  { value: WallpaperMode.Tile, label: t('wallpapers.modes.tile.label'), description: t('wallpapers.modes.tile.description') },
+])
 
 const currentModeLabel = computed(() => {
-  return modeOptions.find(m => m.value === selectedMode.value)?.label || '模式'
+  return modeOptions.value.find(m => m.value === selectedMode.value)?.label || t('wallpapers.mode')
 })
 
 const showImageViewer = ref(false)

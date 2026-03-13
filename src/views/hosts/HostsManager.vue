@@ -113,6 +113,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { HostEntry } from '@/types/hosts'
 
 import GroupManager from '@/components/hosts/common/GroupManager.vue'
@@ -127,6 +128,8 @@ import GlobalSwitchFab from '@/components/hosts/common/GlobalSwitchFab.vue'
 
 import { getOsInfo } from '@/api/hosts'
 import { useHostsData } from '@/composables/useHostsData'
+
+const { t } = useI18n()
 
 const dialogs = ref({
   addGroup: false,
@@ -199,7 +202,7 @@ function openRenameGroupDialog(name: string) {
 async function handleConfirmRenameGroup() {
   const trimmed = renameGroupName.value.trim()
   if (!trimmed) {
-    showNotification('分组名称不能为空', 'error')
+    showNotification(t('hosts.validation.groupNameRequired'), 'error')
     return
   }
   await renameGroup(renameGroupOriginalName.value, trimmed)

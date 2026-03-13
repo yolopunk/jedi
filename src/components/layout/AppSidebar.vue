@@ -392,6 +392,40 @@ onUnmounted(() => {
   align-items: center;
 }
 
+/* Jedi Lightsaber Effect */
+.sidebar-item {
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.sidebar-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: rgb(var(--v-theme-primary));
+  opacity: 0;
+  transform: scaleY(0);
+  transition: all 0.15s ease;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
+}
+
+.sidebar-item.v-list-item--active::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+.sidebar-item.v-list-item--active {
+  background: rgba(96, 165, 250, 0.08) !important;
+}
+
+.sidebar-item.v-list-item--active .sidebar-icon-container {
+  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.6));
+  transition: filter 0.15s ease;
+}
+
 /* Resize Handle */
 .resize-handle {
   position: absolute;

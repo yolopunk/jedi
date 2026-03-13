@@ -63,14 +63,9 @@
 
       <!-- Status Column -->
       <template v-slot:item.enabled="{ item }">
-        <v-switch
-          v-model="item.enabled"
-          color="success"
-          hide-details
-          density="compact"
-          inset
-          @update:model-value="emit('update-status', item)"
-        ></v-switch>
+        <div class="status-indicator-wrapper" @click.stop="toggleItemEnabled(item)">
+          <div class="status-indicator" :class="{ 'status-enabled': item.enabled, 'status-disabled': !item.enabled }"></div>
+        </div>
       </template>
 
       <!-- Actions Column -->
@@ -239,6 +234,12 @@ onUnmounted(() => {
   removeScrollListener()
 })
 
+// Toggle item enabled status
+function toggleItemEnabled(item: any) {
+  item.enabled = !item.enabled
+  emit('update-status', item)
+}
+
 // 处理打开域名
 function handleOpenDomain(domain: string) {
   openDomainLink(domain)
@@ -276,64 +277,68 @@ function handleOpenDomain(domain: string) {
   overflow-y: auto;
 }
 
+/* IDE-style table row height */
+.table-wrapper :deep(.v-data-table__tr) {
+  height: 32px;
+}
+
+.table-wrapper :deep(.v-data-table__td) {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
 .load-more-row {
   background-color: transparent;
 }
 
-/* Jedi Switch Styling */
-:deep(.jedi-switch) {
+/* Status Indicator - Lightsaber style */
+.status-indicator-wrapper {
   display: flex;
+  align-items: center;
   justify-content: center;
+  cursor: pointer;
+  padding: 8px;
 }
 
-:deep(.jedi-switch .v-selection-control) {
-  min-height: auto;
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
 }
 
-/* Track Styling */
-:deep(.jedi-switch .v-switch__track) {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  opacity: 1 !important;
-  height: 12px; /* Reduced to micro size */
-  width: 24px;  /* Reduced to micro size */
-  border-radius: 12px;
-  transition: all 0.3s ease;
+.status-enabled {
+  background: rgb(var(--v-theme-success));
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+  will-change: box-shadow;
 }
 
-:deep(.jedi-switch.v-input--is-dirty .v-switch__track) {
-  background-color: rgba(0, 255, 128, 0.15) !important;
-  border-color: rgba(0, 255, 128, 0.3);
-  box-shadow: 0 0 8px rgba(0, 255, 128, 0.2) inset;
+.status-disabled {
+  background: #52525b;
 }
 
-/* Thumb Styling */
-:deep(.jedi-switch .v-selection-control__input input) {
-  opacity: 0;
+.status-indicator-wrapper:hover .status-enabled {
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.7);
 }
 
-:deep(.jedi-switch .v-switch__thumb) {
-  height: 8px; /* Micro size */
-  width: 8px;  /* Micro size */
-  background-color: #95a5a6;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  top: calc(50% - 4px);
+.status-indicator-wrapper:hover .status-disabled {
+  background: #71717a;
 }
 
-:deep(.jedi-switch.v-input--is-dirty .v-switch__thumb) {
-  background-color: #00ff80;
-  box-shadow: 0 0 8px rgba(0, 255, 128, 0.6), 0 0 10px rgba(0, 255, 128, 0.4);
-  transform: translateX(12px);
+/* Light theme adjustments */
+:global(.light-theme) .status-enabled {
+  background: #16a34a;
+  box-shadow: 0 0 4px rgba(22, 163, 74, 0.4);
 }
 
-/* Hover effects */
-:deep(.jedi-switch:hover .v-switch__track) {
-  border-color: rgba(255, 255, 255, 0.3);
+:global(.light-theme) .status-indicator-wrapper:hover .status-enabled {
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.6);
 }
 
-:deep(.jedi-switch.v-input--is-dirty:hover .v-switch__track) {
-  border-color: rgba(0, 255, 128, 0.5);
-  box-shadow: 0 0 10px rgba(0, 255, 128, 0.3) inset;
+/* Responsive - hide remarks column on small screens */
+@media (max-width: 600px) {
+  .table-wrapper :deep([data-column-key="remarks"]) {
+    display: none;
+  }
 }
 </style>

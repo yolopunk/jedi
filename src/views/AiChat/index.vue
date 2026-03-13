@@ -112,13 +112,17 @@
             >
               <div class="message-container">
                 <div class="message-avatar">
-                  <v-avatar
-                    :size="message.role === 'user' ? 28 : 32"
-                    :color="message.role === 'user' ? 'secondary' : 'primary'"
-                    variant="tonal"
-                  >
-                    <v-icon :icon="message.role === 'user' ? mdiAccount : mdiRobot" :size="message.role === 'user' ? 16 : 18" />
-                  </v-avatar>
+                  <template v-if="message.role === 'user'">
+                    <v-avatar size="28" color="secondary" variant="tonal">
+                      <v-icon :icon="mdiAccount" size="16" />
+                    </v-avatar>
+                  </template>
+                  <template v-else>
+                    <div class="avatar-r2d2" :class="{ 'thinking': store.isLoading && index === displayMessages.length - 1 }">
+                      <div class="r2d2-body"></div>
+                      <div class="r2d2-center"></div>
+                    </div>
+                  </template>
                 </div>
 
                 <div class="message-content-wrapper">
@@ -159,9 +163,10 @@
             <div v-if="store.isLoading" class="message-wrapper assistant">
               <div class="message-container">
                 <div class="message-avatar">
-                  <v-avatar size="32" color="primary" variant="tonal">
-                    <v-icon :icon="mdiRobot" size="18" />
-                  </v-avatar>
+                  <div class="avatar-r2d2 thinking">
+                    <div class="r2d2-body"></div>
+                    <div class="r2d2-center"></div>
+                  </div>
                 </div>
                 <div class="message-content-wrapper">
                   <div class="message-meta">
@@ -756,6 +761,55 @@ onMounted(() => {
   margin-top: 2px;
 }
 
+/* R2-D2 Avatar */
+.avatar-r2d2 {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e3a5f 0%, #3b82f6 50%, #60a5fa 100%);
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.4);
+  position: relative;
+  will-change: box-shadow, transform;
+  overflow: hidden;
+}
+
+.avatar-r2d2 .r2d2-body {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e3a5f 0%, #3b82f6 50%, #60a5fa 100%);
+}
+
+.avatar-r2d2 .r2d2-center {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px rgba(255,255,255,0.5);
+  z-index: 2;
+}
+
+/* Thinking state - pulse glow */
+@keyframes pulse-glow {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 12px rgba(96, 165, 250, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(96, 165, 250, 0.6);
+  }
+}
+
+.avatar-r2d2.thinking {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
 .message-content-wrapper {
   flex: 1;
   min-width: 0;
@@ -779,6 +833,15 @@ onMounted(() => {
   position: relative;
   line-height: 1.6;
   font-size: 0.95rem;
+}
+
+/* AI message - lightsaber left border */
+.message-wrapper.assistant .message-bubble {
+  border-left: 2px solid rgba(96, 165, 250, 0.5);
+  background: rgba(96, 165, 250, 0.05);
+  border-radius: 0 8px 8px 0;
+  padding: 12px 16px;
+  margin-left: -2px;
 }
 
 .message-wrapper.user .message-bubble {

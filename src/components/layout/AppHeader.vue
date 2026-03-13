@@ -1,5 +1,5 @@
 <template>
-  <div class="app-header" data-tauri-drag-region>
+  <div class="app-header" data-tauri-drag-region @dblclick="handleDoubleClick">
     <!-- macOS Traffic Lights / Window Controls -->
     <template v-if="isMacOS">
       <div class="header-left" data-tauri-no-drag>
@@ -232,6 +232,10 @@ async function closeWindow() {
   await appWindow.close()
 }
 
+function handleDoubleClick() {
+  toggleMaximize()
+}
+
 async function checkMaximized() {
   isMaximized.value = await appWindow.isMaximized()
 }
@@ -261,9 +265,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 36px; /* Reduced height for IDE look */
+  height: 32px;
   padding: 0 10px;
-  background-color: rgb(var(--v-theme-surface)); /* Solid color, no gradient */
+  background-color: rgb(var(--v-theme-surface));
   border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.06);
   position: relative;
   z-index: 100;

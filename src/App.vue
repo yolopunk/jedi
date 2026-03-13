@@ -1,5 +1,5 @@
 <template>
-  <v-app :class="platformClass">
+  <v-app :class="[platformClass, { fullscreen: isFullscreen }]">
     <div class="app-layout">
       <!-- Full Width Title Bar -->
       <app-header
@@ -56,7 +56,7 @@
           <system-info-bar></system-info-bar>
         </div>
         <div class="status-bar-right" data-tauri-no-drag>
-          <!-- Right side can have additional controls -->
+          <span class="status-text">{{ currentLocale }}</span>
         </div>
       </div>
     </div>
@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStorage } from '@/composables/useStorage'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
@@ -92,6 +92,7 @@ import HelpDialog from '@/components/dialogs/HelpDialog.vue'
 import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
 import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 import { open } from '@tauri-apps/plugin-shell'
+import { getCurrentWindow } from '@tauri-apps/api/window'
 import { initTheme } from '@/composables/useTheme'
 import { useWallpaper } from '@/composables/useWallpaper'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
@@ -101,6 +102,7 @@ import { mdiMenu, mdiMenuOpen } from '@mdi/js'
 const { locale } = useI18n()
 const { getItem, setItem } = useStorage()
 const { currentPlaying, setAudioRef } = useAudioPlayer()
+const appWindow = getCurrentWindow()
 
 const audioEl = ref<HTMLAudioElement | null>(null)
 
@@ -115,6 +117,18 @@ const platformClass = ref('')
 // Sidebar state
 const sidebarCollapsed = ref(false)
 const sidebarWidth = ref(260)
+
+// Fullscreen state
+const isFullscreen = ref(false)
+
+// Current locale display
+const currentLocale = computed(() => {
+  return locale.value === 'zh' ? 'zh-CN' : 'en-US'
+})
+
+async function checkFullscreen() {
+  isFullscreen.value = await appWindow.isFullscreen()
+}
 
 // Initialize Audio Player
 watch(audioEl, (el) => {
@@ -201,6 +215,12 @@ onMounted(async () => {
   } else if (ua.includes('win')) {
     platformClass.value = 'os-windows'
   }
+
+  // Check initial fullscreen state and listen for changes
+  await checkFullscreen()
+  await appWindow.onResized(() => {
+    checkFullscreen()
+  })
 })
 </script>
 
@@ -215,6 +235,12 @@ onMounted(async () => {
   overflow: hidden;
   /* Add a subtle border/shadow to define the window */
   box-shadow: 0 0 0 1px rgba(var(--v-theme-on-surface), 0.12), 0 20px 50px rgba(0, 0, 0, 0.3);
+}
+
+/* Fullscreen mode - remove corner radius and shadow */
+:global(.os-macos.fullscreen) .app-layout {
+  border-radius: 0;
+  box-shadow: none;
 }
 
 /* Ensure background is applied to the layout container for transparency support */
@@ -327,5 +353,11 @@ onMounted(async () => {
 
 .sidebar-toggle-btn:hover .v-icon {
   opacity: 1;
+}
+
+.status-text {
+  font-size: 0.75rem;
+  color: rgba(var(--v-theme-on-surface), 0.5);
+  padding: 0 8px;
 }
 </style>

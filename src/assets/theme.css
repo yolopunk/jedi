@@ -303,3 +303,31 @@ body {
 .text-caption, .text-overline {
   font-family: var(--jedi-font-ui) !important;
 }
+
+/* =========================================
+   Jedi Console - 光剑效果
+   ========================================= */
+
+/* 光剑发光 - 限制使用范围 */
+.glow-saber {
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+  will-change: box-shadow;
+}
+
+/* 悬停发光 */
+.glow-hover:hover {
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.5);
+}
+
+/* 浅色主题下调低发光强度 */
+.light-theme .glow-saber {
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.3);
+}
+
+/* 焦点指示器 - 无障碍 */
+.glow-focus:focus-visible,
+.btn:focus-visible,
+.sidebar-item:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 2px;
+}

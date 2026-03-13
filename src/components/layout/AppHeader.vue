@@ -152,7 +152,6 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import {
   mdiClose, mdiWindowMinimize, mdiWindowMaximize, mdiWindowRestore,
@@ -167,32 +166,20 @@ defineProps<{
   sidebarCollapsed?: boolean
 }>()
 
-const emit = defineEmits<{
+defineEmits<{
   (e: 'toggle-sidebar'): void
   (e: 'show-settings'): void
   (e: 'open-github'): void
 }>()
 
 const { t } = useI18n()
-const route = useRoute()
 const appWindow = getCurrentWindow()
-const { isDark, themeMode, setTheme } = useTheme()
+const { themeMode, setTheme } = useTheme()
 const { currentPlaying, isPaused, togglePlay, seek } = useAudioPlayer()
-
-// Expose variables for template usage
-void isDark
-void isPaused
-void seek
-void mdiRewind15
-void mdiFastForward15
 
 const isMaximized = ref(false)
 const isMacOS = ref(false)
 let unlistenResize: (() => void) | null = null
-
-const currentRoute = computed(() => {
-  return route.meta?.title as string || ''
-})
 
 const themeIcon = computed(() => {
   if (themeMode.value === 'dark') return mdiWeatherNight

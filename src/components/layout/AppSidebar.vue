@@ -109,15 +109,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import {
-  mdiDns, mdiWallpaper, mdiPodcast, mdiRobot, mdiCog, mdiGithub,
-  mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark,
-  mdiPlay, mdiPause, mdiRewind15, mdiFastForward15, mdiStop
+  mdiDns, mdiWallpaper, mdiPodcast, mdiRobot
 } from '@mdi/js'
-import { useTheme } from '@/composables/useTheme'
-import { useAudioPlayer } from '@/composables/useAudioPlayer'
 
 const props = defineProps<{
   collapsed?: boolean
@@ -130,10 +125,6 @@ const emit = defineEmits<{
   (e: 'toggle-sidebar'): void
 }>()
 
-const { t } = useI18n()
-const { isDark, themeMode, setTheme } = useTheme()
-const { currentPlaying, isPaused, currentTime, duration, togglePlay, seek, stop } = useAudioPlayer()
-
 // Sidebar width and resize
 const width = ref(180)
 const minWidth = 64 // Collapsed icon width
@@ -144,46 +135,6 @@ const isCollapsed = ref(false)
 
 let startX = 0
 let startWidth = 0
-
-const progressPercentage = computed(() => {
-  if (!duration.value) return 0
-  return (currentTime.value / duration.value) * 100
-})
-
-function formatTime(seconds: number): string {
-  if (!seconds || isNaN(seconds)) return '00:00'
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-}
-
-function handleModelClick() {
-  if (currentPlaying.value) {
-    togglePlay()
-  }
-}
-
-const themeIcon = computed(() => {
-  if (themeMode.value === 'dark') return mdiWeatherNight
-  if (themeMode.value === 'light') return mdiWeatherSunny
-  return mdiThemeLightDark
-})
-
-const themeTooltip = computed(() => {
-  if (themeMode.value === 'dark') return t('theme.dark')
-  if (themeMode.value === 'light') return t('theme.light')
-  return t('theme.system')
-})
-
-function toggleTheme() {
-  if (themeMode.value === 'light') {
-    setTheme('dark')
-  } else if (themeMode.value === 'dark') {
-    setTheme('system')
-  } else {
-    setTheme('light')
-  }
-}
 
 // Watch for external collapse prop changes
 watch(() => props.collapsed, (newVal) => {

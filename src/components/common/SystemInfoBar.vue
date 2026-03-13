@@ -150,9 +150,6 @@ import pkg from '../../../package.json'
 
 const appVersion = pkg.version
 
-// Connection status simulation
-const isConnected = ref(true)
-
 // Update composable
 const {
   hasUpdate,

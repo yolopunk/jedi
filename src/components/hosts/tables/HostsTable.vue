@@ -1,112 +1,181 @@
 <template>
-  <div class="hosts-table-container pa-4 d-flex flex-column flex-grow-1">
-    <!-- Toolbar -->
-    <div class="d-flex justify-space-between align-center mb-4 flex-shrink-0">
-      <v-text-field
-        v-model="searchModel"
-        :label="$t('common.search')"
-        :prepend-inner-icon="mdiMagnify"
-        variant="outlined"
-        density="compact"
-        hide-details
-        class="search-field"
-        style="max-width: 300px;"
-        rounded="lg"
-      ></v-text-field>
+  <div class="hosts-console-container">
+    <!-- CRT Effects -->
+    <div class="scanlines"></div>
+    <div class="crt-vignette"></div>
 
-      <v-btn
-        color="success"
-        variant="flat"
-        class="text-none px-4"
-        @click="emit('add-host', currentGroup.name)"
-      >
-        <v-icon :icon="mdiPlus" class="mr-1"></v-icon>
-        {{ $t('hosts.table.addHost') }}
-      </v-btn>
+    <!-- Console Header -->
+    <div class="console-header">
+      <div class="console-title-bar">
+        <div class="console-status-indicators">
+          <div class="status-light status-online" title="System Online"></div>
+          <div class="status-light status-standby" title="Hosts Active"></div>
+          <div class="status-light status-scanning" title="Monitoring"></div>
+        </div>
+        <div class="console-title">
+          <span class="title-prefix">[</span>
+          <span class="title-text">HOSTS_MANAGEMENT_CONSOLE</span>
+          <span class="title-suffix">]</span>
+        </div>
+        <div class="console-metrics">
+          <span class="metric-item">
+            <span class="metric-label">ENTRIES:</span>
+            <span class="metric-value">{{ filteredItems.length }}</span>
+          </span>
+          <span class="metric-item">
+            <span class="metric-label">ACTIVE:</span>
+            <span class="metric-value metric-active">{{ activeCount }}</span>
+          </span>
+        </div>
+      </div>
     </div>
 
-    <!-- Table -->
-    <div class="table-wrapper flex-grow-1" ref="tableWrapperRef">
-      <v-data-table
-        :headers="headers"
-        :items="displayItems"
-        :search="searchModel"
-        :loading="loading"
-        density="compact"
-        hover
-        fixed-header
-        class="jedi-data-table"
-        :items-per-page="-1"
-        hide-default-footer
-      >
-      <!-- IP Column -->
-      <template v-slot:item.ip="{ item }">
-        <span class="jedi-table-ip">{{ item.ip }}</span>
-      </template>
-
-      <!-- Domain Column -->
-      <template v-slot:item.domain="{ item }">
-        <div class="d-flex align-center">
-          <span class="jedi-table-domain mr-2">{{ item.domain }}</span>
-          <v-btn
-            icon
-            size="x-small"
-            variant="text"
-            color="primary"
-            class="opacity-50 hover-opacity-100"
-            @click="handleOpenDomain(item.domain)"
-          >
-            <v-icon :icon="mdiWeb" size="small"></v-icon>
-          </v-btn>
+    <!-- Toolbar -->
+    <div class="console-toolbar">
+      <div class="toolbar-section">
+        <div class="input-wrapper">
+          <span class="input-prompt">>></span>
+          <input
+            v-model="searchModel"
+            type="text"
+            class="terminal-input"
+            :placeholder="searchPlaceholder + '...'"
+            @input="handleSearch"
+          />
+          <span class="input-cursor"></span>
         </div>
-      </template>
+      </div>
+      <div class="toolbar-section">
+        <button class="console-btn btn-primary" @click="emit('add-host', currentGroup.name)">
+          <span class="btn-icon">+</span>
+          <span class="btn-text">{{ addHostText }}</span>
+        </button>
+      </div>
+    </div>
 
-      <!-- Status Column -->
-      <template v-slot:item.enabled="{ item }">
-        <div class="status-indicator-wrapper" @click.stop="toggleItemEnabled(item)">
-          <div class="status-indicator" :class="{ 'status-enabled': item.enabled, 'status-disabled': !item.enabled }"></div>
+    <!-- Grid Background -->
+    <div class="grid-background"></div>
+
+    <!-- Table Container -->
+    <div class="table-wrapper" ref="tableWrapperRef">
+      <!-- Table Header -->
+      <div class="table-header-row">
+        <div class="table-cell cell-ip">
+          <span class="cell-label">IP_ADDRESS</span>
+          <span class="cell-divider">|</span>
         </div>
-      </template>
-
-      <!-- Actions Column -->
-      <template v-slot:item.actions="{ item }">
-        <div class="d-flex">
-          <v-btn
-            icon
-            size="small"
-            variant="text"
-            color="primary"
-            class="mr-1"
-            @click="emit('edit-host', item)"
-          >
-            <v-icon :icon="mdiPencil" size="small"></v-icon>
-          </v-btn>
-          <v-btn
-            icon
-            size="small"
-            variant="text"
-            color="error"
-            @click="emit('delete-host', item.id)"
-          >
-            <v-icon :icon="mdiDelete" size="small"></v-icon>
-          </v-btn>
+        <div class="table-cell cell-domain">
+          <span class="cell-label">DOMAIN</span>
+          <span class="cell-divider">|</span>
         </div>
-      </template>
+        <div class="table-cell cell-status">
+          <span class="cell-label">STATUS</span>
+          <span class="cell-divider">|</span>
+        </div>
+        <div class="table-cell cell-actions">
+          <span class="cell-label">ACTIONS</span>
+        </div>
+      </div>
 
-      <!-- Progress indicator at bottom -->
-      <template v-slot:body.append>
-        <tr v-if="hasMore && !loading" class="load-more-row">
-          <td :colspan="headers.length" class="text-center py-4">
-            <v-progress-circular indeterminate size="24" color="primary"></v-progress-circular>
-          </td>
-        </tr>
-        <tr v-else-if="!hasMore && filteredItems.length > 0" class="load-more-row">
-          <td :colspan="headers.length" class="text-center py-4 text-medium-emphasis">
-            {{ $t('hosts.table.noMore') }}
-          </td>
-        </tr>
-      </template>
-      </v-data-table>
+      <!-- Table Body -->
+      <div class="table-body">
+        <div
+          v-for="(item, index) in displayItems"
+          :key="item.id"
+          class="table-row"
+          :class="{ 'row-highlight': index % 2 === 0 }"
+          data-row-index="index"
+        >
+          <div class="table-cell cell-ip">
+            <span class="row-index">[{{ String(index + 1).padStart(3, '0') }}]</span>
+            <span class="ip-address">{{ item.ip }}</span>
+          </div>
+          <div class="table-cell cell-domain">
+            <span class="domain-name">{{ item.domain }}</span>
+            <button
+              class="icon-btn"
+              @click="handleOpenDomain(item.domain)"
+              title="Open Domain"
+            >
+              <span class="icon-globe">◈</span>
+            </button>
+          </div>
+          <div class="table-cell cell-status">
+            <div
+              class="status-toggle"
+              :class="{ 'status-active': item.enabled }"
+              @click="toggleItemEnabled(item)"
+            >
+              <div class="status-core">
+                <div class="status-inner" :class="{ 'glow-active': item.enabled }"></div>
+              </div>
+              <span class="status-text">{{ item.enabled ? 'ACTIVE' : 'INACTIVE' }}</span>
+            </div>
+          </div>
+          <div class="table-cell cell-actions">
+            <button class="icon-btn btn-edit" @click="emit('edit-host', item)" title="Edit">
+              <span class="icon-edit">✎</span>
+            </button>
+            <button class="icon-btn btn-delete" @click="emit('delete-host', item.id)" title="Delete">
+              <span class="icon-delete">✕</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div v-if="loading" class="loading-row">
+          <div class="loading-content">
+            <div class="loading-spinner">
+              <div class="spinner-segment"></div>
+              <div class="spinner-segment"></div>
+              <div class="spinner-segment"></div>
+              <div class="spinner-segment"></div>
+            </div>
+            <span class="loading-text">INITIALIZING_HOSTS_MATRIX...</span>
+          </div>
+        </div>
+
+        <!-- Load More -->
+        <div v-if="hasMore && !loading" class="load-more-row" @click="loadMore">
+          <div class="load-more-content">
+            <span class="load-more-text">[ LOAD_MORE_ENTRIES ]</span>
+            <div class="load-more-line"></div>
+          </div>
+        </div>
+
+        <!-- No More Data -->
+        <div v-else-if="!hasMore && filteredItems.length > 0" class="end-row">
+          <div class="end-content">
+            <span class="end-line">══════════════════════════════════════════════════════════════</span>
+            <span class="end-text">END_OF_TRANSMISSION</span>
+            <span class="end-line">══════════════════════════════════════════════════════════════</span>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div v-if="filteredItems.length === 0 && !loading" class="empty-row">
+          <div class="empty-content">
+            <div class="empty-icon">◇</div>
+            <span class="empty-text">NO_HOST_ENTRIES_FOUND</span>
+            <span class="empty-hint">Use the + button to add a new host entry</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Status Bar -->
+    <div class="console-footer">
+      <div class="footer-section">
+        <span class="footer-label">GROUP:</span>
+        <span class="footer-value">{{ currentGroup.name || 'DEFAULT' }}</span>
+      </div>
+      <div class="footer-section">
+        <span class="footer-label">DISPLAYING:</span>
+        <span class="footer-value">{{ displayItems.length }} / {{ filteredItems.length }}</span>
+      </div>
+      <div class="footer-section">
+        <span class="footer-timestamp">{{ currentTimestamp }}</span>
+      </div>
     </div>
   </div>
 </template>
@@ -114,26 +183,17 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import {
-  mdiMagnify,
-  mdiPlus,
-  mdiWeb,
-  mdiPencil,
-  mdiDelete
-} from '@mdi/js'
 import { getHostsAsItems, openDomainLink } from '@/utils/hostsUtils'
 import { Group } from '@/types/hosts'
 
 const { t } = useI18n()
 
-// 定义组件属性
 const props = defineProps<{
   currentGroup: Group;
   search?: string;
   loading?: boolean;
 }>()
 
-// 定义组件事件
 const emit = defineEmits<{
   (e: 'update:search', value: string): void;
   (e: 'update-status', host: any): void;
@@ -144,103 +204,63 @@ const emit = defineEmits<{
 }>()
 
 const tableWrapperRef = ref<HTMLElement | null>(null)
-const itemsPerPage = 20
+const itemsPerPage = 15
 const currentDisplayCount = ref(itemsPerPage)
+const currentTimestamp = ref('')
+let timestampInterval: number | null = null
 
-// 表格列配置
-const headers = computed(() => [
-  { title: t('hosts.table.ip'), key: 'ip', sortable: true },
-  { title: t('hosts.table.domain'), key: 'domain', sortable: true },
-  { title: t('hosts.table.status'), key: 'enabled', sortable: false },
-  { title: t('hosts.table.actions'), key: 'actions', sortable: false }
-])
-
-// 搜索模型
 const searchModel = computed({
   get: () => props.search || '',
   set: (value) => emit('update:search', value)
 })
 
-// 过滤后的所有数据
 const filteredItems = computed(() => {
-  // 如果在加载状态且没有currentGroup，返回空数组
   if (props.loading && (!props.currentGroup || !props.currentGroup.hosts)) {
     return []
   }
   return getHostsAsItems(props.currentGroup.hosts)
 })
 
-// 当前显示的数据
+const activeCount = computed(() => {
+  return filteredItems.value.filter(item => item.enabled).length
+})
+
 const displayItems = computed(() => {
   return filteredItems.value.slice(0, currentDisplayCount.value)
 })
 
-// 是否还有更多数据
 const hasMore = computed(() => {
   return currentDisplayCount.value < filteredItems.value.length
 })
 
-// 重置显示数量当数据变化时
+// Use t() to avoid TS6133
+const searchPlaceholder = computed(() => t('common.search'))
+const addHostText = computed(() => t('hosts.table.addHost'))
+
+function updateTimestamp() {
+  const now = new Date()
+  currentTimestamp.value = now.toISOString().replace('T', ' ').substring(0, 19)
+}
+
 watch(filteredItems, () => {
   currentDisplayCount.value = itemsPerPage
 })
 
-// 加载更多
 function loadMore() {
   if (hasMore.value) {
     currentDisplayCount.value += itemsPerPage
   }
 }
 
-// 滚动监听
-let scrollHandler: (() => void) | null = null
-
-function setupScrollListener() {
-  if (!tableWrapperRef.value) return
-
-  const wrapper = tableWrapperRef.value
-  const tableWrapper = wrapper.querySelector('.v-data-table__wrapper')
-
-  if (tableWrapper) {
-    scrollHandler = () => {
-      const { scrollTop, scrollHeight, clientHeight } = tableWrapper as HTMLElement
-      // 当滚动到底部附近时加载更多
-      if (scrollTop + clientHeight >= scrollHeight - 100) {
-        loadMore()
-      }
-    }
-    tableWrapper.addEventListener('scroll', scrollHandler)
-  }
+function handleSearch() {
+  currentDisplayCount.value = itemsPerPage
 }
 
-function removeScrollListener() {
-  if (!tableWrapperRef.value || !scrollHandler) return
-
-  const wrapper = tableWrapperRef.value
-  const tableWrapper = wrapper.querySelector('.v-data-table__wrapper')
-
-  if (tableWrapper) {
-    tableWrapper.removeEventListener('scroll', scrollHandler)
-  }
-  scrollHandler = null
-}
-
-onMounted(() => {
-  // 延迟设置滚动监听器，确保表格已渲染
-  setTimeout(setupScrollListener, 100)
-})
-
-onUnmounted(() => {
-  removeScrollListener()
-})
-
-// Toggle item enabled status
 function toggleItemEnabled(item: any) {
   item.enabled = !item.enabled
   emit('update-status', item)
 }
 
-// 处理打开域名
 function handleOpenDomain(domain: string) {
   openDomainLink(domain)
     .then((message) => {
@@ -251,94 +271,744 @@ function handleOpenDomain(domain: string) {
       emit('open-domain', domain, `打开域名失败: ${domain}`)
     })
 }
+
+let scrollHandler: (() => void) | null = null
+
+function setupScrollListener() {
+  if (!tableWrapperRef.value) return
+
+  const wrapper = tableWrapperRef.value
+  scrollHandler = () => {
+    const { scrollTop, scrollHeight, clientHeight } = wrapper
+    if (scrollTop + clientHeight >= scrollHeight - 50) {
+      loadMore()
+    }
+  }
+  wrapper.addEventListener('scroll', scrollHandler)
+}
+
+function removeScrollListener() {
+  if (!tableWrapperRef.value || !scrollHandler) return
+  tableWrapperRef.value.removeEventListener('scroll', scrollHandler)
+  scrollHandler = null
+}
+
+onMounted(() => {
+  setTimeout(setupScrollListener, 100)
+  updateTimestamp()
+  timestampInterval = window.setInterval(updateTimestamp, 1000)
+})
+
+onUnmounted(() => {
+  removeScrollListener()
+  if (timestampInterval) {
+    clearInterval(timestampInterval)
+  }
+})
 </script>
 
 <style scoped>
-.hosts-table-container {
+.hosts-console-container {
+  position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 0;
   height: 100%;
-}
-
-.table-wrapper {
-  flex-grow: 1;
   min-height: 0;
+  background: linear-gradient(180deg, #0a0a0f 0%, #0d0d14 50%, #0a0a0f 100%);
+  border: 1px solid #1a1a2e;
+  border-radius: 8px;
   overflow: hidden;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
 }
 
-/* Ensure data table handles scrolling properly */
-.table-wrapper :deep(.v-data-table) {
-  height: 100%;
+/* CRT Effects */
+.scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 10;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
 }
 
-.table-wrapper :deep(.v-data-table__wrapper) {
-  max-height: calc(100vh - 300px);
-  overflow-y: auto;
+.crt-vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 11;
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
 }
 
-/* IDE-style table row height */
-.table-wrapper :deep(.v-data-table__tr) {
-  height: 32px;
+/* Grid Background */
+.grid-background {
+  position: absolute;
+  top: 80px;
+  left: 0;
+  right: 0;
+  bottom: 40px;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
-.table-wrapper :deep(.v-data-table__td) {
-  padding-top: 4px;
-  padding-bottom: 4px;
+/* Console Header */
+.console-header {
+  position: relative;
+  z-index: 5;
+  background: linear-gradient(180deg, #0f0f1a 0%, #0a0a12 100%);
+  border-bottom: 1px solid #00ffff22;
+  padding: 12px 16px;
 }
 
-.load-more-row {
-  background-color: transparent;
-}
-
-/* Status Indicator - Lightsaber style */
-.status-indicator-wrapper {
+.console-title-bar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 8px;
+  justify-content: space-between;
 }
 
-.status-indicator {
-  width: 10px;
-  height: 10px;
+.console-status-indicators {
+  display: flex;
+  gap: 8px;
+}
+
+.status-light {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
+  position: relative;
+}
+
+.status-online {
+  background: #00ff88;
+  box-shadow: 0 0 10px #00ff88, 0 0 20px #00ff8855;
+  animation: pulse-online 2s ease-in-out infinite;
+}
+
+.status-standby {
+  background: #ffaa00;
+  box-shadow: 0 0 10px #ffaa00, 0 0 20px #ffaa0055;
+  animation: pulse-standby 1.5s ease-in-out infinite;
+}
+
+.status-scanning {
+  background: #00aaff;
+  box-shadow: 0 0 10px #00aaff, 0 0 20px #00aaff55;
+  animation: pulse-scanning 1s ease-in-out infinite;
+}
+
+@keyframes pulse-online {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes pulse-standby {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes pulse-scanning {
+  0%, 100% { box-shadow: 0 0 10px #00aaff, 0 0 20px #00aaff55; }
+  50% { box-shadow: 0 0 15px #00aaff, 0 0 30px #00aaff88; }
+}
+
+.console-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.title-prefix,
+.title-suffix {
+  color: #00ffff;
+  font-size: 12px;
+  text-shadow: 0 0 10px #00ffff88;
+}
+
+.title-text {
+  color: #00ff88;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px #00ff8888;
+}
+
+.console-metrics {
+  display: flex;
+  gap: 16px;
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.metric-label {
+  color: #666;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.metric-value {
+  color: #00ffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 0 0 8px #00ffff66;
+}
+
+.metric-active {
+  color: #00ff88;
+  text-shadow: 0 0 8px #00ff8866;
+}
+
+/* Toolbar */
+.console-toolbar {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(10, 10, 20, 0.8);
+  border-bottom: 1px solid #1a1a3a;
+}
+
+.toolbar-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #050508;
+  border: 1px solid #1a1a3a;
+  border-radius: 4px;
+  padding: 6px 12px;
+  min-width: 280px;
+}
+
+.input-prompt {
+  color: #00ff88;
+  font-size: 12px;
+  margin-right: 8px;
+  text-shadow: 0 0 8px #00ff8866;
+}
+
+.terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #00ffff;
+  font-family: inherit;
+  font-size: 12px;
+  width: 180px;
+}
+
+.terminal-input::placeholder {
+  color: #333;
+}
+
+.input-cursor {
+  width: 8px;
+  height: 14px;
+  background: #00ffff;
+  margin-left: 4px;
+  animation: cursor-blink 1s step-end infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.console-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid #00ff88;
+  color: #00ff88;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.status-enabled {
-  background: rgb(var(--v-theme-success));
-  box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
-  will-change: box-shadow;
+.console-btn:hover {
+  background: #00ff8811;
+  box-shadow: 0 0 15px #00ff8844, inset 0 0 15px #00ff8811;
 }
 
-.status-disabled {
-  background: #52525b;
+.btn-icon {
+  font-size: 14px;
 }
 
-.status-indicator-wrapper:hover .status-enabled {
-  box-shadow: 0 0 10px rgba(74, 222, 128, 0.7);
+/* Table Wrapper */
+.table-wrapper {
+  position: relative;
+  z-index: 5;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
-.status-indicator-wrapper:hover .status-disabled {
-  background: #71717a;
+.table-wrapper::-webkit-scrollbar {
+  width: 8px;
 }
 
-/* Light theme adjustments */
-:global(.light-theme) .status-enabled {
-  background: #16a34a;
-  box-shadow: 0 0 4px rgba(22, 163, 74, 0.4);
+.table-wrapper::-webkit-scrollbar-track {
+  background: #0a0a0f;
 }
 
-:global(.light-theme) .status-indicator-wrapper:hover .status-enabled {
-  box-shadow: 0 0 8px rgba(22, 163, 74, 0.6);
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #00ffff33;
+  border-radius: 4px;
 }
 
-/* Responsive - hide remarks column on small screens */
-@media (max-width: 600px) {
-  .table-wrapper :deep([data-column-key="remarks"]) {
-    display: none;
+.table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #00ffff55;
+}
+
+/* Table Header */
+.table-header-row {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(180deg, #0f0f1a 0%, #0a0a12 100%);
+  border-bottom: 2px solid #00ffff44;
+  padding: 12px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cell-ip {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.cell-domain {
+  flex: 1;
+  min-width: 0;
+}
+
+.cell-status {
+  width: 140px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.cell-actions {
+  width: 100px;
+  flex-shrink: 0;
+  justify-content: center;
+  gap: 4px;
+}
+
+.cell-label {
+  color: #00ffff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px #00ffff66;
+}
+
+.cell-divider {
+  color: #00ffff33;
+  font-size: 12px;
+}
+
+/* Table Body */
+.table-body {
+  position: relative;
+}
+
+.table-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid #1a1a2e;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.table-row:hover {
+  background: #00ffff08;
+}
+
+.table-row:hover::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #00ffff;
+  box-shadow: 0 0 15px #00ffff;
+}
+
+.row-highlight {
+  background: #00000033;
+}
+
+.row-index {
+  color: #444;
+  font-size: 10px;
+  margin-right: 8px;
+  min-width: 40px;
+}
+
+.ip-address {
+  color: #ff00ff;
+  font-size: 12px;
+  font-weight: 600;
+  text-shadow: 0 0 8px #ff00ff44;
+}
+
+.domain-name {
+  color: #00ff88;
+  font-size: 12px;
+  text-shadow: 0 0 8px #00ff8844;
+}
+
+/* Status Toggle */
+.status-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.status-toggle:hover {
+  background: #ffffff08;
+}
+
+.status-core {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1a1a2e;
+  border: 2px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.status-inner {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #555;
+  transition: all 0.3s ease;
+}
+
+.status-active .status-core {
+  border-color: #00ff88;
+  box-shadow: 0 0 10px #00ff8844;
+}
+
+.status-active .status-inner {
+  background: #00ff88;
+}
+
+.status-active .glow-active {
+  animation: status-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes status-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px #00ff88, 0 0 16px #00ff8866;
   }
+  50% {
+    box-shadow: 0 0 12px #00ff88, 0 0 24px #00ff88aa;
+  }
+}
+
+.status-text {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.status-active .status-text {
+  color: #00ff88;
+  text-shadow: 0 0 8px #00ff8866;
+}
+
+/* Icon Buttons */
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid #333;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.icon-btn:hover {
+  border-color: #00ffff;
+  box-shadow: 0 0 10px #00ffff44;
+}
+
+.icon-globe {
+  color: #00ffff;
+}
+
+.icon-edit {
+  color: #ffaa00;
+}
+
+.btn-edit:hover {
+  border-color: #ffaa00;
+  box-shadow: 0 0 10px #ffaa0044;
+}
+
+.icon-delete {
+  color: #ff4444;
+}
+
+.btn-delete:hover {
+  border-color: #ff4444;
+  box-shadow: 0 0 10px #ff444444;
+}
+
+/* Loading Row */
+.loading-row {
+  padding: 32px 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  position: relative;
+}
+
+.spinner-segment {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 2px solid transparent;
+  border-top-color: #00ffff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner-segment:nth-child(2) {
+  border-top-color: #00ff88;
+  animation-delay: 0.15s;
+  width: 80%;
+  height: 80%;
+  top: 10%;
+  left: 10%;
+}
+
+.spinner-segment:nth-child(3) {
+  border-top-color: #ff00ff;
+  animation-delay: 0.3s;
+  width: 60%;
+  height: 60%;
+  top: 20%;
+  left: 20%;
+}
+
+.spinner-segment:nth-child(4) {
+  border-top-color: #ffaa00;
+  animation-delay: 0.45s;
+  width: 40%;
+  height: 40%;
+  top: 30%;
+  left: 30%;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: #00ffff;
+  font-size: 11px;
+  letter-spacing: 2px;
+  animation: text-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes text-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Load More */
+.load-more-row {
+  padding: 20px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.load-more-row:hover {
+  background: #00ffff08;
+}
+
+.load-more-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.load-more-text {
+  color: #00ffff;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px #00ffff66;
+}
+
+.load-more-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #00ffff44, transparent);
+  max-width: 200px;
+}
+
+/* End Row */
+.end-row {
+  padding: 24px 16px;
+}
+
+.end-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.end-line {
+  color: #00ffff33;
+  font-size: 10px;
+  letter-spacing: 4px;
+}
+
+.end-text {
+  color: #00ff88;
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-shadow: 0 0 8px #00ff8866;
+}
+
+/* Empty Row */
+.empty-row {
+  padding: 48px 16px;
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.empty-icon {
+  color: #333;
+  font-size: 48px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.empty-text {
+  color: #444;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+.empty-hint {
+  color: #333;
+  font-size: 10px;
+}
+
+/* Console Footer */
+.console-footer {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: linear-gradient(180deg, #0a0a12 0%, #0f0f1a 100%);
+  border-top: 1px solid #1a1a2e;
+}
+
+.footer-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-label {
+  color: #444;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.footer-value {
+  color: #00ffff;
+  font-size: 11px;
+  font-weight: 600;
+  text-shadow: 0 0 6px #00ffff44;
+}
+
+.footer-timestamp {
+  color: #00ff88;
+  font-size: 10px;
+  font-family: 'SF Mono', monospace;
+  text-shadow: 0 0 6px #00ff8844;
 }
 </style>

@@ -1,42 +1,46 @@
 <template>
-  <div class="hosts-container fade-in-up">
-    <v-card class="main-card d-flex flex-column h-100">
-    <!-- 分组管理区域 -->
-    <group-manager
-      v-if="groups.length"
-      v-model="selectedGroup"
-      :groups="groups"
-      @add-group="dialogs.addGroup = true"
-      @rename-group="openRenameGroupDialog"
-      class="fade-in flex-shrink-0"
-    />
+  <div class="hosts-container scifi-page">
+    <!-- CRT Effects -->
+    <div class="scanlines"></div>
+    <div class="crt-vignette"></div>
 
-    <!-- 数据展示区域 -->
-    <template v-if="loading || currentGroup">
-      <div class="flex-grow-1 overflow-hidden d-flex flex-column">
-        <hosts-table
-          :current-group="currentGroup || { name: '', hosts: [] }"
-          v-model:search="search"
-          :loading="loading"
-          @update-status="updateHostStatus"
-          @edit-host="openEditHostDialog"
-          @delete-host="removeHost"
-          @add-host="openAddHostDialog"
-          @open-domain="handleOpenDomain"
+    <div class="content-wrapper">
+      <!-- 分组管理区域 -->
+      <group-manager
+        v-if="groups.length"
+        v-model="selectedGroup"
+        :groups="groups"
+        @add-group="dialogs.addGroup = true"
+        @rename-group="openRenameGroupDialog"
+        class="fade-in flex-shrink-0"
+      />
+
+      <!-- 数据展示区域 -->
+      <template v-if="loading || currentGroup">
+        <div class="flex-grow-1 overflow-hidden d-flex flex-column">
+          <hosts-table
+            :current-group="currentGroup || { name: '', hosts: [] }"
+            v-model:search="search"
+            :loading="loading"
+            @update-status="updateHostStatus"
+            @edit-host="openEditHostDialog"
+            @delete-host="removeHost"
+            @add-host="openAddHostDialog"
+            @open-domain="handleOpenDomain"
+            class="fade-in-scale h-100"
+          />
+        </div>
+      </template>
+
+      <!-- 空状态显示 -->
+      <template v-else>
+        <empty-state
+          @add-group="dialogs.addGroup = true"
+          @use-default="initializeDefaultConfig"
           class="fade-in-scale h-100"
         />
-      </div>
-    </template>
-
-    <!-- 空状态显示 -->
-    <template v-else>
-      <empty-state
-        @add-group="dialogs.addGroup = true"
-        @use-default="initializeDefaultConfig"
-        class="fade-in-scale h-100"
-      />
-    </template>
-  </v-card>
+      </template>
+    </div>
   </div>
 
   <!-- 对话框区域 -->
@@ -47,31 +51,35 @@
   />
 
   <v-dialog v-model="dialogs.renameGroup" max-width="400">
-    <v-card>
-      <v-card-title>{{ $t('hosts.dialog.renameGroupTitle') }}</v-card-title>
-      <v-card-text>
-        <v-text-field
-          v-model="renameGroupName"
-          :label="$t('hosts.dialog.groupNameLabel')"
-          variant="outlined"
-        />
+    <v-card class="scifi-card">
+      <v-card-title class="console-title-bar">
+        <span class="dialog-title">[ RENAME_GROUP ]</span>
+      </v-card-title>
+      <v-card-text class="console-card-text">
+        <div class="input-wrapper">
+          <span class="input-prompt">>></span>
+          <input
+            v-model="renameGroupName"
+            type="text"
+            class="console-input"
+            :placeholder="$t('hosts.dialog.groupNameLabel')"
+          />
+        </div>
       </v-card-text>
-      <v-card-actions>
+      <v-card-actions class="console-card-actions">
         <v-spacer />
-        <v-btn
-          variant="text"
-          color="grey-darken-1"
+        <button
+          class="console-btn"
           @click="dialogs.renameGroup = false"
         >
-          {{ $t('common.cancel') }}
-        </v-btn>
-        <v-btn
-          color="primary"
-          variant="elevated"
+          <span class="btn-text">{{ t('common.cancel').toUpperCase() }}</span>
+        </button>
+        <button
+          class="console-btn primary"
           @click="handleConfirmRenameGroup"
         >
-          {{ $t('common.save') }}
-        </v-btn>
+          <span class="btn-text">{{ t('common.save').toUpperCase() }}</span>
+        </button>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -221,18 +229,144 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 0; /* Crucial for nested flex scrolling */
+  min-height: 0;
   overflow: hidden;
+  position: relative;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 
-.main-card {
+/* CRT Effects */
+.scanlines {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 100;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.12),
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+.crt-vignette {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 99;
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.35) 100%);
+}
+
+.content-wrapper {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   flex: 1;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
   min-height: 0;
+  overflow: hidden;
+  padding: 8px;
+}
+
+/* Sci-Fi Card Overrides for Dialog */
+.console-title-bar {
+  background: linear-gradient(180deg, #0f0f1a 0%, #0a0a12 100%);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+  padding: 12px 16px;
+}
+
+.dialog-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #00ff88;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.console-card-text {
+  background: #0a0a0f;
+  padding: 20px 16px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(5, 5, 8, 0.9);
+  border: 1px solid #1a1a3a;
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+.input-prompt {
+  color: #00ff88;
+  font-size: 12px;
+  margin-right: 8px;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.console-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #00ffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.console-input::placeholder {
+  color: #333;
+}
+
+.console-card-actions {
+  background: linear-gradient(0deg, #0f0f1a 0%, #0a0a12 100%);
+  border-top: 1px solid rgba(0, 255, 255, 0.15);
+  padding: 12px 16px;
+}
+
+.console-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid #00ff88;
+  color: #00ff88;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.console-btn:hover {
+  background: rgba(0, 255, 136, 0.07);
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.27), inset 0 0 15px rgba(0, 255, 136, 0.07);
+}
+
+.console-btn.primary {
+  border-color: #00ffff;
+  color: #00ffff;
+}
+
+.console-btn.primary:hover {
+  background: rgba(0, 255, 255, 0.07);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.27), inset 0 0 15px rgba(0, 255, 255, 0.07);
+}
+
+.btn-text {
+  letter-spacing: 1px;
 }
 </style>

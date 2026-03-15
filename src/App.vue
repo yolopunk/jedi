@@ -56,7 +56,7 @@
           <system-info-bar></system-info-bar>
         </div>
         <div class="status-bar-right" data-tauri-no-drag>
-          <span class="status-text">{{ currentLocale }}</span>
+          <span class="status-text clickable" @click="toggleLanguage" :title="localeTooltip">{{ currentLocale }}</span>
         </div>
       </div>
     </div>
@@ -123,8 +123,21 @@ const isFullscreen = ref(false)
 
 // Current locale display
 const currentLocale = computed(() => {
-  return locale.value === 'zh' ? 'zh-CN' : 'en-US'
+  const flag = locale.value === 'zh' ? '🇨🇳 ' : '🇺🇸 '
+  const text = locale.value === 'zh' ? 'zh-CN' : 'en-US'
+  return flag + text
 })
+
+const localeTooltip = computed(() => {
+  return locale.value === 'zh' ? 'Switch to English' : '切换到中文'
+})
+
+// Toggle language
+const toggleLanguage = async () => {
+  const newLang = locale.value === 'zh' ? 'en' : 'zh'
+  locale.value = newLang
+  await setItem('language', newLang)
+}
 
 async function checkFullscreen() {
   isFullscreen.value = await appWindow.isFullscreen()
@@ -359,5 +372,14 @@ onMounted(async () => {
   font-size: 0.75rem;
   color: rgba(var(--v-theme-on-surface), 0.5);
   padding: 0 8px;
+}
+
+.status-text.clickable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.status-text.clickable:hover {
+  color: rgb(var(--v-theme-primary));
 }
 </style>

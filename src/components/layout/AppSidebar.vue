@@ -1,416 +1,685 @@
 <template>
-  <div
-    class="sidebar-wrapper"
-    :class="{ 'sidebar-collapsed': isCollapsed }"
-    :style="{ width: isCollapsed ? '64px' : `${width}px` }"
-  >
-    <aside
-      class="jedi-sidebar d-flex flex-column"
-      :class="{ 'sidebar-collapsed': isCollapsed }"
-      :style="{ width: isCollapsed ? '64px' : `${width}px` }"
-    >
-      <!-- Logo Area -->
-      <div class="d-flex flex-column align-center py-2 border-bottom logo-area">
-        <div class="grogu-pod-container mb-1" :class="{ 'mini-pod': isCollapsed }">
-          <img src="/icon.png" alt="Jedi Logo" class="app-logo" />
-        </div>
-
-        <!-- Title/Subtitle -->
-        <div v-if="!isCollapsed" class="text-center px-2 fade-transition" style="max-width: 100%;">
-          <h2 class="text-h6 font-weight-bold text-primary" style="font-size: 1rem !important;">{{ $t('sidebar.title') }}</h2>
-          <div class="text-caption text-secondary" style="font-size: 0.7rem !important;">{{ $t('sidebar.subtitle') }}</div>
-        </div>
-      </div>
-
-      <!-- Navigation -->
-      <v-list nav class="pa-2 mt-2 flex-grow-1">
-        <v-list-item
-          to="/chat"
-          rounded="lg"
-          class="mb-2 sidebar-item"
-          color="primary"
-          active-class="v-list-item--active"
-          :class="{ 'justify-center': isCollapsed }"
-        >
-          <template v-slot:prepend>
-            <div class="sidebar-icon-container" :class="{ 'mr-3': !isCollapsed }">
-              <v-icon :icon="mdiRobot" size="20"></v-icon>
-            </div>
-          </template>
-          <v-list-item-title v-if="!isCollapsed" class="font-weight-medium">Chat</v-list-item-title>
-          <v-tooltip v-if="isCollapsed" activator="parent" location="right">Chat</v-tooltip>
-        </v-list-item>
-
-        <v-list-item
-          to="/hosts"
-          rounded="lg"
-          class="mb-2 sidebar-item"
-          color="primary"
-          active-class="v-list-item--active"
-          :class="{ 'justify-center': isCollapsed }"
-        >
-          <template v-slot:prepend>
-            <div class="sidebar-icon-container" :class="{ 'mr-3': !isCollapsed }">
-              <v-icon :icon="mdiDns" size="20"></v-icon>
-            </div>
-          </template>
-          <v-list-item-title v-if="!isCollapsed" class="font-weight-medium">{{ $t('sidebar.hostsManager') }}</v-list-item-title>
-          <v-tooltip v-if="isCollapsed" activator="parent" location="right">{{ $t('sidebar.hostsManager') }}</v-tooltip>
-        </v-list-item>
-
-        <v-list-item
-          to="/wallpapers"
-          rounded="lg"
-          class="mb-2 sidebar-item"
-          color="primary"
-          active-class="v-list-item--active"
-          :class="{ 'justify-center': isCollapsed }"
-        >
-          <template v-slot:prepend>
-            <div class="sidebar-icon-container" :class="{ 'mr-3': !isCollapsed }">
-              <v-icon :icon="mdiWallpaper" size="20"></v-icon>
-            </div>
-          </template>
-          <v-list-item-title v-if="!isCollapsed" class="font-weight-medium">{{ $t('sidebar.wallpapers') }}</v-list-item-title>
-          <v-tooltip v-if="isCollapsed" activator="parent" location="right">{{ $t('sidebar.wallpapers') }}</v-tooltip>
-        </v-list-item>
-
-        <v-list-item
-          to="/podcast"
-          rounded="lg"
-          class="mb-2 sidebar-item"
-          color="primary"
-          active-class="v-list-item--active"
-          :class="{ 'justify-center': isCollapsed }"
-        >
-          <template v-slot:prepend>
-            <div class="sidebar-icon-container" :class="{ 'mr-3': !isCollapsed }">
-              <v-icon :icon="mdiPodcast" size="20"></v-icon>
-            </div>
-          </template>
-          <v-list-item-title v-if="!isCollapsed" class="font-weight-medium">{{ $t('sidebar.podcast') }}</v-list-item-title>
-          <v-tooltip v-if="isCollapsed" activator="parent" location="right">{{ $t('sidebar.podcast') }}</v-tooltip>
-        </v-list-item>
-      </v-list>
-
-      <!-- Footer Area: Jedi Control Deck -->
-      <!-- Removed as controls moved to Top Header -->
-    </aside>
-
-    <!-- Resize Handle -->
     <div
-      class="resize-handle"
-      :class="{ 'is-resizing': isResizing }"
-      @mousedown="startResize"
+        class="sidebar-wrapper"
+        :class="{ 'sidebar-collapsed': isCollapsed }"
+        :style="{ width: isCollapsed ? '64px' : `${width}px` }"
     >
-      <div class="resize-indicator"></div>
+        <aside
+            class="jedi-sidebar d-flex flex-column"
+            :class="{ 'sidebar-collapsed': isCollapsed }"
+            :style="{ width: isCollapsed ? '64px' : `${width}px` }"
+        >
+            <!-- Logo Area -->
+            <div
+                class="d-flex flex-column align-center py-2 border-bottom logo-area"
+            >
+                <div
+                    class="grogu-pod-container mb-1"
+                    :class="{ 'mini-pod': isCollapsed }"
+                >
+                    <img src="/icon.png" alt="Jedi Logo" class="app-logo" />
+                    <div class="logo-glow"></div>
+                </div>
+
+                <!-- Title/Subtitle -->
+                <div
+                    v-if="!isCollapsed"
+                    class="text-center px-2 fade-transition"
+                    style="max-width: 100%"
+                >
+                    <h2 class="text-h6 font-weight-bold sidebar-title">
+                        <span class="title-bracket">[</span>
+                        {{ $t("sidebar.title") }}
+                        <span class="title-bracket">]</span>
+                    </h2>
+                    <div class="text-caption sidebar-subtitle">
+                        {{ $t("sidebar.subtitle") }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <v-list nav class="pa-2 mt-2 flex-grow-1">
+                <v-list-item
+                    to="/chat"
+                    rounded="lg"
+                    class="mb-2 sidebar-item"
+                    color="primary"
+                    active-class="v-list-item--active"
+                    :class="{ 'justify-center': isCollapsed }"
+                >
+                    <template v-slot:prepend>
+                        <div
+                            class="sidebar-icon-container"
+                            :class="{ 'mr-3': !isCollapsed }"
+                        >
+                            <v-icon :icon="mdiRobot" size="20"></v-icon>
+                        </div>
+                    </template>
+                    <v-list-item-title
+                        v-if="!isCollapsed"
+                        class="font-weight-medium nav-text"
+                        >CHAT</v-list-item-title
+                    >
+                    <v-tooltip
+                        v-if="isCollapsed"
+                        activator="parent"
+                        location="right"
+                        >{{ $t("sidebar.chat") }}</v-tooltip
+                    >
+                    <div v-if="!isCollapsed" class="nav-indicator"></div>
+                </v-list-item>
+
+                <v-list-item
+                    to="/hosts"
+                    rounded="lg"
+                    class="mb-2 sidebar-item"
+                    color="primary"
+                    active-class="v-list-item--active"
+                    :class="{ 'justify-center': isCollapsed }"
+                >
+                    <template v-slot:prepend>
+                        <div
+                            class="sidebar-icon-container"
+                            :class="{ 'mr-3': !isCollapsed }"
+                        >
+                            <v-icon :icon="mdiDns" size="20"></v-icon>
+                        </div>
+                    </template>
+                    <v-list-item-title
+                        v-if="!isCollapsed"
+                        class="font-weight-medium nav-text"
+                        >HOSTS</v-list-item-title
+                    >
+                    <v-tooltip
+                        v-if="isCollapsed"
+                        activator="parent"
+                        location="right"
+                        >{{ $t("sidebar.hostsManager") }}</v-tooltip
+                    >
+                    <div v-if="!isCollapsed" class="nav-indicator"></div>
+                </v-list-item>
+
+                <v-list-item
+                    to="/wallpapers"
+                    rounded="lg"
+                    class="mb-2 sidebar-item"
+                    color="primary"
+                    active-class="v-list-item--active"
+                    :class="{ 'justify-center': isCollapsed }"
+                >
+                    <template v-slot:prepend>
+                        <div
+                            class="sidebar-icon-container"
+                            :class="{ 'mr-3': !isCollapsed }"
+                        >
+                            <v-icon :icon="mdiWallpaper" size="20"></v-icon>
+                        </div>
+                    </template>
+                    <v-list-item-title
+                        v-if="!isCollapsed"
+                        class="font-weight-medium nav-text"
+                        >WALLPAPER</v-list-item-title
+                    >
+                    <v-tooltip
+                        v-if="isCollapsed"
+                        activator="parent"
+                        location="right"
+                        >{{ $t("sidebar.wallpapers") }}</v-tooltip
+                    >
+                    <div v-if="!isCollapsed" class="nav-indicator"></div>
+                </v-list-item>
+
+                <v-list-item
+                    to="/podcast"
+                    rounded="lg"
+                    class="mb-2 sidebar-item"
+                    color="primary"
+                    active-class="v-list-item--active"
+                    :class="{ 'justify-center': isCollapsed }"
+                >
+                    <template v-slot:prepend>
+                        <div
+                            class="sidebar-icon-container"
+                            :class="{ 'mr-3': !isCollapsed }"
+                        >
+                            <v-icon :icon="mdiPodcast" size="20"></v-icon>
+                        </div>
+                    </template>
+                    <v-list-item-title
+                        v-if="!isCollapsed"
+                        class="font-weight-medium nav-text"
+                        >PODCAST</v-list-item-title
+                    >
+                    <v-tooltip
+                        v-if="isCollapsed"
+                        activator="parent"
+                        location="right"
+                        >{{ $t("sidebar.podcast") }}</v-tooltip
+                    >
+                    <div v-if="!isCollapsed" class="nav-indicator"></div>
+                </v-list-item>
+            </v-list>
+
+            <!-- Footer Status -->
+            <div v-if="!isCollapsed" class="sidebar-footer">
+                <div class="footer-status">
+                    <span class="status-label"
+                        >{{ $t("sidebar.system") }}:</span
+                    >
+                    <span class="status-value online">{{
+                        $t("sidebar.online")
+                    }}</span>
+                </div>
+                <div class="footer-time">{{ currentTime }}</div>
+            </div>
+        </aside>
+
+        <!-- Resize Handle -->
+        <div
+            class="resize-handle"
+            :class="{ 'is-resizing': isResizing }"
+            @mousedown="startResize"
+        >
+            <div class="resize-indicator"></div>
+        </div>
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
-import {
-  mdiDns, mdiWallpaper, mdiPodcast, mdiRobot
-} from '@mdi/js'
+import { ref, onMounted, onUnmounted, watch } from "vue";
+import { mdiDns, mdiWallpaper, mdiPodcast, mdiRobot } from "@mdi/js";
 
 const props = defineProps<{
-  collapsed?: boolean
-}>()
+    collapsed?: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'show-settings'): void
-  (e: 'open-github'): void
-  (e: 'update:width', width: number): void
-  (e: 'toggle-sidebar'): void
-}>()
+    (e: "show-settings"): void;
+    (e: "open-github"): void;
+    (e: "update:width", width: number): void;
+    (e: "toggle-sidebar"): void;
+}>();
 
 // Sidebar width and resize
-const width = ref(180)
-const minWidth = 64 // Collapsed icon width
-const expandThreshold = 140
-const maxWidth = 180 // Default recommended width as max
-const isResizing = ref(false)
-const isCollapsed = ref(false)
+const width = ref(200);
+const minWidth = 64;
+const expandThreshold = 150;
+const maxWidth = 220;
+const isResizing = ref(false);
+const isCollapsed = ref(false);
+const currentTime = ref("");
 
-let startX = 0
-let startWidth = 0
+let startX = 0;
+let startWidth = 0;
+let timeInterval: number | null = null;
 
 // Watch for external collapse prop changes
-watch(() => props.collapsed, (newVal) => {
-  if (newVal !== undefined) {
-    isCollapsed.value = newVal
-  }
-})
+watch(
+    () => props.collapsed,
+    (newVal) => {
+        if (newVal !== undefined) {
+            isCollapsed.value = newVal;
+        }
+    },
+);
 
 // Resize functions
 function startResize(e: MouseEvent) {
-  isResizing.value = true
-  startX = e.clientX
-  startWidth = isCollapsed.value ? minWidth : width.value
-  document.addEventListener('mousemove', doResize)
-  document.addEventListener('mouseup', stopResize)
-  document.body.style.cursor = 'ew-resize'
-  document.body.style.userSelect = 'none'
-  document.body.classList.add('no-transition') // Add global no-transition
+    isResizing.value = true;
+    startX = e.clientX;
+    startWidth = isCollapsed.value ? minWidth : width.value;
+    document.addEventListener("mousemove", doResize);
+    document.addEventListener("mouseup", stopResize);
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+    document.body.classList.add("no-transition");
 }
 
 function doResize(e: MouseEvent) {
-  if (!isResizing.value) return
-  const delta = e.clientX - startX
-  let newWidth = startWidth + delta
+    if (!isResizing.value) return;
+    const delta = e.clientX - startX;
+    let newWidth = startWidth + delta;
 
-  // Logic: 
-  // 1. If width < expandThreshold, snap to minWidth (collapse)
-  // 2. If width > expandThreshold, allow resize up to maxWidth
-  
-  if (newWidth < expandThreshold) {
-    isCollapsed.value = true
-    newWidth = minWidth
-  } else {
-    isCollapsed.value = false
-    newWidth = Math.min(maxWidth, Math.max(expandThreshold, newWidth))
-    width.value = newWidth
-  }
-  
-  emit('update:width', newWidth)
+    if (newWidth < expandThreshold) {
+        isCollapsed.value = true;
+        newWidth = minWidth;
+    } else {
+        isCollapsed.value = false;
+        newWidth = Math.min(maxWidth, Math.max(expandThreshold, newWidth));
+        width.value = newWidth;
+    }
+
+    emit("update:width", newWidth);
 }
 
 function stopResize() {
-  isResizing.value = false
-  document.removeEventListener('mousemove', doResize)
-  document.removeEventListener('mouseup', stopResize)
-  document.body.style.cursor = ''
-  document.body.style.userSelect = ''
-  document.body.classList.remove('no-transition') // Remove global no-transition
-  saveWidth(width.value)
+    isResizing.value = false;
+    document.removeEventListener("mousemove", doResize);
+    document.removeEventListener("mouseup", stopResize);
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    document.body.classList.remove("no-transition");
+    saveWidth(width.value);
+}
+
+function updateTime() {
+    const now = new Date();
+    currentTime.value = now.toLocaleTimeString("en-US", { hour12: false });
 }
 
 onMounted(() => {
-  // Load saved width from localStorage if available
-  const savedWidth = localStorage.getItem('jedi-sidebar-width')
-  if (savedWidth) {
-    const parsed = parseInt(savedWidth, 10)
-    if (!isNaN(parsed) && parsed >= expandThreshold && parsed <= maxWidth) {
-      width.value = parsed
-      isCollapsed.value = false
-    } else {
-      isCollapsed.value = true
+    const savedWidth = localStorage.getItem("jedi-sidebar-width");
+    if (savedWidth) {
+        const parsed = parseInt(savedWidth, 10);
+        if (!isNaN(parsed) && parsed >= expandThreshold && parsed <= maxWidth) {
+            width.value = parsed;
+            isCollapsed.value = false;
+        } else {
+            isCollapsed.value = true;
+        }
     }
-  }
-})
+    updateTime();
+    timeInterval = window.setInterval(updateTime, 1000);
+});
 
-// Watch width changes and save to localStorage
 function saveWidth(newWidth: number) {
-  localStorage.setItem('jedi-sidebar-width', newWidth.toString())
+    localStorage.setItem("jedi-sidebar-width", newWidth.toString());
 }
 
 onUnmounted(() => {
-  document.removeEventListener('mousemove', doResize)
-  document.removeEventListener('mouseup', stopResize)
-})
+    document.removeEventListener("mousemove", doResize);
+    document.removeEventListener("mouseup", stopResize);
+    if (timeInterval) {
+        clearInterval(timeInterval);
+    }
+});
 </script>
 
 <style scoped>
 .sidebar-wrapper {
-  position: relative;
-  height: 100%;
-  transition: width 0.2s ease;
-  overflow: visible; /* Allow resize handle to be visible/grabbable */
-  flex-shrink: 0;
-  z-index: 90; /* High but below header/footer if needed, but here we want it to be distinct */
+    position: relative;
+    height: 100%;
+    transition: width 0.2s ease;
+    overflow: visible;
+    flex-shrink: 0;
+    z-index: 90;
 }
 
 .jedi-sidebar {
-  border-right: 1px solid rgba(var(--v-theme-on-surface), 0.08);
-  background: linear-gradient(
-    180deg,
-    rgba(var(--v-theme-surface), 1) 0%,
-    rgba(var(--v-theme-surface), 0.98) 100%
-  );
-  height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
+    border-right: 1px solid rgba(0, 255, 255, 0.15);
+    background: linear-gradient(180deg, #0d0d12 0%, #0a0a0f 100%);
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
 }
 
 /* Custom Scrollbar for Sidebar */
 .jedi-sidebar::-webkit-scrollbar {
-  width: 4px;
+    width: 4px;
+}
+.jedi-sidebar::-webkit-scrollbar-track {
+    background: transparent;
 }
 .jedi-sidebar::-webkit-scrollbar-thumb {
-  background: rgba(var(--v-theme-on-surface), 0.1);
-  border-radius: 2px;
+    background: rgba(0, 255, 255, 0.2);
+    border-radius: 2px;
+}
+.jedi-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 255, 0.3);
+}
+
+.logo-area {
+    border-bottom-color: rgba(0, 255, 255, 0.15) !important;
+    padding: 16px 8px !important;
 }
 
 .grogu-pod-container {
-  position: relative;
-  width: 80px;
-  height: 80px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.3s ease;
+    position: relative;
+    width: 72px;
+    height: 72px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
 }
 
 .grogu-pod-container.mini-pod {
-  width: 48px;
-  height: 48px;
-  margin-bottom: 4px !important;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 4px !important;
+}
+
+.logo-glow {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(0, 255, 255, 0.3) 0%,
+        transparent 70%
+    );
+    animation: logoPulse 2s ease-in-out infinite;
+    z-index: 0;
+}
+
+@keyframes logoPulse {
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
 }
 
 .app-logo {
-  width: 64px;
-  height: 64px;
-  object-fit: contain;
-  transition: all 0.3s ease;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-  z-index: 2;
-  border-radius: 50%; /* Ensure round for rotation */
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    transition: all 0.3s ease;
+    z-index: 2;
+    border-radius: 50%;
+    position: relative;
 }
 
 .mini-pod .app-logo {
-  width: 40px;
-  height: 40px;
+    width: 40px;
+    height: 40px;
 }
 
-.logo-spin {
-  animation: spin 20s linear infinite;
+.sidebar-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px;
+    color: #00ff88 !important;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
 }
 
-/* Visualizer Animation */
-.visualizer-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 140%;
-  height: 140%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  border: 2px dashed rgba(var(--v-theme-primary), 0.3);
-  pointer-events: none;
-  animation: visualizer-spin 12s linear infinite;
+.title-bracket {
+    color: #00ffff;
+    font-size: 12px;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
 
-.visualizer-ring::after {
-  content: '';
-  position: absolute;
-  inset: -15%;
-  border-radius: 50%;
-  border: 2px dotted rgba(var(--v-theme-primary), 0.15);
-  animation: visualizer-spin 18s linear infinite reverse;
-}
-
-@keyframes visualizer-spin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.sidebar-subtitle {
+    font-size: 9px !important;
+    color: #52525b !important;
+    letter-spacing: 1px;
 }
 
 /* Ensure icons center in collapsed mode */
 .sidebar-item.justify-center :deep(.v-list-item) {
-  justify-content: center !important;
-  padding-inline: 0 !important;
+    justify-content: center !important;
+    padding-inline: 0 !important;
 }
 
 .sidebar-item.justify-center :deep(.v-list-item__content) {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
-  padding-inline: 0 !important;
-  width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-inline: 0 !important;
+    width: 100%;
 }
 
 .sidebar-item.justify-center :deep(.v-list-item__prepend) {
-  margin-inline-end: 0 !important;
-  margin-inline-start: 0 !important;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
+    margin-inline-end: 0 !important;
+    margin-inline-start: 0 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
 }
 
 .sidebar-item.justify-center .sidebar-icon-container {
-  margin-right: 0 !important;
-  margin-left: 0 !important;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* Jedi Lightsaber Effect */
+/* Sci-Fi Console Sidebar Item */
 .sidebar-item {
-  transition: all 0.15s ease;
-  position: relative;
+    transition: all 0.15s ease;
+    position: relative;
+    border-radius: 4px !important;
+    overflow: hidden;
+}
+
+.sidebar-item :deep(.v-list-item) {
+    border-radius: 4px !important;
+    position: relative;
 }
 
 .sidebar-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 8px;
-  bottom: 8px;
-  width: 2px;
-  background: rgb(var(--v-theme-primary));
-  opacity: 0;
-  transform: scaleY(0);
-  transition: all 0.15s ease;
-  box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: #00ffff;
+    opacity: 0;
+    transform: scaleY(0);
+    transition: all 0.15s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    z-index: 2;
 }
 
 .sidebar-item.v-list-item--active::before {
-  opacity: 1;
-  transform: scaleY(1);
+    opacity: 1;
+    transform: scaleY(1);
 }
 
-.sidebar-item.v-list-item--active {
-  background: rgba(96, 165, 250, 0.08) !important;
+.sidebar-item.v-list-item--active :deep(.v-list-item) {
+    background: rgba(0, 255, 255, 0.08) !important;
 }
 
 .sidebar-item.v-list-item--active .sidebar-icon-container {
-  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.6));
-  transition: filter 0.15s ease;
+    filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.8));
+}
+
+.sidebar-item:hover :deep(.v-list-item) {
+    background: rgba(0, 255, 255, 0.05) !important;
+}
+
+.nav-text {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #a1a1aa;
+}
+
+.sidebar-item.v-list-item--active .nav-text {
+    color: #00ffff;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+}
+
+.nav-indicator {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #00ff88;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar-item.v-list-item--active .nav-indicator {
+    opacity: 1;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    padding: 12px 16px;
+    border-top: 1px solid rgba(0, 255, 255, 0.15);
+    background: linear-gradient(0deg, #0f0f1a 0%, transparent 100%);
+}
+
+.footer-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.status-label {
+    font-size: 9px;
+    color: #52525b;
+    letter-spacing: 1px;
+}
+
+.status-value {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.status-value.online {
+    color: #00ff88;
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+}
+
+.footer-time {
+    font-size: 10px;
+    color: #00ffff;
+    font-family: "JetBrains Mono", monospace;
+    text-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
 }
 
 /* Resize Handle */
 .resize-handle {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 6px;
-  height: 100%;
-  cursor: ew-resize;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.15s ease;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 100%;
+    cursor: ew-resize;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease;
 }
 
 .resize-handle:hover {
-  background-color: rgba(var(--v-theme-primary), 0.1);
+    background-color: rgba(0, 255, 255, 0.1);
 }
 
 .resize-handle.is-resizing {
-  background-color: rgba(var(--v-theme-primary), 0.15);
+    background-color: rgba(0, 255, 255, 0.15);
 }
 
 .resize-indicator {
-  width: 2px;
-  height: 32px;
-  border-radius: 2px;
-  background-color: rgba(var(--v-theme-on-surface), 0.15);
-  transition: background-color 0.15s ease;
+    width: 2px;
+    height: 32px;
+    border-radius: 2px;
+    background-color: rgba(0, 255, 255, 0.2);
+    transition: background-color 0.15s ease;
 }
 
 .resize-handle:hover .resize-indicator,
 .resize-handle.is-resizing .resize-indicator {
-  background-color: rgb(var(--v-theme-primary));
-  width: 3px;
+    background-color: #00ffff;
+    width: 3px;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+/* =========================================
+   Light Theme Styles (Blue Tech)
+   ========================================= */
+.light-theme .jedi-sidebar {
+    background: linear-gradient(180deg, #e8eef5 0%, #dde5ef 100%);
+    border-right-color: rgba(30, 136, 229, 0.25);
+}
+
+.light-theme .logo-area {
+    border-bottom-color: rgba(30, 136, 229, 0.25) !important;
+}
+
+.light-theme .logo-glow {
+    background: radial-gradient(
+        circle,
+        rgba(30, 136, 229, 0.25) 0%,
+        transparent 70%
+    );
+}
+
+.light-theme .sidebar-title {
+    color: #1e88e5 !important;
+    text-shadow: 0 0 10px rgba(30, 136, 229, 0.4);
+}
+
+.light-theme .title-bracket {
+    color: #546e7a;
+}
+
+.light-theme .sidebar-subtitle {
+    color: #78909c !important;
+}
+
+.light-theme .sidebar-item::before {
+    background: #1e88e5;
+    box-shadow: 0 0 10px rgba(30, 136, 229, 0.5);
+}
+
+.light-theme .sidebar-item.v-list-item--active::before {
+    opacity: 1;
+    transform: scaleY(1);
+}
+
+.light-theme .sidebar-item.v-list-item--active .sidebar-icon-container {
+    filter: drop-shadow(0 0 8px rgba(30, 136, 229, 0.5));
+}
+
+.light-theme .sidebar-item:hover :deep(.v-list-item) {
+    background: rgba(30, 136, 229, 0.08) !important;
+}
+
+.light-theme .nav-text {
+    color: #546e7a;
+}
+
+.light-theme .sidebar-item.v-list-item--active .nav-text {
+    color: #1e88e5;
+}
+
+.light-theme .nav-indicator {
+    background: #43a047;
+    box-shadow: 0 0 10px rgba(67, 160, 71, 0.5);
+}
+
+.light-theme .sidebar-footer {
+    border-top-color: rgba(30, 136, 229, 0.25);
+    background: linear-gradient(0deg, #e8eef5 0%, transparent 100%);
+}
+
+.light-theme .status-label {
+    color: #78909c;
+}
+
+.light-theme .status-value.online {
+    color: #43a047;
+}
+
+.light-theme .footer-time {
+    color: #1e88e5;
+}
+
+.light-theme .resize-indicator {
+    background-color: rgba(30, 136, 229, 0.25);
+}
+
+.light-theme .resize-handle:hover .resize-indicator,
+.light-theme .resize-handle.is-resizing .resize-indicator {
+    background-color: #1e88e5;
+    box-shadow: 0 0 10px rgba(30, 136, 229, 0.5);
 }
 </style>

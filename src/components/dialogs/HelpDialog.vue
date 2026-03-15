@@ -1,46 +1,35 @@
 <template>
-  <v-dialog v-model="dialogModel" max-width="600" class="jedi-dialog-card">
-    <v-card class="jedi-dialog-card">
-      <v-toolbar color="surface" class="px-4 jedi-dialog-header border-b">
-        <v-icon :icon="mdiHelpCircle" color="primary" class="mr-2"></v-icon>
-        <v-toolbar-title class="font-weight-medium">{{ $t('help.title') }}</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn :icon="mdiClose" variant="text" color="medium-emphasis" @click="dialogModel = false"></v-btn>
-      </v-toolbar>
-      <v-card-text class="pa-6">
-        <h3 class="text-h6 mb-4">{{ $t('help.basicGuide') }}</h3>
-        <v-list>
-          <v-list-item>
-            <template v-slot:prepend>
-              <v-icon :icon="mdiPlusCircle" color="var(--jedi-accent)" class="mr-2"></v-icon>
-            </template>
-            <v-list-item-title>{{ $t('help.addGroup') }}</v-list-item-title>
-          </v-list-item>
-          <v-list-item>
-            <template v-slot:prepend>
-              <v-icon :icon="mdiPlus" color="var(--jedi-accent)" class="mr-2"></v-icon>
-            </template>
-            <v-list-item-title>{{ $t('help.addEntry') }}</v-list-item-title>
-          </v-list-item>
-          <v-list-item>
-            <template v-slot:prepend>
-              <v-icon :icon="mdiToggleSwitch" color="var(--jedi-accent)" class="mr-2"></v-icon>
-            </template>
-            <v-list-item-title>{{ $t('help.toggleEntry') }}</v-list-item-title>
-          </v-list-item>
-          <v-list-item>
-            <template v-slot:prepend>
-              <v-icon :icon="mdiPower" color="var(--jedi-accent)" class="mr-2"></v-icon>
-            </template>
-            <v-list-item-title>{{ $t('help.globalSwitch') }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
+  <v-dialog v-model="dialogModel" max-width="600">
+    <v-card class="scifi-card">
+      <v-card-title class="console-title-bar">
+        <span class="dialog-title">[ USER_GUIDE ]</span>
+      </v-card-title>
+      <v-card-text class="console-card-text">
+        <h3 class="help-section-title mb-4">&gt; {{ $t('help.basicGuide') }}</h3>
+        <div class="help-list">
+          <div class="help-item">
+            <span class="help-icon">＋</span>
+            <span class="help-text">{{ $t('help.addGroup') }}</span>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">＋</span>
+            <span class="help-text">{{ $t('help.addEntry') }}</span>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">⊡</span>
+            <span class="help-text">{{ $t('help.toggleEntry') }}</span>
+          </div>
+          <div class="help-item">
+            <span class="help-icon">⚡</span>
+            <span class="help-text">{{ $t('help.globalSwitch') }}</span>
+          </div>
+        </div>
       </v-card-text>
-      <v-card-actions class="pa-4 pt-0">
+      <v-card-actions class="console-card-actions">
         <v-spacer></v-spacer>
-        <v-btn color="var(--jedi-accent)" variant="elevated" @click="dialogModel = false" rounded="sm">
-          {{ $t('common.close') }}
-        </v-btn>
+        <button class="console-btn primary" @click="dialogModel = false">
+          <span class="btn-text">{{ $t('common.close') }}</span>
+        </button>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -48,21 +37,65 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { mdiHelpCircle, mdiClose, mdiPlusCircle, mdiPlus, mdiToggleSwitch, mdiPower } from '@mdi/js'
 
-// 定义组件属性
 const props = defineProps<{
   modelValue: boolean;
 }>()
 
-// 定义组件事件
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
 }>()
 
-// 对话框状态
 const dialogModel = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 })
 </script>
+
+<style scoped>
+.help-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #00ffff;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+.help-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.help-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(0, 255, 255, 0.03);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.help-item:hover {
+  background: rgba(0, 255, 255, 0.08);
+  border-color: rgba(0, 255, 255, 0.2);
+}
+
+.help-icon {
+  width: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: #00ff88;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+}
+
+.help-text {
+  font-size: 11px;
+  color: #a1a1aa;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+}
+</style>

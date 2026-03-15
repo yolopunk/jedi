@@ -1,438 +1,440 @@
 <template>
-  <v-dialog v-model="dialogModel" max-width="800" class="jedi-dialog-card">
-    <v-card class="jedi-dialog-card">
-      <v-toolbar color="surface" class="px-4 jedi-dialog-header border-b">
-        <v-icon :icon="mdiCog" color="primary" class="mr-2"></v-icon>
-        <v-toolbar-title class="font-weight-medium">应用设置</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn :icon="mdiClose" variant="text" color="medium-emphasis" @click="dialogModel = false"></v-btn>
-      </v-toolbar>
-      <v-card-text class="pa-6">
-        <v-tabs v-model="settingsTab" color="var(--jedi-accent)">
-          <v-tab value="general">常规设置</v-tab>
-          <v-tab value="wallpaper">{{ $t('settings.wallpaper') }}</v-tab>
-          <v-tab value="chat">AI Chat</v-tab>
-          <v-tab value="advanced">{{ $t('settings.advanced') }}</v-tab>
-        </v-tabs>
+  <v-dialog v-model="dialogModel" max-width="800">
+    <v-card class="scifi-card">
+      <v-card-title class="console-title-bar">
+        <span class="dialog-title">[ SYSTEM_CONFIG ]</span>
+      </v-card-title>
+      <v-card-text class="console-card-text settings-content">
+        <!-- Tabs -->
+        <div class="settings-tabs">
+          <button
+            v-for="tab in tabs"
+            :key="tab.value"
+            class="tab-button"
+            :class="{ active: settingsTab === tab.value }"
+            @click="settingsTab = tab.value"
+          >
+            <span class="tab-text">{{ tab.label }}</span>
+          </button>
+        </div>
 
-        <v-window v-model="settingsTab" class="mt-4">
+        <div class="tab-content">
           <!-- General Settings -->
-          <v-window-item value="general">
-            <v-list>
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiTranslate" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>语言 / Language</v-list-item-title>
-                <template v-slot:append>
-                  <v-menu>
-                    <template v-slot:activator="{ props }">
-                      <v-btn
-                        color="var(--jedi-accent)"
-                        variant="tonal"
-                        size="small"
-                        v-bind="props"
-                        rounded="sm"
-                      >
-                        {{ currentLangLabel }}
-                      </v-btn>
-                    </template>
-                    <v-list density="compact">
-                      <v-list-item
-                        v-for="lang in languages"
-                        :key="lang.value"
-                        :value="lang.value"
-                        @click="changeLanguage(lang.value)"
-                        :active="locale === lang.value"
-                        color="primary"
-                      >
-                        <v-list-item-title>{{ lang.label }}</v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
-                </template>
-              </v-list-item>
+          <div v-if="settingsTab === 'general'" class="settings-section">
+            <div class="setting-item">
+              <div class="setting-icon">🌐</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.language') }}</div>
+              </div>
+              <div class="setting-action">
+                <v-menu location="bottom end">
+                  <template v-slot:activator="{ props }">
+                    <button v-bind="props" class="console-btn small">
+                      {{ currentLangLabel }}
+                    </button>
+                  </template>
+                  <div class="console-menu">
+                    <div
+                      v-for="lang in languages"
+                      :key="lang.value"
+                      class="menu-item"
+                      :class="{ active: locale === lang.value }"
+                      @click="changeLanguage(lang.value)"
+                    >
+                      <span class="menu-check">{{ locale === lang.value ? '▣' : '▢' }}</span>
+                      <span class="menu-text">{{ lang.label }}</span>
+                    </div>
+                  </div>
+                </v-menu>
+              </div>
+            </div>
 
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiLaunch" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>开机自启动</v-list-item-title>
-                <template v-slot:append>
-                  <v-switch
-                    v-model="autostartEnabled"
-                    color="var(--jedi-accent)"
-                    hide-details
-                    :loading="autostartLoading"
-                    @update:model-value="toggleAutostart"
-                  ></v-switch>
-                </template>
-              </v-list-item>
+            <!-- Theme Setting -->
+            <div class="setting-item">
+              <div class="setting-icon">🎨</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.theme') }}</div>
+              </div>
+              <div class="setting-action">
+                <v-menu location="bottom end">
+                  <template v-slot:activator="{ props }">
+                    <button v-bind="props" class="console-btn small">
+                      {{ currentThemeLabel }}
+                    </button>
+                  </template>
+                  <div class="console-menu">
+                    <div
+                      v-for="theme in themeModes"
+                      :key="theme.value"
+                      class="menu-item"
+                      :class="{ active: themeMode === theme.value }"
+                      @click="setTheme(theme.value as 'light' | 'dark' | 'system')"
+                    >
+                      <span class="menu-icon">{{ theme.icon }}</span>
+                      <span class="menu-text">{{ theme.label }}</span>
+                    </div>
+                  </div>
+                </v-menu>
+              </div>
+            </div>
 
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiTrayArrowDown" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>最小化到托盘</v-list-item-title>
-                <template v-slot:append>
-                  <v-switch color="var(--jedi-accent)" hide-details></v-switch>
-                </template>
-              </v-list-item>
+            <div class="setting-item">
+              <div class="setting-icon">🚀</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.autostart') }}</div>
+              </div>
+              <div class="setting-action">
+                <div
+                  class="toggle-switch"
+                  :class="{ active: autostartEnabled }"
+                  @click="!autostartLoading && toggleAutostart(!autostartEnabled)"
+                >
+                  <div class="toggle-handle"></div>
+                </div>
+              </div>
+            </div>
 
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiUpdate" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>自动检查更新</v-list-item-title>
-                <template v-slot:append>
-                  <v-switch
-                    v-model="autoUpdateEnabled"
-                    color="var(--jedi-accent)"
-                    hide-details
-                    @update:model-value="handleAutoUpdateChange"
-                  ></v-switch>
-                </template>
-              </v-list-item>
+            <div class="setting-item">
+              <div class="setting-icon">📥</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.minimizeToTray') }}</div>
+              </div>
+              <div class="setting-action">
+                <div class="toggle-switch">
+                  <div class="toggle-handle"></div>
+                </div>
+              </div>
+            </div>
 
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiRefresh" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>{{ $t('settings.checkUpdate') }}</v-list-item-title>
-                <v-list-item-subtitle v-if="hasUpdate">
+            <div class="setting-item">
+              <div class="setting-icon">🔄</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.autoUpdate') }}</div>
+              </div>
+              <div class="setting-action">
+                <div
+                  class="toggle-switch"
+                  :class="{ active: autoUpdateEnabled }"
+                  @click="handleAutoUpdateChange(!autoUpdateEnabled)"
+                >
+                  <div class="toggle-handle"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-icon">↻</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('settings.checkUpdate') }}</div>
+                <div class="setting-subtitle" v-if="hasUpdate">
                   {{ $t('settings.updateAvailable', { version: updateInfo?.version }) }}
-                </v-list-item-subtitle>
-                <v-list-item-subtitle v-else-if="updateLoading">
+                </div>
+                <div class="setting-subtitle" v-else-if="updateLoading">
                   {{ $t('settings.updateChecking') }}
-                </v-list-item-subtitle>
-                <v-list-item-subtitle v-else>
+                </div>
+                <div class="setting-subtitle" v-else>
                   {{ formatLastCheckTime() }}
-                </v-list-item-subtitle>
-                <template v-slot:append>
-                  <v-btn
-                    color="var(--jedi-accent)"
-                    variant="tonal"
-                    size="small"
-                    rounded="sm"
-                    :loading="updateLoading"
-                    :disabled="updateLoading"
-                    @click="handleManualCheck"
-                  >
-                    {{ $t('settings.checkUpdate') }}
-                  </v-btn>
-                </template>
-              </v-list-item>
-            </v-list>
-
-            <!-- Update Dialog -->
-            <UpdateDialog
-              v-if="updateInfo"
-              v-model="showUpdateDialog"
-              :update-info="updateInfo"
-              :is-installing="isInstalling"
-              @install="handleInstallUpdate"
-            ></UpdateDialog>
-          </v-window-item>
+                </div>
+              </div>
+              <div class="setting-action">
+                <button class="console-btn small" :disabled="updateLoading" @click="handleManualCheck">
+                  <span v-if="!updateLoading">{{ $t('settings.checkUpdate') }}</span>
+                  <span v-else>...</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
           <!-- Wallpaper Settings -->
-          <v-window-item value="wallpaper">
-            <v-list>
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiWallpaper" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>{{ $t('settings.wpAutoUpdate') }}</v-list-item-title>
-                <template v-slot:append>
-                  <v-switch
-                    v-model="wallpaperSettings.autoUpdate"
-                    color="var(--jedi-accent)"
-                    hide-details
-                    @update:model-value="saveWallpaperSettings(wallpaperSettings)"
-                  ></v-switch>
-                </template>
-              </v-list-item>
+          <div v-if="settingsTab === 'wallpaper'" class="settings-section">
+            <div class="setting-item">
+              <div class="setting-icon">🖼</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('settings.wpAutoUpdate') }}</div>
+              </div>
+              <div class="setting-action">
+                <div
+                  class="toggle-switch"
+                  :class="{ active: wallpaperSettings.autoUpdate }"
+                  @click="wallpaperSettings.autoUpdate = !wallpaperSettings.autoUpdate; saveWallpaperSettings(wallpaperSettings)"
+                >
+                  <div class="toggle-handle"></div>
+                </div>
+              </div>
+            </div>
 
-              <v-list-item v-if="wallpaperSettings.autoUpdate">
-                 <template v-slot:prepend>
-                  <v-icon icon="" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>{{ $t('settings.wpFrequency') }}</v-list-item-title>
-                <template v-slot:append>
-                  <v-text-field
+            <div class="setting-item" v-if="wallpaperSettings.autoUpdate">
+              <div class="setting-icon"></div>
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('settings.wpFrequency') }}</div>
+              </div>
+              <div class="setting-action">
+                <div class="input-wrapper small">
+                  <input
                     v-model.number="wallpaperSettings.frequencyDays"
                     type="number"
                     min="1"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    style="width: 100px"
-                    @update:model-value="saveWallpaperSettings(wallpaperSettings)"
-                  ></v-text-field>
-                </template>
-              </v-list-item>
-
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon icon="" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>{{ $t('settings.wpCategories') }}</v-list-item-title>
-                <template v-slot:append>
-                  <v-select
-                    v-model="wallpaperSettings.selectedCategories"
-                    :items="allCategories"
-                    multiple
-                    chips
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    style="width: 250px"
-                    @update:model-value="saveWallpaperSettings(wallpaperSettings)"
-                  ></v-select>
-                </template>
-              </v-list-item>
-
-               <v-list-item>
-                <v-list-item-subtitle class="text-caption text-right">
-                  {{ $t('settings.wpLastUpdate', { time: wallpaperSettings.lastUpdate ? new Date(wallpaperSettings.lastUpdate).toLocaleString() : 'N/A' }) }}
-                </v-list-item-subtitle>
-              </v-list-item>
-            </v-list>
-          </v-window-item>
-
-          <!-- AI Chat Settings -->
-          <v-window-item value="chat">
-            <div class="chat-settings">
-              <!-- API Providers -->
-              <div class="settings-section">
-                <h3 class="section-title">AI 提供商</h3>
-                <p class="section-desc">配置您的 AI 模型提供商 API 密钥</p>
-
-                <v-list class="provider-list" density="compact">
-                  <v-list-item
-                    v-for="provider in providerList"
-                    :key="provider.id"
-                    class="provider-item"
-                    :class="{ 'configured': isProviderConfigured(provider.id) }"
-                  >
-                    <template v-slot:prepend>
-                      <div class="provider-icon">
-                        <v-icon :icon="provider.icon" size="20" />
-                      </div>
-                    </template>
-                    <v-list-item-title>{{ provider.name }}</v-list-item-title>
-                    <template v-slot:append>
-                      <div class="provider-status">
-                        <v-chip
-                          v-if="isProviderConfigured(provider.id)"
-                          size="small"
-                          color="success"
-                          variant="flat"
-                        >
-                          已配置
-                        </v-chip>
-                        <v-chip
-                          v-else
-                          size="small"
-                          variant="outlined"
-                        >
-                          未配置
-                        </v-chip>
-                      </div>
-                      <v-btn
-                        size="small"
-                        variant="text"
-                        @click="openProviderConfig(provider.id)"
-                      >
-                        {{ isProviderConfigured(provider.id) ? '编辑' : '配置' }}
-                      </v-btn>
-                    </template>
-                  </v-list-item>
-                </v-list>
-              </div>
-
-              <!-- Chat Settings -->
-              <div class="settings-section mt-6">
-                <h3 class="section-title">对话设置</h3>
-                <p class="section-desc">配置 AI 对话的默认参数</p>
-
-                <v-list>
-                  <v-list-item>
-                    <template v-slot:prepend>
-                      <v-icon :icon="mdiThermometer" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                    </template>
-                    <v-list-item-title>温度 (Temperature)</v-list-item-title>
-                    <v-list-item-subtitle>控制输出的随机性，值越高越有创意</v-list-item-subtitle>
-                    <template v-slot:append>
-                      <div class="slider-container">
-                        <span class="slider-value">{{ chatSettings.temperature.toFixed(2) }}</span>
-                        <v-slider
-                          v-model="chatSettings.temperature"
-                          :min="0"
-                          :max="2"
-                          :step="0.1"
-                          density="compact"
-                          color="primary"
-                          style="width: 150px"
-                          @update:model-value="saveChatSettings"
-                        />
-                      </div>
-                    </template>
-                  </v-list-item>
-
-                  <v-list-item>
-                    <template v-slot:prepend>
-                      <v-icon :icon="mdiText" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                    </template>
-                    <v-list-item-title>最大令牌数</v-list-item-title>
-                    <v-list-item-subtitle>单次响应的最大长度</v-list-item-subtitle>
-                    <template v-slot:append>
-                      <v-text-field
-                        v-model.number="chatSettings.maxTokens"
-                        type="number"
-                        :min="256"
-                        :max="128000"
-                        variant="outlined"
-                        density="compact"
-                        hide-details
-                        style="width: 120px"
-                        @update:model-value="saveChatSettings"
-                      />
-                    </template>
-                  </v-list-item>
-
-                  <v-list-item>
-                    <template v-slot:prepend>
-                      <v-icon :icon="mdiLightningBolt" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                    </template>
-                    <v-list-item-title>流式响应</v-list-item-title>
-                    <v-list-item-subtitle>实时显示 AI 响应内容</v-list-item-subtitle>
-                    <template v-slot:append>
-                      <v-switch
-                        v-model="chatSettings.streamEnabled"
-                        color="var(--jedi-accent)"
-                        hide-details
-                        @update:model-value="saveChatSettings"
-                      />
-                    </template>
-                  </v-list-item>
-                </v-list>
-              </div>
-
-              <!-- MCP Servers -->
-              <div class="settings-section mt-6">
-                <h3 class="section-title">MCP 服务器</h3>
-                <p class="section-desc">配置 MCP (Model Context Protocol) 服务器</p>
-
-                <v-list>
-                  <v-list-item
-                    v-for="server in mcpServers"
-                    :key="server.id"
-                  >
-                    <template v-slot:prepend>
-                      <v-icon :icon="server.icon || mdiPuzzle" size="20" />
-                    </template>
-                    <v-list-item-title>{{ server.name }}</v-list-item-title>
-                    <v-list-item-subtitle v-if="server.description">{{ server.description }}</v-list-item-subtitle>
-                    <template v-slot:append>
-                      <v-switch
-                        v-model="server.enabled"
-                        color="primary"
-                        hide-details
-                        @update:model-value="toggleMcpServer(server.id)"
-                      />
-                    </template>
-                  </v-list-item>
-                </v-list>
+                    class="console-input"
+                    @input="saveWallpaperSettings(wallpaperSettings)"
+                  />
+                </div>
               </div>
             </div>
-          </v-window-item>
+
+            <div class="setting-item">
+              <div class="setting-icon"></div>
+              <div class="setting-info">
+                <div class="setting-label">{{ $t('settings.wpCategories') }}</div>
+              </div>
+              <div class="setting-action">
+                <v-menu location="bottom end">
+                  <template v-slot:activator="{ props }">
+                    <button v-bind="props" class="console-btn small">
+                      {{ t('settings.categories', { n: wallpaperSettings.selectedCategories?.length || 0 }) }}
+                    </button>
+                  </template>
+                  <div class="console-menu">
+                    <div
+                      v-for="cat in allCategories"
+                      :key="cat"
+                      class="menu-item"
+                      :class="{ active: wallpaperSettings.selectedCategories?.includes(cat) }"
+                      @click="toggleCategory(cat)"
+                    >
+                      <span class="menu-check">{{ wallpaperSettings.selectedCategories?.includes(cat) ? '▣' : '▢' }}</span>
+                      <span class="menu-text">{{ cat }}</span>
+                    </div>
+                  </div>
+                </v-menu>
+              </div>
+            </div>
+
+            <div class="setting-item no-hover">
+              <div class="setting-icon"></div>
+              <div class="setting-info">
+                <div class="setting-subtitle text-right">
+                  {{ $t('settings.wpLastUpdate', { time: wallpaperSettings.lastUpdate ? new Date(wallpaperSettings.lastUpdate).toLocaleString() : 'N/A' }) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- AI Chat Settings -->
+          <div v-if="settingsTab === 'chat'" class="settings-section">
+            <div class="section-header">
+              <span class="section-title">{{ t('settings.aiProvider') }}</span>
+              <span class="section-desc">{{ t('settings.providerConfig') }}</span>
+            </div>
+
+            <div class="provider-list">
+              <div
+                v-for="provider in providerList"
+                :key="provider.id"
+                class="provider-item"
+                :class="{ 'configured': isProviderConfigured(provider.id) }"
+              >
+                <div class="provider-icon">{{ providerIcon(provider.id) }}</div>
+                <div class="provider-name">{{ provider.name }}</div>
+                <div class="provider-status">
+                  <span
+                    v-if="isProviderConfigured(provider.id)"
+                    class="status-chip success"
+                  >
+                    {{ t('settings.configured') }}
+                  </span>
+                  <span v-else class="status-chip">
+                    {{ t('settings.notConfigured') }}
+                  </span>
+                </div>
+                <button class="console-btn small" @click="openProviderConfig(provider.id)">
+                  {{ isProviderConfigured(provider.id) ? t('settings.edit') : t('settings.configure') }}
+                </button>
+              </div>
+            </div>
+
+            <div class="divider-line my-4"></div>
+
+            <div class="section-header">
+              <span class="section-title">{{ t('settings.chatSettings') }}</span>
+              <span class="section-desc">{{ t('settings.chatSettingsDesc') }}</span>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-icon">🌡</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.temperature') }}</div>
+                <div class="setting-subtitle">{{ t('settings.temperatureDesc') }}</div>
+              </div>
+              <div class="setting-action slider-action">
+                <span class="slider-value">{{ chatSettings.temperature.toFixed(2) }}</span>
+                <v-slider
+                  v-model="chatSettings.temperature"
+                  :min="0"
+                  :max="2"
+                  :step="0.1"
+                  density="compact"
+                  color="primary"
+                  style="width: 150px"
+                  @update:model-value="saveChatSettings"
+                />
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-icon">📝</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.maxTokens') }}</div>
+                <div class="setting-subtitle">{{ t('settings.maxTokensDesc') }}</div>
+              </div>
+              <div class="setting-action">
+                <div class="input-wrapper small">
+                  <input
+                    v-model.number="chatSettings.maxTokens"
+                    type="number"
+                    min="256"
+                    max="128000"
+                    class="console-input"
+                    @input="saveChatSettings"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="setting-item">
+              <div class="setting-icon">⚡</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.streamResponse') }}</div>
+                <div class="setting-subtitle">{{ t('settings.streamResponseDesc') }}</div>
+              </div>
+              <div class="setting-action">
+                <div
+                  class="toggle-switch"
+                  :class="{ active: chatSettings.streamEnabled }"
+                  @click="chatSettings.streamEnabled = !chatSettings.streamEnabled; saveChatSettings()"
+                >
+                  <div class="toggle-handle"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="divider-line my-4"></div>
+
+            <div class="section-header">
+              <span class="section-title">{{ t('settings.mcpServers') }}</span>
+              <span class="section-desc">{{ t('settings.mcpServersDesc') }}</span>
+            </div>
+
+            <div class="setting-item" v-for="server in mcpServers" :key="server.id">
+              <div class="setting-icon">🧩</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ server.name }}</div>
+                <div class="setting-subtitle" v-if="server.description">{{ server.description }}</div>
+              </div>
+              <div class="setting-action">
+                <div
+                  class="toggle-switch"
+                  :class="{ active: server.enabled }"
+                  @click="toggleMcpServer(server.id)"
+                >
+                  <div class="toggle-handle"></div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           <!-- Advanced Settings -->
-          <v-window-item value="advanced">
-            <v-list>
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiFileDocument" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>Hosts 文件路径</v-list-item-title>
-                <template v-slot:append>
-                  <v-text-field
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    readonly
-                    value="/etc/hosts"
-                    style="width: 250px"
-                  ></v-text-field>
-                </template>
-              </v-list-item>
+          <div v-if="settingsTab === 'advanced'" class="settings-section">
+            <div class="setting-item">
+              <div class="setting-icon">📄</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.hostsPath') }}</div>
+              </div>
+              <div class="setting-action hosts-path-action">
+                <div class="input-wrapper small">
+                  <input type="text" readonly :value="hostsPath" class="console-input" />
+                </div>
+                <button class="console-btn small ml-2" @click="openHostsFile" :title="t('wallpapers.openFolder')">
+                  <span>📂</span>
+                </button>
+              </div>
+            </div>
 
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiBackupRestore" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>备份设置</v-list-item-title>
-                <template v-slot:append>
-                  <v-btn color="var(--jedi-accent)" variant="tonal" size="small" rounded="sm">备份</v-btn>
-                </template>
-              </v-list-item>
+            <div class="setting-item">
+              <div class="setting-icon">↩</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.backup') }}</div>
+              </div>
+              <div class="setting-action">
+                <button class="console-btn small">{{ t('settings.backupBtn') }}</button>
+              </div>
+            </div>
 
-              <v-list-item>
-                <template v-slot:prepend>
-                  <v-icon :icon="mdiRefresh" color="var(--jedi-primary)" class="mr-3"></v-icon>
-                </template>
-                <v-list-item-title>重置应用</v-list-item-title>
-                <template v-slot:append>
-                  <v-btn color="var(--jedi-danger)" variant="tonal" size="small" rounded="sm">重置</v-btn>
-                </template>
-              </v-list-item>
-            </v-list>
-          </v-window-item>
-        </v-window>
+            <div class="setting-item">
+              <div class="setting-icon">🔄</div>
+              <div class="setting-info">
+                <div class="setting-label">{{ t('settings.reset') }}</div>
+              </div>
+              <div class="setting-action">
+                <button class="console-btn danger small">{{ t('settings.resetBtn') }}</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </v-card-text>
-      <v-card-actions class="pa-4 pt-0">
+      <v-card-actions class="console-card-actions">
         <v-spacer></v-spacer>
-        <v-btn variant="text" @click="dialogModel = false" rounded="sm" class="mr-2">
-          关闭
-        </v-btn>
+        <button class="console-btn" @click="dialogModel = false">
+          <span class="btn-text">{{ t('settings.close') }}</span>
+        </button>
       </v-card-actions>
     </v-card>
 
+    <!-- Update Dialog -->
+    <UpdateDialog
+      v-if="updateInfo"
+      v-model="showUpdateDialog"
+      :update-info="updateInfo"
+      :is-installing="isInstalling"
+      @install="handleInstallUpdate"
+    ></UpdateDialog>
+
     <!-- Provider Config Dialog -->
     <v-dialog v-model="showProviderDialog" max-width="500">
-      <v-card>
-        <v-card-title>
-          {{ currentProvider?.name }} 配置
+      <v-card class="scifi-card">
+        <v-card-title class="console-title-bar">
+          <span class="dialog-title">[ {{ currentProvider?.name }}_CONFIG ]</span>
         </v-card-title>
-        <v-card-text>
-          <v-text-field
-            v-model="providerConfig.apiKey"
-            :label="`${currentProvider?.name} API Key`"
-            variant="outlined"
-            type="password"
-            :prepend-inner-icon="mdiKey"
-            class="mb-3"
-          />
-          <v-text-field
-            v-model="providerConfig.endpoint"
-            label="API Endpoint (可选)"
-            variant="outlined"
-            :prepend-inner-icon="mdiWeb"
-            :placeholder="currentProvider?.defaultEndpoint"
-          />
+        <v-card-text class="console-card-text">
+          <div class="input-wrapper mb-3">
+            <span class="input-prompt">>></span>
+            <input
+              v-model="providerConfig.apiKey"
+              type="password"
+              class="console-input"
+              :placeholder="t('settings.apiKey')"
+            />
+          </div>
+          <div class="input-wrapper">
+            <span class="input-prompt">>></span>
+            <input
+              v-model="providerConfig.endpoint"
+              type="text"
+              class="console-input"
+              :placeholder="t('settings.apiEndpoint')"
+            />
+          </div>
         </v-card-text>
-        <v-card-actions>
+        <v-card-actions class="console-card-actions">
           <v-spacer />
-          <v-btn variant="text" @click="showProviderDialog = false">取消</v-btn>
-          <v-btn
+          <button class="console-btn" @click="showProviderDialog = false">{{ t('common.cancel') }}</button>
+          <button
             v-if="hasProviderKey(currentProvider?.id)"
-            color="error"
-            variant="text"
+            class="console-btn danger ml-2"
             @click="deleteProviderKey"
           >
-            删除
-          </v-btn>
-          <v-btn color="primary" @click="saveProviderConfig">保存</v-btn>
+            {{ t('common.delete') }}
+          </button>
+          <button class="console-btn primary ml-2" @click="saveProviderConfig">{{ t('common.save') }}</button>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -443,50 +445,47 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStorage } from '@/composables/useStorage'
-import {
-  mdiCog,
-  mdiClose,
-  mdiLaunch,
-  mdiTrayArrowDown,
-  mdiUpdate,
-  mdiFileDocument,
-  mdiBackupRestore,
-  mdiRefresh,
-  mdiTranslate,
-  mdiWallpaper,
-  mdiKey,
-  mdiWeb,
-  mdiThermometer,
-  mdiText,
-  mdiLightningBolt,
-  mdiPuzzle,
-  mdiOpenid,
-  mdiGoogle,
-  mdiBrain,
-  mdiChevronRight
-} from '@mdi/js'
 import { enableAutostart, disableAutostart, isAutostartEnabled } from '@/api/app'
 import { useWallpaper } from '@/composables/useWallpaper'
 import { getWallpapers } from '@/api/wallpaper'
 import { useUpdate } from '@/composables/useUpdate'
+import { useTheme } from '@/composables/useTheme'
+import { showInFolder } from '@/api/wallpaper'
 import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
 import { useAiChatStore, type McpServer } from '@/stores/aiChat'
 
 const store = useAiChatStore()
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const { setItem } = useStorage()
+const { themeMode, setTheme } = useTheme()
 const { settings: wallpaperSettings, saveSettings: saveWallpaperSettings } = useWallpaper()
 const allCategories = ref<string[]>([])
 
-// Language options
-const languages = [
+const tabs = computed(() => [
+  { value: 'general', label: t('settings.general') },
+  { value: 'wallpaper', label: t('settings.wallpaper') },
+  { value: 'chat', label: t('settings.chat') },
+  { value: 'advanced', label: t('settings.advanced') }
+])
+
+const languages = computed(() => [
   { label: '简体中文', value: 'zh' },
   { label: 'English', value: 'en' }
-]
+])
+
+const themeModes = computed(() => [
+  { label: t('settings.themeDark'), value: 'dark', icon: '🌙' },
+  { label: t('settings.themeLight'), value: 'light', icon: '☀️' },
+  { label: t('settings.themeSystem'), value: 'system', icon: '💻' }
+])
+
+const currentThemeLabel = computed(() => {
+  return themeModes.value.find(m => m.value === themeMode.value)?.label || t('settings.themeSystem')
+})
 
 const currentLangLabel = computed(() => {
-  return languages.find(l => l.value === locale.value)?.label || '简体中文'
+  return languages.value.find((l: { value: string }) => l.value === locale.value)?.label || '简体中文'
 })
 
 const changeLanguage = async (lang: string) => {
@@ -494,7 +493,6 @@ const changeLanguage = async (lang: string) => {
   await setItem('language', lang)
 }
 
-// Props and emits
 const props = defineProps<{
   modelValue: boolean;
 }>()
@@ -503,20 +501,26 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
 }>()
 
-// Dialog state
 const dialogModel = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 })
 
-// Settings tab
 const settingsTab = ref('general')
 
-// Autostart related state
+const hostsPath = '/etc/hosts'
+
+async function openHostsFile() {
+  try {
+    await showInFolder(hostsPath)
+  } catch (error) {
+    console.error('Failed to open hosts file:', error)
+  }
+}
+
 const autostartEnabled = ref(false)
 const autostartLoading = ref(false)
 
-// Update composable
 const {
   hasUpdate,
   updateInfo,
@@ -552,25 +556,24 @@ const handleInstallUpdate = async () => {
   }
 }
 
-// Toggle autostart
 async function toggleAutostart(value: boolean | null) {
   if (value === null) return
   try {
     autostartLoading.value = true
     if (value) {
       await enableAutostart()
+      autostartEnabled.value = true
     } else {
       await disableAutostart()
+      autostartEnabled.value = false
     }
   } catch (error) {
     console.error('切换自启动状态失败:', error)
-    autostartEnabled.value = !value
   } finally {
     autostartLoading.value = false
   }
 }
 
-// Check autostart status
 async function checkAutostartStatus() {
   try {
     autostartLoading.value = true
@@ -583,13 +586,35 @@ async function checkAutostartStatus() {
   }
 }
 
-// AI Chat Settings
+function toggleCategory(cat: string) {
+  if (!wallpaperSettings.value.selectedCategories) {
+    wallpaperSettings.value.selectedCategories = []
+  }
+  const index = wallpaperSettings.value.selectedCategories.indexOf(cat)
+  if (index > -1) {
+    wallpaperSettings.value.selectedCategories.splice(index, 1)
+  } else {
+    wallpaperSettings.value.selectedCategories.push(cat)
+  }
+  saveWallpaperSettings(wallpaperSettings.value)
+}
+
 const providerList = [
-  { id: 'openai', name: 'OpenAI', icon: mdiOpenid, defaultEndpoint: 'https://api.openai.com/v1' },
-  { id: 'anthropic', name: 'Anthropic', icon: mdiBrain, defaultEndpoint: 'https://api.anthropic.com' },
-  { id: 'google', name: 'Google (Gemini)', icon: mdiGoogle, defaultEndpoint: 'https://generativelanguage.googleapis.com' },
-  { id: 'deepseek', name: 'DeepSeek', icon: mdiChevronRight, defaultEndpoint: 'https://api.deepseek.com' },
+  { id: 'openai', name: 'OpenAI', defaultEndpoint: 'https://api.openai.com/v1' },
+  { id: 'anthropic', name: 'Anthropic', defaultEndpoint: 'https://api.anthropic.com' },
+  { id: 'google', name: 'Google (Gemini)', defaultEndpoint: 'https://generativelanguage.googleapis.com' },
+  { id: 'deepseek', name: 'DeepSeek', defaultEndpoint: 'https://api.deepseek.com' },
 ]
+
+function providerIcon(id: string) {
+  const icons: Record<string, string> = {
+    openai: '○',
+    anthropic: '◎',
+    google: '⊕',
+    deepseek: '▶'
+  }
+  return icons[id] || '○'
+}
 
 const chatSettings = ref({
   temperature: 0.7,
@@ -656,14 +681,12 @@ function saveChatSettings() {
 
 function toggleMcpServer(serverId: string) {
   store.toggleMcpServer(serverId)
-  // Sync local state
   const server = mcpServers.value.find(s => s.id === serverId)
   if (server) {
     server.enabled = !server.enabled
   }
 }
 
-// Load AI Chat settings
 function loadAiChatSettings() {
   chatSettings.value.temperature = store.temperature
   chatSettings.value.maxTokens = store.maxTokens
@@ -671,7 +694,6 @@ function loadAiChatSettings() {
   mcpServers.value = [...store.mcpServers]
 }
 
-// Watch dialog open/close
 watch(dialogModel, (newVal) => {
   if (newVal) {
     loadAiChatSettings()
@@ -682,7 +704,6 @@ watch(dialogModel, (newVal) => {
 onMounted(async () => {
   await checkAutostartStatus()
 
-  // Load wallpaper settings and categories
   const { loadSettings } = useWallpaper()
   await loadSettings()
 
@@ -694,87 +715,465 @@ onMounted(async () => {
     console.error('Failed to load wallpaper categories', e)
   }
 
-  // Load AI Chat store
   store.loadSettings()
 })
 </script>
 
 <style scoped>
-.save-btn {
-  transition: all 0.2s;
+.settings-content {
+  padding: 0 !important;
 }
 
-.save-btn:hover {
-  background: rgba(59, 130, 246, 0.1);
-  transform: scale(1.05);
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 12px 16px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(0, 255, 255, 0.1);
 }
 
-/* AI Chat Settings */
-.chat-settings {
-  padding: 8px 0;
+.tab-button {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #52525b;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab-button:hover {
+  background: rgba(0, 255, 255, 0.05);
+  color: #a1a1aa;
+}
+
+.tab-button.active {
+  background: rgba(0, 255, 255, 0.1);
+  color: #00ffff;
+}
+
+.tab-content {
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .settings-section {
-  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.section-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin: 0 0 4px;
-  color: rgb(var(--v-theme-on-surface));
-}
-
-.section-desc {
-  font-size: 13px;
-  color: rgba(var(--v-theme-on-surface), 0.6);
-  margin: 0 0 16px;
-}
-
-.provider-list {
-  background: rgba(var(--v-theme-surface-variant), 0.3);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.provider-item {
+.setting-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 4px;
   transition: background-color 0.15s ease;
 }
 
+.setting-item:not(.no-hover):hover {
+  background: rgba(0, 255, 255, 0.03);
+}
+
+.setting-icon {
+  width: 24px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.setting-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.setting-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e4e4e7;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+}
+
+.setting-subtitle {
+  font-size: 10px;
+  color: #52525b;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+}
+
+.setting-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setting-action.slider-action {
+  gap: 12px;
+}
+
+.slider-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00ffff;
+  font-family: 'JetBrains Mono', monospace;
+  min-width: 40px;
+  text-align: right;
+}
+
+.divider-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
+  margin: 16px 0;
+}
+
+.my-4 {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0 8px;
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #00ff88;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  letter-spacing: 1px;
+}
+
+.section-desc {
+  font-size: 10px;
+  color: #52525b;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+}
+
+.provider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.provider-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(0, 255, 255, 0.03);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
 .provider-item:hover {
-  background: rgba(var(--v-theme-on-surface), 0.05);
+  background: rgba(0, 255, 255, 0.08);
+  border-color: rgba(0, 255, 255, 0.2);
 }
 
 .provider-item.configured {
-  background: rgba(var(--v-theme-primary), 0.05);
+  background: rgba(0, 255, 136, 0.05);
+  border-color: rgba(0, 255, 136, 0.2);
 }
 
 .provider-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: rgba(var(--v-theme-surface-variant), 0.6);
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgb(var(--v-theme-primary));
+  background: rgba(0, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.provider-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e4e4e7;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 
 .provider-status {
   margin-right: 8px;
 }
 
-.slider-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.status-chip {
+  font-size: 10px;
+  padding: 4px 10px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 4px;
+  color: #52525b;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
 }
 
-.slider-value {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgb(var(--v-theme-primary));
-  min-width: 40px;
+.status-chip.success {
+  border-color: rgba(0, 255, 136, 0.4);
+  color: #00ff88;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  width: 40px;
+  height: 22px;
+  background: rgba(82, 82, 91, 0.5);
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(82, 82, 91, 0.5);
+}
+
+.toggle-switch.active {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: rgba(0, 255, 136, 0.5);
+}
+
+.toggle-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: #52525b;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: all 0.2s ease;
+}
+
+.toggle-switch.active .toggle-handle {
+  background: #00ff88;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  left: 20px;
+}
+
+/* Small input wrapper */
+.input-wrapper.small {
+  padding: 4px 8px;
+}
+
+.input-wrapper.small .console-input {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.text-right {
   text-align: right;
+}
+
+/* Custom scrollbar */
+.tab-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tab-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.tab-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 255, 0.3);
+}
+
+/* =========================================
+   Light Theme Styles (Blue Tech)
+   ========================================= */
+.light-theme .scifi-card {
+  background: linear-gradient(135deg, #E8EEF5 0%, #DDE5EF 100%);
+  border-color: rgba(30, 136, 229, 0.25);
+}
+
+.light-theme .scifi-card::before {
+  background: linear-gradient(90deg, transparent, #1E88E5, transparent);
+}
+
+.light-theme .console-title-bar {
+  background: linear-gradient(180deg, #E8EEF5 0%, #DDE5EF 100%);
+  border-bottom-color: rgba(30, 136, 229, 0.25);
+}
+
+.light-theme .dialog-title {
+  color: #1E88E5;
+  text-shadow: 0 0 10px rgba(30, 136, 229, 0.4);
+}
+
+.light-theme .console-card-text {
+  background: #E8EEF5;
+}
+
+.light-theme .settings-tabs {
+  background: #DDE5EF;
+  border-bottom-color: rgba(30, 136, 229, 0.2);
+}
+
+.light-theme .tab-button {
+  color: #546E7A;
+}
+
+.light-theme .tab-button:hover {
+  color: #1E88E5;
+}
+
+.light-theme .tab-button.active {
+  color: #1E88E5;
+  border-bottom-color: #1E88E5;
+}
+
+.light-theme .tab-text {
+  color: inherit;
+}
+
+.light-theme .setting-item {
+  border-bottom-color: #D0DAE5;
+}
+
+.light-theme .setting-label {
+  color: #1A237E;
+}
+
+.light-theme .setting-subtitle {
+  color: #546E7A;
+}
+
+.light-theme .setting-icon {
+  color: #1E88E5;
+}
+
+.light-theme .console-input {
+  background: #FFFFFF;
+  border-color: #B3E5FC;
+  color: #1A237E;
+}
+
+.light-theme .console-input:focus {
+  border-color: #1E88E5;
+  box-shadow: 0 0 15px rgba(30, 136, 229, 0.25);
+}
+
+.light-theme .console-input::placeholder {
+  color: #78909C;
+}
+
+.light-theme .input-prompt {
+  color: #1E88E5;
+}
+
+.light-theme .console-btn {
+  border-color: #1E88E5;
+  color: #1E88E5;
+  background: transparent;
+}
+
+.light-theme .console-btn:hover {
+  background: rgba(30, 136, 229, 0.12);
+}
+
+.light-theme .console-btn.primary {
+  border-color: #1E88E5;
+  color: #FFFFFF;
+  background: #1E88E5;
+}
+
+.light-theme .console-btn.primary:hover {
+  background: #1565C0;
+}
+
+.light-theme .console-btn.danger {
+  border-color: #E53935;
+  color: #E53935;
+}
+
+.light-theme .console-btn.danger:hover {
+  background: rgba(229, 57, 53, 0.1);
+}
+
+.light-theme .toggle-switch {
+  background: #B3E5FC;
+}
+
+.light-theme .toggle-switch.active {
+  background: #1E88E5;
+}
+
+.light-theme .toggle-switch .toggle-handle {
+  background: #FFFFFF;
+}
+
+.light-theme .console-menu {
+  background: #E8EEF5 !important;
+  border-color: rgba(30, 136, 229, 0.25) !important;
+}
+
+.light-theme .menu-item {
+  color: #546E7A;
+}
+
+.light-theme .menu-item:hover {
+  background: rgba(30, 136, 229, 0.12);
+  color: #1E88E5;
+}
+
+.light-theme .menu-check {
+  color: #43A047;
+}
+
+.light-theme .section-header {
+  border-bottom-color: rgba(30, 136, 229, 0.2);
+}
+
+.light-theme .section-title {
+  color: #1E88E5;
+}
+
+.light-theme .section-desc {
+  color: #546E7A;
+}
+
+.light-theme .provider-item {
+  border-color: #C5D5E3;
+  background: #E8EEF5;
+}
+
+.light-theme .provider-item.configured {
+  border-color: rgba(67, 160, 71, 0.4);
+  background: rgba(67, 160, 71, 0.08);
+}
+
+.light-theme .provider-name {
+  color: #1A237E;
+}
+
+.light-theme .status-chip {
+  background: #C5D5E3;
+  color: #546E7A;
+}
+
+.light-theme .status-chip.success {
+  background: rgba(67, 160, 71, 0.2);
+  color: #00aa66;
+}
+
+.light-theme .divider-line {
+  background: #e4e4e7;
+}
+
+.light-theme .tab-content::-webkit-scrollbar-thumb {
+  background: rgba(8, 145, 178, 0.2);
+}
+
+.light-theme .tab-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(8, 145, 178, 0.3);
 }
 </style>

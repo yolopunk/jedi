@@ -98,6 +98,11 @@ export default {
     // Dialog
     apiKey: 'API Key',
     apiEndpoint: 'API Endpoint (optional)',
+    // Wallpaper settings
+    wpAutoUpdate: 'Auto Update Wallpaper',
+    wpFrequency: 'Update Frequency (days)',
+    wpCategories: 'Wallpaper Categories',
+    wpLastUpdate: 'Last update: {time}',
   },
   update: {
     title: 'New Version Available',
@@ -203,6 +208,7 @@ export default {
     dialog: {
       editTitle: 'Edit Entry',
       addTitle: 'Add Entry',
+      addHostTitle: 'Add Host',
       deleteTitle: 'Confirm Delete',
       addGroupTitle: 'Add Group',
       ipLabel: 'IP Address',
@@ -255,10 +261,10 @@ export default {
     chapters: 'Chapters: ',
     howToExportOpml: 'How to export OPML?',
     exportGuide: 'OPML Export Guide',
-    exportGuideStep1: '1. Tap the [Subscriptions] menu at the bottom',
-    exportGuideStep2: '2. Tap the [My Subscriptions] button at the top right',
-    exportGuideStep3: '3. Tap the share button at the top right',
-    exportGuideStep4: '4. Select podcasts and tap [Export OPML] at the bottom',
+    exportGuideStep1: 'Tap the [Subscriptions] menu at the bottom',
+    exportGuideStep2: 'Tap the [My Subscriptions] button at the top right',
+    exportGuideStep3: 'Tap the share button at the top right',
+    exportGuideStep4: 'Select podcasts and tap [Export OPML] at the bottom',
   },
   common: {
     confirm: 'Confirm',

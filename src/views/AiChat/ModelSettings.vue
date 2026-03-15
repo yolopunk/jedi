@@ -334,13 +334,14 @@ watch(() => props.settings, (newSettings) => {
 // Provider helpers
 function getProviderIcon(type: string): string {
   const icons: Record<string, string> = {
-    openai: 'mdi-robot',
+    openai: 'mdi-openai',
     anthropic: 'mdi-brain',
     google: 'mdi-google',
     azure: 'mdi-microsoft-azure',
-    ollama: 'mdi-llama',
-    openrouter: 'mdi-router-wireless',
-    custom: 'mdi-api',
+    ollama: 'mdi-robot',
+    openrouter: 'mdi-transit-connection',
+    deepseek: 'mdi-chip',
+    custom: 'mdi-tune',
   }
   return icons[type] || 'mdi-cloud'
 }

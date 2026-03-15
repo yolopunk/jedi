@@ -559,7 +559,7 @@ body {
 }
 
 .console-input::placeholder {
-  color: #333;
+  color: #666;
 }
 
 /* Terminal Text Colors */

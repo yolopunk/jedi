@@ -98,6 +98,11 @@ export default {
     // Dialog
     apiKey: 'API Key',
     apiEndpoint: 'API Endpoint (可选)',
+    // Wallpaper settings
+    wpAutoUpdate: '自动更新壁纸',
+    wpFrequency: '更新频率 (天)',
+    wpCategories: '壁纸分类',
+    wpLastUpdate: '上次更新: {time}',
   },
   chat: {
     title: '对话',
@@ -192,6 +197,7 @@ export default {
     dialog: {
       editTitle: '编辑条目',
       addTitle: '新增条目',
+      addHostTitle: '添加条目',
       renameGroupTitle: '重命名分组',
       deleteTitle: '确认删除',
       addGroupTitle: '添加分组',
@@ -247,10 +253,10 @@ export default {
     chapters: '章节：',
     howToExportOpml: '如何导出 OPML？',
     exportGuide: 'OPML 导出指南',
-    exportGuideStep1: '1. 点击app 底部菜单栏【订阅】菜单',
-    exportGuideStep2: '2. 点击右上角【我的订阅】按钮',
-    exportGuideStep3: '3. 点击【我的订阅】页面右上角的分享按钮',
-    exportGuideStep4: '4. 选择要订阅的播客，然后点击底部的【导出OPML】按钮',
+    exportGuideStep1: '点击app 底部菜单栏【订阅】菜单',
+    exportGuideStep2: '点击右上角【我的订阅】按钮',
+    exportGuideStep3: '点击【我的订阅】页面右上角的分享按钮',
+    exportGuideStep4: '选择要订阅的播客，然后点击底部的【导出OPML】按钮',
   },
   common: {
     confirm: '确认',

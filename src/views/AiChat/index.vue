@@ -6,11 +6,11 @@
     <div class="crt-vignette"></div>
 
     <div class="chat-console-layout">
-      <!-- 左侧：MCP 技能面板 -->
+      <!-- 左侧：Skills 面板 -->
       <div class="mcp-panel">
         <div class="panel-header">
-          <span class="panel-title">// MCP SKILLS</span>
-          <span class="panel-status online">ONLINE</span>
+          <span class="panel-title">// SKILLS</span>
+          <span class="panel-status online">READY</span>
         </div>
         <div class="mcp-skills-list">
           <div
@@ -26,7 +26,7 @@
           </div>
         </div>
         <div class="panel-footer">
-          <span class="footer-text">SYSTEM READY</span>
+          <span class="footer-text">TYPE /SKILL FOR HELP</span>
         </div>
       </div>
 
@@ -289,14 +289,15 @@ const inputRef = ref<HTMLTextAreaElement | null>(null)
 const showScrollButton = ref(false)
 const activeSkill = ref<string | null>(null)
 
-// MCP Skills
+// Skills - Teach procedures that can be invoked in chat
+// These are like "recipes" that Claude can follow when activated
 const mcpSkills = ref([
-  { id: 'hosts', name: 'HOSTS_MGR', enabled: true, hotkey: 'F1' },
-  { id: 'wallpaper', name: 'WALLPAPER', enabled: false, hotkey: 'F2' },
-  { id: 'podcast', name: 'PODCAST', enabled: true, hotkey: 'F3' },
-  { id: 'browser', name: 'BROWSER', enabled: false, hotkey: 'F4' },
-  { id: 'terminal', name: 'TERMINAL', enabled: true, hotkey: 'F5' },
-  { id: 'filesystem', name: 'FILE_SYS', enabled: true, hotkey: 'F6' },
+  { id: 'terminal', name: 'TERMINAL', enabled: true, hotkey: 'F1', desc: 'Execute system commands' },
+  { id: 'filesystem', name: 'FILE_SYS', enabled: true, hotkey: 'F2', desc: 'Read/write files' },
+  { id: 'hosts', name: 'HOSTS_MGR', enabled: true, hotkey: 'F3', desc: 'Manage hosts file' },
+  { id: 'podcast', name: 'PODCAST', enabled: true, hotkey: 'F4', desc: 'Manage podcasts' },
+  { id: 'wallpaper', name: 'WALLPAPER', enabled: false, hotkey: 'F5', desc: 'Change wallpapers' },
+  { id: 'browser', name: 'BROWSER', enabled: false, hotkey: 'F6', desc: 'Web browsing' },
 ])
 
 // Boot sequence

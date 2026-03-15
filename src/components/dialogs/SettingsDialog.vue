@@ -604,6 +604,8 @@ const providerList = [
   { id: 'anthropic', name: 'Anthropic', defaultEndpoint: 'https://api.anthropic.com' },
   { id: 'google', name: 'Google (Gemini)', defaultEndpoint: 'https://generativelanguage.googleapis.com' },
   { id: 'deepseek', name: 'DeepSeek', defaultEndpoint: 'https://api.deepseek.com' },
+  { id: 'openrouter', name: 'OpenRouter', defaultEndpoint: 'https://openrouter.ai/api/v1' },
+  { id: 'custom', name: 'Custom', defaultEndpoint: '' },
 ]
 
 function providerIcon(id: string) {
@@ -611,7 +613,9 @@ function providerIcon(id: string) {
     openai: '○',
     anthropic: '◎',
     google: '⊕',
-    deepseek: '▶'
+    deepseek: '▶',
+    openrouter: '◎',
+    custom: '◈'
   }
   return icons[id] || '○'
 }

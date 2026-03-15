@@ -224,8 +224,15 @@ onMounted(async () => {
 
   // Check initial fullscreen state and listen for changes
   await checkFullscreen()
-  await appWindow.onResized(() => {
-    checkFullscreen()
+  
+  let fullscreenTimeout: number | null = null
+  appWindow.onResized(() => {
+    if (fullscreenTimeout) {
+      clearTimeout(fullscreenTimeout)
+    }
+    fullscreenTimeout = window.setTimeout(() => {
+      checkFullscreen()
+    }, 100)
   })
 })
 </script>

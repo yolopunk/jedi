@@ -341,6 +341,9 @@
 
         <!-- Header Area -->
         <div class="notes-header flex-shrink-0 position-relative" style="z-index: 10;">
+          <!-- Background SHOW NOTES text -->
+          <div class="show-notes-bg-text">SHOW NOTES</div>
+          
           <div class="d-flex align-end px-6 pt-12 pb-4 notes-header-content">
             <div class="notes-cover mr-4 flex-shrink-0">
               <v-img
@@ -1495,10 +1498,23 @@ function setupEpisodesObserver() {
   border-bottom: 1px solid rgba(0, 255, 255, 0.15);
 }
 
+.show-notes-bg-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 120px;
+  font-weight: 900;
+  color: rgba(0, 255, 255, 0.03);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 0;
+  letter-spacing: 8px;
+}
+
 .notes-header-content {
-  max-width: 960px;
-  margin: 0 auto;
-  width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .notes-cover {

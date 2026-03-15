@@ -3,9 +3,10 @@
         class="app-header"
         data-tauri-drag-region
         @dblclick="handleDoubleClick"
+        @click="handleClick"
     >
         <!-- Status Lights -->
-        <div class="status-indicators" data-tauri-no-drag>
+        <div class="status-indicators" data-tauri-no-drag @click.stop>
             <div
                 class="status-light online"
                 :title="$t('header.systemOnline')"
@@ -293,6 +294,14 @@ function handleDoubleClick() {
     toggleMaximize();
 }
 
+function handleClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (target.closest('[data-tauri-no-drag]')) {
+        return;
+    }
+    toggleMaximize();
+}
+
 async function checkMaximized() {
     isMaximized.value = await appWindow.isMaximized();
 }
@@ -302,11 +311,22 @@ function checkPlatform() {
     isMacOS.value = ua.includes("mac") || ua.includes("darwin");
 }
 
+let resizeTimeout: number | null = null;
+
+function debouncedCheckMaximized() {
+    if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+    }
+    resizeTimeout = window.setTimeout(() => {
+        checkMaximized();
+    }, 100);
+}
+
 onMounted(async () => {
     checkPlatform();
     await checkMaximized();
     unlistenResize = await appWindow.onResized(() => {
-        checkMaximized();
+        debouncedCheckMaximized();
     });
 });
 

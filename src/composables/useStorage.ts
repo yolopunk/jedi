@@ -59,26 +59,8 @@ export function useStorage() {
     }
   }
 
-  // 删除存储项
-  const removeItem = async (key: string): Promise<void> => {
-    try {
-      const s = await initStore()
-      if (s) {
-        // 使用Tauri存储
-        await s.delete(key)
-        await s.save()
-      } else {
-        // 降级使用localStorage
-        localStorage.removeItem(key)
-      }
-    } catch (error) {
-      console.error(`删除存储项 ${key} 失败:`, error)
-    }
-  }
-
   return {
     getItem,
-    setItem,
-    removeItem
+    setItem
   }
 }

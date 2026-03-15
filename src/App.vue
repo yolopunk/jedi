@@ -14,7 +14,6 @@
         <!-- Sidebar -->
         <app-sidebar
           :collapsed="sidebarCollapsed"
-          @update:width="onSidebarWidthUpdate"
           @open-github="openGithubRepo"
           @open-website="openProjectWebsite"
           @open-email="sendEmail"
@@ -116,7 +115,6 @@ const platformClass = ref('')
 
 // Sidebar state
 const sidebarCollapsed = ref(false)
-const sidebarWidth = ref(260)
 
 // Fullscreen state
 const isFullscreen = ref(false)
@@ -161,11 +159,6 @@ const initLanguage = async () => {
 // Toggle sidebar
 const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
-}
-
-// Sidebar width update
-const onSidebarWidthUpdate = (width: number) => {
-  sidebarWidth.value = width
 }
 
 // Open GitHub repo

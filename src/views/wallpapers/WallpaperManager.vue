@@ -272,12 +272,13 @@
     <v-snackbar
       v-model="snackbar.show"
       :color="snackbar.color"
+      :scrim="false"
       timeout="3000"
       location="top"
       class="console-snackbar"
     >
       <div class="snackbar-content">
-        <span class="snackbar-icon">{{ snackbar.color === 'success' ? '✓' : '!' }}</span>
+        <span class="snackbar-icon">{{ getSnackbarIcon }}</span>
         <span class="snackbar-text">{{ snackbar.text }}</span>
       </div>
     </v-snackbar>
@@ -321,6 +322,19 @@ const snackbar = ref({
   show: false,
   text: '',
   color: 'success'
+})
+
+const getSnackbarIcon = computed(() => {
+  switch (snackbar.value.color) {
+    case 'success':
+      return '✓'
+    case 'error':
+      return '✕'
+    case 'warning':
+      return '!'
+    default:
+      return '›'
+  }
 })
 
 const modeOptions = computed(() => [

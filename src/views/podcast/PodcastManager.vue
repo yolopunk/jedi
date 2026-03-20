@@ -396,12 +396,13 @@
     <v-snackbar
       v-model="snackbar"
       :color="snackbarColor"
+      :scrim="false"
       timeout="3000"
       location="top"
       class="console-snackbar"
     >
       <div class="snackbar-content">
-        <span class="snackbar-icon">{{ snackbarColor === 'success' ? '✓' : '!' }}</span>
+        <span class="snackbar-icon">{{ getSnackbarIcon }}</span>
         <span class="snackbar-text">{{ snackbarText }}</span>
       </div>
     </v-snackbar>
@@ -466,6 +467,19 @@ const opmlError = ref('');
 const snackbar = ref(false);
 const snackbarText = ref('');
 const snackbarColor = ref<'success' | 'error' | 'info' | 'warning'>('error');
+
+const getSnackbarIcon = computed(() => {
+  switch (snackbarColor.value) {
+    case 'success':
+      return '✓'
+    case 'error':
+      return '✕'
+    case 'warning':
+      return '!'
+    default:
+      return '›'
+  }
+});
 
 onMounted(async () => {
   loading.value = true;
@@ -1500,8 +1514,8 @@ function setupEpisodesObserver() {
 
 .show-notes-bg-text {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 65%;
+  left: 65%;
   transform: translate(-50%, -50%);
   font-size: 120px;
   font-weight: 900;

@@ -24,15 +24,15 @@ export const vuetify = createVuetify({
       light: {
         dark: false,
         colors: {
-          background: '#ffffff',
-          surface: '#f4f4f5',
-          primary: '#0088aa',      // Sci-Fi Cyan (light)
-          secondary: '#008844',    // Sci-Fi Green (light)
-          accent: '#aa00aa',       // Sci-Fi Magenta (light)
-          error: '#cc0000',
-          info: '#0088aa',
-          success: '#008844',
-          warning: '#aa6600',
+          background: '#f5e6d3',      // Warm sand
+          surface: '#efe0cc',         // Light sand
+          primary: '#cd7f32',         // Copper
+          secondary: '#6b4423',       // Sandstone brown
+          accent: '#daa520',          // Dark gold
+          error: '#b22222',           // Firebrick red
+          info: '#b8860b',            // Dark goldenrod
+          success: '#daa520',         // Dark gold
+          warning: '#cd853f',         // Peru
         }
       },
       dark: {

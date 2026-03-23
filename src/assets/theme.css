@@ -93,88 +93,88 @@
 }
 
 /* =========================================
-   Light Theme (Blue Tech - Modern Sci-Fi)
+   Light Theme (TATOOINE OUTPOST - Sand & Metal)
    ========================================= */
 .light-theme {
-  /* Backgrounds */
-  --jedi-bg-app: #F5F7FA;
-  --jedi-bg-surface: #E8EEF5;
-  --jedi-bg-surface-hover: #DDE5EF;
-  --jedi-bg-sidebar: #E8EEF5;
-  --jedi-bg-input: #FFFFFF;
+  /* Backgrounds - Warm Sand Gradient */
+  --jedi-bg-app: #f5e6d3;
+  --jedi-bg-surface: #efe0cc;
+  --jedi-bg-surface-hover: #e8d4bc;
+  --jedi-bg-sidebar: #e8d4bc;
+  --jedi-bg-input: #faf3e8;
 
-  /* Borders */
-  --jedi-border: #B3E5FC;
-  --jedi-border-focus: #1E88E5;
+  /* Borders - Brass */
+  --jedi-border: #b8860b;
+  --jedi-border-focus: #cd7f32;
 
-  /* Text */
-  --jedi-text-primary: #1A237E;
-  --jedi-text-secondary: #546E7A;
-  --jedi-text-tertiary: #78909C;
-  --jedi-text-inverse: #FFFFFF;
+  /* Text - Sandstone Browns */
+  --jedi-text-primary: #3d2914;
+  --jedi-text-secondary: #6b4423;
+  --jedi-text-tertiary: #9a7b5a;
+  --jedi-text-inverse: #ffffff;
 
-  /* Functional - Blue Tech */
-  --jedi-primary: #1E88E5;
-  --jedi-primary-hover: #1565C0;
-  --jedi-accent: #00ACC1;
-  --jedi-success: #43A047;
-  --jedi-warning: #FB8C00;
-  --jedi-danger: #E53935;
+  /* Functional - Metal Tones */
+  --jedi-primary: #cd7f32;
+  --jedi-primary-hover: #e6be8a;
+  --jedi-accent: #daa520;
+  --jedi-success: #daa520;
+  --jedi-warning: #cd853f;
+  --jedi-danger: #b22222;
 
   /* Syntax */
-  --jedi-syntax-ip: #7B1FA2;
-  --jedi-syntax-domain: #00897B;
+  --jedi-syntax-ip: #cd7f32;
+  --jedi-syntax-domain: #b8860b;
 
-  /* Sci-Fi Console (Blue Tech) */
-  --scifi-bg: #E8EEF5;
-  --scifi-bg-terminal: #DDE5EF;
-  --scifi-cyan: #00ACC1;
-  --scifi-green: #43A047;
-  --scifi-magenta: #8E24AA;
-  --scifi-amber: #FB8C00;
-  --scifi-red: #E53935;
-  --scifi-border: #B3E5FC;
+  /* Sci-Fi Console (Tatooine Version) */
+  --scifi-bg: #f5e6d3;
+  --scifi-bg-terminal: #faf3e8;
+  --scifi-cyan: #b8860b;
+  --scifi-green: #daa520;
+  --scifi-magenta: #cd7f32;
+  --scifi-amber: #cd853f;
+  --scifi-red: #b22222;
+  --scifi-border: #b8860b;
 
-  /* Shadows */
-  --jedi-shadow-sm: 0 1px 3px rgba(30, 136, 229, 0.1);
-  --jedi-shadow-md: 0 4px 8px rgba(30, 136, 229, 0.15);
+  /* Shadows - Metal Glow (No Neon) */
+  --jedi-shadow-sm: 0 2px 4px rgba(184, 134, 11, 0.1);
+  --jedi-shadow-md: 0 2px 8px rgba(184, 134, 11, 0.2);
 
-  /* Glow effects */
-  --glow-border: rgba(30, 136, 229, 0.25);
-  --glow-text: rgba(30, 136, 229, 0.5);
-  --glow-hover: rgba(30, 136, 229, 0.12);
+  /* Glow effects - SUBTLE METAL ONLY */
+  --glow-border: rgba(205, 127, 50, 0.15);
+  --glow-text: rgba(184, 134, 11, 0.3);
+  --glow-hover: rgba(205, 127, 50, 0.08);
 
-  /* Vuetify Theme Variables */
-  --v-theme-background: 245, 247, 250;
-  --v-theme-surface: 232, 238, 245;
-  --v-theme-surface-light: 255, 255, 255;
-  --v-theme-surface-dark: 221, 229, 239;
-  --v-theme-primary: 30, 136, 229;
-  --v-theme-primary-light: 100, 181, 246;
-  --v-theme-primary-dark: 21, 101, 192;
-  --v-theme-secondary: 84, 110, 122;
-  --v-theme-secondary-light: 120, 144, 156;
-  --v-theme-secondary-dark: 55, 71, 83;
-  --v-theme-error: 229, 57, 53;
-  --v-theme-error-light: 239, 154, 154;
-  --v-theme-error-dark: 211, 47, 47;
-  --v-theme-info: 30, 136, 229;
-  --v-theme-info-light: 100, 181, 246;
-  --v-theme-info-dark: 21, 101, 192;
-  --v-theme-success: 67, 160, 71;
-  --v-theme-success-light: 129, 199, 132;
-  --v-theme-success-dark: 56, 142, 60;
-  --v-theme-warning: 251, 140, 0;
-  --v-theme-warning-light: 255, 183, 77;
-  --v-theme-warning-dark: 245, 124, 0;
-  --v-theme-on-background: 26, 35, 126;
-  --v-theme-on-surface: 26, 35, 126;
+  /* Vuetify Theme Variables (RGB channels) */
+  --v-theme-background: 245, 230, 211;
+  --v-theme-surface: 239, 224, 204;
+  --v-theme-surface-light: 232, 212, 188;
+  --v-theme-surface-dark: 250, 243, 232;
+  --v-theme-primary: 205, 127, 50;
+  --v-theme-primary-light: 230, 190, 138;
+  --v-theme-primary-dark: 184, 134, 11;
+  --v-theme-secondary: 107, 68, 35;
+  --v-theme-secondary-light: 154, 123, 90;
+  --v-theme-secondary-dark: 61, 41, 20;
+  --v-theme-error: 178, 34, 34;
+  --v-theme-error-light: 205, 68, 68;
+  --v-theme-error-dark: 139, 0, 0;
+  --v-theme-info: 184, 134, 11;
+  --v-theme-info-light: 218, 165, 32;
+  --v-theme-info-dark: 139, 105, 20;
+  --v-theme-success: 218, 165, 32;
+  --v-theme-success-light: 230, 190, 138;
+  --v-theme-success-dark: 139, 105, 20;
+  --v-theme-warning: 205, 133, 63;
+  --v-theme-warning-light: 222, 170, 120;
+  --v-theme-warning-dark: 139, 90, 43;
+  --v-theme-on-background: 61, 41, 20;
+  --v-theme-on-surface: 61, 41, 20;
   --v-theme-on-primary: 255, 255, 255;
   --v-theme-on-secondary: 255, 255, 255;
   --v-theme-on-error: 255, 255, 255;
-  --v-theme-on-info: 255, 255, 255;
-  --v-theme-on-success: 255, 255, 255;
-  --v-theme-on-warning: 255, 255, 255;
+  --v-theme-on-info: 61, 41, 20;
+  --v-theme-on-success: 61, 41, 20;
+  --v-theme-on-warning: 61, 41, 20;
 }
 
 /* =========================================
@@ -345,13 +345,34 @@ body {
   box-shadow: 0 0 12px rgba(96, 165, 250, 0.5);
 }
 
-/* 浅色主题 - 蓝色科技风发光效果 */
+/* 浅色主题 - NEON DAYLIGHT 发光效果 */
 .light-theme .glow-saber {
-  box-shadow: 0 0 10px rgba(30, 136, 229, 0.35);
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.4), 0 0 30px rgba(255, 0, 255, 0.2);
 }
 
 .light-theme .glow-hover:hover {
-  box-shadow: 0 0 15px rgba(30, 136, 229, 0.45);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5), 0 0 40px rgba(0, 255, 255, 0.25);
+}
+
+/* 浅色主题 - 霓虹发光文本 */
+.light-theme .neon-glow-cyan {
+  text-shadow: 0 0 10px rgba(0, 204, 204, 0.8), 0 0 20px rgba(0, 204, 204, 0.4);
+}
+
+.light-theme .neon-glow-green {
+  text-shadow: 0 0 10px rgba(0, 170, 0, 0.8), 0 0 20px rgba(0, 170, 0, 0.4);
+}
+
+.light-theme .neon-glow-magenta {
+  text-shadow: 0 0 10px rgba(204, 0, 204, 0.8), 0 0 20px rgba(204, 0, 204, 0.4);
+}
+
+.light-theme .neon-box-cyan {
+  box-shadow: 0 0 12px rgba(0, 204, 204, 0.4), 0 0 24px rgba(0, 204, 204, 0.2);
+}
+
+.light-theme .neon-box-green {
+  box-shadow: 0 0 12px rgba(0, 170, 0, 0.4), 0 0 24px rgba(0, 170, 0, 0.2);
 }
 
 /* 焦点指示器 - 无障碍 */
@@ -416,6 +437,13 @@ body {
   z-index: 0;
 }
 
+/* Light Theme Grid - NEON RAINBOW Grid */
+.light-theme .grid-bg::before {
+  background-image:
+    linear-gradient(rgba(255, 0, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+}
+
 /* Terminal Font */
 .terminal-font {
   font-family: var(--jedi-font-mono);
@@ -452,6 +480,24 @@ body {
   font-family: var(--jedi-font-mono);
 }
 
+/* Light Theme Console - NEON DAYLIGHT Terminal */
+.light-theme .console-container {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f8ff 50%, #ffffff 100%);
+  border: 2px solid #ff00ff;
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.3), 0 0 40px rgba(0, 255, 255, 0.15);
+}
+
+.light-theme .console-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #ff00ff, #00ffff, #00ff00, transparent);
+  opacity: 0.8;
+}
+
 /* Status Light */
 .status-light {
   width: 8px;
@@ -475,6 +521,22 @@ body {
 .status-light.offline {
   background: #ff4444;
   box-shadow: 0 0 10px #ff4444, 0 0 20px rgba(255, 68, 68, 0.33);
+}
+
+/* Light Theme Status Lights - NEON */
+.light-theme .status-light.online {
+  background: #00ff00;
+  box-shadow: 0 0 12px #00ff00, 0 0 24px rgba(0, 255, 0, 0.4);
+}
+
+.light-theme .status-light.standby {
+  background: #ff8800;
+  box-shadow: 0 0 12px #ff8800, 0 0 24px rgba(255, 136, 0, 0.4);
+}
+
+.light-theme .status-light.offline {
+  background: #ff0044;
+  box-shadow: 0 0 12px #ff0044, 0 0 24px rgba(255, 0, 68, 0.4);
 }
 
 @keyframes pulse-online {
@@ -540,6 +602,37 @@ body {
   box-shadow: 0 0 15px rgba(255, 68, 68, 0.27), inset 0 0 15px rgba(255, 68, 68, 0.07);
 }
 
+/* Light Theme Console Buttons - NEON */
+.light-theme .console-btn {
+  border-color: #00ff00;
+  color: #00aa00;
+}
+
+.light-theme .console-btn:hover {
+  background: rgba(0, 255, 0, 0.1);
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.4), inset 0 0 20px rgba(0, 255, 0, 0.1);
+}
+
+.light-theme .console-btn.primary {
+  border-color: #ff00ff;
+  color: #cc00cc;
+}
+
+.light-theme .console-btn.primary:hover {
+  background: rgba(255, 0, 255, 0.1);
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.4), inset 0 0 20px rgba(255, 0, 255, 0.1);
+}
+
+.light-theme .console-btn.danger {
+  border-color: #ff0044;
+  color: #cc0044;
+}
+
+.light-theme .console-btn.danger:hover {
+  background: rgba(255, 0, 68, 0.1);
+  box-shadow: 0 0 20px rgba(255, 0, 68, 0.4), inset 0 0 20px rgba(255, 0, 68, 0.1);
+}
+
 /* Console Input */
 .console-input {
   background: rgba(5, 5, 8, 0.9);
@@ -560,6 +653,22 @@ body {
 
 .console-input::placeholder {
   color: #666;
+}
+
+/* Light Theme Console Input - NEON */
+.light-theme .console-input {
+  background: #ffffff;
+  border: 2px solid #00ffff;
+  color: #000000;
+}
+
+.light-theme .console-input:focus {
+  border-color: #ff00ff;
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.4), inset 0 0 0 2px rgba(255, 0, 255, 0.2);
+}
+
+.light-theme .console-input::placeholder {
+  color: #9900ff;
 }
 
 /* Terminal Text Colors */
@@ -598,6 +707,23 @@ body {
   height: 2px;
   background: linear-gradient(90deg, transparent, #00ffff, transparent);
   opacity: 0.5;
+}
+
+/* Light Theme Sci-Fi Card - NEON DAYLIGHT */
+.light-theme .scifi-page {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f8ff 50%, #ffffff 100%);
+}
+
+.light-theme .scifi-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 248, 255, 0.95) 100%);
+  border: 2px solid #ff00ff;
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.25);
+}
+
+.light-theme .scifi-card::before {
+  background: linear-gradient(90deg, transparent, #ff00ff, #00ffff, #00ff00, transparent);
+  opacity: 0.8;
+  height: 3px;
 }
 
 /* Scrollbar for Console */
@@ -751,4 +877,101 @@ body {
   color: #71717a;
   margin-bottom: 16px;
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+}
+
+/* =========================================
+   Light Theme (NEON DAYLIGHT) - Component Styles
+   ========================================= */
+
+/* Light Theme Console Scrollbar */
+.light-theme .console-scroll::-webkit-scrollbar-track {
+  background: #f8f8ff;
+}
+
+.light-theme .console-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 0, 255, 0.4);
+}
+
+.light-theme .console-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 0, 255, 0.6);
+}
+
+/* Light Theme Header/Footer Bars */
+.light-theme .console-header-bar {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f8ff 100%);
+  border-bottom: 2px solid #ff00ff;
+}
+
+.light-theme .console-footer-bar {
+  background: linear-gradient(180deg, #f8f8ff 0%, #ffffff 100%);
+  border-top: 2px solid #00ffff;
+}
+
+/* Light Theme Console Title Bar */
+.light-theme .console-title-bar {
+  background: linear-gradient(180deg, #ffffff 0%, #f8f8ff 100%);
+  border-bottom: 2px solid #ff00ff;
+}
+
+.light-theme .dialog-title {
+  color: #cc00cc;
+  text-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
+}
+
+/* Light Theme Console Card Text & Actions */
+.light-theme .console-card-text {
+  background: #ffffff;
+}
+
+.light-theme .console-card-actions {
+  background: linear-gradient(0deg, #f8f8ff 0%, #ffffff 100%);
+  border-top: 2px solid #00ffff;
+}
+
+/* Light Theme Input Wrapper */
+.light-theme .input-wrapper {
+  background: #ffffff;
+  border: 2px solid #00ffff;
+}
+
+.light-theme .input-prompt {
+  color: #00cccc;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+}
+
+/* Light Theme Console Menu */
+.light-theme .console-menu {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 2px solid #ff00ff !important;
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.3) !important;
+}
+
+.light-theme .menu-item {
+  color: #000000;
+}
+
+.light-theme .menu-item:hover {
+  background: rgba(255, 0, 255, 0.1);
+  color: #cc00cc;
+}
+
+.light-theme .menu-item.active {
+  background: rgba(0, 255, 255, 0.15);
+  color: #00cccc;
+}
+
+.light-theme .menu-check {
+  color: #00ff00;
+}
+
+.light-theme .menu-divider {
+  background: rgba(255, 0, 255, 0.3);
+}
+
+.light-theme .menu-header {
+  color: #9900ff;
+}
+
+.light-theme .dialog-instruction {
+  color: #660099;
 }

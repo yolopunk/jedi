@@ -573,58 +573,58 @@ onUnmounted(() => {
 }
 
 /* =========================================
-   Light Theme Styles (Blue Tech)
+   Light Theme Styles (Tatooine Outpost)
    ========================================= */
 .light-theme .app-header {
-    background: linear-gradient(180deg, #e8eef5 0%, #dde5ef 100%);
-    border-bottom-color: rgba(30, 136, 229, 0.25);
+    background: linear-gradient(180deg, #f5e6d3 0%, #efe0cc 100%);
+    border-bottom-color: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .status-light.online {
-    background: #43a047;
-    box-shadow: 0 0 10px rgba(67, 160, 71, 0.5);
+    background: #daa520;
+    box-shadow: 0 0 8px rgba(218, 165, 32, 0.4);
 }
 
 .light-theme .status-light.standby {
-    background: #fb8c00;
-    box-shadow: 0 0 10px rgba(251, 140, 0, 0.5);
+    background: #cd853f;
+    box-shadow: 0 0 8px rgba(205, 133, 63, 0.4);
 }
 
 .light-theme .status-light.scanning {
-    background: #1e88e5;
-    box-shadow: 0 0 10px rgba(30, 136, 229, 0.5);
+    background: #cd7f32;
+    box-shadow: 0 0 8px rgba(205, 127, 50, 0.4);
 }
 
 .light-theme .traffic-light {
-    color: #546e7a;
+    color: #6b4423;
 }
 
 .light-theme .window-btn .v-icon {
-    color: #607d8b;
+    color: #8b7355;
 }
 
 .light-theme .window-btn:hover {
-    background: rgba(30, 136, 229, 0.12);
+    background: rgba(205, 127, 50, 0.15);
 }
 
 .light-theme .window-btn:hover .v-icon {
-    color: #1e88e5;
+    color: #cd7f32;
 }
 
 .light-theme .mini-player {
-    background: rgba(30, 136, 229, 0.12);
-    border-color: rgba(30, 136, 229, 0.25);
+    background: rgba(184, 134, 11, 0.15);
+    border-color: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .control-btn {
-    color: #607d8b;
+    color: #8b7355;
 }
 
 .light-theme .control-btn:hover {
-    color: #1e88e5;
+    color: #cd7f32;
 }
 
 .light-theme .divider-vertical {
-    background: #b3e5fc;
+    background: #d4a574;
 }
 </style>

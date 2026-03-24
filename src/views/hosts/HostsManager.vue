@@ -369,4 +369,118 @@ onMounted(async () => {
 .btn-text {
   letter-spacing: 1px;
 }
+
+/* =========================================
+   Light Theme Styles (Tatooine Outpost)
+   ========================================= */
+.light-theme .scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(107, 68, 35, 0.03),
+    rgba(107, 68, 35, 0.03) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+.light-theme .crt-vignette {
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(107, 68, 35, 0.1) 100%);
+}
+
+.light-theme .console-title-bar {
+  background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
+  border-bottom: 1px solid #b8860b;
+}
+
+.light-theme .dialog-title {
+  color: #cd7f32;
+  text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .console-card-text {
+  background: #faf3e8;
+}
+
+.light-theme .input-wrapper {
+  background: #faf3e8;
+  border: 1px solid #b8860b;
+}
+
+.light-theme .input-prompt {
+  color: #cd7f32;
+  text-shadow: 0 0 6px rgba(205, 127, 50, 0.25);
+}
+
+.light-theme .console-input {
+  color: #3d2914;
+}
+
+.light-theme .console-input::placeholder {
+  color: #8b7355;
+}
+
+.light-theme .console-card-actions {
+  background: linear-gradient(0deg, #e8d4bc 0%, #efe0cc 100%);
+  border-top: 1px solid #b8860b;
+}
+
+.light-theme .console-btn {
+  border-color: #cd7f32;
+  color: #cd7f32;
+}
+
+.light-theme .console-btn:hover {
+  background: rgba(205, 127, 50, 0.1);
+  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.25);
+}
+
+.light-theme .console-btn.primary {
+  border-color: #cd7f32;
+  color: #cd7f32;
+}
+
+.light-theme .console-btn.primary:hover {
+  background: rgba(205, 127, 50, 0.1);
+  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
+}
+
+/* Tatooine Texture Enhancements */
+.light-theme .hosts-container {
+  background: 
+    linear-gradient(180deg, rgba(245, 230, 211, 0.95) 0%, rgba(239, 224, 204, 0.98) 100%),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 20px,
+      rgba(184, 134, 11, 0.015) 20px,
+      rgba(184, 134, 11, 0.015) 40px
+    );
+}
+
+.light-theme .content-wrapper {
+  background: transparent;
+}
+
+.light-theme .scifi-card {
+  background: linear-gradient(135deg, #efe0cc 0%, #e8d4bc 100%);
+  border-color: #b8860b;
+  box-shadow: 
+    0 4px 20px rgba(107, 68, 35, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.light-theme .console-title-bar {
+  background: linear-gradient(180deg, #e8d4bc 0%, #dcc8a8 100%);
+  border-bottom-color: #b8860b;
+}
+
+.light-theme .console-card-text {
+  background: #faf3e8;
+  border-top: none;
+}
+
+.light-theme .console-card-actions {
+  background: linear-gradient(0deg, #dcc8a8 0%, #e8d4bc 100%);
+  border-top-color: #b8860b;
+}
 </style>

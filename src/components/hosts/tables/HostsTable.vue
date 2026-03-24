@@ -375,11 +375,11 @@ onUnmounted(() => {
     right: 0;
     bottom: 0;
     pointer-events: none;
-    z-index: 10;
+    z-index: 100;
     background: repeating-linear-gradient(
         0deg,
-        rgba(0, 0, 0, 0.15),
-        rgba(0, 0, 0, 0.15) 1px,
+        rgba(0, 0, 0, 0.12),
+        rgba(0, 0, 0, 0.12) 1px,
         transparent 1px,
         transparent 2px
     );
@@ -392,11 +392,11 @@ onUnmounted(() => {
     right: 0;
     bottom: 0;
     pointer-events: none;
-    z-index: 11;
+    z-index: 99;
     background: radial-gradient(
         ellipse at center,
         transparent 0%,
-        rgba(0, 0, 0, 0.4) 100%
+        rgba(0, 0, 0, 0.35) 100%
     );
 }
 
@@ -1114,17 +1114,56 @@ onUnmounted(() => {
 }
 
 /* =========================================
-   Light Theme Styles (Blue Tech)
+   Light Theme Styles (Tatooine Outpost)
    ========================================= */
 .light-theme .hosts-console-container {
-    background: #E8EEF5;
+    background: 
+        linear-gradient(135deg, rgba(245, 230, 211, 0.9) 0%, rgba(239, 224, 204, 0.95) 50%, rgba(232, 212, 188, 0.9) 100%),
+        repeating-linear-gradient(
+            45deg,
+            transparent,
+            transparent 10px,
+            rgba(184, 134, 11, 0.02) 10px,
+            rgba(184, 134, 11, 0.02) 20px
+        );
+    border: 1px solid #b8860b;
+    box-shadow: 
+        inset 0 0 100px rgba(184, 134, 11, 0.05),
+        0 4px 20px rgba(107, 68, 35, 0.15);
+}
+
+.light-theme .console-toolbar {
+    background: #e8d4bc;
+    border-bottom-color: rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .input-wrapper {
+    background: #faf3e8;
+    border-color: #b8860b;
+}
+
+.light-theme .input-prompt {
+    color: #cd7f32;
+    text-shadow: 0 0 6px rgba(205, 127, 50, 0.25);
+}
+
+.light-theme .terminal-input {
+    color: #3d2914;
+}
+
+.light-theme .terminal-input::placeholder {
+    color: #8b7355;
+}
+
+.light-theme .input-cursor {
+    background: #cd7f32;
 }
 
 .light-theme .scanlines {
     background: repeating-linear-gradient(
         0deg,
-        rgba(30, 136, 229, 0.03),
-        rgba(30, 136, 229, 0.03) 1px,
+        rgba(107, 68, 35, 0.03),
+        rgba(107, 68, 35, 0.03) 1px,
         transparent 1px,
         transparent 2px
     );
@@ -1134,126 +1173,299 @@ onUnmounted(() => {
     background: radial-gradient(
         ellipse at center,
         transparent 0%,
-        rgba(30, 136, 229, 0.04) 100%
+        rgba(107, 68, 35, 0.1) 100%
     );
 }
 
 .light-theme .console-header {
-    background: linear-gradient(180deg, #E8EEF5 0%, #DDE5EF 100%);
-    border-bottom-color: rgba(30, 136, 229, 0.25);
+    background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
+    border-bottom-color: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .console-title-bar {
-    background: linear-gradient(180deg, #E8EEF5 0%, #DDE5EF 100%);
+    background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
 }
 
 .light-theme .title-text {
-    color: #1E88E5;
-    text-shadow: 0 0 10px rgba(30, 136, 229, 0.4);
+    color: #cd7f32;
+    text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
 }
 
 .light-theme .title-prefix,
 .light-theme .title-suffix {
-    color: #78909C;
+    color: #8b7355;
 }
 
 .light-theme .metric-label {
-    color: #546E7A;
+    color: #6b4423;
 }
 
 .light-theme .metric-value {
-    color: #1A237E;
+    color: #3d2914;
 }
 
 .light-theme .metric-active {
-    color: #43A047;
+    color: #daa520;
 }
 
 .light-theme .console-toolbar {
-    background: #DDE5EF;
-    border-bottom-color: rgba(30, 136, 229, 0.2);
+    background: #e8d4bc;
+    border-bottom-color: rgba(184, 134, 11, 0.25);
 }
 
 .light-theme .terminal-input {
-    background: #FFFFFF;
-    border-color: #B3E5FC;
-    color: #1A237E;
+    background: #faf3e8;
+    border-color: #d4a574;
+    color: #3d2914;
 }
 
 .light-theme .input-prompt {
-    color: #1E88E5;
+    color: #cd7f32;
 }
 
 .light-theme .console-btn {
-    border-color: #1E88E5;
-    color: #1E88E5;
+    border-color: #cd7f32;
+    color: #cd7f32;
 }
 
 .light-theme .console-btn:hover {
-    background: rgba(30, 136, 229, 0.12);
-    box-shadow: 0 0 15px rgba(30, 136, 229, 0.3);
+    background: rgba(205, 127, 50, 0.12);
+    box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
 }
 
-.light-theme .console-btn.primary {
-    border-color: #1E88E5;
-    color: #FFFFFF;
-    background: #1E88E5;
+.light-theme .console-btn.btn-primary {
+    border-color: #cd7f32;
+    color: #ffffff;
+    background: #cd7f32;
+}
+
+.light-theme .console-btn.btn-primary:hover {
+    background: #b8860b;
+    box-shadow: 0 2px 8px rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .grid-background {
     background-image:
-        linear-gradient(rgba(30, 136, 229, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(30, 136, 229, 0.04) 1px, transparent 1px);
+        linear-gradient(rgba(184, 134, 11, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(184, 134, 11, 0.08) 1px, transparent 1px);
 }
 
 .light-theme .table-header-row {
-    background: #DDE5EF;
-    border-bottom-color: #B3E5FC;
+    background: #e8d4bc;
+    border-bottom-color: #d4a574;
 }
 
 .light-theme .cell-label {
-    color: #1E88E5;
+    color: #cd7f32;
 }
 
 .light-theme .cell-divider {
-    color: #B3E5FC;
+    color: #d4a574;
 }
 
 .light-theme .table-row {
-    border-bottom-color: #E8EEF5;
+    border-bottom-color: #f5e6d3;
 }
 
 .light-theme .table-row:hover {
-    background: rgba(30, 136, 229, 0.06);
+    background: rgba(205, 127, 50, 0.08);
 }
 
 .light-theme .domain-text {
-    color: #00897B;
+    color: #b8860b;
 }
 
 .light-theme .ip-text {
-    color: #7B1FA2;
+    color: #cd7f32;
 }
 
 .light-theme .status-enabled {
-    background: #43A047;
-    box-shadow: 0 0 10px rgba(67, 160, 71, 0.5);
+    background: #daa520;
+    box-shadow: 0 0 8px rgba(218, 165, 32, 0.4);
 }
 
 .light-theme .status-disabled {
-    background: #B3E5FC;
+    background: #d4a574;
     box-shadow: none;
 }
 
-.light-theme .action-btn {
-    color: #78909C;
-}
-
-.light-theme .action-btn:hover {
-    color: #1E88E5;
-}
-
 .light-theme .no-data-message {
-    color: #78909C;
+    color: #8b7355;
+}
+
+.light-theme .table-wrapper::-webkit-scrollbar-track {
+    background: #e8d4bc;
+}
+
+.light-theme .table-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(184, 134, 11, 0.4);
+}
+
+.light-theme .table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(184, 134, 11, 0.6);
+}
+
+.light-theme .row-index {
+    color: #9a7b5a;
+}
+
+.light-theme .ip-address {
+    color: #cd7f32;
+    text-shadow: 0 0 6px rgba(205, 127, 50, 0.25);
+}
+
+.light-theme .domain-name {
+    color: #b8860b;
+    text-shadow: 0 0 6px rgba(184, 134, 11, 0.25);
+}
+
+.light-theme .status-text {
+    color: #8b7355;
+}
+
+.light-theme .status-active .status-text {
+    color: #daa520;
+    text-shadow: 0 0 6px rgba(218, 165, 32, 0.3);
+}
+
+.light-theme .footer-label {
+    color: #8b7355;
+}
+
+.light-theme .footer-value {
+    color: #cd7f32;
+    text-shadow: 0 0 6px rgba(205, 127, 50, 0.25);
+}
+
+.light-theme .table-row:hover::before {
+    background: #cd7f32;
+    box-shadow: 0 0 8px rgba(205, 127, 50, 0.4);
+}
+
+.light-theme .row-highlight {
+    background: rgba(184, 134, 11, 0.05);
+}
+
+.light-theme .status-toggle:hover {
+    background: rgba(205, 127, 50, 0.08);
+}
+
+.light-theme .status-core {
+    background: #faf3e8;
+    border-color: #d4a574;
+}
+
+.light-theme .status-inner {
+    background: #b8860b;
+}
+
+.light-theme .status-active .status-core {
+    border-color: #daa520;
+    box-shadow: 0 0 8px rgba(218, 165, 32, 0.4);
+}
+
+.light-theme .status-active .status-inner {
+    background: #daa520;
+}
+
+.light-theme .status-text {
+    color: #9a7b5a;
+}
+
+.light-theme .status-active .status-text {
+    color: #daa520;
+    text-shadow: 0 0 6px rgba(218, 165, 32, 0.3);
+}
+
+.light-theme .icon-btn {
+    border-color: #d4a574;
+}
+
+.light-theme .icon-btn:hover {
+    border-color: #cd7f32;
+    box-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .icon-globe {
+    color: #cd7f32;
+}
+
+.light-theme .icon-edit {
+    color: #b8860b;
+}
+
+.light-theme .icon-delete {
+    color: #b22222;
+}
+
+.light-theme .btn-edit:hover {
+    border-color: #b8860b;
+    box-shadow: 0 0 8px rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .btn-delete:hover {
+    border-color: #b22222;
+    box-shadow: 0 0 8px rgba(178, 34, 34, 0.3);
+}
+
+/* Tatooine Desert Texture */
+.light-theme .table-row {
+    border-bottom-color: rgba(184, 134, 11, 0.15);
+    background: linear-gradient(90deg, rgba(250, 243, 232, 0.5) 0%, transparent 100%);
+}
+
+.light-theme .table-row:hover {
+    background: linear-gradient(90deg, rgba(205, 127, 50, 0.12) 0%, rgba(205, 127, 50, 0.05) 100%);
+}
+
+.light-theme .row-highlight {
+    background: linear-gradient(90deg, rgba(184, 134, 11, 0.06) 0%, rgba(184, 134, 11, 0.02) 100%);
+}
+
+.light-theme .table-header-row {
+    background: linear-gradient(180deg, #dcc8a8 0%, #e8d4bc 100%);
+    border-bottom: 2px solid #b8860b;
+}
+
+.light-theme .console-footer {
+    background: linear-gradient(180deg, #e8d4bc 0%, #dcc8a8 100%);
+    border-top: 2px solid #b8860b;
+}
+
+.light-theme .loading-spinner .spinner-segment {
+    border-color: rgba(184, 134, 11, 0.2);
+    border-top-color: #cd7f32;
+}
+
+.light-theme .loading-text {
+    color: #8b7355;
+}
+
+.light-theme .end-line {
+    color: #d4a574;
+}
+
+.light-theme .end-text {
+    color: #8b7355;
+}
+
+.light-theme .load-more-text {
+    color: #cd7f32;
+}
+
+.light-theme .load-more-line {
+    background: linear-gradient(90deg, transparent, #d4a574, transparent);
+}
+
+.light-theme .empty-icon {
+    color: #d4a574;
+}
+
+.light-theme .empty-text {
+    color: #6b4423;
+}
+
+.light-theme .empty-hint {
+    color: #8b7355;
 }
 </style>

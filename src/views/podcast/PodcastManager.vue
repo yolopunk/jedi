@@ -1630,71 +1630,71 @@ function setupEpisodesObserver() {
 }
 
 /* =========================================
-   Light Theme Styles (Blue Tech)
+   Light Theme Styles (Tatooine Outpost)
    ========================================= */
 .light-theme .podcast-manager {
-  background: #E8EEF5;
+  background: #f5e6d3;
 }
 
 .light-theme .scanlines {
   background: repeating-linear-gradient(
     0deg,
-    rgba(30, 136, 229, 0.03),
-    rgba(30, 136, 229, 0.03) 1px,
+    rgba(107, 68, 35, 0.03),
+    rgba(107, 68, 35, 0.03) 1px,
     transparent 1px,
     transparent 2px
   );
 }
 
 .light-theme .crt-vignette {
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(30, 136, 229, 0.04) 100%);
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(107, 68, 35, 0.1) 100%);
 }
 
 .light-theme .console-header-bar {
-  background: linear-gradient(180deg, #E8EEF5 0%, #DDE5EF 100%);
-  border-bottom-color: rgba(30, 136, 229, 0.25);
+  background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
+  border-bottom-color: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .title-text {
-  color: #1E88E5;
-  text-shadow: 0 0 10px rgba(30, 136, 229, 0.4);
+  color: #cd7f32;
+  text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
 }
 
 .light-theme .title-prefix,
 .light-theme .title-suffix {
-  color: #78909C;
+  color: #8b7355;
 }
 
 .light-theme .metric-label {
-  color: #546E7A;
+  color: #6b4423;
 }
 
 .light-theme .metric-value {
-  color: #1E88E5;
+  color: #cd7f32;
 }
 
 .light-theme .status-light.online {
-  background: #43A047;
-  box-shadow: 0 0 10px rgba(67, 160, 71, 0.5);
+  background: #daa520;
+  box-shadow: 0 0 8px rgba(218, 165, 32, 0.4);
 }
 
 .light-theme .status-light.standby {
-  background: #FB8C00;
-  box-shadow: 0 0 10px rgba(251, 140, 0, 0.5);
+  background: #cd853f;
+  box-shadow: 0 0 8px rgba(205, 133, 63, 0.4);
 }
 
 .light-theme .console-btn {
-  border-color: #1E88E5;
-  color: #1E88E5;
+  border-color: #cd7f32;
+  color: #cd7f32;
 }
 
 .light-theme .console-btn:hover {
-  background: rgba(30, 136, 229, 0.12);
+  background: rgba(205, 127, 50, 0.12);
 }
 
 .light-theme .console-btn.primary {
-  background: #1E88E5;
-  color: #FFFFFF;
+  background: #cd7f32;
+  color: #ffffff;
 }
 
 .light-theme .console-btn.icon-only {
@@ -1703,56 +1703,253 @@ function setupEpisodesObserver() {
 
 .light-theme .grid-bg-layer {
   background-image:
-    linear-gradient(rgba(30, 136, 229, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(30, 136, 229, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(184, 134, 11, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(184, 134, 11, 0.08) 1px, transparent 1px);
 }
 
 .light-theme .podcast-card {
-  background: linear-gradient(135deg, #E8EEF5 0%, #DDE5EF 100%);
-  border-color: rgba(30, 136, 229, 0.25);
+  background: linear-gradient(135deg, #efe0cc 0%, #e8d4bc 100%);
+  border-color: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .card-glow {
-  background: radial-gradient(ellipse at center, rgba(30, 136, 229, 0.12) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(184, 134, 11, 0.15) 0%, transparent 70%);
 }
 
 .light-theme .card-title {
-  color: #1A237E;
+  color: #3d2914;
 }
 
 .light-theme .card-meta {
-  color: #546E7A;
+  color: #6b4423;
 }
 
 .light-theme .empty-state {
-  background: #E8EEF5;
+  background: #f5e6d3;
 }
 
 .light-theme .empty-icon {
-  color: #1E88E5;
+  color: #cd7f32;
 }
 
 .light-theme .empty-text {
-  color: #546E7A;
+  color: #6b4423;
 }
 
 .light-theme .podcast-item:hover .podcast-card {
-  border-color: rgba(30, 136, 229, 0.4);
+  border-color: rgba(205, 127, 50, 0.5);
 }
 
 .light-theme .playing-indicator {
-  background: rgba(67, 160, 71, 0.9);
+  background: rgba(218, 165, 32, 0.9);
 }
 
 .light-theme .playing-bar {
-  background: #FFFFFF;
+  background: #ffffff;
 }
 
 .light-theme .console-scroll::-webkit-scrollbar-thumb {
-  background: rgba(30, 136, 229, 0.25);
+  background: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .console-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(30, 136, 229, 0.4);
+  background: rgba(184, 134, 11, 0.5);
+}
+
+/* Detail View Light Theme */
+.light-theme .podcast-header {
+  background: rgba(239, 224, 204, 0.8);
+  border-bottom-color: rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .cover-image {
+  box-shadow: 0 0 20px rgba(184, 134, 11, 0.2);
+}
+
+.light-theme .podcast-title {
+  color: #cd7f32;
+  text-shadow: 0 0 10px rgba(205, 127, 50, 0.2);
+}
+
+.light-theme .podcast-author {
+  color: #b8860b;
+  text-shadow: 0 0 8px rgba(184, 134, 11, 0.2);
+}
+
+.light-theme .tag-chip {
+  border-color: rgba(184, 134, 11, 0.3);
+  color: #6b4423;
+}
+
+.light-theme .stats-panel {
+  border-left-color: rgba(184, 134, 11, 0.2);
+}
+
+.light-theme .episodes-count {
+  color: #cd7f32;
+  text-shadow: 0 0 15px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .episodes-label {
+  color: #8b7355;
+}
+
+.light-theme .podcast-description {
+  border-top-color: rgba(184, 134, 11, 0.2);
+}
+
+.light-theme .playing-bar {
+  background: #daa520;
+  box-shadow: 0 0 8px rgba(218, 165, 32, 0.5);
+}
+
+.light-theme .input-wrapper {
+  background: #faf3e8;
+  border-color: #d4a574;
+}
+
+.light-theme .input-prompt {
+  color: #cd7f32;
+  text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .console-input {
+  color: #3d2914;
+}
+
+.light-theme .console-input::placeholder {
+  color: #8b7355;
+}
+
+.light-theme .placeholder-icon {
+  opacity: 0.6;
+}
+
+/* Episode List Light Theme */
+.light-theme .episodes-header {
+  color: #6b4423;
+}
+
+.light-theme .episode-item:hover {
+  background: rgba(205, 127, 50, 0.08);
+}
+
+.light-theme .episode-item.active {
+  background: rgba(205, 127, 50, 0.12);
+}
+
+.light-theme .episode-item::before {
+  background: #cd7f32;
+  box-shadow: 0 0 10px rgba(205, 127, 50, 0.6);
+}
+
+.light-theme .episode-title {
+  color: #3d2914;
+}
+
+.light-theme .episode-item.active .episode-title {
+  color: #cd7f32;
+  text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .episode-desc {
+  color: #8b7355;
+}
+
+.light-theme .meta-text {
+  color: #8b7355;
+}
+
+.light-theme .meta-tag {
+  border-color: rgba(184, 134, 11, 0.3);
+  color: #6b4423;
+}
+
+.light-theme .play-icon {
+  color: #daa520;
+  text-shadow: 0 0 8px rgba(218, 165, 32, 0.4);
+}
+
+.light-theme .date-thumb {
+  background: rgba(245, 230, 211, 0.9);
+  border-color: rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .date-month {
+  color: #8b7355;
+}
+
+.light-theme .date-day {
+  color: #cd7f32;
+}
+
+.light-theme .episode-overlay {
+  background: rgba(107, 68, 35, 0.5);
+}
+
+.light-theme .loading-card {
+  background: rgba(245, 230, 211, 0.5);
+  border-color: rgba(184, 134, 11, 0.1);
+}
+
+.light-theme .loading-image {
+  background: linear-gradient(90deg, rgba(184, 134, 11, 0.05) 25%, rgba(184, 134, 11, 0.12) 50%, rgba(184, 134, 11, 0.05) 75%);
+}
+
+.light-theme .loading-text {
+  background: linear-gradient(90deg, rgba(184, 134, 11, 0.05) 25%, rgba(184, 134, 11, 0.12) 50%, rgba(184, 134, 11, 0.05) 75%);
+}
+
+.light-theme .loading-spinner {
+  border-color: rgba(184, 134, 11, 0.2);
+  border-top-color: #cd7f32;
+}
+
+/* Show Notes Light Theme */
+.light-theme .show-notes-container {
+  background: linear-gradient(180deg, #f5e6d3 0%, #efe0cc 50%, #f5e6d3 100%);
+}
+
+.light-theme .notes-header {
+  background: rgba(239, 224, 204, 0.9);
+  border-bottom-color: rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .show-notes-bg-text {
+  color: rgba(184, 134, 11, 0.06);
+}
+
+.light-theme .notes-cover-image {
+  box-shadow: 0 0 30px rgba(184, 134, 11, 0.2);
+}
+
+.light-theme .notes-title {
+  color: #cd7f32;
+  text-shadow: 0 0 10px rgba(205, 127, 50, 0.2);
+}
+
+.light-theme .notes-meta {
+  color: #6b4423;
+}
+
+.light-theme .meta-podcast {
+  color: #b8860b;
+}
+
+.light-theme .meta-separator {
+  color: #d4a574;
+}
+
+.light-theme .meta-date,
+.light-theme .meta-duration {
+  color: #8b7355;
+}
+
+.light-theme .console-file-input :deep(.v-file-input__text) {
+  color: #cd7f32 !important;
+}
+
+.light-theme .console-file-input :deep(.v-label) {
+  color: #8b7355 !important;
 }
 </style>

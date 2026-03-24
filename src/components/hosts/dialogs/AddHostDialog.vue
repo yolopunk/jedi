@@ -130,6 +130,14 @@ function confirmAdd() {
   box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
 }
 
+.console-title-bar {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
 .dialog-decorator {
   position: absolute;
   top: 0;
@@ -184,6 +192,16 @@ function confirmAdd() {
   margin-right: 8px;
 }
 
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(5, 5, 8, 0.9);
+  border: 1px solid #1a1a3a;
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
 .input-prefix {
   display: flex;
   align-items: center;
@@ -194,6 +212,20 @@ function confirmAdd() {
   border-right: 1px solid rgba(0, 255, 255, 0.2);
   min-width: 50px;
   justify-content: center;
+}
+
+.console-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #00ffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.console-input::placeholder {
+  color: #52525b;
 }
 
 .console-input.with-prefix {
@@ -219,5 +251,91 @@ function confirmAdd() {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+/* =========================================
+   Light Theme Styles (Tatooine Outpost)
+   ========================================= */
+.light-theme .dialog-with-glow {
+  box-shadow: 0 0 30px rgba(184, 134, 11, 0.2);
+}
+
+.light-theme .dialog-decorator {
+  background: linear-gradient(90deg, transparent, #cd7f32, transparent);
+}
+
+.light-theme .dialog-icon {
+  color: #cd7f32;
+}
+
+.light-theme .close-btn {
+  color: rgba(107, 68, 35, 0.6);
+}
+
+.light-theme .close-btn:hover {
+  color: #b22222;
+}
+
+.light-theme .input-label {
+  color: rgba(61, 41, 20, 0.8);
+}
+
+.light-theme .label-icon {
+  color: #cd7f32;
+}
+
+.light-theme .input-wrapper {
+  background: #faf3e8;
+  border-color: #d4a574;
+}
+
+.light-theme .input-prefix {
+  color: rgba(107, 68, 35, 0.7);
+  background: rgba(205, 127, 50, 0.08);
+  border-right: 1px solid rgba(205, 127, 50, 0.25);
+}
+
+.light-theme .console-input {
+  color: #3d2914;
+}
+
+.light-theme .console-input::placeholder {
+  color: #8b7355;
+}
+
+.light-theme .action-hint {
+  color: rgba(107, 68, 35, 0.7);
+}
+
+.light-theme .hint-dot {
+  background: #daa520;
+}
+
+.light-theme .console-btn.primary {
+  border-color: #cd7f32;
+  background: #cd7f32;
+  color: #ffffff;
+}
+
+.light-theme .console-btn.primary:hover {
+  background: #b8860b;
+  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .dialog-title {
+  color: #3d2914;
+}
+
+.light-theme .scifi-card {
+  background: linear-gradient(135deg, #efe0cc 0%, #e8d4bc 100%);
+}
+
+.light-theme .console-card-text {
+  background: #faf3e8;
+}
+
+.light-theme .console-card-actions {
+  background: linear-gradient(0deg, #e8d4bc 0%, #efe0cc 100%);
+  border-top: 1px solid #b8860b;
 }
 </style>

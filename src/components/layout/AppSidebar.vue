@@ -46,6 +46,7 @@
                     class="mb-2 sidebar-item"
                     color="primary"
                     active-class="v-list-item--active"
+                    :slim="isCollapsed"
                     :class="{ 'justify-center': isCollapsed }"
                 >
                     <template v-slot:prepend>
@@ -76,6 +77,7 @@
                     class="mb-2 sidebar-item"
                     color="primary"
                     active-class="v-list-item--active"
+                    :slim="isCollapsed"
                     :class="{ 'justify-center': isCollapsed }"
                 >
                     <template v-slot:prepend>
@@ -106,6 +108,7 @@
                     class="mb-2 sidebar-item"
                     color="primary"
                     active-class="v-list-item--active"
+                    :slim="isCollapsed"
                     :class="{ 'justify-center': isCollapsed }"
                 >
                     <template v-slot:prepend>
@@ -136,6 +139,7 @@
                     class="mb-2 sidebar-item"
                     color="primary"
                     active-class="v-list-item--active"
+                    :slim="isCollapsed"
                     :class="{ 'justify-center': isCollapsed }"
                 >
                     <template v-slot:prepend>
@@ -415,25 +419,31 @@ onUnmounted(() => {
 .sidebar-item.justify-center :deep(.v-list-item) {
     justify-content: center !important;
     padding-inline: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    min-width: 0 !important;
 }
 
 .sidebar-item.justify-center :deep(.v-list-item__content) {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    padding-inline: 0 !important;
-    width: 100%;
+    display: none !important;
+}
+
+.sidebar-item.justify-center :deep(.v-list-item__spacer) {
+    display: none !important;
+    width: 0 !important;
+    flex: none !important;
 }
 
 .sidebar-item.justify-center :deep(.v-list-item__prepend) {
     margin-inline-end: 0 !important;
     margin-inline-start: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;
+    width: auto;
+    flex: none !important;
 }
 
 .sidebar-item.justify-center .sidebar-icon-container {
@@ -593,41 +603,41 @@ onUnmounted(() => {
 }
 
 /* =========================================
-   Light Theme Styles (Blue Tech)
+   Light Theme Styles (Tatooine Outpost)
    ========================================= */
 .light-theme .jedi-sidebar {
-    background: linear-gradient(180deg, #e8eef5 0%, #dde5ef 100%);
-    border-right-color: rgba(30, 136, 229, 0.25);
+    background: linear-gradient(180deg, #f5e6d3 0%, #efe0cc 100%);
+    border-right-color: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .logo-area {
-    border-bottom-color: rgba(30, 136, 229, 0.25) !important;
+    border-bottom-color: rgba(184, 134, 11, 0.3) !important;
 }
 
 .light-theme .logo-glow {
     background: radial-gradient(
         circle,
-        rgba(30, 136, 229, 0.25) 0%,
+        rgba(205, 127, 50, 0.2) 0%,
         transparent 70%
     );
 }
 
 .light-theme .sidebar-title {
-    color: #1e88e5 !important;
-    text-shadow: 0 0 10px rgba(30, 136, 229, 0.4);
+    color: #cd7f32 !important;
+    text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
 }
 
 .light-theme .title-bracket {
-    color: #546e7a;
+    color: #6b4423;
 }
 
 .light-theme .sidebar-subtitle {
-    color: #78909c !important;
+    color: #8b7355 !important;
 }
 
 .light-theme .sidebar-item::before {
-    background: #1e88e5;
-    box-shadow: 0 0 10px rgba(30, 136, 229, 0.5);
+    background: #cd7f32;
+    box-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
 }
 
 .light-theme .sidebar-item.v-list-item--active::before {
@@ -636,50 +646,50 @@ onUnmounted(() => {
 }
 
 .light-theme .sidebar-item.v-list-item--active .sidebar-icon-container {
-    filter: drop-shadow(0 0 8px rgba(30, 136, 229, 0.5));
+    filter: drop-shadow(0 0 6px rgba(205, 127, 50, 0.4));
 }
 
 .light-theme .sidebar-item:hover :deep(.v-list-item) {
-    background: rgba(30, 136, 229, 0.08) !important;
+    background: rgba(205, 127, 50, 0.1) !important;
 }
 
 .light-theme .nav-text {
-    color: #546e7a;
+    color: #6b4423;
 }
 
 .light-theme .sidebar-item.v-list-item--active .nav-text {
-    color: #1e88e5;
+    color: #cd7f32;
 }
 
 .light-theme .nav-indicator {
-    background: #43a047;
-    box-shadow: 0 0 10px rgba(67, 160, 71, 0.5);
+    background: #daa520;
+    box-shadow: 0 0 8px rgba(218, 165, 32, 0.4);
 }
 
 .light-theme .sidebar-footer {
-    border-top-color: rgba(30, 136, 229, 0.25);
-    background: linear-gradient(0deg, #e8eef5 0%, transparent 100%);
+    border-top-color: rgba(184, 134, 11, 0.3);
+    background: linear-gradient(0deg, #f5e6d3 0%, transparent 100%);
 }
 
 .light-theme .status-label {
-    color: #78909c;
+    color: #8b7355;
 }
 
 .light-theme .status-value.online {
-    color: #43a047;
+    color: #daa520;
 }
 
 .light-theme .footer-time {
-    color: #1e88e5;
+    color: #cd7f32;
 }
 
 .light-theme .resize-indicator {
-    background-color: rgba(30, 136, 229, 0.25);
+    background-color: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .resize-handle:hover .resize-indicator,
 .light-theme .resize-handle.is-resizing .resize-indicator {
-    background-color: #1e88e5;
-    box-shadow: 0 0 10px rgba(30, 136, 229, 0.5);
+    background-color: #cd7f32;
+    box-shadow: 0 0 8px rgba(205, 127, 50, 0.4);
 }
 </style>

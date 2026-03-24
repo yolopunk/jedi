@@ -498,17 +498,17 @@ onMounted(() => {
 
 /* 扫描线效果 */
 .scanlines {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   pointer-events: none;
-  z-index: 1000;
+  z-index: 100;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.15),
-    rgba(0, 0, 0, 0.15) 1px,
+    rgba(0, 0, 0, 0.12),
+    rgba(0, 0, 0, 0.12) 1px,
     transparent 1px,
     transparent 2px
   );
@@ -516,14 +516,14 @@ onMounted(() => {
 
 /* CRT 晕影 */
 .crt-vignette {
-  position: fixed;
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   pointer-events: none;
-  z-index: 999;
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+  z-index: 99;
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.35) 100%);
 }
 
 /* 主布局 */
@@ -1506,5 +1506,425 @@ onMounted(() => {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(96, 165, 250, 0.3);
+}
+
+/* =========================================
+   Light Theme Styles (Tatooine Outpost)
+   ========================================= */
+.light-theme .chat-console-page {
+  background: linear-gradient(180deg, #f5e6d3 0%, #efe0cc 50%, #f5e6d3 100%);
+}
+
+.light-theme .scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(139, 115, 85, 0.08),
+    rgba(139, 115, 85, 0.08) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+}
+
+.light-theme .crt-vignette {
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(107, 68, 35, 0.15) 100%);
+}
+
+.light-theme .mcp-panel {
+  background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
+  border-right: 1px solid #b8860b;
+}
+
+.light-theme .history-panel {
+  background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
+  border-left: 1px solid #b8860b;
+}
+
+.light-theme .panel-header {
+  border-bottom: 1px solid #b8860b;
+  background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
+}
+
+.light-theme .panel-title {
+  color: #cd7f32;
+  text-shadow: 0 0 10px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .panel-status.online {
+  color: #b8860b;
+  background: rgba(184, 134, 11, 0.15);
+  box-shadow: 0 0 8px rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .new-session-btn {
+  background: rgba(205, 127, 50, 0.1);
+  border-color: #cd7f32;
+  color: #cd7f32;
+}
+
+.light-theme .new-session-btn:hover {
+  background: rgba(205, 127, 50, 0.2);
+}
+
+.light-theme .session-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.light-theme .session-list::-webkit-scrollbar-thumb {
+  background: rgba(184, 134, 11, 0.4);
+}
+
+.light-theme .session-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(184, 134, 11, 0.6);
+}
+
+.light-theme .session-item {
+  border-right-color: transparent;
+}
+
+.light-theme .session-item:hover {
+  background: rgba(205, 127, 50, 0.08);
+}
+
+.light-theme .session-item.active {
+  background: rgba(205, 127, 50, 0.15);
+  border-right-color: #cd7f32;
+}
+
+.light-theme .session-dot {
+  background: #d4a574;
+}
+
+.light-theme .session-item.active .session-dot {
+  background: #cd7f32;
+  box-shadow: 0 0 8px rgba(205, 127, 50, 0.5);
+}
+
+.light-theme .session-title {
+  color: #6b4423;
+}
+
+.light-theme .session-item.active .session-title {
+  color: #3d2914;
+}
+
+.light-theme .session-time {
+  color: #9a7b5a;
+}
+
+.light-theme .menu-btn {
+  color: #9a7b5a;
+}
+
+.light-theme .menu-btn:hover {
+  background: rgba(205, 127, 50, 0.1);
+  color: #cd7f32;
+}
+
+.light-theme .chat-console-area {
+  background: linear-gradient(135deg, #f5e6d3 0%, #efe0cc 50%, #f5e6d3 100%);
+}
+
+.light-theme .chat-console-area::before {
+  background-image:
+    linear-gradient(rgba(184, 134, 11, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(184, 134, 11, 0.06) 1px, transparent 1px);
+}
+
+.light-theme .console-header {
+  background: linear-gradient(180deg, rgba(239, 224, 204, 0.95) 0%, rgba(232, 212, 188, 0.9) 100%);
+  border-bottom: 1px solid #d4a574;
+}
+
+.light-theme .prompt-user { color: #cd7f32; }
+.light-theme .prompt-separator { color: #9a7b5a; }
+.light-theme .prompt-host { color: #b8860b; }
+.light-theme .prompt-path { color: #8b7355; }
+.light-theme .prompt-cursor { color: #daa520; }
+
+.light-theme .status-badge {
+  background: rgba(218, 165, 32, 0.15);
+  border-color: rgba(218, 165, 32, 0.3);
+}
+
+.light-theme .status-dot {
+  background: #daa520;
+  box-shadow: 0 0 8px rgba(218, 165, 32, 0.5);
+}
+
+.light-theme .status-text {
+  color: #b8860b;
+}
+
+.light-theme .model-label {
+  color: #9a7b5a;
+}
+
+.light-theme .model-name {
+  color: #cd7f32;
+  background: rgba(205, 127, 50, 0.1);
+  border-color: rgba(205, 127, 50, 0.25);
+}
+
+.light-theme .messages-container {
+  background: transparent;
+}
+
+.light-theme .boot-logo .bb8-body {
+  background: linear-gradient(135deg, #f5e6d3 0%, #d4c4a8 50%, #b8956e 100%);
+  box-shadow: 0 10px 40px rgba(107, 68, 35, 0.3), inset 0 -5px 20px rgba(107, 68, 35, 0.15);
+}
+
+.light-theme .boot-logo .bb8-head {
+  background: linear-gradient(180deg, #f5e6d3 0%, #d4c4a8 100%);
+  box-shadow: 0 5px 15px rgba(107, 68, 35, 0.25);
+}
+
+.light-theme .bb8-eye {
+  box-shadow: 0 0 10px rgba(205, 127, 50, 0.4);
+}
+
+.light-theme .bb8-circle {
+  border-color: #cd7f32;
+  box-shadow: 0 0 20px rgba(205, 127, 50, 0.4);
+}
+
+.light-theme .bb8-line {
+  background: #9a7b5a;
+}
+
+.light-theme .boot-line {
+  color: #9a7b5a;
+}
+
+.light-theme .boot-prefix {
+  color: #cd7f32;
+}
+
+.light-theme .boot-content {
+  color: #6b4423;
+}
+
+.light-theme .command-card {
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.08) 0%, rgba(205, 127, 50, 0.03) 100%);
+  border-color: rgba(205, 127, 50, 0.2);
+}
+
+.light-theme .command-card:hover {
+  border-color: rgba(205, 127, 50, 0.5);
+  background: rgba(205, 127, 50, 0.12);
+  box-shadow: 0 10px 30px rgba(205, 127, 50, 0.1);
+}
+
+.light-theme .command-title {
+  color: #3d2914;
+}
+
+.light-theme .command-desc {
+  color: #8b7355;
+}
+
+.light-theme .timestamp {
+  color: #9a7b5a;
+}
+
+.light-theme .avatar-container {
+  background: linear-gradient(135deg, #b8860b 0%, #cd7f32 100%);
+  box-shadow: 0 0 20px rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .avatar-glow {
+  background: linear-gradient(135deg, rgba(184, 134, 11, 0.4), transparent);
+}
+
+.light-theme .message-role {
+  color: #cd7f32;
+}
+
+.light-theme .user-message .message-role {
+  color: #b8860b;
+}
+
+.light-theme .message-model {
+  color: #9a7b5a;
+  background: rgba(205, 127, 50, 0.1);
+}
+
+.light-theme .message-body {
+  background: rgba(107, 68, 35, 0.03);
+}
+
+.light-theme .ai-message .message-body {
+  border-left-color: #cd7f32;
+  box-shadow: 0 0 20px rgba(205, 127, 50, 0.05);
+}
+
+.light-theme .user-message .message-body {
+  border-left-color: #b8860b;
+  background: rgba(184, 134, 11, 0.05);
+}
+
+.light-theme .action-btn {
+  border-color: #d4a574;
+  color: #8b7355;
+}
+
+.light-theme .action-btn:hover {
+  border-color: #cd7f32;
+  color: #cd7f32;
+  background: rgba(205, 127, 50, 0.1);
+}
+
+.light-theme .streaming-cursor {
+  background: #cd7f32;
+}
+
+.light-theme .streaming-text {
+  color: #cd7f32;
+}
+
+.light-theme .streaming-dots .dot {
+  background: #cd7f32;
+}
+
+.light-theme .r2d2-dome {
+  background: linear-gradient(135deg, #cd7f32 0%, #b8860b 100%);
+  box-shadow: 0 4px 15px rgba(205, 127, 50, 0.4);
+}
+
+.light-theme .r2d2-sensor {
+  background: #6b4423;
+}
+
+.light-theme .r2d2-sensor.main {
+  box-shadow: 0 0 10px rgba(184, 134, 11, 0.6);
+}
+
+.light-theme .r2d2-panel {
+  background: linear-gradient(180deg, #f5e6d3 0%, #d4c4a8 100%);
+}
+
+.light-theme .r2d2-arm {
+  background: #9a7b5a;
+}
+
+.light-theme .r2d2-avatar.thinking .r2d2-dome {
+  animation: domeGlowLight 1s ease-in-out infinite;
+}
+
+@keyframes domeGlowLight {
+  0%, 100% { box-shadow: 0 4px 15px rgba(205, 127, 50, 0.4); }
+  50% { box-shadow: 0 4px 25px rgba(205, 127, 50, 0.8); }
+}
+
+.light-theme .wave {
+  background: #cd7f32;
+}
+
+.light-theme .input-console {
+  background: linear-gradient(0deg, rgba(239, 224, 204, 0.95) 0%, rgba(239, 224, 204, 0.8) 100%);
+  border-top: 1px solid #b8860b;
+}
+
+.light-theme .console-input {
+  background: rgba(107, 68, 35, 0.03);
+  border-color: #d4a574;
+  color: #3d2914;
+}
+
+.light-theme .console-input:focus {
+  border-color: #cd7f32;
+  box-shadow: 0 0 20px rgba(205, 127, 50, 0.15), inset 0 0 0 1px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .console-input::placeholder {
+  color: #9a7b5a;
+}
+
+.light-theme .send-btn {
+  background: linear-gradient(135deg, #cd7f32 0%, #b8860b 100%);
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .send-btn:hover:not(.disabled) {
+  box-shadow: 0 6px 25px rgba(205, 127, 50, 0.4);
+}
+
+.light-theme .send-btn.disabled {
+  opacity: 0.3;
+}
+
+.light-theme .stop-btn {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+}
+
+.light-theme .stop-btn:hover {
+  box-shadow: 0 6px 25px rgba(220, 38, 38, 0.4);
+}
+
+.light-theme .footer-hint {
+  color: #9a7b5a;
+}
+
+.light-theme .shortcut {
+  color: #b8a080;
+}
+
+.light-theme .mcp-skill-item {
+  border-left-color: transparent;
+}
+
+.light-theme .mcp-skill-item:hover {
+  background: rgba(205, 127, 50, 0.08);
+  border-left-color: rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .mcp-skill-item.active {
+  background: rgba(205, 127, 50, 0.15);
+  border-left-color: #cd7f32;
+}
+
+.light-theme .skill-indicator {
+  background: #d4a574;
+}
+
+.light-theme .skill-indicator.enabled {
+  background: #daa520;
+  box-shadow: 0 0 8px rgba(218, 165, 32, 0.5);
+}
+
+.light-theme .skill-name {
+  color: #6b4423;
+}
+
+.light-theme .mcp-skill-item:hover .skill-name {
+  color: #3d2914;
+}
+
+.light-theme .skill-hotkey {
+  color: #9a7b5a;
+  background: rgba(205, 127, 50, 0.05);
+  border-color: #d4a574;
+}
+
+.light-theme .panel-footer {
+  border-top: 1px solid #d4a574;
+}
+
+.light-theme .footer-text {
+  color: #cd7f32;
+}
+
+.light-theme ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.light-theme ::-webkit-scrollbar-thumb {
+  background: rgba(184, 134, 11, 0.4);
+}
+
+.light-theme ::-webkit-scrollbar-thumb:hover {
+  background: rgba(184, 134, 11, 0.6);
 }
 </style>

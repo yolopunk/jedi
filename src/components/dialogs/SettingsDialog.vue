@@ -992,47 +992,47 @@ onMounted(async () => {
 }
 
 /* =========================================
-   Light Theme Styles (Blue Tech)
+   Light Theme Styles (Tatooine Outpost)
    ========================================= */
 .light-theme .scifi-card {
-  background: linear-gradient(135deg, #E8EEF5 0%, #DDE5EF 100%);
-  border-color: rgba(30, 136, 229, 0.25);
+  background: linear-gradient(135deg, #efe0cc 0%, #e8d4bc 100%);
+  border-color: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .scifi-card::before {
-  background: linear-gradient(90deg, transparent, #1E88E5, transparent);
+  background: linear-gradient(90deg, transparent, #cd7f32, transparent);
 }
 
 .light-theme .console-title-bar {
-  background: linear-gradient(180deg, #E8EEF5 0%, #DDE5EF 100%);
-  border-bottom-color: rgba(30, 136, 229, 0.25);
+  background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
+  border-bottom-color: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .dialog-title {
-  color: #1E88E5;
-  text-shadow: 0 0 10px rgba(30, 136, 229, 0.4);
+  color: #cd7f32;
+  text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
 }
 
 .light-theme .console-card-text {
-  background: #E8EEF5;
+  background: #f5e6d3;
 }
 
 .light-theme .settings-tabs {
-  background: #DDE5EF;
-  border-bottom-color: rgba(30, 136, 229, 0.2);
+  background: #e8d4bc;
+  border-bottom-color: rgba(184, 134, 11, 0.25);
 }
 
 .light-theme .tab-button {
-  color: #546E7A;
+  color: #6b4423;
 }
 
 .light-theme .tab-button:hover {
-  color: #1E88E5;
+  color: #cd7f32;
 }
 
 .light-theme .tab-button.active {
-  color: #1E88E5;
-  border-bottom-color: #1E88E5;
+  color: #cd7f32;
+  border-bottom-color: #cd7f32;
 }
 
 .light-theme .tab-text {
@@ -1040,144 +1040,144 @@ onMounted(async () => {
 }
 
 .light-theme .setting-item {
-  border-bottom-color: #D0DAE5;
+  border-bottom-color: #d4a574;
 }
 
 .light-theme .setting-label {
-  color: #1A237E;
+  color: #3d2914;
 }
 
 .light-theme .setting-subtitle {
-  color: #546E7A;
+  color: #6b4423;
 }
 
 .light-theme .setting-icon {
-  color: #1E88E5;
+  color: #cd7f32;
 }
 
 .light-theme .console-input {
-  background: #FFFFFF;
-  border-color: #B3E5FC;
-  color: #1A237E;
+  background: #faf3e8;
+  border-color: #d4a574;
+  color: #3d2914;
 }
 
 .light-theme .console-input:focus {
-  border-color: #1E88E5;
-  box-shadow: 0 0 15px rgba(30, 136, 229, 0.25);
+  border-color: #cd7f32;
+  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
 }
 
 .light-theme .console-input::placeholder {
-  color: #78909C;
+  color: #8b7355;
 }
 
 .light-theme .input-prompt {
-  color: #1E88E5;
+  color: #cd7f32;
 }
 
 .light-theme .console-btn {
-  border-color: #1E88E5;
-  color: #1E88E5;
+  border-color: #cd7f32;
+  color: #cd7f32;
   background: transparent;
 }
 
 .light-theme .console-btn:hover {
-  background: rgba(30, 136, 229, 0.12);
+  background: rgba(205, 127, 50, 0.12);
 }
 
 .light-theme .console-btn.primary {
-  border-color: #1E88E5;
-  color: #FFFFFF;
-  background: #1E88E5;
+  border-color: #cd7f32;
+  color: #ffffff;
+  background: #cd7f32;
 }
 
 .light-theme .console-btn.primary:hover {
-  background: #1565C0;
+  background: #b87333;
 }
 
 .light-theme .console-btn.danger {
-  border-color: #E53935;
-  color: #E53935;
+  border-color: #b22222;
+  color: #b22222;
 }
 
 .light-theme .console-btn.danger:hover {
-  background: rgba(229, 57, 53, 0.1);
+  background: rgba(178, 34, 34, 0.1);
 }
 
 .light-theme .toggle-switch {
-  background: #B3E5FC;
+  background: #d4a574;
 }
 
 .light-theme .toggle-switch.active {
-  background: #1E88E5;
+  background: #cd7f32;
 }
 
 .light-theme .toggle-switch .toggle-handle {
-  background: #FFFFFF;
+  background: #ffffff;
 }
 
 .light-theme .console-menu {
-  background: #E8EEF5 !important;
-  border-color: rgba(30, 136, 229, 0.25) !important;
+  background: #efe0cc !important;
+  border-color: rgba(184, 134, 11, 0.3) !important;
 }
 
 .light-theme .menu-item {
-  color: #546E7A;
+  color: #6b4423;
 }
 
 .light-theme .menu-item:hover {
-  background: rgba(30, 136, 229, 0.12);
-  color: #1E88E5;
+  background: rgba(205, 127, 50, 0.12);
+  color: #cd7f32;
 }
 
 .light-theme .menu-check {
-  color: #43A047;
+  color: #daa520;
 }
 
 .light-theme .section-header {
-  border-bottom-color: rgba(30, 136, 229, 0.2);
+  border-bottom-color: rgba(184, 134, 11, 0.25);
 }
 
 .light-theme .section-title {
-  color: #1E88E5;
+  color: #cd7f32;
 }
 
 .light-theme .section-desc {
-  color: #546E7A;
+  color: #6b4423;
 }
 
 .light-theme .provider-item {
-  border-color: #C5D5E3;
-  background: #E8EEF5;
+  border-color: #d4a574;
+  background: #efe0cc;
 }
 
 .light-theme .provider-item.configured {
-  border-color: rgba(67, 160, 71, 0.4);
-  background: rgba(67, 160, 71, 0.08);
+  border-color: rgba(218, 165, 32, 0.5);
+  background: rgba(218, 165, 32, 0.1);
 }
 
 .light-theme .provider-name {
-  color: #1A237E;
+  color: #3d2914;
 }
 
 .light-theme .status-chip {
-  background: #C5D5E3;
-  color: #546E7A;
+  background: #d4a574;
+  color: #6b4423;
 }
 
 .light-theme .status-chip.success {
-  background: rgba(67, 160, 71, 0.2);
-  color: #00aa66;
+  background: rgba(218, 165, 32, 0.2);
+  color: #b8860b;
 }
 
 .light-theme .divider-line {
-  background: #e4e4e7;
+  background: #d4a574;
 }
 
 .light-theme .tab-content::-webkit-scrollbar-thumb {
-  background: rgba(8, 145, 178, 0.2);
+  background: rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .tab-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(8, 145, 178, 0.3);
+  background: rgba(184, 134, 11, 0.5);
 }
 </style>

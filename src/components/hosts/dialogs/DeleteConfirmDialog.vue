@@ -139,4 +139,43 @@ function confirmDelete() {
 .term-red {
   color: #ff4444;
 }
+
+/* =========================================
+   Light Theme Styles (Tatooine Outpost)
+   ========================================= */
+.light-theme .dialog-danger {
+  box-shadow: 0 0 30px rgba(178, 34, 34, 0.2);
+}
+
+.light-theme .dialog-decorator.danger {
+  background: linear-gradient(90deg, transparent, #b22222, transparent);
+}
+
+.light-theme .console-title-bar.danger {
+  border-bottom-color: rgba(178, 34, 34, 0.4);
+}
+
+.light-theme .dialog-icon.danger {
+  color: #b22222;
+}
+
+.light-theme .delete-confirm-text {
+  color: rgba(61, 41, 20, 0.9);
+}
+
+.light-theme .dialog-title {
+  color: #b22222;
+}
+
+.light-theme .close-btn {
+  color: rgba(107, 68, 35, 0.6);
+}
+
+.light-theme .close-btn:hover {
+  color: #b22222;
+}
+
+.light-theme .term-red {
+  color: #b22222;
+}
 </style>

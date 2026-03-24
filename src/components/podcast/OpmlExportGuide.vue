@@ -181,4 +181,54 @@ const images = [
 .step-text {
   letter-spacing: 0.5px;
 }
+
+/* =========================================
+   Light Theme Styles (Tatooine Outpost)
+   ========================================= */
+.light-theme .dialog-with-glow {
+  box-shadow: 0 0 30px rgba(184, 134, 11, 0.2);
+}
+
+.light-theme .dialog-decorator {
+  background: linear-gradient(90deg, transparent, #cd7f32, transparent);
+}
+
+.light-theme .dialog-icon {
+  color: #cd7f32;
+}
+
+.light-theme .dialog-title {
+  color: #daa520;
+  text-shadow: 0 0 10px rgba(218, 165, 32, 0.4);
+}
+
+.light-theme .close-btn {
+  color: rgba(107, 68, 35, 0.6);
+}
+
+.light-theme .close-btn:hover {
+  color: #b22222;
+}
+
+.light-theme .opml-carousel {
+  border-color: rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .carousel-slide {
+  background: rgba(245, 230, 211, 0.5);
+}
+
+.light-theme .slide-image {
+  border-color: rgba(184, 134, 11, 0.2);
+}
+
+.light-theme .slide-label {
+  color: #3d2914;
+}
+
+.light-theme .step-number {
+  background: rgba(205, 127, 50, 0.15);
+  border-color: rgba(205, 127, 50, 0.3);
+  color: #cd7f32;
+}
 </style>

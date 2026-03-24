@@ -166,4 +166,67 @@ function handleClick(event: MouseEvent) {
 .cursor-pointer {
     cursor: pointer;
 }
+
+/* =========================================
+   Light Theme Styles (Tatooine Outpost)
+   ========================================= */
+.light-theme .show-notes-content {
+    color: #3d2914;
+}
+
+.light-theme .show-notes-content a {
+    color: #cd7f32;
+    border-bottom-color: rgba(205, 127, 50, 0.5);
+}
+
+.light-theme .show-notes-content a:hover {
+    color: #b8860b;
+    border-bottom-color: #b8860b;
+}
+
+.light-theme .show-notes-content blockquote {
+    background: rgba(184, 134, 11, 0.08);
+    border-left-color: #cd7f32;
+    color: #6b4423;
+}
+
+.light-theme .show-notes-content pre {
+    background: rgba(107, 68, 35, 0.08);
+    border-color: #d4a574;
+    color: #3d2914;
+}
+
+.light-theme .show-notes-content code {
+    color: #b8860b;
+}
+
+.light-theme .show-notes-content h1,
+.light-theme .show-notes-content h2,
+.light-theme .show-notes-content h3,
+.light-theme .show-notes-content h4 {
+    color: #cd7f32;
+}
+
+.light-theme .show-notes-content strong {
+    color: #3d2914;
+}
+
+.light-theme .show-notes-content li {
+    color: #3d2914;
+}
+
+.light-theme .show-notes-content img {
+    box-shadow: 0 4px 6px rgba(107, 68, 35, 0.15);
+}
+
+.light-theme .timestamp-link {
+    color: #cd7f32;
+    font-weight: 600;
+    background: rgba(205, 127, 50, 0.1);
+}
+
+.light-theme .timestamp-link:hover {
+    background: rgba(205, 127, 50, 0.2);
+    color: #b8860b;
+}
 </style>

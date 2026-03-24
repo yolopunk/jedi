@@ -489,36 +489,36 @@ defineEmits<{
 }
 
 /* =========================================
-   Light Theme Styles (Blue Tech)
+   Light Theme Styles (Tatooine Outpost)
    ========================================= */
 .light-theme .deep-space-bg {
-    background: linear-gradient(180deg, #E8EEF5 0%, #D0DAE5 50%, #B8C9D8 100%);
+    background: linear-gradient(180deg, #f5e6d3 0%, #efe0cc 50%, #e8d4bc 100%);
 }
 
 .light-theme .nebula-glow {
     background: radial-gradient(
         ellipse at center,
-        rgba(30, 136, 229, 0.2) 0%,
+        rgba(205, 127, 50, 0.15) 0%,
         transparent 70%
     );
 }
 
 .light-theme .footer-console {
-    background: rgba(232, 238, 245, 0.95);
+    background: rgba(245, 230, 211, 0.95);
     backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(30, 136, 229, 0.25);
+    border-top: 1px solid rgba(184, 134, 11, 0.3);
 }
 
 .light-theme .footer-btn {
-    color: #546E7A;
+    color: #6b4423;
 }
 
 .light-theme .footer-btn:hover {
-    color: #1E88E5;
+    color: #cd7f32;
 }
 
 .light-theme .footer-divider {
-    background: #B3E5FC;
+    background: #d4a574;
 }
 
 .lang-flag {

@@ -50,6 +50,29 @@
                 </v-btn>
             </div>
 
+            <!-- Center Section: Mini Player -->
+            <div
+                v-if="currentPlaying"
+                class="mini-player-section d-flex align-center px-2 h-100 border-left border-right"
+            >
+                <v-btn
+                    icon
+                    size="x-small"
+                    variant="text"
+                    color="primary"
+                    class="player-btn"
+                    @click.stop="togglePlay"
+                >
+                    <v-icon :icon="isPaused ? mdiPlay : mdiPause" size="14" />
+                </v-btn>
+                <span
+                    class="text-caption text-truncate"
+                    style="max-width: 140px; font-size: 10px"
+                >
+                    {{ currentPlaying.title }}
+                </span>
+            </div>
+
             <v-spacer></v-spacer>
 
             <!-- Right Section: System Info Modules -->
@@ -222,14 +245,20 @@ import {
     mdiMemory,
     mdiDownload,
     mdiUpload,
+    mdiPlay,
+    mdiPause,
 } from "@mdi/js";
 import { getOsInfo } from "@/api/hosts";
 import { OsInfo } from "@/types/os";
 import { useUpdate } from "@/composables/useUpdate";
+import { useAudioPlayer } from "@/composables/useAudioPlayer";
 import UpdateDialog from "@/components/dialogs/UpdateDialog.vue";
 import pkg from "../../../package.json";
 
 const appVersion = pkg.version;
+
+// Audio player
+const { currentPlaying, isPaused, togglePlay } = useAudioPlayer();
 
 // Update composable
 const { hasUpdate, updateInfo, isChecking, isInstalling, installUpdate } =
@@ -375,6 +404,18 @@ onUnmounted(() => {
     display: inline-block;
     min-width: 54px; /* Fixed width for stability */
     text-align: right;
+}
+
+/* Mini Player Section */
+.mini-player-section {
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.player-btn {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
 }
 
 /* Hide non-critical info on mobile/small screens */

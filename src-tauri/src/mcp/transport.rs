@@ -324,7 +324,10 @@ mod async_transport {
     async fn send_request(&mut self, request: JsonRpcRequest) -> Result<JsonRpcResponse, McpError>;
 
     /// 发送通知
-    async fn send_notification(&mut self, notification: JsonRpcNotification) -> Result<(), McpError>;
+    async fn send_notification(
+      &mut self,
+      notification: JsonRpcNotification,
+    ) -> Result<(), McpError>;
 
     /// 检查是否运行中
     fn is_running(&self) -> bool;

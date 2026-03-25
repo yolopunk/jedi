@@ -52,7 +52,26 @@
       "Bash(/Users/cynosure/.cargo/bin/rustc:*)",
       "Bash(export:*)",
       "Bash(git push:*)",
-      "WebFetch(domain:tauri.app)"
+      "WebFetch(domain:tauri.app)",
+      "Skill(claude-hud:setup)",
+      "Skill(browser-use)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "Bash(chmod:*)",
+      "Bash(git clone:*)",
+      "Bash(./setup)",
+      "Bash(bash)",
+      "Bash(mkdir -p /Users/cynosure/workspace/github/jedi/.claude/skills)",
+      "Bash(cp -Rf ~/.claude/skills/gstack /Users/cynosure/workspace/github/jedi/.claude/skills/gstack)",
+      "Bash(open https://garryslist.org/posts/boil-the-ocean)",
+      "Bash(touch ~/.gstack/.completeness-intro-seen)",
+      "Bash(~/.claude/skills/gstack/bin/gstack-config set:*)",
+      "Bash(touch ~/.gstack/.telemetry-prompted)",
+      "Bash(open:*)",
+      "Read(//Users/cynosure/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/**)",
+      "Read(//Users/cynosure/.claude/skills/**)",
+      "Skill(code-review:code-review)"
     ]
   }
 }

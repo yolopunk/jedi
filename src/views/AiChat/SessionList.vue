@@ -18,7 +18,7 @@
     <div class="list-search">
       <v-text-field
         v-model="searchQuery"
-        placeholder="Search conversations..."
+        :placeholder="$t('chat.searchPlaceholder')"
         prepend-inner-icon="mdi-magnify"
         variant="solo-filled"
         density="compact"

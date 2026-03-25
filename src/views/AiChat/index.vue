@@ -205,7 +205,7 @@
                 ref="inputRef"
                 v-model="inputText"
                 class="console-input"
-                :placeholder="'Enter your command...'"
+                :placeholder="$t('chat.commandPlaceholder')"
                 rows="1"
                 @keydown="handleKeydown"
                 @input="autoResize"

@@ -173,7 +173,10 @@ export default {
     error: {
       providerConfig: 'Please configure AI provider in settings...'
     },
-    inputHint: 'Press Enter to send, Shift+Enter for new line'
+    inputHint: 'Press Enter to send, Shift+Enter for new line',
+    searchPlaceholder: 'Search conversations...',
+    modelSearchPlaceholder: 'Search models...',
+    commandPlaceholder: 'Enter command...',
   },
   hosts: {
     validation: {

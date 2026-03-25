@@ -275,6 +275,49 @@ cargo test           # 运行Rust测试
 
 ---
 
+## gstack
+
+这个项目使用 gstack 技能来增强开发工作流。
+
+### Web浏览
+- 使用 **/browse** 技能进行所有网页浏览
+- 永远不要使用 mcp__claude-in-chrome__* 工具
+
+### 可用技能
+- **/office-hours** - 头脑风暴新想法
+- **/plan-ceo-review** - 评审计划（战略层面）
+- **/plan-eng-review** - 评审计划（架构层面）
+- **/plan-design-review** - 评审计划（设计层面）
+- **/design-consultation** - 创建设计系统
+- **/review** - 合并前代码审查
+- **/ship** - 准备部署/创建PR
+- **/land-and-deploy** - 落地部署
+- **/canary** - 金丝雀发布
+- **/benchmark** - 性能基准测试
+- **/browse** - 网页浏览
+- **/qa** - 应用测试
+- **/qa-only** - 仅QA测试
+- **/design-review** - 视觉设计审计
+- **/setup-browser-cookies** - 设置浏览器cookies
+- **/setup-deploy** - 设置部署
+- **/retro** - 每周回顾
+- **/investigate** - 调试错误
+- **/document-release** - 发布后文档更新
+- **/codex** - 获得第二意见或对抗性代码审查
+- **/careful** - 处理生产或实时系统
+- **/freeze** - 将编辑范围限定在一个模块/目录
+- **/guard** - 最大安全模式（破坏性警告+编辑限制）
+- **/unfreeze** - 移除编辑限制
+- **/gstack-upgrade** - 升级gstack到最新版本
+
+### 故障排除
+如果 gstack 技能无法正常工作，运行以下命令来构建二进制文件并注册技能：
+```bash
+cd .claude/skills/gstack && ./setup
+```
+
+---
+
 ## 相关文档
 
 - **README.md**: 详细的使用说明和功能介绍

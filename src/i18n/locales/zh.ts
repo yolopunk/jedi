@@ -164,13 +164,18 @@ export default {
     error: {
       providerConfig: '请在设置中配置 AI 提供商...'
     },
-    inputHint: '按 Enter 发送，Shift+Enter 换行'
+    inputHint: '按 Enter 发送，Shift+Enter 换行',
+    searchPlaceholder: '搜索对话...',
+    modelSearchPlaceholder: '搜索模型...',
+    commandPlaceholder: '输入命令...',
   },
   hosts: {
     validation: {
       groupNameRequired: '分组名称不能为空',
     },
     globalSwitch: {
+      enabledTooltip: '已启用 - 点击禁用',
+      disabledTooltip: '已禁用 - 点击启用',
       enabled: '已启用',
       disabled: '已禁用',
     },

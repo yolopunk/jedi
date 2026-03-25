@@ -26,7 +26,7 @@
         <div class="search-wrapper pa-2">
           <v-text-field
             v-model="searchQuery"
-            placeholder="Search models..."
+            :placeholder="$t('chat.modelSearchPlaceholder')"
             prepend-inner-icon="mdi-magnify"
             variant="solo-filled"
             density="compact"

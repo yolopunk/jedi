@@ -165,15 +165,107 @@
                 </v-list-item>
             </v-list>
 
+            <!-- Collapsed Action Icons -->
+            <div v-if="isCollapsed" class="collapsed-actions">
+                <v-btn
+                    icon
+                    size="x-small"
+                    variant="text"
+                    class="collapsed-action-btn"
+                    @click="toggleTheme"
+                >
+                    <v-icon :icon="themeIcon" size="16" />
+                    <v-tooltip activator="parent" location="right">{{
+                        themeTooltip
+                    }}</v-tooltip>
+                </v-btn>
+                <v-btn
+                    icon
+                    size="x-small"
+                    variant="text"
+                    class="collapsed-action-btn"
+                    @click="$emit('open-github')"
+                >
+                    <v-icon :icon="mdiGithub" size="16" />
+                    <v-tooltip activator="parent" location="right">GitHub</v-tooltip>
+                </v-btn>
+                <v-btn
+                    icon
+                    size="x-small"
+                    variant="text"
+                    class="collapsed-action-btn"
+                    @click="$emit('show-settings')"
+                >
+                    <v-icon :icon="mdiCog" size="16" />
+                    <v-tooltip activator="parent" location="right">{{
+                        $t("header.settings")
+                    }}</v-tooltip>
+                </v-btn>
+            </div>
+
             <!-- Footer Status -->
             <div v-if="!isCollapsed" class="sidebar-footer">
-                <div class="footer-status">
-                    <span class="status-label"
-                        >{{ $t("sidebar.system") }}:</span
+                <div class="footer-actions">
+                    <v-btn
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="footer-action-btn"
+                        @click="toggleTheme"
                     >
-                    <span class="status-value online">{{
-                        $t("sidebar.online")
-                    }}</span>
+                        <v-icon :icon="themeIcon" size="16" />
+                        <v-tooltip activator="parent" location="top">{{
+                            themeTooltip
+                        }}</v-tooltip>
+                    </v-btn>
+                    <v-btn
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="footer-action-btn"
+                        @click="$emit('open-github')"
+                    >
+                        <v-icon :icon="mdiGithub" size="16" />
+                        <v-tooltip activator="parent" location="top">GitHub</v-tooltip>
+                    </v-btn>
+                    <v-btn
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="footer-action-btn"
+                        @click="$emit('show-settings')"
+                    >
+                        <v-icon :icon="mdiCog" size="16" />
+                        <v-tooltip activator="parent" location="top">{{
+                            $t("header.settings")
+                        }}</v-tooltip>
+                    </v-btn>
+                </div>
+                <div class="hud-panel">
+                    <div class="hud-scanline"></div>
+                    <div class="hud-item">
+                        <span class="hud-dot online"></span>
+                        <span class="hud-label">SYS</span>
+                        <v-tooltip activator="parent" location="top">{{
+                            $t("header.systemOnline")
+                        }}</v-tooltip>
+                    </div>
+                    <div class="hud-divider"></div>
+                    <div class="hud-item">
+                        <span class="hud-dot standby"></span>
+                        <span class="hud-label">MOD</span>
+                        <v-tooltip activator="parent" location="top">{{
+                            $t("header.modulesActive")
+                        }}</v-tooltip>
+                    </div>
+                    <div class="hud-divider"></div>
+                    <div class="hud-item">
+                        <span class="hud-dot scanning"></span>
+                        <span class="hud-label">MON</span>
+                        <v-tooltip activator="parent" location="top">{{
+                            $t("header.monitoring")
+                        }}</v-tooltip>
+                    </div>
                 </div>
                 <div class="footer-time">{{ currentTime }}</div>
             </div>
@@ -191,8 +283,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue";
-import { mdiDns, mdiWallpaper, mdiPodcast, mdiRobot } from "@mdi/js";
+import { ref, onMounted, onUnmounted, watch, computed } from "vue";
+import { useI18n } from "vue-i18n";
+import {
+    mdiDns,
+    mdiWallpaper,
+    mdiPodcast,
+    mdiRobot,
+    mdiCog,
+    mdiGithub,
+    mdiWeatherNight,
+    mdiWeatherSunny,
+    mdiThemeLightDark,
+} from "@mdi/js";
+import { useTheme } from "@/composables/useTheme";
 
 const props = defineProps<{
     collapsed?: boolean;
@@ -204,6 +308,31 @@ const emit = defineEmits<{
     (e: "update:width", width: number): void;
     (e: "toggle-sidebar"): void;
 }>();
+
+const { t } = useI18n();
+const { themeMode, setTheme } = useTheme();
+
+const themeIcon = computed(() => {
+    if (themeMode.value === "dark") return mdiWeatherNight;
+    if (themeMode.value === "light") return mdiWeatherSunny;
+    return mdiThemeLightDark;
+});
+
+const themeTooltip = computed(() => {
+    if (themeMode.value === "dark") return t("theme.dark");
+    if (themeMode.value === "light") return t("theme.light");
+    return t("theme.system");
+});
+
+function toggleTheme() {
+    if (themeMode.value === "light") {
+        setTheme("dark");
+    } else if (themeMode.value === "dark") {
+        setTheme("system");
+    } else {
+        setTheme("light");
+    }
+}
 
 // Sidebar width and resize
 const width = ref(200);
@@ -528,33 +657,152 @@ onUnmounted(() => {
 
 /* Sidebar Footer */
 .sidebar-footer {
-    padding: 12px 16px;
+    padding: 8px 12px 10px;
     border-top: 1px solid rgba(0, 255, 255, 0.15);
     background: linear-gradient(0deg, #0f0f1a 0%, transparent 100%);
 }
 
-.footer-status {
+/* Footer Action Buttons */
+.footer-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 6px;
 }
 
-.status-label {
+.footer-action-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    border-radius: 4px;
+    color: rgba(0, 255, 255, 0.5);
+    opacity: 0.7;
+    transition: all 0.15s ease;
+}
+
+.footer-action-btn:hover {
+    background-color: rgba(0, 255, 255, 0.1);
+    opacity: 1;
+    color: #00ffff !important;
+}
+
+/* Collapsed Action Icons */
+.collapsed-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 0;
+    border-top: 1px solid rgba(0, 255, 255, 0.15);
+}
+
+.collapsed-action-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 4px;
+    color: rgba(0, 255, 255, 0.5);
+    opacity: 0.7;
+    transition: all 0.15s ease;
+}
+
+.collapsed-action-btn:hover {
+    background-color: rgba(0, 255, 255, 0.1);
+    opacity: 1;
+    color: #00ffff !important;
+}
+
+/* HUD Status Panel */
+.hud-panel {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    height: 22px;
+    padding: 0 8px;
+    background: rgba(0, 255, 255, 0.04);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
     font-size: 9px;
-    color: #52525b;
     letter-spacing: 1px;
+    margin-bottom: 6px;
 }
 
-.status-value {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 1px;
+.hud-scanline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 255, 0.03) 2px,
+        rgba(0, 255, 255, 0.03) 4px
+    );
+    pointer-events: none;
+    animation: scanline-move 3s linear infinite;
 }
 
-.status-value.online {
-    color: #00ff88;
-    text-shadow: 0 0 8px rgba(0, 255, 136, 0.5);
+@keyframes scanline-move {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 0 4px;
+    }
+}
+
+.hud-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 5px;
+}
+
+.hud-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.hud-dot.online {
+    background: #00ff88;
+    box-shadow: 0 0 4px #00ff88;
+}
+
+.hud-dot.standby {
+    background: #ffaa00;
+    box-shadow: 0 0 4px #ffaa00;
+}
+
+.hud-dot.scanning {
+    background: #00aaff;
+    box-shadow: 0 0 4px #00aaff;
+    animation: hud-blink 1.5s ease-in-out infinite;
+}
+
+@keyframes hud-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.hud-label {
+    color: rgba(0, 255, 255, 0.5);
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.hud-divider {
+    width: 1px;
+    height: 12px;
+    background: rgba(0, 255, 255, 0.15);
+    flex-shrink: 0;
 }
 
 .footer-time {
@@ -562,6 +810,7 @@ onUnmounted(() => {
     color: #00ffff;
     font-family: "JetBrains Mono", monospace;
     text-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
+    text-align: center;
 }
 
 /* Resize Handle */
@@ -671,12 +920,64 @@ onUnmounted(() => {
     background: linear-gradient(0deg, #f5e6d3 0%, transparent 100%);
 }
 
-.light-theme .status-label {
-    color: #8b7355;
+.light-theme .footer-action-btn {
+    color: rgba(107, 68, 35, 0.5);
 }
 
-.light-theme .status-value.online {
-    color: #daa520;
+.light-theme .footer-action-btn:hover {
+    background-color: rgba(205, 127, 50, 0.15);
+    color: #cd7f32 !important;
+}
+
+.light-theme .collapsed-actions {
+    border-top-color: rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .collapsed-action-btn {
+    color: rgba(107, 68, 35, 0.5);
+}
+
+.light-theme .collapsed-action-btn:hover {
+    background-color: rgba(205, 127, 50, 0.15);
+    color: #cd7f32 !important;
+}
+
+.light-theme .hud-panel {
+    background: rgba(184, 134, 11, 0.08);
+    border-color: rgba(184, 134, 11, 0.25);
+}
+
+.light-theme .hud-scanline {
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(107, 68, 35, 0.03) 2px,
+        rgba(107, 68, 35, 0.03) 4px
+    );
+}
+
+.light-theme .hud-dot.online {
+    background: #daa520;
+    box-shadow: 0 0 4px rgba(218, 165, 32, 0.5);
+}
+
+.light-theme .hud-dot.standby {
+    background: #cd853f;
+    box-shadow: 0 0 4px rgba(205, 133, 63, 0.5);
+}
+
+.light-theme .hud-dot.scanning {
+    background: #cd7f32;
+    box-shadow: 0 0 4px rgba(205, 127, 50, 0.5);
+}
+
+.light-theme .hud-label {
+    color: rgba(107, 68, 35, 0.5);
+}
+
+.light-theme .hud-divider {
+    background: rgba(184, 134, 11, 0.2);
 }
 
 .light-theme .footer-time {

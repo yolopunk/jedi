@@ -1,15 +1,6 @@
 <template>
-  <v-app :class="[platformClass, { fullscreen: isFullscreen }]">
+  <v-app>
     <div class="app-layout">
-      <!-- Full Width Title Bar -->
-      <app-header
-        :sidebar-collapsed="sidebarCollapsed"
-        @toggle-sidebar="toggleSidebar"
-        @open-github="openGithubRepo"
-        @show-settings="showSettingsDialog = true"
-        class="full-width-titlebar"
-      />
-
       <div class="content-wrapper">
         <!-- Sidebar -->
         <app-sidebar
@@ -86,12 +77,10 @@ import { useI18n } from 'vue-i18n'
 import { useStorage } from '@/composables/useStorage'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppHeader from '@/components/layout/AppHeader.vue'
 import HelpDialog from '@/components/dialogs/HelpDialog.vue'
 import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
 import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 import { open } from '@tauri-apps/plugin-shell'
-import { getCurrentWindow } from '@tauri-apps/api/window'
 import { initTheme } from '@/composables/useTheme'
 import { useWallpaper } from '@/composables/useWallpaper'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
@@ -101,7 +90,6 @@ import { mdiMenu, mdiMenuOpen } from '@mdi/js'
 const { locale } = useI18n()
 const { getItem, setItem } = useStorage()
 const { currentPlaying, setAudioRef } = useAudioPlayer()
-const appWindow = getCurrentWindow()
 
 const audioEl = ref<HTMLAudioElement | null>(null)
 
@@ -110,14 +98,8 @@ const showHelpDialog = ref(false)
 const showSettingsDialog = ref(false)
 const showAboutDialog = ref(false)
 
-// Platform detection
-const platformClass = ref('')
-
 // Sidebar state
 const sidebarCollapsed = ref(false)
-
-// Fullscreen state
-const isFullscreen = ref(false)
 
 // Current locale display
 const currentLocale = computed(() => {
@@ -135,10 +117,6 @@ const toggleLanguage = async () => {
   const newLang = locale.value === 'zh' ? 'en' : 'zh'
   locale.value = newLang
   await setItem('language', newLang)
-}
-
-async function checkFullscreen() {
-  isFullscreen.value = await appWindow.isFullscreen()
 }
 
 // Initialize Audio Player
@@ -213,60 +191,17 @@ onMounted(async () => {
   // Initialize auto-update check
   const { startAutoCheck } = useUpdate()
   startAutoCheck()
-
-  // Detect Platform
-  const ua = navigator.userAgent.toLowerCase()
-  if (ua.includes('mac') || ua.includes('darwin')) {
-    platformClass.value = 'os-macos'
-  } else if (ua.includes('win')) {
-    platformClass.value = 'os-windows'
-  }
-
-  // Check initial fullscreen state and listen for changes
-  await checkFullscreen()
-  
-  let fullscreenTimeout: number | null = null
-  appWindow.onResized(() => {
-    if (fullscreenTimeout) {
-      clearTimeout(fullscreenTimeout)
-    }
-    fullscreenTimeout = window.setTimeout(() => {
-      checkFullscreen()
-    }, 100)
-  })
 })
 </script>
 
 <style scoped>
-/* Platform Specific Styles */
-:global(.os-macos) {
-  background: transparent !important;
-}
-
-:global(.os-macos) .app-layout {
-  border-radius: 12px;
-  overflow: hidden;
-  /* Add a subtle border/shadow to define the window */
-  box-shadow: 0 0 0 1px rgba(var(--v-theme-on-surface), 0.12), 0 20px 50px rgba(0, 0, 0, 0.3);
-}
-
-/* Fullscreen mode - remove corner radius and shadow */
-:global(.os-macos.fullscreen) .app-layout {
-  border-radius: 0;
-  box-shadow: none;
-}
-
-/* Ensure background is applied to the layout container for transparency support */
+/* Ensure background is applied to the layout container */
 .app-layout {
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
   background-color: rgb(var(--v-theme-background));
-}
-
-.full-width-titlebar {
-  flex-shrink: 0;
 }
 
 .content-wrapper {

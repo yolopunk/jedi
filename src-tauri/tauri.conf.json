@@ -9,18 +9,6 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [
-      {
-        "decorations": false,
-        "transparent": true,
-        "resizable": true,
-        "title": "Jedi",
-        "width": 1200,
-        "height": 768,
-        "minWidth": 980,
-        "minHeight": 600
-      }
-    ],
     "security": {
       "csp": "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
     }

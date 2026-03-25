@@ -44,7 +44,7 @@ use crate::utils::logger;
 use std::sync::Mutex;
 use sysinfo::{Networks, System};
 use tauri::RunEvent::WindowEvent;
-use tauri::{Manager, RunEvent};
+use tauri::{Manager, RunEvent, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 
 mod api;
 mod config;
@@ -91,6 +91,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .manage(chat_session_manager_state)
     .manage(model_provider_manager_state)
     .setup(|app| {
+      // 创建主窗口
+      let mut win_builder =
+        WebviewWindowBuilder::new(app, "main", WebviewUrl::App(Default::default()))
+          .title("Jedi")
+          .inner_size(1200.0, 768.0)
+          .min_inner_size(980.0, 600.0)
+          .resizable(true);
+
+      #[cfg(target_os = "macos")]
+      {
+        win_builder = win_builder.title_bar_style(TitleBarStyle::Transparent);
+      }
+
+      let _window = win_builder.build()?;
+
       config::app::load_tray_config(app);
 
       #[cfg(desktop)]

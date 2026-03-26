@@ -13,6 +13,7 @@
             <div
                 class="d-flex flex-column align-center py-2 border-bottom logo-area"
             >
+                <LogoShaderBg :is-collapsed="isCollapsed" />
                 <div
                     class="grogu-pod-container mb-1"
                     :class="{ 'mini-pod': isCollapsed }"
@@ -297,6 +298,7 @@ import {
     mdiThemeLightDark,
 } from "@mdi/js";
 import { useTheme } from "@/composables/useTheme";
+import LogoShaderBg from "@/components/common/LogoShaderBg.vue";
 
 const props = defineProps<{
     collapsed?: boolean;
@@ -466,6 +468,9 @@ onUnmounted(() => {
 .logo-area {
     border-bottom-color: rgba(0, 255, 255, 0.15) !important;
     padding: 16px 8px !important;
+    position: relative;
+    overflow: hidden;
+    min-height: 160px;
 }
 
 .grogu-pod-container {

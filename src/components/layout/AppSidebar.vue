@@ -13,7 +13,7 @@
             <div
                 class="d-flex flex-column align-center py-2 border-bottom logo-area"
             >
-                <LogoShaderBg :is-collapsed="isCollapsed" />
+                <LogoShaderBg v-if="!isCollapsed" :is-collapsed="isCollapsed" />
                 <div
                     class="grogu-pod-container mb-1"
                     :class="{ 'mini-pod': isCollapsed }"
@@ -473,6 +473,17 @@ onUnmounted(() => {
     min-height: 160px;
 }
 
+/* Collapsed logo area */
+.sidebar-collapsed .logo-area {
+    min-height: auto;
+    padding: 10px 8px !important;
+    background: radial-gradient(
+        circle at center,
+        rgba(0, 255, 255, 0.06) 0%,
+        transparent 70%
+    );
+}
+
 .grogu-pod-container {
     position: relative;
     width: 72px;
@@ -866,6 +877,24 @@ onUnmounted(() => {
 
 .light-theme .logo-area {
     border-bottom-color: rgba(184, 134, 11, 0.3) !important;
+}
+
+.light-theme .sidebar-collapsed .logo-area {
+    background: radial-gradient(
+        circle at center,
+        rgba(205, 127, 50, 0.08) 0%,
+        transparent 70%
+    );
+}
+
+.light-theme .logo-shader-wrap :deep(.logo-shader-bg) {
+    filter: none;
+    opacity: 0.35;
+}
+
+.light-theme .logo-shader-wrap :deep(.shader-fps) {
+    color: rgba(107, 68, 35, 0.7);
+    text-shadow: 0 0 4px rgba(205, 127, 50, 0.3);
 }
 
 .light-theme .logo-glow {

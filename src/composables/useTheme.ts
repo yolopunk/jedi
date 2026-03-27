@@ -1,6 +1,11 @@
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useStorage } from '@/composables/useStorage'
 import { vuetify } from '@/plugins/vuetify'
+import {
+  mdiWeatherNight,
+  mdiWeatherSunny,
+  mdiThemeLightDark,
+} from '@mdi/js'
 
 // 主题类型
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -92,4 +97,32 @@ export function useTheme() {
     isDark,
     setTheme
   }
+}
+
+export function useThemeToggle() {
+  const { themeMode, setTheme } = useTheme()
+
+  const themeIcon = computed(() => {
+    if (themeMode.value === 'dark') return mdiWeatherNight
+    if (themeMode.value === 'light') return mdiWeatherSunny
+    return mdiThemeLightDark
+  })
+
+  const themeTooltip = computed(() => {
+    if (themeMode.value === 'dark') return 'theme.dark'
+    if (themeMode.value === 'light') return 'theme.light'
+    return 'theme.system'
+  })
+
+  function toggleTheme() {
+    if (themeMode.value === 'light') {
+      setTheme('dark')
+    } else if (themeMode.value === 'dark') {
+      setTheme('system')
+    } else {
+      setTheme('light')
+    }
+  }
+
+  return { themeMode, themeIcon, themeTooltip, toggleTheme }
 }

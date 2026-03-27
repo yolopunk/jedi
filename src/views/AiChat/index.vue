@@ -276,9 +276,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useAiChatStore } from '@/stores/aiChat'
-import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js'
-import DOMPurify from 'dompurify'
+import { sharedMd, renderSafe } from '@/utils/markdown'
 
 const store = useAiChatStore()
 
@@ -328,24 +326,8 @@ const displayMessages = computed(() => {
   return store.currentSession?.messages || []
 })
 
-// Markdown renderer
-const md = MarkdownIt({
-  highlight: (str, lang) => {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return hljs.highlight(str, { language: lang }).value
-      } catch (e) {}
-    }
-    return ''
-  },
-  linkify: true,
-  breaks: true,
-})
-
 function renderMessage(content: string) {
-  if (!content) return ''
-  const html = md.render(content)
-  return DOMPurify.sanitize(html)
+  return renderSafe(sharedMd, content)
 }
 
 // Formatting

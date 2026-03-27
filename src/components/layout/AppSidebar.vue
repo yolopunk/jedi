@@ -177,7 +177,7 @@
                 >
                     <v-icon :icon="themeIcon" size="16" />
                     <v-tooltip activator="parent" location="right">{{
-                        themeTooltip
+                        $t(themeTooltip)
                     }}</v-tooltip>
                 </v-btn>
                 <v-btn
@@ -216,7 +216,7 @@
                     >
                         <v-icon :icon="themeIcon" size="16" />
                         <v-tooltip activator="parent" location="top">{{
-                            themeTooltip
+                            $t(themeTooltip)
                         }}</v-tooltip>
                     </v-btn>
                     <v-btn
@@ -284,8 +284,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, computed } from "vue";
-import { useI18n } from "vue-i18n";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import {
     mdiDns,
     mdiWallpaper,
@@ -293,11 +292,8 @@ import {
     mdiRobot,
     mdiCog,
     mdiGithub,
-    mdiWeatherNight,
-    mdiWeatherSunny,
-    mdiThemeLightDark,
 } from "@mdi/js";
-import { useTheme } from "@/composables/useTheme";
+import { useThemeToggle } from "@/composables/useTheme";
 import LogoShaderBg from "@/components/common/LogoShaderBg.vue";
 
 const props = defineProps<{
@@ -311,30 +307,7 @@ const emit = defineEmits<{
     (e: "toggle-sidebar"): void;
 }>();
 
-const { t } = useI18n();
-const { themeMode, setTheme } = useTheme();
-
-const themeIcon = computed(() => {
-    if (themeMode.value === "dark") return mdiWeatherNight;
-    if (themeMode.value === "light") return mdiWeatherSunny;
-    return mdiThemeLightDark;
-});
-
-const themeTooltip = computed(() => {
-    if (themeMode.value === "dark") return t("theme.dark");
-    if (themeMode.value === "light") return t("theme.light");
-    return t("theme.system");
-});
-
-function toggleTheme() {
-    if (themeMode.value === "light") {
-        setTheme("dark");
-    } else if (themeMode.value === "dark") {
-        setTheme("system");
-    } else {
-        setTheme("light");
-    }
-}
+const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle();
 
 // Sidebar width and resize
 const width = ref(200);

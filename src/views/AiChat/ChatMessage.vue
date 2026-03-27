@@ -93,9 +93,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js'
-import DOMPurify from 'dompurify'
+import { sharedMd, renderSafe } from '@/utils/markdown'
 import type { Message } from '@/stores/aiChat'
 
 const props = defineProps<{
@@ -108,30 +106,9 @@ defineEmits<{
 
 const copied = ref(false)
 
-// Configure markdown-it with syntax highlighting
-const md: MarkdownIt = new MarkdownIt({
-  html: false,
-  linkify: true,
-  typographer: true,
-  highlight: function (str: string, lang: string): string {
-    if (lang && hljs.getLanguage(lang)) {
-      try {
-        return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang }).value}</code></pre>`
-      } catch (_) {}
-    }
-    return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
-  }
-})
-
 const renderedContent = computed(() => {
   if (!props.message.content) return ''
-  
-  // Render markdown and sanitize
-  const rendered = md.render(props.message.content)
-  return DOMPurify.sanitize(rendered, {
-    ADD_ATTR: ['class'],
-    ADD_TAGS: ['pre', 'code'],
-  })
+  return renderSafe(sharedMd, props.message.content)
 })
 
 async function copyToClipboard() {

@@ -58,7 +58,7 @@
                 >
                     <v-icon :icon="themeIcon"></v-icon>
                     <v-tooltip activator="parent" location="top">{{
-                        themeTooltip
+                        $t(themeTooltip)
                     }}</v-tooltip>
                 </v-btn>
                 <v-btn
@@ -116,16 +116,14 @@ import {
     mdiHelpCircle,
     mdiCog,
     mdiInformation,
-    mdiWeatherNight,
-    mdiWeatherSunny,
-    mdiThemeLightDark,
 } from "@mdi/js";
-import { useTheme } from "@/composables/useTheme";
+import { useTheme, useThemeToggle } from "@/composables/useTheme";
 import { useStorage } from "@/composables/useStorage";
 
 // 获取主题状态
-const { t, locale } = useI18n();
-const { isDark, themeMode, setTheme } = useTheme();
+const { locale } = useI18n();
+const { isDark } = useTheme();
+const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle();
 const { setItem } = useStorage();
 
 // 语言切换
@@ -139,36 +137,10 @@ async function toggleLanguage() {
     await setItem("language", newLang);
 }
 
-// 计算属性图标
-const themeIcon = computed(() => {
-    if (themeMode.value === "dark") return mdiWeatherNight;
-    if (themeMode.value === "light") return mdiWeatherSunny;
-    return mdiThemeLightDark;
-});
-
-// 主题文本提示
-const themeTooltip = computed(() => {
-    if (themeMode.value === "dark") return t("theme.dark");
-    if (themeMode.value === "light") return t("theme.light");
-    return t("theme.system");
-});
-
 // Language flag
 const langFlag = computed(() => {
-    return locale.value === "zh" ? "🇨🇳" : "🇺🇸";
+    return locale.value === "zh" ? "" : "";
 });
-
-// 切换主题
-function toggleTheme() {
-    // 切换顺序: 浅色 -> 深色 -> 跟随系统 -> 浅色
-    if (themeMode.value === "light") {
-        setTheme("dark");
-    } else if (themeMode.value === "dark") {
-        setTheme("system");
-    } else {
-        setTheme("light");
-    }
-}
 
 // 定义组件事件
 defineEmits<{

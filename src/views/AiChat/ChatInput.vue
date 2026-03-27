@@ -151,7 +151,7 @@ const emit = defineEmits<{
   (e: 'attach-file'): void
 }>()
 
-const inputRef = ref<any>(null)
+const inputRef = ref<{ focus: () => void } | null>(null)
 const inputText = ref('')
 const showAttachMenu = ref(false)
 

@@ -60,18 +60,19 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { validateHostInput } from '@/utils/hostsUtils'
+import type { HostEntry } from '@/types/hosts'
 
 // 定义组件属性
 const props = defineProps<{
   modelValue: boolean;
-  host: any | null;
+  host: HostEntry | null;
 }>()
 
 // 定义组件事件
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
   (e: 'edit', data: {
-    originalHost: any;
+    originalHost: HostEntry;
     ip: string;
     domain: string;
   }): void;

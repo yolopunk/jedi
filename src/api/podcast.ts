@@ -38,29 +38,29 @@ export interface PodcastSubscription {
 }
 
 export async function refreshSubscription(rssUrl: string): Promise<PodcastSubscription> {
-  return await invoke('refresh_subscription', { rssUrl });
+  return await invoke<PodcastSubscription>('refresh_subscription', { rssUrl });
 }
 
 export async function getSubscriptions(): Promise<PodcastSubscription[]> {
-  return await invoke('get_subscriptions');
+  return await invoke<PodcastSubscription[]>('get_subscriptions');
 }
 
 export async function saveSubscription(sub: PodcastSubscription): Promise<PodcastSubscription[]> {
-  return await invoke('save_subscription', { sub });
+  return await invoke<PodcastSubscription[]>('save_subscription', { sub });
 }
 
 export async function removeSubscription(rssUrl: string): Promise<PodcastSubscription[]> {
-  return await invoke('remove_subscription', { rssUrl });
+  return await invoke<PodcastSubscription[]>('remove_subscription', { rssUrl });
 }
 
 export async function fetchRssChannel(rssUrl: string): Promise<PodcastSubscription> {
-  return await invoke('fetch_rss_channel', { rssUrl });
+  return await invoke<PodcastSubscription>('fetch_rss_channel', { rssUrl });
 }
 
 export async function fetchEpisodes(rssUrl: string): Promise<PodcastEpisode[]> {
-  return await invoke('fetch_episodes', { rssUrl });
+  return await invoke<PodcastEpisode[]>('fetch_episodes', { rssUrl });
 }
 
 export async function importOpml(opmlContent: string): Promise<PodcastSubscription[]> {
-  return await invoke('import_opml', { opmlContent });
+  return await invoke<PodcastSubscription[]>('import_opml', { opmlContent });
 }

@@ -322,7 +322,7 @@ function getMemoryUsagePercentage(): number {
 async function refreshOsInfo() {
     try {
         const info = await getOsInfo();
-        osInfo.value = info as any;
+        osInfo.value = info;
     } catch (error) {
         console.error("Failed to get OS info:", error);
     }

@@ -107,14 +107,14 @@
                     <div class="table-cell cell-actions">
                         <button
                             class="icon-btn btn-edit"
-                            @click="emit('edit-host', item)"
+                            @click="emit('edit-host', item.originalMap)"
                             title="Edit"
                         >
                             <span class="icon-edit">✎</span>
                         </button>
                         <button
                             class="icon-btn btn-delete"
-                            @click="emit('delete-host', item.id)"
+                            @click="emit('delete-host', item.originalMap)"
                             title="Delete"
                         >
                             <span class="icon-delete">✕</span>
@@ -227,7 +227,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { getHostsAsItems, openDomainLink } from "@/utils/hostsUtils";
-import { Group } from "@/types/hosts";
+import { Group, HostEntry } from "@/types/hosts";
 
 const { t } = useI18n();
 
@@ -239,9 +239,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: "update:search", value: string): void;
-    (e: "update-status", host: any): void;
-    (e: "edit-host", host: any): void;
-    (e: "delete-host", host: any): void;
+    (e: "update-status", host: HostEntry, enabled: boolean): void;
+    (e: "edit-host", host: HostEntry): void;
+    (e: "delete-host", host: HostEntry): void;
     (e: "add-host", name: string): void;
     (e: "open-domain", domain: string, message: string): void;
 }>();
@@ -292,9 +292,9 @@ function handleSearch() {
     currentDisplayCount.value = itemsPerPage;
 }
 
-function toggleItemEnabled(item: any) {
+function toggleItemEnabled(item: { domain: string; ip: string; enabled: boolean; originalMap: HostEntry }) {
     item.enabled = !item.enabled;
-    emit("update-status", item);
+    emit("update-status", item.originalMap, item.enabled);
 }
 
 function handleOpenDomain(domain: string) {

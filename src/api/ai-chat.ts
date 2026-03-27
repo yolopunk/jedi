@@ -99,7 +99,7 @@ export interface LogSecurityEventRequest {
   action?: string;
   ip_address?: string;
   user_agent?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export interface QuerySecurityLogsRequest {
@@ -121,14 +121,14 @@ export interface SecurityEventResponse {
   result: string;
   ip_address?: string;
   user_agent?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 /**
  * 记录安全事件
  */
-export async function logSecurityEvent(request: LogSecurityEventRequest) {
-  return await invoke('log_security_event', { request });
+export async function logSecurityEvent(request: LogSecurityEventRequest): Promise<void> {
+  return await invoke<void>('log_security_event', { request });
 }
 
 /**
@@ -160,8 +160,8 @@ export interface ProviderInfoResponse {
 /**
  * 存储 API Key
  */
-export async function storeApiKey(request: StoreApiKeyRequest) {
-  return await invoke('store_api_key', { request });
+export async function storeApiKey(request: StoreApiKeyRequest): Promise<void> {
+  return await invoke<void>('store_api_key', { request });
 }
 
 /**
@@ -174,8 +174,8 @@ export async function getApiKeyInfo(provider: string) {
 /**
  * 删除 API Key
  */
-export async function deleteApiKey(provider: string) {
-  return await invoke('delete_api_key', { provider });
+export async function deleteApiKey(provider: string): Promise<void> {
+  return await invoke<void>('delete_api_key', { provider });
 }
 
 /**

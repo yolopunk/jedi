@@ -4,12 +4,13 @@
  */
 import { invoke } from '@tauri-apps/api/core';
 import { Group } from '@/types/hosts';
+import { OsInfo } from '@/types/os';
 
 /**
  * 获取系统信息
  * @returns 系统信息
  */
-export async function getOsInfo() {
+export async function getOsInfo(): Promise<OsInfo> {
   return await invoke('get_os_info');
 }
 
@@ -17,8 +18,8 @@ export async function getOsInfo() {
  * 读取系统hosts配置
  * @returns hosts配置数据
  */
-export async function readSystemHosts() {
-  return await invoke('read_system_hosts');
+export async function readSystemHosts(): Promise<Group[]> {
+  return await invoke<Group[]>('read_system_hosts');
 }
 
 /**
@@ -26,8 +27,8 @@ export async function readSystemHosts() {
  * @param groups 分组数据
  * @returns 更新结果
  */
-export async function updateHostsWithGroups(groups: Group[]) {
-  return await invoke('update_hosts_with_groups', {
+export async function updateHostsWithGroups(groups: Group[]): Promise<string> {
+  return await invoke<string>('update_hosts_with_groups', {
     source: 'current',
     url: null,
     groups
@@ -38,16 +39,16 @@ export async function updateHostsWithGroups(groups: Group[]) {
  * 恢复hosts文件
  * @returns 恢复结果
  */
-export async function revertHosts() {
-  return await invoke('revert_hosts');
+export async function revertHosts(): Promise<string> {
+  return await invoke<string>('revert_hosts');
 }
 
 /**
  * 初始化默认配置
  * @returns 初始化结果
  */
-export async function initializeDefaultConfig() {
-  return await invoke('update_hosts_with_groups', {
+export async function initializeDefaultConfig(): Promise<string> {
+  return await invoke<string>('update_hosts_with_groups', {
     source: 'default',
     url: null,
     groups: null
@@ -59,6 +60,6 @@ export async function initializeDefaultConfig() {
  * @param url 远程配置URL
  * @returns 远程配置数据
  */
-export async function fetchRemoteConfig(url: string) {
-  return await invoke('fetch_remote_config', { url });
+export async function fetchRemoteConfig(url: string): Promise<string> {
+  return await invoke<string>('fetch_remote_config', { url });
 }

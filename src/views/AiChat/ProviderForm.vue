@@ -268,8 +268,12 @@
 import { ref, computed, watch } from 'vue'
 import type { Provider } from '@/stores/aiChat'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Model = any
+interface ProviderFormModel {
+  id: string
+  name: string
+  providerId: string
+  enabled: boolean
+}
 
 const props = defineProps<{
   modelValue: boolean
@@ -284,7 +288,7 @@ const emit = defineEmits<{
 
 // Form state
 const currentStep = ref(1)
-const configForm = ref<any>(null)
+const configForm = ref<{ validate: () => void } | null>(null)
 const configValid = ref(false)
 const showApiKey = ref(false)
 const loadingModels = ref(false)
@@ -297,7 +301,7 @@ const form = ref({
   baseUrl: '',
   apiKey: '',
   isActive: true,
-  models: [] as (Model & { enabled: boolean })[],
+  models: [] as ProviderFormModel[],
 })
 
 // Provider types

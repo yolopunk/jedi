@@ -794,41 +794,6 @@ function setupEpisodesObserver() {
   gap: 16px;
 }
 
-.status-indicators {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-light {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  position: relative;
-}
-
-.status-light.online {
-  background: #00ff88;
-  box-shadow: 0 0 10px #00ff88, 0 0 20px rgba(0, 255, 136, 0.33);
-  animation: pulse-online 2s ease-in-out infinite;
-}
-
-.status-light.standby {
-  background: #ffaa00;
-  box-shadow: 0 0 10px #ffaa00, 0 0 20px rgba(255, 170, 0, 0.33);
-  animation: pulse-standby 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse-online {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-@keyframes pulse-standby {
-  0%, 100% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.2); }
-}
-
 .console-title {
   display: flex;
   align-items: center;
@@ -866,134 +831,6 @@ function setupEpisodesObserver() {
   font-size: 12px;
   font-weight: 700;
   text-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
-}
-
-.input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: rgba(5, 5, 8, 0.9);
-  border: 1px solid #1a1a3a;
-  border-radius: 4px;
-  padding: 6px 12px;
-  min-width: 200px;
-}
-
-.input-prompt {
-  color: #00ff88;
-  font-size: 12px;
-  margin-right: 8px;
-  text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
-}
-
-.console-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #00ffff;
-  font-family: inherit;
-  font-size: 12px;
-}
-
-.console-input::placeholder {
-  color: #333;
-}
-
-.console-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: 1px solid #00ff88;
-  color: #00ff88;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.console-btn:hover:not(:disabled) {
-  background: rgba(0, 255, 136, 0.07);
-  box-shadow: 0 0 15px rgba(0, 255, 136, 0.27), inset 0 0 15px rgba(0, 255, 136, 0.07);
-}
-
-.console-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.console-btn.primary {
-  border-color: #00ffff;
-  color: #00ffff;
-}
-
-.console-btn.primary:hover:not(:disabled) {
-  background: rgba(0, 255, 255, 0.07);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.27), inset 0 0 15px rgba(0, 255, 255, 0.07);
-}
-
-.console-btn.icon-only {
-  padding: 6px 10px;
-}
-
-.btn-icon {
-  font-size: 14px;
-}
-
-.btn-icon.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* CRT Effects */
-.scanlines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 100;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.12),
-    rgba(0, 0, 0, 0.12) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-}
-
-.crt-vignette {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 99;
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.35) 100%);
-}
-
-.grid-bg-layer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image:
-    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
 }
 
 /* Podcast Grid */
@@ -1243,10 +1080,6 @@ function setupEpisodesObserver() {
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .episodes-list {
   display: flex;
   flex-direction: column;
@@ -1437,61 +1270,9 @@ function setupEpisodesObserver() {
   height: 20px;
 }
 
-/* Empty State */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-}
-
-.empty-icon {
-  font-size: 48px;
-  color: #52525b;
-  margin-bottom: 16px;
-}
-
-.empty-text {
-  font-size: 12px;
-  color: #71717a;
-  letter-spacing: 2px;
-}
-
-/* Loading Grid */
-.loading-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  padding: 8px;
-}
-
-.loading-card {
-  border-radius: 8px;
-  overflow: hidden;
-  background: rgba(15, 15, 26, 0.5);
-  border: 1px solid rgba(0, 255, 255, 0.05);
-}
-
-.loading-image {
-  aspect-ratio: 1;
-  background: linear-gradient(90deg, rgba(0, 255, 255, 0.03) 25%, rgba(0, 255, 255, 0.08) 50%, rgba(0, 255, 255, 0.03) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-.loading-text {
-  height: 40px;
-  margin: 12px;
-  background: linear-gradient(90deg, rgba(0, 255, 255, 0.03) 25%, rgba(0, 255, 255, 0.08) 50%, rgba(0, 255, 255, 0.03) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
-}
-
-@keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.spinning {
+  animation: spin 1s linear infinite;
+  display: inline-block;
 }
 
 /* Show Notes Dialog */
@@ -1605,25 +1386,6 @@ function setupEpisodesObserver() {
   letter-spacing: 1px;
 }
 
-/* Console scrollbar */
-.console-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-
-.console-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.console-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.console-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 255, 255, 0.3);
-}
-
-/* Spinning animation */
 .spinning {
   animation: spin 1s linear infinite;
   display: inline-block;
@@ -1634,20 +1396,6 @@ function setupEpisodesObserver() {
    ========================================= */
 .light-theme .podcast-manager {
   background: #f5e6d3;
-}
-
-.light-theme .scanlines {
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(107, 68, 35, 0.03),
-    rgba(107, 68, 35, 0.03) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-}
-
-.light-theme .crt-vignette {
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(107, 68, 35, 0.1) 100%);
 }
 
 .light-theme .console-header-bar {
@@ -1673,40 +1421,6 @@ function setupEpisodesObserver() {
   color: #cd7f32;
 }
 
-.light-theme .status-light.online {
-  background: #daa520;
-  box-shadow: 0 0 8px rgba(218, 165, 32, 0.4);
-}
-
-.light-theme .status-light.standby {
-  background: #cd853f;
-  box-shadow: 0 0 8px rgba(205, 133, 63, 0.4);
-}
-
-.light-theme .console-btn {
-  border-color: #cd7f32;
-  color: #cd7f32;
-}
-
-.light-theme .console-btn:hover {
-  background: rgba(205, 127, 50, 0.12);
-}
-
-.light-theme .console-btn.primary {
-  background: #cd7f32;
-  color: #ffffff;
-}
-
-.light-theme .console-btn.icon-only {
-  background: transparent;
-}
-
-.light-theme .grid-bg-layer {
-  background-image:
-    linear-gradient(rgba(184, 134, 11, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(184, 134, 11, 0.08) 1px, transparent 1px);
-}
-
 .light-theme .podcast-card {
   background: linear-gradient(135deg, #efe0cc 0%, #e8d4bc 100%);
   border-color: rgba(184, 134, 11, 0.3);
@@ -1724,18 +1438,6 @@ function setupEpisodesObserver() {
   color: #6b4423;
 }
 
-.light-theme .empty-state {
-  background: #f5e6d3;
-}
-
-.light-theme .empty-icon {
-  color: #cd7f32;
-}
-
-.light-theme .empty-text {
-  color: #6b4423;
-}
-
 .light-theme .podcast-item:hover .podcast-card {
   border-color: rgba(205, 127, 50, 0.5);
 }
@@ -1748,15 +1450,6 @@ function setupEpisodesObserver() {
   background: #ffffff;
 }
 
-.light-theme .console-scroll::-webkit-scrollbar-thumb {
-  background: rgba(184, 134, 11, 0.3);
-}
-
-.light-theme .console-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(184, 134, 11, 0.5);
-}
-
-/* Detail View Light Theme */
 .light-theme .podcast-header {
   background: rgba(239, 224, 204, 0.8);
   border-bottom-color: rgba(184, 134, 11, 0.3);
@@ -1801,24 +1494,6 @@ function setupEpisodesObserver() {
 .light-theme .playing-bar {
   background: #daa520;
   box-shadow: 0 0 8px rgba(218, 165, 32, 0.5);
-}
-
-.light-theme .input-wrapper {
-  background: #faf3e8;
-  border-color: #d4a574;
-}
-
-.light-theme .input-prompt {
-  color: #cd7f32;
-  text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
-}
-
-.light-theme .console-input {
-  color: #3d2914;
-}
-
-.light-theme .console-input::placeholder {
-  color: #8b7355;
 }
 
 .light-theme .placeholder-icon {
@@ -1885,19 +1560,6 @@ function setupEpisodesObserver() {
 
 .light-theme .episode-overlay {
   background: rgba(107, 68, 35, 0.5);
-}
-
-.light-theme .loading-card {
-  background: rgba(245, 230, 211, 0.5);
-  border-color: rgba(184, 134, 11, 0.1);
-}
-
-.light-theme .loading-image {
-  background: linear-gradient(90deg, rgba(184, 134, 11, 0.05) 25%, rgba(184, 134, 11, 0.12) 50%, rgba(184, 134, 11, 0.05) 75%);
-}
-
-.light-theme .loading-text {
-  background: linear-gradient(90deg, rgba(184, 134, 11, 0.05) 25%, rgba(184, 134, 11, 0.12) 50%, rgba(184, 134, 11, 0.05) 75%);
 }
 
 .light-theme .loading-spinner {

@@ -496,36 +496,6 @@ onMounted(() => {
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 
-/* 扫描线效果 */
-.scanlines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 100;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.12),
-    rgba(0, 0, 0, 0.12) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-}
-
-/* CRT 晕影 */
-.crt-vignette {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 99;
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.35) 100%);
-}
-
 /* 主布局 */
 .chat-console-layout {
   display: flex;

@@ -235,35 +235,6 @@ onMounted(async () => {
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 
-/* CRT Effects */
-.scanlines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 100;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.12),
-    rgba(0, 0, 0, 0.12) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-}
-
-.crt-vignette {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 99;
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.35) 100%);
-}
-
 .content-wrapper {
   position: relative;
   z-index: 1;
@@ -294,38 +265,6 @@ onMounted(async () => {
 .console-card-text {
   background: #0a0a0f;
   padding: 20px 16px;
-}
-
-.input-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  background: rgba(5, 5, 8, 0.9);
-  border: 1px solid #1a1a3a;
-  border-radius: 4px;
-  padding: 8px 12px;
-}
-
-.input-prompt {
-  color: #00ff88;
-  font-size: 12px;
-  margin-right: 8px;
-  text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.console-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #00ffff;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-}
-
-.console-input::placeholder {
-  color: #333;
 }
 
 .console-card-actions {
@@ -373,20 +312,6 @@ onMounted(async () => {
 /* =========================================
    Light Theme Styles (Tatooine Outpost)
    ========================================= */
-.light-theme .scanlines {
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(107, 68, 35, 0.03),
-    rgba(107, 68, 35, 0.03) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-}
-
-.light-theme .crt-vignette {
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(107, 68, 35, 0.1) 100%);
-}
-
 .light-theme .console-title-bar {
   background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
   border-bottom: 1px solid #b8860b;
@@ -399,24 +324,6 @@ onMounted(async () => {
 
 .light-theme .console-card-text {
   background: #faf3e8;
-}
-
-.light-theme .input-wrapper {
-  background: #faf3e8;
-  border: 1px solid #b8860b;
-}
-
-.light-theme .input-prompt {
-  color: #cd7f32;
-  text-shadow: 0 0 6px rgba(205, 127, 50, 0.25);
-}
-
-.light-theme .console-input {
-  color: #3d2914;
-}
-
-.light-theme .console-input::placeholder {
-  color: #8b7355;
 }
 
 .light-theme .console-card-actions {

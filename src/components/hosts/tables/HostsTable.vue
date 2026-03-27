@@ -249,8 +249,6 @@ const emit = defineEmits<{
 const tableWrapperRef = ref<HTMLElement | null>(null);
 const itemsPerPage = 15;
 const currentDisplayCount = ref(itemsPerPage);
-const currentTimestamp = ref("");
-let timestampInterval: number | null = null;
 
 const searchModel = computed({
     get: () => props.search || "",
@@ -279,14 +277,6 @@ const hasMore = computed(() => {
 // Use t() to avoid TS6133
 const searchPlaceholder = computed(() => t("common.search"));
 const addHostText = computed(() => t("hosts.table.addHost"));
-
-function updateTimestamp() {
-    const now = new Date();
-    currentTimestamp.value = now
-        .toISOString()
-        .replace("T", " ")
-        .substring(0, 19);
-}
 
 watch(filteredItems, () => {
     currentDisplayCount.value = itemsPerPage;
@@ -341,15 +331,10 @@ function removeScrollListener() {
 
 onMounted(() => {
     setTimeout(setupScrollListener, 100);
-    updateTimestamp();
-    timestampInterval = window.setInterval(updateTimestamp, 1000);
 });
 
 onUnmounted(() => {
     removeScrollListener();
-    if (timestampInterval) {
-        clearInterval(timestampInterval);
-    }
 });
 </script>
 
@@ -413,99 +398,6 @@ onUnmounted(() => {
         linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 40px 40px;
-}
-
-/* Console Header */
-.console-header {
-    position: relative;
-    z-index: 5;
-    background: linear-gradient(180deg, #0f0f1a 0%, #0a0a12 100%);
-    border-bottom: 1px solid #00ffff22;
-    padding: 12px 16px;
-}
-
-.console-title-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.console-status-indicators {
-    display: flex;
-    gap: 8px;
-}
-
-.status-light {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    position: relative;
-}
-
-.status-online {
-    background: #00ff88;
-    box-shadow:
-        0 0 10px #00ff88,
-        0 0 20px #00ff8855;
-    animation: pulse-online 2s ease-in-out infinite;
-}
-
-.status-standby {
-    background: #ffaa00;
-    box-shadow:
-        0 0 10px #ffaa00,
-        0 0 20px #ffaa0055;
-    animation: pulse-standby 1.5s ease-in-out infinite;
-}
-
-.status-scanning {
-    background: #00aaff;
-    box-shadow:
-        0 0 10px #00aaff,
-        0 0 20px #00aaff55;
-    animation: pulse-scanning 1s ease-in-out infinite;
-}
-
-@keyframes pulse-online {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.5;
-    }
-}
-
-@keyframes pulse-standby {
-    0%,
-    100% {
-        opacity: 0.8;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1.2);
-    }
-}
-
-@keyframes pulse-scanning {
-    0%,
-    100% {
-        box-shadow:
-            0 0 10px #00aaff,
-            0 0 20px #00aaff55;
-    }
-    50% {
-        box-shadow:
-            0 0 15px #00aaff,
-            0 0 30px #00aaff88;
-    }
-}
-
-.console-title {
-    display: flex;
-    align-items: center;
-    gap: 4px;
 }
 
 .title-prefix,
@@ -1175,15 +1067,6 @@ onUnmounted(() => {
         transparent 0%,
         rgba(107, 68, 35, 0.1) 100%
     );
-}
-
-.light-theme .console-header {
-    background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
-    border-bottom-color: rgba(184, 134, 11, 0.3);
-}
-
-.light-theme .console-title-bar {
-    background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
 }
 
 .light-theme .title-text {

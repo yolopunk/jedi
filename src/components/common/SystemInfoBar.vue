@@ -282,10 +282,6 @@ const osInfo = ref<OsInfo | null>(null);
 const REFRESH_INTERVAL = 3000;
 
 let refreshTimer: number | null = null;
-let timeTimer: number | null = null;
-
-// 当前时间
-const now = ref(new Date());
 
 // 格式化百分比
 function formatPercentage(value?: number): string {
@@ -336,15 +332,10 @@ onMounted(async () => {
     await refreshOsInfo();
 
     refreshTimer = window.setInterval(refreshOsInfo, REFRESH_INTERVAL);
-
-    timeTimer = window.setInterval(() => {
-        now.value = new Date();
-    }, 1000);
 });
 
 onUnmounted(() => {
     if (refreshTimer) clearInterval(refreshTimer);
-    if (timeTimer) clearInterval(timeTimer);
 });
 </script>
 

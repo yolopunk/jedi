@@ -1,4 +1,3 @@
-// @ts-ignore
 import { Store } from '@tauri-apps/plugin-store'
 
 // 创建存储实例

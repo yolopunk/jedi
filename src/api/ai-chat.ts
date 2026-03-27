@@ -2,7 +2,6 @@
  * AI Chat API
  * 封装与Tauri后端的交互
  */
-// @ts-ignore
 import { invoke } from '@tauri-apps/api/core';
 
 // ========== 输入验证 API ==========

@@ -1,4 +1,3 @@
-// @ts-ignore
 import { invoke } from '@tauri-apps/api/core';
 
 export interface AppInfo {

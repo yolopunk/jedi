@@ -42,7 +42,9 @@
             <!-- Navigation -->
             <v-list nav class="pa-2 mt-2 flex-grow-1">
                 <v-list-item
-                    to="/chat"
+                    v-for="item in navItems"
+                    :key="item.to"
+                    :to="item.to"
                     rounded="lg"
                     class="mb-2 sidebar-item"
                     color="primary"
@@ -55,112 +57,19 @@
                             class="sidebar-icon-container"
                             :class="{ 'mr-3': !isCollapsed }"
                         >
-                            <v-icon :icon="mdiRobot" size="20"></v-icon>
+                            <v-icon :icon="item.icon" size="20"></v-icon>
                         </div>
                     </template>
                     <v-list-item-title
                         v-if="!isCollapsed"
                         class="font-weight-medium nav-text"
-                        >CHAT</v-list-item-title
+                        >{{ item.label }}</v-list-item-title
                     >
                     <v-tooltip
                         v-if="isCollapsed"
                         activator="parent"
                         location="right"
-                        >{{ $t("sidebar.chat") }}</v-tooltip
-                    >
-                    <div v-if="!isCollapsed" class="nav-indicator"></div>
-                </v-list-item>
-
-                <v-list-item
-                    to="/hosts"
-                    rounded="lg"
-                    class="mb-2 sidebar-item"
-                    color="primary"
-                    active-class="v-list-item--active"
-                    :slim="isCollapsed"
-                    :class="{ 'justify-center': isCollapsed }"
-                >
-                    <template v-slot:prepend>
-                        <div
-                            class="sidebar-icon-container"
-                            :class="{ 'mr-3': !isCollapsed }"
-                        >
-                            <v-icon :icon="mdiDns" size="20"></v-icon>
-                        </div>
-                    </template>
-                    <v-list-item-title
-                        v-if="!isCollapsed"
-                        class="font-weight-medium nav-text"
-                        >HOSTS</v-list-item-title
-                    >
-                    <v-tooltip
-                        v-if="isCollapsed"
-                        activator="parent"
-                        location="right"
-                        >{{ $t("sidebar.hostsManager") }}</v-tooltip
-                    >
-                    <div v-if="!isCollapsed" class="nav-indicator"></div>
-                </v-list-item>
-
-                <v-list-item
-                    to="/wallpapers"
-                    rounded="lg"
-                    class="mb-2 sidebar-item"
-                    color="primary"
-                    active-class="v-list-item--active"
-                    :slim="isCollapsed"
-                    :class="{ 'justify-center': isCollapsed }"
-                >
-                    <template v-slot:prepend>
-                        <div
-                            class="sidebar-icon-container"
-                            :class="{ 'mr-3': !isCollapsed }"
-                        >
-                            <v-icon :icon="mdiWallpaper" size="20"></v-icon>
-                        </div>
-                    </template>
-                    <v-list-item-title
-                        v-if="!isCollapsed"
-                        class="font-weight-medium nav-text"
-                        >WALLPAPER</v-list-item-title
-                    >
-                    <v-tooltip
-                        v-if="isCollapsed"
-                        activator="parent"
-                        location="right"
-                        >{{ $t("sidebar.wallpapers") }}</v-tooltip
-                    >
-                    <div v-if="!isCollapsed" class="nav-indicator"></div>
-                </v-list-item>
-
-                <v-list-item
-                    to="/podcast"
-                    rounded="lg"
-                    class="mb-2 sidebar-item"
-                    color="primary"
-                    active-class="v-list-item--active"
-                    :slim="isCollapsed"
-                    :class="{ 'justify-center': isCollapsed }"
-                >
-                    <template v-slot:prepend>
-                        <div
-                            class="sidebar-icon-container"
-                            :class="{ 'mr-3': !isCollapsed }"
-                        >
-                            <v-icon :icon="mdiPodcast" size="20"></v-icon>
-                        </div>
-                    </template>
-                    <v-list-item-title
-                        v-if="!isCollapsed"
-                        class="font-weight-medium nav-text"
-                        >PODCAST</v-list-item-title
-                    >
-                    <v-tooltip
-                        v-if="isCollapsed"
-                        activator="parent"
-                        location="right"
-                        >{{ $t("sidebar.podcast") }}</v-tooltip
+                        >{{ $t(item.tooltipKey) }}</v-tooltip
                     >
                     <div v-if="!isCollapsed" class="nav-indicator"></div>
                 </v-list-item>
@@ -308,6 +217,13 @@ const emit = defineEmits<{
 }>();
 
 const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle();
+
+const navItems = [
+    { to: "/chat", icon: mdiRobot, label: "CHAT", tooltipKey: "sidebar.chat" },
+    { to: "/hosts", icon: mdiDns, label: "HOSTS", tooltipKey: "sidebar.hostsManager" },
+    { to: "/wallpapers", icon: mdiWallpaper, label: "WALLPAPER", tooltipKey: "sidebar.wallpapers" },
+    { to: "/podcast", icon: mdiPodcast, label: "PODCAST", tooltipKey: "sidebar.podcast" },
+];
 
 // Sidebar width and resize
 const width = ref(200);

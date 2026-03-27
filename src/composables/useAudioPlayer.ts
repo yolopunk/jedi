@@ -9,6 +9,13 @@ const currentTime = ref(0);
 const duration = ref(0);
 const audioRef = ref<HTMLAudioElement | null>(null);
 
+// Handler references for cleanup
+let pauseHandler: (() => void) | null = null;
+let playHandler: (() => void) | null = null;
+let endedHandler: (() => void) | null = null;
+let timeUpdateHandler: (() => void) | null = null;
+let loadedMetadataHandler: (() => void) | null = null;
+
 // Actions
 function playEpisode(ep: PodcastEpisode, subUrl?: string) {
     if (currentPlaying.value?.audio_url === ep.audio_url) {
@@ -56,16 +63,31 @@ function seek(seconds: number) {
 function setAudioRef(el: HTMLAudioElement) {
     audioRef.value = el;
     
-    // Attach listeners
-    el.addEventListener('pause', () => isPaused.value = true);
-    el.addEventListener('play', () => isPaused.value = false);
-    el.addEventListener('ended', () => isPaused.value = true);
-    el.addEventListener('timeupdate', () => {
-        currentTime.value = el.currentTime;
-    });
-    el.addEventListener('loadedmetadata', () => {
-        duration.value = el.duration;
-    });
+    // Attach listeners with stored references
+    pauseHandler = () => { isPaused.value = true; };
+    playHandler = () => { isPaused.value = false; };
+    endedHandler = () => { isPaused.value = true; };
+    timeUpdateHandler = () => { currentTime.value = el.currentTime; };
+    loadedMetadataHandler = () => { duration.value = el.duration; };
+
+    el.addEventListener('pause', pauseHandler);
+    el.addEventListener('play', playHandler);
+    el.addEventListener('ended', endedHandler);
+    el.addEventListener('timeupdate', timeUpdateHandler);
+    el.addEventListener('loadedmetadata', loadedMetadataHandler);
+}
+
+function cleanupAudioRef() {
+    if (!audioRef.value) return;
+    
+    const el = audioRef.value;
+    if (pauseHandler) { el.removeEventListener('pause', pauseHandler); pauseHandler = null; }
+    if (playHandler) { el.removeEventListener('play', playHandler); playHandler = null; }
+    if (endedHandler) { el.removeEventListener('ended', endedHandler); endedHandler = null; }
+    if (timeUpdateHandler) { el.removeEventListener('timeupdate', timeUpdateHandler); timeUpdateHandler = null; }
+    if (loadedMetadataHandler) { el.removeEventListener('loadedmetadata', loadedMetadataHandler); loadedMetadataHandler = null; }
+    
+    audioRef.value = null;
 }
 
 export function useAudioPlayer() {
@@ -80,6 +102,7 @@ export function useAudioPlayer() {
         togglePlay,
         stop,
         seek,
-        setAudioRef
+        setAudioRef,
+        cleanupAudioRef
     };
 }

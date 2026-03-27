@@ -159,6 +159,7 @@ export function useHostsData(notify: NotifyFunction) {
     } catch (error) {
       console.error('初始化默认配置失败', error)
       notify('初始化失败: ' + (error as Error).message, 'error')
+    } finally {
       loading.value = false
     }
   }

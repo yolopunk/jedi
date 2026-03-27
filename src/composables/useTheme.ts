@@ -1,4 +1,4 @@
-import { ref, watch, onMounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
 import { useStorage } from '@/composables/useStorage'
 import { vuetify } from '@/plugins/vuetify'
 import {
@@ -90,6 +90,10 @@ export function useTheme() {
 
     // 监听系统主题变化
     prefersDark.addEventListener('change', updateSystemTheme)
+  })
+
+  onUnmounted(() => {
+    prefersDark.removeEventListener('change', updateSystemTheme)
   })
 
   return {

@@ -24,6 +24,7 @@ let prog: WebGLProgram | null = null
 let animId = 0
 let running = true
 let needsResize = true
+let resizeHandler: (() => void) | null = null
 
 // FPS tracking
 let frameCount = 0
@@ -487,7 +488,8 @@ onMounted(() => {
   lastFpsTime = performance.now()
   animId = requestAnimationFrame(render)
 
-  window.addEventListener('resize', () => { needsResize = true })
+  resizeHandler = () => { needsResize = true }
+  window.addEventListener('resize', resizeHandler)
   document.addEventListener('visibilitychange', onVisibilityChange)
   canvas.addEventListener('mousedown', onMouseDown)
   window.addEventListener('mousemove', onMouseMove)
@@ -497,6 +499,10 @@ onMounted(() => {
 onUnmounted(() => {
   running = false
   cancelAnimationFrame(animId)
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler)
+    resizeHandler = null
+  }
   document.removeEventListener('visibilitychange', onVisibilityChange)
   if (gl) {
     gl.getExtension('WEBGL_lose_context')?.loseContext()

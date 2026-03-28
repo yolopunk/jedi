@@ -492,7 +492,7 @@ onUnmounted(() => {
 }
 
 .terminal-input::placeholder {
-    color: #333;
+    color: #5a5a65;
 }
 
 .input-cursor {
@@ -655,7 +655,7 @@ onUnmounted(() => {
 }
 
 .row-index {
-    color: #444;
+    color: #5a5a65;
     font-size: 10px;
     margin-right: 8px;
     min-width: 40px;

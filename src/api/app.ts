@@ -1,4 +1,3 @@
-// @ts-ignore
 import { invoke } from '@tauri-apps/api/core';
 
 export interface AppInfo {
@@ -11,7 +10,7 @@ export interface AppInfo {
  * @returns 应用信息，包括版本号和名称
  */
 export async function getAppInfo(): Promise<AppInfo> {
-  return invoke('get_app_info');
+  return invoke<AppInfo>('get_app_info');
 }
 
 /**
@@ -19,7 +18,7 @@ export async function getAppInfo(): Promise<AppInfo> {
  * @returns 操作结果
  */
 export async function enableAutostart(): Promise<void> {
-  return invoke('enable_autostart');
+  return invoke<void>('enable_autostart');
 }
 
 /**
@@ -27,7 +26,7 @@ export async function enableAutostart(): Promise<void> {
  * @returns 操作结果
  */
 export async function disableAutostart(): Promise<void> {
-  return invoke('disable_autostart');
+  return invoke<void>('disable_autostart');
 }
 
 /**
@@ -35,7 +34,7 @@ export async function disableAutostart(): Promise<void> {
  * @returns 是否已启用
  */
 export async function isAutostartEnabled(): Promise<boolean> {
-  return invoke('is_autostart_enabled');
+  return invoke<boolean>('is_autostart_enabled');
 }
 
 /**
@@ -43,5 +42,5 @@ export async function isAutostartEnabled(): Promise<boolean> {
  * @returns .jedi 目录路径
  */
 export async function ensureJediDir(): Promise<string> {
-  return invoke('ensure_jedi_dir');
+  return invoke<string>('ensure_jedi_dir');
 }

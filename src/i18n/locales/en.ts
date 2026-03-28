@@ -1,12 +1,26 @@
 export default {
   sidebar: {
-    title: 'Jedi Toolkit',
+    title: 'Jedi Command',
     subtitle: 'Force for Developers',
     hostsManager: 'Hosts Manager',
     github: 'GitHub Repository',
     status_connected: 'Connected',
     wallpapers: 'Knowledge Wall',
     podcast: 'Xiaoyuzhou',
+    chat: 'Chat',
+    system: 'SYSTEM',
+    online: 'ONLINE',
+  },
+  header: {
+    systemOnline: 'System Online',
+    modulesActive: 'Modules Active',
+    monitoring: 'Monitoring',
+    console: 'JEDI CONSOLE',
+    rewind15s: 'Rewind 15s',
+    play: 'Play',
+    pause: 'Pause',
+    forward15s: 'Forward 15s',
+    settings: 'Settings',
   },
   theme: {
     dark: 'Dark Mode',
@@ -18,8 +32,8 @@ export default {
     memory: 'Memory',
   },
   about: {
-    title: 'About Jedi Toolkit',
-    appName: 'Jedi Toolkit',
+    title: 'About Jedi Command',
+    appName: 'Jedi Command',
     version: 'Version v{version}',
     description: 'Multi-functional development utility kit',
     techStack: 'Built with Tauri + Vue + Vuetify',
@@ -37,26 +51,58 @@ export default {
     title: 'Settings',
     general: 'General',
     advanced: 'Advanced',
+    wallpaper: 'Wallpaper',
+    chat: 'AI Chat',
     autostart: 'Autostart',
     minimizeToTray: 'Minimize to Tray',
     autoUpdate: 'Auto Update',
     hostsPath: 'Hosts File Path',
-    backup: 'Backup',
+    backup: 'Backup Settings',
     reset: 'Reset App',
     backupBtn: 'Backup',
     resetBtn: 'Reset',
     language: 'Language',
-    wallpaper: 'Wallpaper Settings',
-    wpAutoUpdate: 'Auto Update Wallpaper',
-    wpFrequency: 'Update Frequency (Days)',
-    wpCategories: 'Preferred Categories',
-    wpLastUpdate: 'Last Update: {time}',
+    theme: 'Theme',
+    themeMode: 'Theme Mode',
+    themeDark: 'Dark',
+    themeLight: 'Light',
+    themeSystem: 'System',
     checkUpdate: 'Check Now',
     updateChecking: 'Checking...',
     updateAvailable: 'New version {version} available',
     updateLatest: 'Already up to date',
     lastCheckTime: 'Last check: {time}',
     never: 'Never',
+    close: 'Close',
+    categories: '{n} categories',
+    // Settings sections
+    aiProvider: 'AI Provider',
+    providerConfig: 'Configure your AI model provider API keys',
+    chatSettings: 'Chat Settings',
+    chatSettingsDesc: 'Configure default parameters for AI chat',
+    mcpServers: 'MCP Servers',
+    mcpServersDesc: 'Configure MCP (Model Context Protocol) servers',
+    // Status
+    configured: 'Configured',
+    notConfigured: 'Not Configured',
+    // Actions
+    edit: 'Edit',
+    configure: 'Configure',
+    // Chat settings
+    temperature: 'Temperature',
+    temperatureDesc: 'Controls randomness, higher values are more creative',
+    maxTokens: 'Max Tokens',
+    maxTokensDesc: 'Maximum response length',
+    streamResponse: 'Stream Response',
+    streamResponseDesc: 'Display AI response in real-time',
+    // Dialog
+    apiKey: 'API Key',
+    apiEndpoint: 'API Endpoint (optional)',
+    // Wallpaper settings
+    wpAutoUpdate: 'Auto Update Wallpaper',
+    wpFrequency: 'Update Frequency (days)',
+    wpCategories: 'Wallpaper Categories',
+    wpLastUpdate: 'Last update: {time}',
   },
   update: {
     title: 'New Version Available',
@@ -67,7 +113,75 @@ export default {
     downloading: 'Downloading...',
     installing: 'Installing...',
   },
+  chat: {
+    title: 'Chat',
+    newChat: 'New Chat',
+    history: 'History',
+    noHistory: 'No conversations yet',
+    inputPlaceholder: 'Type a message...',
+    send: 'Send',
+    stop: 'Stop generating',
+    copy: 'Copy',
+    regenerate: 'Regenerate',
+    delete: 'Delete',
+    rename: 'Rename',
+    export: 'Export',
+    clearContext: 'Clear Context',
+    mcp: 'MCP',
+    welcome: {
+      title: 'How can I help you today?',
+      subtitle: 'Select a model and start chatting',
+    },
+    prompts: {
+      explain: {
+        title: 'Explain',
+        hint: 'Explain a complex concept',
+      },
+      code: {
+        title: 'Code',
+        hint: 'Generate or optimize code',
+      },
+      summarize: {
+        title: 'Summarize',
+        hint: 'Summarize text or article',
+      },
+      brainstorm: {
+        title: 'Brainstorm',
+        hint: 'Generate creative ideas',
+      },
+    },
+    roles: {
+      user: 'You',
+      assistant: 'AI',
+    },
+    dialog: {
+      renameTitle: 'Rename Chat',
+      renamePlaceholder: 'Enter new name',
+      cancel: 'Cancel',
+      save: 'Save',
+    },
+    confirm: {
+        delete: 'Are you sure you want to delete this chat?',
+        clear: 'Clear current conversation history?',
+    },
+    time: {
+        justNow: 'Just now',
+        minutesAgo: '{n}m ago',
+        hoursAgo: '{n}h ago',
+        daysAgo: '{n}d ago',
+    },
+    error: {
+      providerConfig: 'Please configure AI provider in settings...'
+    },
+    inputHint: 'Press Enter to send, Shift+Enter for new line',
+    searchPlaceholder: 'Search conversations...',
+    modelSearchPlaceholder: 'Search models...',
+    commandPlaceholder: 'Enter command...',
+  },
   hosts: {
+    validation: {
+      groupNameRequired: 'Group name cannot be empty',
+    },
     globalSwitch: {
       enabledTooltip: 'Enabled - Click to disable',
       disabledTooltip: 'Disabled - Click to enable',
@@ -85,10 +199,19 @@ export default {
     },
     table: {
       addHost: 'Add Host',
+      ip: 'IP Address',
+      domain: 'Domain',
+      status: 'Status',
+      actions: 'Actions',
+      noMore: 'No more data',
+      search: 'Search',
+      entries: 'Entries',
+      active: 'Active',
     },
     dialog: {
       editTitle: 'Edit Entry',
       addTitle: 'Add Entry',
+      addHostTitle: 'Add Host',
       deleteTitle: 'Confirm Delete',
       addGroupTitle: 'Add Group',
       ipLabel: 'IP Address',
@@ -107,6 +230,17 @@ export default {
       hostsListLabel: 'Hosts List',
       hostsListPlaceholder: 'Format: IP Domain, one per line\ne.g.\n127.0.0.1 localhost\n192.168.1.1 router.local',
       hostsListHint: 'One entry per line, format: <code>IP Domain</code>',
+    },
+    // Table UI
+    console: {
+      title: 'HOSTS MANAGEMENT CONSOLE',
+      systemOnline: 'System Online',
+      hostsActive: 'Hosts Active',
+      monitoring: 'Monitoring',
+      ipAddress: 'IP ADDRESS',
+      domain: 'DOMAIN',
+      status: 'STATUS',
+      actions: 'ACTIONS',
     },
   },
   podcast: {
@@ -127,12 +261,13 @@ export default {
     selectOpml: 'Select an OPML file to import your subscriptions.',
     chooseFile: 'Choose File',
     shows: 'Shows',
+    chapters: 'Chapters: ',
     howToExportOpml: 'How to export OPML?',
     exportGuide: 'OPML Export Guide',
-    exportGuideStep1: '1. Tap the [Subscriptions] menu at the bottom',
-    exportGuideStep2: '2. Tap the [My Subscriptions] button at the top right',
-    exportGuideStep3: '3. Tap the share button at the top right',
-    exportGuideStep4: '4. Select podcasts and tap [Export OPML] at the bottom',
+    exportGuideStep1: 'Tap the [Subscriptions] menu at the bottom',
+    exportGuideStep2: 'Tap the [My Subscriptions] button at the top right',
+    exportGuideStep3: 'Tap the share button at the top right',
+    exportGuideStep4: 'Select podcasts and tap [Export OPML] at the bottom',
   },
   common: {
     confirm: 'Confirm',
@@ -155,5 +290,39 @@ export default {
     setSuccess: 'Wallpaper set successfully!',
     setError: 'Failed to set wallpaper',
     loadError: 'Failed to load wallpapers',
+    getCurrent: 'Get Current Wallpaper',
+    currentWallpaper: 'Current Wallpaper',
+    getCurrentError: 'Unable to get current wallpaper info',
+    openFolder: 'Open File Location',
+    openFolderError: 'Failed to open file location',
+    viewDetails: 'View Details',
+    mode: 'Mode',
+    wallpaperMode: 'Wallpaper Mode',
+    modes: {
+      center: {
+        label: 'Center',
+        description: 'Center the image without scaling, leave space around'
+      },
+      crop: {
+        label: 'Crop/Fill',
+        description: 'Scale image to fill screen, crop excess'
+      },
+      fit: {
+        label: 'Fit',
+        description: 'Scale image to fit entirely, may have black bars'
+      },
+      span: {
+        label: 'Span',
+        description: 'Span image across all displays'
+      },
+      stretch: {
+        label: 'Stretch',
+        description: 'Force image to fill screen, may distort'
+      },
+      tile: {
+        label: 'Tile',
+        description: 'Repeat image at original size'
+      }
+    }
   }
 }

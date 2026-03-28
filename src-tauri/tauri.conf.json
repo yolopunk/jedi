@@ -3,25 +3,14 @@
   "version": "0.2.4",
   "identifier": "io.jedi",
   "build": {
-    "beforeDevCommand": "pnpm dev",
+    "beforeDevCommand": "pnpm dev:prepare && pnpm dev",
     "devUrl": "http://localhost:31420",
     "beforeBuildCommand": "pnpm build",
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [
-      {
-        "decorations": true,
-        "resizable": true,
-        "title": "Jedi",
-        "width": 980,
-        "height": 600,
-        "minWidth": 980,
-        "minHeight": 600
-      }
-    ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'"
     }
   },
   "plugins": {

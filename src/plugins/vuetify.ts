@@ -24,27 +24,29 @@ export const vuetify = createVuetify({
       light: {
         dark: false,
         colors: {
-          background: '#ffffff',
-          surface: '#f4f4f5',
-          primary: '#09090b',
-          secondary: '#71717a',
-          error: '#ef4444',
-          info: '#3b82f6',
-          success: '#10b981',
-          warning: '#f59e0b',
+          background: '#f5e6d3',      // Warm sand
+          surface: '#efe0cc',         // Light sand
+          primary: '#cd7f32',         // Copper
+          secondary: '#6b4423',       // Sandstone brown
+          accent: '#daa520',          // Dark gold
+          error: '#b22222',           // Firebrick red
+          info: '#b8860b',            // Dark goldenrod
+          success: '#daa520',         // Dark gold
+          warning: '#cd853f',         // Peru
         }
       },
       dark: {
         dark: true,
         colors: {
-          background: '#09090b', // Zinc-950
-          surface: '#18181b',    // Zinc-900
-          primary: '#60a5fa',    // Blue-400
-          secondary: '#a1a1aa',  // Zinc-400
-          error: '#f87171',      // Red-400
-          info: '#60a5fa',       // Blue-400
-          success: '#4ade80',    // Green-400
-          warning: '#fbbf24',    // Amber-400
+          background: '#111113',   // Slightly lighter for better visibility
+          surface: '#18181b',      // Zinc-900
+          primary: '#00ffff',       // Sci-Fi Cyan
+          secondary: '#00ff88',     // Sci-Fi Green
+          accent: '#ff00ff',        // Sci-Fi Magenta
+          error: '#ff4444',         // Sci-Fi Red
+          info: '#00ffff',          // Sci-Fi Cyan
+          success: '#00ff88',       // Sci-Fi Green
+          warning: '#ffaa00',       // Sci-Fi Amber
         }
       }
     }

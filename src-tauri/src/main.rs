@@ -1,6 +1,33 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use crate::api::ai_chat::{
+  append_message,
+  create_session,
+  delete_api_key,
+  delete_session,
+  encode_html_entities,
+  get_api_key_info,
+  get_session,
+  has_api_key,
+  list_api_key_providers,
+  list_sessions,
+  log_security_event,
+  query_security_logs,
+  sanitize,
+  // Phase 2: 模型和会话管理
+  send_chat_message,
+  send_chat_message_stream,
+  store_api_key,
+  validate_input,
+  validate_key,
+  validate_message,
+  validate_url,
+  AuditLoggerState,
+  ChatSessionManagerState,
+  KeyringManagerState,
+  ModelProviderManagerState,
+};
 use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
 };
@@ -17,14 +44,35 @@ use crate::utils::logger;
 use std::sync::Mutex;
 use sysinfo::{Networks, System};
 use tauri::RunEvent::WindowEvent;
-use tauri::{Manager, RunEvent};
+use tauri::{Manager, RunEvent, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 
 mod api;
 mod config;
+mod mcp;
 mod utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   let _logger_guard = logger::init();
+
+  // 初始化审计日志记录器状态
+  let audit_logger_state = AuditLoggerState::new().expect("Failed to initialize audit logger");
+
+  // 初始化密钥链管理器状态
+  let keyring_manager_state =
+    KeyringManagerState::new().expect("Failed to initialize keyring manager");
+
+  // Phase 2: 初始化会话管理器状态
+  use crate::api::ai_chat::sessions::ChatSessionManager;
+  use crate::utils::security::AuditLogger;
+  let audit_logger_for_sessions =
+    AuditLogger::new().expect("Failed to initialize audit logger for sessions");
+  let chat_session_manager = ChatSessionManager::new(audit_logger_for_sessions);
+  let chat_session_manager_state = ChatSessionManagerState::new(chat_session_manager);
+
+  // Phase 2: 初始化模型提供商管理器状态
+  let keyring_manager_for_models = crate::utils::security::KeyringManager::new()
+    .expect("Failed to initialize keyring manager for models");
+  let model_provider_manager_state = ModelProviderManagerState::new(keyring_manager_for_models);
 
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
@@ -37,7 +85,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       system: Mutex::new(System::new_all()),
       networks: Mutex::new(Networks::new_with_refreshed_list()),
     })
+    .manage(audit_logger_state)
+    .manage(keyring_manager_state)
+    // Phase 2: 管理新增状态
+    .manage(chat_session_manager_state)
+    .manage(model_provider_manager_state)
     .setup(|app| {
+      // 创建主窗口
+      let mut win_builder =
+        WebviewWindowBuilder::new(app, "main", WebviewUrl::App(Default::default()))
+          .title("Jedi")
+          .inner_size(1200.0, 768.0)
+          .min_inner_size(980.0, 600.0)
+          .resizable(true);
+
+      #[cfg(target_os = "macos")]
+      {
+        win_builder = win_builder.title_bar_style(TitleBarStyle::Transparent);
+      }
+
+      let _window = win_builder.build()?;
+
       config::app::load_tray_config(app);
 
       #[cfg(desktop)]
@@ -86,7 +154,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       fetch_rss_channel,
       fetch_episodes,
       import_opml,
-      resolve_xiaoyuzhou_podcast
+      resolve_xiaoyuzhou_podcast,
+      // AI Chat 安全审计日志 commands
+      log_security_event,
+      query_security_logs,
+      // AI Chat API Key 管理 commands
+      store_api_key,
+      get_api_key_info,
+      delete_api_key,
+      has_api_key,
+      list_api_key_providers,
+      // AI Chat 输入验证 commands
+      validate_input,
+      validate_key,
+      validate_url,
+      validate_message,
+      sanitize,
+      encode_html_entities,
+      // Phase 2: AI Chat 模型和会话管理 commands
+      send_chat_message,
+      send_chat_message_stream,
+      create_session,
+      list_sessions,
+      get_session,
+      delete_session,
+      append_message
     ])
     .build(tauri::generate_context!())?;
 

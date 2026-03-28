@@ -159,6 +159,7 @@ export function useHostsData(notify: NotifyFunction) {
     } catch (error) {
       console.error('初始化默认配置失败', error)
       notify('初始化失败: ' + (error as Error).message, 'error')
+    } finally {
       loading.value = false
     }
   }
@@ -212,7 +213,7 @@ export function useHostsData(notify: NotifyFunction) {
     }
   }
 
-  async function editHost(data: { originalHost: any; ip: string; domain: string }) {
+  async function editHost(data: { originalHost: HostEntry; ip: string; domain: string }) {
     const group = getCurrentGroup()
     if (!group) return
 
@@ -251,29 +252,30 @@ export function useHostsData(notify: NotifyFunction) {
     }
   }
 
-  async function updateHostStatus(host: any) {
+  async function updateHostStatus(host: HostEntry, enabled?: boolean) {
     const group = getCurrentGroup()
     if (!group) return
 
     const hostEntry = findHostEntry(group, host)
     if (!hostEntry) return
 
-    updateHostEntryStatus(hostEntry, host.enabled)
+    const isEnabled = enabled ?? !hostEntry.disabled
+    updateHostEntryStatus(hostEntry, isEnabled)
 
     try {
       await debouncedUpdateHosts()
       notify(
-        host.enabled ? '条目已启用' : '条目已禁用',
-        host.enabled ? 'success' : 'info'
+        isEnabled ? '条目已启用' : '条目已禁用',
+        isEnabled ? 'success' : 'info'
       )
     } catch (error) {
       console.error('更新状态失败', error)
       notify('更新状态失败: ' + (error as Error).message, 'error')
-      host.enabled = !host.enabled
+      hostEntry.disabled = !isEnabled
     }
   }
 
-  async function confirmDeleteHost(host: any) {
+  async function confirmDeleteHost(host: HostEntry) {
     const group = getCurrentGroup()
     if (!group) return
 

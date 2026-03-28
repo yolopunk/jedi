@@ -1,68 +1,43 @@
 <template>
-  <v-dialog v-model="dialogModel" max-width="600" class="jedi-dialog-card">
-    <v-card class="jedi-dialog-card">
-      <v-toolbar color="surface" class="px-4 jedi-dialog-header border-b">
-        <v-icon :icon="mdiDownload" color="primary" class="mr-2"></v-icon>
-        <v-toolbar-title class="font-weight-medium">{{ $t('update.title') }}</v-toolbar-title>
-        <v-spacer></v-spacer>
-        <v-btn :icon="mdiClose" variant="text" color="medium-emphasis" @click="dialogModel = false"></v-btn>
-      </v-toolbar>
-      <v-card-text class="pa-6">
-        <v-alert
-          type="info"
-          variant="tonal"
-          class="mb-4"
-          density="compact"
-        >
-          <div class="d-flex align-center">
-            <span class="font-weight-bold mr-2">{{ $t('update.currentVersion') }}:</span>
-            <span>{{ currentVersion }}</span>
-          </div>
-        </v-alert>
-
-        <v-alert
-          type="success"
-          variant="tonal"
-          class="mb-4"
-          density="compact"
-        >
-          <div class="d-flex align-center">
-            <span class="font-weight-bold mr-2">{{ $t('update.newVersion') }}:</span>
-            <span>{{ updateInfo.version }}</span>
-          </div>
-        </v-alert>
-
-        <div class="mb-4">
-          <div class="text-subtitle-2 font-weight-bold mb-2">{{ $t('update.releaseNotes') }}</div>
-          <v-card variant="outlined" class="pa-3 bg-surface-variant-opt">
-            <div class="text-body-2 release-notes" v-html="formattedReleaseNotes"></div>
-          </v-card>
+  <v-dialog v-model="dialogModel" max-width="600">
+    <v-card class="scifi-card">
+      <v-card-title class="console-title-bar">
+        <span class="dialog-title">[ UPDATE_AVAILABLE ]</span>
+      </v-card-title>
+      <v-card-text class="console-card-text">
+        <div class="alert-box info mb-4">
+          <span class="alert-label">{{ $t('update.currentVersion') }}:</span>
+          <span class="alert-value">{{ currentVersion }}</span>
         </div>
 
-        <v-progress-linear
-          v-if="isInstalling"
-          indeterminate
-          color="primary"
-          height="6"
-          rounded
-          class="mb-4"
-        ></v-progress-linear>
+        <div class="alert-box success mb-4">
+          <span class="alert-label">{{ $t('update.newVersion') }}:</span>
+          <span class="alert-value">{{ updateInfo.version }}</span>
+        </div>
+
+        <div class="release-notes-section mb-4">
+          <div class="section-title">&gt; {{ $t('update.releaseNotes') }}</div>
+          <div class="release-notes-box">
+            <div class="release-notes" v-html="formattedReleaseNotes"></div>
+          </div>
+        </div>
+
+        <div v-if="isInstalling" class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-indeterminate"></div>
+          </div>
+          <div class="progress-text">{{ $t('update.installing') }}...</div>
+        </div>
       </v-card-text>
-      <v-card-actions class="pa-4 pt-0">
+      <v-card-actions class="console-card-actions">
         <v-spacer></v-spacer>
-        <v-btn variant="text" @click="dialogModel = false" rounded="sm" class="mr-2" :disabled="isInstalling">
-          {{ $t('common.cancel') }}
-        </v-btn>
-        <v-btn
-          color="var(--jedi-accent)"
-          variant="elevated"
-          @click="handleInstall"
-          rounded="sm"
-          :loading="isInstalling"
-          :disabled="isInstalling"
-        >
-          {{ isInstalling ? $t('update.installing') : $t('update.downloadAndInstall') }}
-        </v-btn>
+        <button class="console-btn" @click="dialogModel = false" :disabled="isInstalling">
+          <span class="btn-text">{{ $t('common.cancel') }}</span>
+        </button>
+        <button class="console-btn primary ml-2" @click="handleInstall" :disabled="isInstalling">
+          <span class="btn-text" v-if="!isInstalling">{{ $t('update.downloadAndInstall') }}</span>
+          <span class="btn-text" v-else>{{ $t('update.installing') }}...</span>
+        </button>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -70,19 +45,16 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { mdiDownload, mdiClose } from '@mdi/js'
 import { UpdateInfo } from '@/api/update'
 import pkg from '../../../package.json'
 import MarkdownIt from 'markdown-it'
 
-// Define props
 const props = defineProps<{
   modelValue: boolean
   updateInfo: UpdateInfo
   isInstalling: boolean
 }>()
 
-// Define emits
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'install'): void
@@ -95,13 +67,11 @@ const md = new MarkdownIt({
   breaks: true
 })
 
-// Dialog model
 const dialogModel = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 })
 
-// Format release notes (convert markdown to HTML)
 const formattedReleaseNotes = computed(() => {
   if (!props.updateInfo.body) return ''
   return md.render(props.updateInfo.body)
@@ -113,7 +83,73 @@ const handleInstall = () => {
 </script>
 
 <style scoped>
+.alert-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 4px;
+  border: 1px solid;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+}
+
+.alert-box.info {
+  background: rgba(0, 170, 255, 0.05);
+  border-color: rgba(0, 170, 255, 0.3);
+}
+
+.alert-box.success {
+  background: rgba(0, 255, 136, 0.05);
+  border-color: rgba(0, 255, 136, 0.3);
+}
+
+.alert-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #52525b;
+  letter-spacing: 1px;
+}
+
+.alert-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e4e4e7;
+}
+
+.alert-box.info .alert-value {
+  color: #00aaff;
+}
+
+.alert-box.success .alert-value {
+  color: #00ff88;
+}
+
+.release-notes-section {
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a1a1aa;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+}
+
+.release-notes-box {
+  background: rgba(5, 5, 8, 0.9);
+  border: 1px solid #1a1a3a;
+  border-radius: 4px;
+  padding: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 .release-notes {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-size: 11px;
+  color: #71717a;
   line-height: 1.6;
 }
 
@@ -121,26 +157,86 @@ const handleInstall = () => {
 .release-notes :deep(h2),
 .release-notes :deep(h3),
 .release-notes :deep(h4) {
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
+  margin-top: 12px;
+  margin-bottom: 6px;
   font-weight: bold;
+  color: #00ffff;
 }
 
-.release-notes :deep(h1) { font-size: 1.5rem; }
-.release-notes :deep(h2) { font-size: 1.25rem; }
-.release-notes :deep(h3) { font-size: 1.1rem; }
+.release-notes :deep(h1) { font-size: 14px; }
+.release-notes :deep(h2) { font-size: 13px; }
+.release-notes :deep(h3) { font-size: 12px; }
 
 .release-notes :deep(ul),
 .release-notes :deep(ol) {
-  padding-left: 1.5rem;
-  margin-bottom: 0.5rem;
+  padding-left: 20px;
+  margin-bottom: 8px;
 }
 
 .release-notes :deep(p) {
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
 }
 
-.bg-surface-variant-opt {
-  background-color: rgba(var(--v-theme-surface-variant), 0.05);
+.release-notes :deep(a) {
+  color: #00ff88;
+  text-decoration: underline;
+}
+
+.release-notes :deep(code) {
+  background: rgba(0, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #00ffff;
+}
+
+.progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-bar {
+  height: 4px;
+  background: rgba(0, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-indeterminate {
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #00ffff, transparent);
+  animation: progress-slide 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
+.progress-text {
+  font-size: 10px;
+  color: #52525b;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1px;
+}
+
+/* Custom scrollbar for release notes */
+.release-notes-box::-webkit-scrollbar {
+  width: 6px;
+}
+
+.release-notes-box::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.release-notes-box::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.release-notes-box::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 255, 0.3);
 }
 </style>

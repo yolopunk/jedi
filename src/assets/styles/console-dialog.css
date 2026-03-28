@@ -1,0 +1,180 @@
+/* =========================================
+   Console Dialog - Shared Styles
+   Extracted from hosts dialog components
+   ========================================= */
+
+/* =========================================
+   Dialog Layout
+   ========================================= */
+
+.dialog-with-glow {
+  position: relative;
+  box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
+}
+
+.dialog-decorator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00ffff, transparent);
+  opacity: 0.6;
+}
+
+.dialog-icon {
+  color: #00ffff;
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+/* Override theme.css .console-title-bar to add flex layout for dialog title bars */
+.console-title-bar {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+/* Override theme.css .dialog-title for dialog-specific sizing */
+.dialog-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.close-btn:hover {
+  color: #ff4444;
+}
+
+/* =========================================
+   Form Styles
+   ========================================= */
+
+.form-section {
+  margin-bottom: 20px;
+}
+
+.input-label {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.label-icon {
+  color: #00ff88;
+  margin-right: 8px;
+}
+
+/* Override theme.css .input-wrapper for dialog form inputs */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: rgba(5, 5, 8, 0.9);
+  border: 1px solid #1a1a3a;
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+
+.input-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  background: rgba(0, 255, 255, 0.05);
+  border-right: 1px solid rgba(0, 255, 255, 0.2);
+  min-width: 50px;
+  justify-content: center;
+}
+
+/* Override theme.css .console-input for inline use inside .input-wrapper */
+.console-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #00ffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.console-input::placeholder {
+  color: #52525b;
+}
+
+.console-input.with-prefix {
+  padding-left: 12px;
+}
+
+/* =========================================
+   Light Theme Styles (Tatooine Outpost)
+   ========================================= */
+
+/* Dialog Layout - Light Theme */
+.light-theme .dialog-with-glow {
+  box-shadow: 0 0 30px rgba(184, 134, 11, 0.2);
+}
+
+.light-theme .dialog-decorator {
+  background: linear-gradient(90deg, transparent, #cd7f32, transparent);
+}
+
+.light-theme .dialog-icon {
+  color: #cd7f32;
+}
+
+.light-theme .dialog-title {
+  color: #3d2914;
+}
+
+.light-theme .close-btn {
+  color: rgba(107, 68, 35, 0.6);
+}
+
+.light-theme .close-btn:hover {
+  color: #b22222;
+}
+
+/* Form Styles - Light Theme */
+.light-theme .input-label {
+  color: rgba(61, 41, 20, 0.8);
+}
+
+.light-theme .label-icon {
+  color: #cd7f32;
+}
+
+.light-theme .input-wrapper {
+  background: #faf3e8;
+  border-color: #d4a574;
+}
+
+.light-theme .input-prefix {
+  color: rgba(107, 68, 35, 0.7);
+  background: rgba(205, 127, 50, 0.08);
+  border-right: 1px solid rgba(205, 127, 50, 0.25);
+}
+
+.light-theme .console-input {
+  color: #3d2914;
+}
+
+.light-theme .console-input::placeholder {
+  color: #8b7355;
+}

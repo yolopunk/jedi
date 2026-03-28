@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 use tauri::AppHandle;
 
-static HOSTS_PATH: &str = if cfg!(any(target_os = "linux", target_os = "macos")) {
+pub const HOSTS_PATH: &str = if cfg!(any(target_os = "linux", target_os = "macos")) {
   "/etc/hosts"
 } else if cfg!(target_os = "windows") {
   r"C:\Windows\System32\drivers\etc\hosts"
 } else {
-  panic!("Unsupported OS");
+  "/etc/hosts"
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

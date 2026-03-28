@@ -1,633 +1,919 @@
 <template>
-  <v-navigation-drawer permanent :width="220" class="jedi-sidebar">
-    <!-- Logo Area -->
-    <div class="d-flex flex-column align-center py-6 border-bottom">
-      <div class="grogu-pod-container mb-4" :class="{ 'is-playing': currentPlaying && !isPaused, 'is-paused': currentPlaying && isPaused }">
-        <!-- Floating Pod Effect -->
-        <div class="pod-chassis">
-          <div class="model-wrapper" @click="handleModelClick">
-            <!-- Playback Progress Ring -->
-            <v-progress-circular
-              v-if="currentPlaying"
-              :model-value="progressPercentage"
-              :rotate="-90"
-              :size="92"
-              :width="4"
-              color="primary"
-              class="progress-ring"
-              bg-color="rgba(255, 255, 255, 0.1)"
+    <div
+        class="sidebar-wrapper"
+        :class="{ 'sidebar-collapsed': isCollapsed }"
+        :style="{ width: isCollapsed ? '64px' : `${width}px` }"
+    >
+        <aside
+            class="jedi-sidebar d-flex flex-column"
+            :class="{ 'sidebar-collapsed': isCollapsed }"
+            :style="{ width: isCollapsed ? '64px' : `${width}px` }"
+        >
+            <!-- Logo Area -->
+            <div
+                class="d-flex flex-column align-center py-2 border-bottom logo-area"
             >
-            </v-progress-circular>
-            
-            <!-- The 3D Model -->
-            <KoalaModel />
+                <LogoShaderBg v-if="!isCollapsed" :is-collapsed="isCollapsed" />
+                <div
+                    class="grogu-pod-container mb-1"
+                    :class="{ 'mini-pod': isCollapsed }"
+                >
+                    <img src="/icon.png" alt="Jedi Logo" class="app-logo" />
+                    <div class="logo-glow"></div>
+                </div>
 
-            <!-- Play/Pause Overlay -->
-            <div v-if="currentPlaying" class="player-overlay d-flex align-center justify-center">
-              <v-icon 
-                :icon="isPaused ? mdiPlay : mdiPause" 
-                size="32" 
-                color="white"
-                class="control-icon"
-              ></v-icon>
+                <!-- Title/Subtitle -->
+                <div
+                    v-if="!isCollapsed"
+                    class="text-center px-2 fade-transition"
+                    style="max-width: 100%"
+                >
+                    <h2 class="text-h6 font-weight-bold sidebar-title">
+                        <span class="title-bracket">[</span>
+                        {{ $t("sidebar.title") }}
+                        <span class="title-bracket">]</span>
+                    </h2>
+                    <div class="text-caption sidebar-subtitle">
+                        {{ $t("sidebar.subtitle") }}
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Satellite Controls -->
-        <div v-if="currentPlaying" class="pod-controls">
-          <v-btn 
-            icon 
-            size="x-small" 
-            variant="tonal" 
-            color="primary" 
-            class="pod-ctrl-btn rewind-btn"
-            @click.stop="seek(-15)"
-          >
-            <v-icon :icon="mdiRewind15" size="16"></v-icon>
-            <v-tooltip activator="parent" location="bottom">Rewind 15s</v-tooltip>
-          </v-btn>
+            <!-- Navigation -->
+            <v-list nav class="pa-2 mt-2 flex-grow-1">
+                <v-list-item
+                    v-for="item in navItems"
+                    :key="item.to"
+                    :to="item.to"
+                    rounded="lg"
+                    class="mb-2 sidebar-item"
+                    color="primary"
+                    active-class="v-list-item--active"
+                    :slim="isCollapsed"
+                    :class="{ 'justify-center': isCollapsed }"
+                >
+                    <template v-slot:prepend>
+                        <div
+                            class="sidebar-icon-container"
+                            :class="{ 'mr-3': !isCollapsed }"
+                        >
+                            <v-icon :icon="item.icon" size="20"></v-icon>
+                        </div>
+                    </template>
+                    <v-list-item-title
+                        v-if="!isCollapsed"
+                        class="font-weight-medium nav-text"
+                        >{{ item.label }}</v-list-item-title
+                    >
+                    <v-tooltip
+                        v-if="isCollapsed"
+                        activator="parent"
+                        location="right"
+                        >{{ $t(item.tooltipKey) }}</v-tooltip
+                    >
+                    <div v-if="!isCollapsed" class="nav-indicator"></div>
+                </v-list-item>
+            </v-list>
 
-          <v-btn 
-            icon 
-            size="x-small" 
-            variant="tonal" 
-            color="error" 
-            class="pod-ctrl-btn stop-btn"
-            @click.stop="stop"
-          >
-            <v-icon :icon="mdiStop" size="16"></v-icon>
-            <v-tooltip activator="parent" location="bottom">Stop Playback</v-tooltip>
-          </v-btn>
-          
-          <v-btn 
-            icon 
-            size="x-small" 
-            variant="tonal" 
-            color="primary" 
-            class="pod-ctrl-btn forward-btn"
-            @click.stop="seek(15)"
-          >
-            <v-icon :icon="mdiFastForward15" size="16"></v-icon>
-            <v-tooltip activator="parent" location="bottom">Forward 15s</v-tooltip>
-          </v-btn>
+            <!-- Collapsed Action Icons -->
+            <div v-if="isCollapsed" class="collapsed-actions">
+                <v-btn
+                    icon
+                    size="x-small"
+                    variant="text"
+                    class="collapsed-action-btn"
+                    @click="toggleTheme"
+                >
+                    <v-icon :icon="themeIcon" size="16" />
+                    <v-tooltip activator="parent" location="right">{{
+                        $t(themeTooltip)
+                    }}</v-tooltip>
+                </v-btn>
+                <v-btn
+                    icon
+                    size="x-small"
+                    variant="text"
+                    class="collapsed-action-btn"
+                    @click="$emit('open-github')"
+                >
+                    <v-icon :icon="mdiGithub" size="16" />
+                    <v-tooltip activator="parent" location="right">GitHub</v-tooltip>
+                </v-btn>
+                <v-btn
+                    icon
+                    size="x-small"
+                    variant="text"
+                    class="collapsed-action-btn"
+                    @click="$emit('show-settings')"
+                >
+                    <v-icon :icon="mdiCog" size="16" />
+                    <v-tooltip activator="parent" location="right">{{
+                        $t("header.settings")
+                    }}</v-tooltip>
+                </v-btn>
+            </div>
+
+            <!-- Footer Status -->
+            <div v-if="!isCollapsed" class="sidebar-footer">
+                <div class="footer-actions">
+                    <v-btn
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="footer-action-btn"
+                        @click="toggleTheme"
+                    >
+                        <v-icon :icon="themeIcon" size="16" />
+                        <v-tooltip activator="parent" location="top">{{
+                            $t(themeTooltip)
+                        }}</v-tooltip>
+                    </v-btn>
+                    <v-btn
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="footer-action-btn"
+                        @click="$emit('open-github')"
+                    >
+                        <v-icon :icon="mdiGithub" size="16" />
+                        <v-tooltip activator="parent" location="top">GitHub</v-tooltip>
+                    </v-btn>
+                    <v-btn
+                        icon
+                        size="x-small"
+                        variant="text"
+                        class="footer-action-btn"
+                        @click="$emit('show-settings')"
+                    >
+                        <v-icon :icon="mdiCog" size="16" />
+                        <v-tooltip activator="parent" location="top">{{
+                            $t("header.settings")
+                        }}</v-tooltip>
+                    </v-btn>
+                </div>
+                <div class="hud-panel">
+                    <div class="hud-scanline"></div>
+                    <div class="hud-item">
+                        <span class="hud-dot online"></span>
+                        <span class="hud-label">SYS</span>
+                        <v-tooltip activator="parent" location="top">{{
+                            $t("header.systemOnline")
+                        }}</v-tooltip>
+                    </div>
+                    <div class="hud-divider"></div>
+                    <div class="hud-item">
+                        <span class="hud-dot standby"></span>
+                        <span class="hud-label">MOD</span>
+                        <v-tooltip activator="parent" location="top">{{
+                            $t("header.modulesActive")
+                        }}</v-tooltip>
+                    </div>
+                    <div class="hud-divider"></div>
+                    <div class="hud-item">
+                        <span class="hud-dot scanning"></span>
+                        <span class="hud-label">MON</span>
+                        <v-tooltip activator="parent" location="top">{{
+                            $t("header.monitoring")
+                        }}</v-tooltip>
+                    </div>
+                </div>
+                <div class="footer-time">{{ currentTime }}</div>
+            </div>
+        </aside>
+
+        <!-- Resize Handle -->
+        <div
+            class="resize-handle"
+            :class="{ 'is-resizing': isResizing }"
+            @mousedown="startResize"
+        >
+            <div class="resize-indicator"></div>
         </div>
-      </div>
-      
-      <!-- Title/Subtitle or Now Playing Info -->
-      <div v-if="currentPlaying" class="text-center px-2" style="max-width: 100%;">
-        <div class="text-caption font-weight-bold text-primary text-truncate">{{ currentPlaying.title }}</div>
-        <div class="text-caption text-secondary text-truncate" style="font-size: 0.7rem !important;">{{ formatTime(currentTime) }} / {{ formatTime(duration) }}</div>
-      </div>
-      <div v-else class="text-center">
-        <h2 class="text-h6 font-weight-bold text-primary">{{ $t('sidebar.title') }}</h2>
-        <div class="text-caption text-secondary">{{ $t('sidebar.subtitle') }}</div>
-      </div>
     </div>
-
-    <!-- Navigation -->
-    <v-list nav class="pa-2 mt-2">
-      <v-list-item
-        to="/hosts"
-        rounded="lg"
-        class="mb-2 sidebar-item"
-        color="primary"
-        active-class="v-list-item--active"
-      >
-        <template v-slot:prepend>
-          <div class="sidebar-icon-container mr-3">
-            <v-icon :icon="mdiDns" size="20"></v-icon>
-          </div>
-        </template>
-        <v-list-item-title class="font-weight-medium">{{ $t('sidebar.hostsManager') }}</v-list-item-title>
-      </v-list-item>
-
-      <v-list-item
-        to="/wallpapers"
-        rounded="lg"
-        class="mb-2 sidebar-item"
-        color="primary"
-        active-class="v-list-item--active"
-      >
-        <template v-slot:prepend>
-          <div class="sidebar-icon-container mr-3">
-            <v-icon :icon="mdiWallpaper" size="20"></v-icon>
-          </div>
-        </template>
-        <v-list-item-title class="font-weight-medium">{{ $t('sidebar.wallpapers') }}</v-list-item-title>
-      </v-list-item>
-
-      <v-list-item
-        to="/podcast"
-        rounded="lg"
-        class="mb-2 sidebar-item"
-        color="primary"
-        active-class="v-list-item--active"
-      >
-        <template v-slot:prepend>
-          <div class="sidebar-icon-container mr-3">
-            <v-icon :icon="mdiPodcast" size="20"></v-icon>
-          </div>
-        </template>
-        <v-list-item-title class="font-weight-medium">{{ $t('sidebar.podcast') }}</v-list-item-title>
-      </v-list-item>
-    </v-list>
-
-    <!-- Footer Area: Jedi Control Deck -->
-    <template v-slot:append>
-      <div class="pa-4">
-        <div class="jedi-control-deck d-flex align-center justify-space-between px-1 py-1">
-          
-          <!-- Power Core (Theme) -->
-          <div class="power-core-wrapper">
-            <v-btn 
-              icon 
-              density="compact" 
-              variant="text" 
-              @click="toggleTheme" 
-              class="power-core-btn"
-              :class="{ 'core-active': isDark }"
-            >
-              <v-icon :icon="themeIcon" size="20" class="core-icon"></v-icon>
-              <div class="core-glow"></div>
-              <v-tooltip activator="parent" location="top">{{ themeTooltip }}</v-tooltip>
-            </v-btn>
-          </div>
-          
-          <div class="deck-divider mx-1"></div>
-          
-          <!-- Control Module (Settings & Github) -->
-          <div class="d-flex align-center control-module">
-            <v-btn 
-              icon 
-              density="compact" 
-              variant="text" 
-              size="small" 
-              @click="$emit('show-settings')" 
-              class="deck-btn"
-            >
-              <v-icon :icon="mdiCog" size="18"></v-icon>
-              <v-tooltip activator="parent" location="top">{{ $t('settings.title') }}</v-tooltip>
-            </v-btn>
-            
-            <v-btn 
-              icon 
-              density="compact" 
-              variant="text" 
-              size="small" 
-              @click="$emit('open-github')" 
-              class="deck-btn"
-            >
-              <v-icon :icon="mdiGithub" size="18"></v-icon>
-              <v-tooltip activator="parent" location="top">{{ $t('sidebar.github') }}</v-tooltip>
-            </v-btn>
-          </div>
-        </div>
-        
-        <div class="text-center mt-3 text-caption jedi-status-text">
-          <span class="status-dot"></span> {{ $t('sidebar.status_connected') }}
-        </div>
-      </div>
-    </template>
-  </v-navigation-drawer>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import KoalaModel from '../common/KoalaModel.vue'
-import { mdiDns, mdiWallpaper, mdiPodcast, mdiCog, mdiGithub, mdiWeatherNight, mdiWeatherSunny, mdiThemeLightDark, mdiPlay, mdiPause, mdiRewind15, mdiFastForward15, mdiStop } from '@mdi/js'
-import { useTheme } from '@/composables/useTheme'
-import { useAudioPlayer } from '@/composables/useAudioPlayer'
+import { ref, onMounted, onUnmounted, watch } from "vue";
+import {
+    mdiDns,
+    mdiWallpaper,
+    mdiPodcast,
+    mdiRobot,
+    mdiCog,
+    mdiGithub,
+} from "@mdi/js";
+import { useThemeToggle } from "@/composables/useTheme";
+import LogoShaderBg from "@/components/common/LogoShaderBg.vue";
 
-const { t } = useI18n()
-const { isDark, themeMode, setTheme } = useTheme()
-const { currentPlaying, isPaused, currentTime, duration, togglePlay, seek, stop } = useAudioPlayer()
+const props = defineProps<{
+    collapsed?: boolean;
+}>();
 
-// defineProps<{
-//   activeItem?: string
-// }>()
+const emit = defineEmits<{
+    (e: "show-settings"): void;
+    (e: "open-github"): void;
+    (e: "update:width", width: number): void;
+    (e: "toggle-sidebar"): void;
+}>();
 
-const emit = defineEmits(['show-settings', 'open-github'])
+const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle();
 
-// function selectItem(item: string) {
-//   emit('update:activeItem', item)
-// }
+const navItems = [
+    { to: "/chat", icon: mdiRobot, label: "CHAT", tooltipKey: "sidebar.chat" },
+    { to: "/hosts", icon: mdiDns, label: "HOSTS", tooltipKey: "sidebar.hostsManager" },
+    { to: "/wallpapers", icon: mdiWallpaper, label: "WALLPAPER", tooltipKey: "sidebar.wallpapers" },
+    { to: "/podcast", icon: mdiPodcast, label: "PODCAST", tooltipKey: "sidebar.podcast" },
+];
 
-const progressPercentage = computed(() => {
-  if (!duration.value) return 0
-  return (currentTime.value / duration.value) * 100
-})
+// Sidebar width and resize
+const width = ref(200);
+const minWidth = 64;
+const expandThreshold = 150;
+const maxWidth = 220;
+const isResizing = ref(false);
+const isCollapsed = ref(false);
+const currentTime = ref("");
 
-function formatTime(seconds: number): string {
-  if (!seconds || isNaN(seconds)) return '00:00'
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+let startX = 0;
+let startWidth = 0;
+let timeInterval: number | null = null;
+
+// Watch for external collapse prop changes
+watch(
+    () => props.collapsed,
+    (newVal) => {
+        if (newVal !== undefined) {
+            isCollapsed.value = newVal;
+        }
+    },
+);
+
+// Resize functions
+function startResize(e: MouseEvent) {
+    isResizing.value = true;
+    startX = e.clientX;
+    startWidth = isCollapsed.value ? minWidth : width.value;
+    document.addEventListener("mousemove", doResize);
+    document.addEventListener("mouseup", stopResize);
+    document.body.style.cursor = "ew-resize";
+    document.body.style.userSelect = "none";
+    document.body.classList.add("no-transition");
 }
 
-function handleModelClick() {
-  if (currentPlaying.value) {
-    togglePlay()
-  }
+function doResize(e: MouseEvent) {
+    if (!isResizing.value) return;
+    const delta = e.clientX - startX;
+    let newWidth = startWidth + delta;
+
+    if (newWidth < expandThreshold) {
+        isCollapsed.value = true;
+        newWidth = minWidth;
+    } else {
+        isCollapsed.value = false;
+        newWidth = Math.min(maxWidth, Math.max(expandThreshold, newWidth));
+        width.value = newWidth;
+    }
+
+    emit("update:width", newWidth);
 }
 
-const themeIcon = computed(() => {
-  if (themeMode.value === 'dark') return mdiWeatherNight
-  if (themeMode.value === 'light') return mdiWeatherSunny
-  return mdiThemeLightDark
-})
-
-const themeTooltip = computed(() => {
-  if (themeMode.value === 'dark') return t('theme.dark')
-  if (themeMode.value === 'light') return t('theme.light')
-  return t('theme.system')
-})
-
-function toggleTheme() {
-  if (themeMode.value === 'light') {
-    setTheme('dark')
-  } else if (themeMode.value === 'dark') {
-    setTheme('system')
-  } else {
-    setTheme('light')
-  }
+function stopResize() {
+    isResizing.value = false;
+    document.removeEventListener("mousemove", doResize);
+    document.removeEventListener("mouseup", stopResize);
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    document.body.classList.remove("no-transition");
+    saveWidth(width.value);
 }
 
+function updateTime() {
+    const now = new Date();
+    currentTime.value = now.toLocaleTimeString("en-US", { hour12: false });
+}
+
+onMounted(() => {
+    const savedWidth = localStorage.getItem("jedi-sidebar-width");
+    if (savedWidth) {
+        const parsed = parseInt(savedWidth, 10);
+        if (!isNaN(parsed) && parsed >= expandThreshold && parsed <= maxWidth) {
+            width.value = parsed;
+            isCollapsed.value = false;
+        } else {
+            isCollapsed.value = true;
+        }
+    }
+    updateTime();
+    timeInterval = window.setInterval(updateTime, 1000);
+});
+
+function saveWidth(newWidth: number) {
+    localStorage.setItem("jedi-sidebar-width", newWidth.toString());
+}
+
+onUnmounted(() => {
+    document.removeEventListener("mousemove", doResize);
+    document.removeEventListener("mouseup", stopResize);
+    if (timeInterval) {
+        clearInterval(timeInterval);
+    }
+});
 </script>
 
 <style scoped>
-/* Minimal scoped styles, rely on global theme */
-.jedi-sidebar {
-  /* Ensure border is visible */
-  border-right: 1px solid var(--jedi-border) !important;
+.sidebar-wrapper {
+    position: relative;
+    height: 100%;
+    transition: width 0.2s ease;
+    overflow: visible;
+    flex-shrink: 0;
+    z-index: 90;
 }
 
-.border-bottom {
-  border-bottom: 1px solid var(--jedi-border);
+.jedi-sidebar {
+    border-right: 1px solid rgba(0, 255, 255, 0.15);
+    background: linear-gradient(180deg, #0d0d12 0%, #0a0a0f 100%);
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+}
+
+/* Custom Scrollbar for Sidebar */
+.jedi-sidebar::-webkit-scrollbar {
+    width: 4px;
+}
+.jedi-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.jedi-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 255, 0.2);
+    border-radius: 2px;
+}
+.jedi-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 255, 0.3);
+}
+
+.logo-area {
+    border-bottom-color: rgba(0, 255, 255, 0.15) !important;
+    padding: 16px 8px !important;
+    position: relative;
+    overflow: hidden;
+    min-height: 160px;
+}
+
+/* Collapsed logo area */
+.sidebar-collapsed .logo-area {
+    min-height: auto;
+    padding: 10px 8px !important;
+    background: radial-gradient(
+        circle at center,
+        rgba(0, 255, 255, 0.06) 0%,
+        transparent 70%
+    );
 }
 
 .grogu-pod-container {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    position: relative;
+    width: 72px;
+    height: 72px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
 }
 
-.pod-chassis {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15), rgba(0, 0, 0, 0.4));
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 
-    0 10px 20px rgba(0, 0, 0, 0.3),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2),
-    inset 0 -2px 5px rgba(0, 0, 0, 0.5);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  z-index: 10;
+.grogu-pod-container.mini-pod {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 4px !important;
 }
 
-.pod-chassis::before {
-  /* Metallic Rim */
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: -4px;
-  right: -4px;
-  bottom: -4px;
-  border-radius: 50%;
-  background: conic-gradient(
-    from 180deg,
-    #334155,
-    #94a3b8,
-    #334155,
-    #94a3b8,
-    #334155
-  );
-  z-index: -1;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+.logo-glow {
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(0, 255, 255, 0.3) 0%,
+        transparent 70%
+    );
+    animation: logoPulse 2s ease-in-out infinite;
+    z-index: 0;
 }
 
-.pod-chassis::after {
-  /* Status Light */
-  content: '';
-  position: absolute;
-  bottom: 8px;
-  width: 6px;
-  height: 6px;
-  background-color: #ef4444; /* Red idle */
-  border-radius: 50%;
-  box-shadow: 0 0 5px #ef4444;
-  transition: background-color 0.3s;
-  z-index: 15;
+@keyframes logoPulse {
+    0%,
+    100% {
+        opacity: 0.5;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
 }
 
-.is-playing .pod-chassis::after {
-  background-color: #10b981; /* Green playing */
-  box-shadow: 0 0 8px #10b981;
-  animation: pulse-status 2s infinite;
+.app-logo {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    transition: all 0.3s ease;
+    z-index: 2;
+    border-radius: 50%;
+    position: relative;
 }
 
-.is-paused .pod-chassis::after {
-  background-color: #f59e0b; /* Amber/Yellow paused */
-  box-shadow: 0 0 8px #f59e0b;
+.mini-pod .app-logo {
+    width: 40px;
+    height: 40px;
 }
 
-.is-playing .pod-chassis {
-  animation: pod-float 4s ease-in-out infinite;
-  box-shadow: 
-    0 20px 40px rgba(0, 0, 0, 0.4),
-    0 0 20px rgba(var(--v-theme-primary), 0.15),
-    inset 0 1px 1px rgba(255, 255, 255, 0.2);
+.sidebar-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 2px;
+    color: #00ff88 !important;
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
 }
 
-@keyframes pod-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+.title-bracket {
+    color: #00ffff;
+    font-size: 12px;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
 
-.model-wrapper {
-  position: relative;
-  width: 92px;
-  height: 92px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border-radius: 50%;
-  background: transparent; /* Removed dark background */
-  overflow: hidden; /* Clip contents to circle */
-  border: 1px solid rgba(255,255,255,0.05);
+.sidebar-subtitle {
+    font-size: 9px !important;
+    color: #52525b !important;
+    letter-spacing: 1px;
 }
 
-.player-overlay {
-  opacity: 1;
+/* Ensure icons center in collapsed mode */
+.sidebar-item.justify-center :deep(.v-list-item) {
+    justify-content: center !important;
+    padding-inline: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    min-width: 0 !important;
 }
 
-.progress-ring {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  filter: drop-shadow(0 0 4px rgba(var(--v-theme-primary), 0.4));
+.sidebar-item.justify-center :deep(.v-list-item__content) {
+    display: none !important;
 }
 
-.player-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 50%;
-  opacity: 0;
-  transition: all 0.3s;
-  z-index: 20;
-  backdrop-filter: blur(2px);
+.sidebar-item.justify-center :deep(.v-list-item__spacer) {
+    display: none !important;
+    width: 0 !important;
+    flex: none !important;
 }
 
-.control-icon {
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
-  transform: scale(1);
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+.sidebar-item.justify-center :deep(.v-list-item__prepend) {
+    margin-inline-end: 0 !important;
+    margin-inline-start: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: auto;
+    flex: none !important;
 }
 
-.model-wrapper:hover .control-icon {
-  transform: scale(1.2);
+.sidebar-item.justify-center .sidebar-icon-container {
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.pod-controls {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  pointer-events: none; /* Let clicks pass through to chassis where appropriate */
-  z-index: 5;
+/* Sci-Fi Console Sidebar Item */
+.sidebar-item {
+    transition: all 0.15s ease;
+    position: relative;
+    border-radius: 4px !important;
+    overflow: hidden;
 }
 
-.pod-ctrl-btn {
-  position: absolute;
-  pointer-events: auto;
-  bottom: 0;
-  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-  opacity: 0;
-  transform: scale(0.8);
-  background: rgba(var(--v-theme-surface), 0.9) !important;
-  border: 1px solid rgba(var(--v-border-color), 0.5);
-  backdrop-filter: blur(4px);
+.sidebar-item :deep(.v-list-item) {
+    border-radius: 4px !important;
+    position: relative;
 }
 
-.grogu-pod-container:hover .pod-ctrl-btn {
-  opacity: 1;
-  transform: scale(1);
+.sidebar-item::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 2px;
+    background: #00ffff;
+    opacity: 0;
+    transform: scaleY(0);
+    transition: all 0.15s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    z-index: 2;
 }
 
-.rewind-btn {
-  left: -4px;
-  bottom: 4px;
+.sidebar-item.v-list-item--active::before {
+    opacity: 1;
+    transform: scaleY(1);
 }
 
-.stop-btn {
-  left: 50%;
-  transform: translateX(-50%) scale(0.8);
-  bottom: -12px;
+.sidebar-item.v-list-item--active :deep(.v-list-item) {
+    background: rgba(0, 255, 255, 0.08) !important;
 }
 
-.grogu-pod-container:hover .stop-btn {
-  transform: translateX(-50%) scale(1);
+.sidebar-item.v-list-item--active .sidebar-icon-container {
+    filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.8));
 }
 
-.forward-btn {
-  right: -4px;
-  bottom: 4px;
+.sidebar-item:hover :deep(.v-list-item) {
+    background: rgba(0, 255, 255, 0.05) !important;
 }
 
-.pod-ctrl-btn:hover {
-  background: rgb(var(--v-theme-primary)) !important;
-  color: white !important;
-  transform: scale(1.1) !important;
-  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.4);
+.nav-text {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #a1a1aa;
 }
 
-.stop-btn:hover {
-  transform: translateX(-50%) scale(1.1) !important;
+.sidebar-item.v-list-item--active .nav-text {
+    color: #00ffff;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
 }
 
-.jedi-logo-glow {
-  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.3));
+.nav-indicator {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #00ff88;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.2s ease;
 }
 
-/* Sidebar Item Active State Override for Light Theme */
-:global(.light-theme) .sidebar-item.v-list-item--active {
-  background-color: #e0f2fe !important; /* Light Blue-50 */
-  color: #0369a1 !important; /* Sky-700 */
+.sidebar-item.v-list-item--active .nav-indicator {
+    opacity: 1;
 }
 
-/* Use a subtle gradient for dark mode active state */
-:global(.dark-theme) .sidebar-item.v-list-item--active {
-  background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), transparent) !important;
-  color: #60a5fa !important; /* Blue-400 */
-  border-left: 2px solid #60a5fa;
+/* Sidebar Footer */
+.sidebar-footer {
+    padding: 8px 12px 10px;
+    border-top: 1px solid rgba(0, 255, 255, 0.15);
+    background: linear-gradient(0deg, #0f0f1a 0%, transparent 100%);
 }
 
-/* Jedi Control Deck - Bolder Design */
-.jedi-control-deck {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95));
-  border: 1px solid rgba(59, 130, 246, 0.3);
-  border-radius: 12px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1), 
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* Footer Action Buttons */
+.footer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    margin-bottom: 6px;
 }
 
-/* Holographic sheen */
-.jedi-control-deck::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.8), transparent);
-  opacity: 0.5;
+.footer-action-btn {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    border-radius: 4px;
+    color: rgba(0, 255, 255, 0.5);
+    opacity: 0.7;
+    transition: all 0.15s ease;
 }
 
-.jedi-control-deck:hover {
-  border-color: rgba(59, 130, 246, 0.6);
-  box-shadow: 
-    0 0 15px rgba(59, 130, 246, 0.2),
-    inset 0 0 20px rgba(59, 130, 246, 0.05);
-  transform: translateY(-2px);
+.footer-action-btn:hover {
+    background-color: rgba(0, 255, 255, 0.1);
+    opacity: 1;
+    color: #00ffff !important;
 }
 
-/* Power Core (Theme Toggle) */
-.power-core-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.2);
-  margin: 2px;
+/* Collapsed Action Icons */
+.collapsed-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 0;
+    border-top: 1px solid rgba(0, 255, 255, 0.15);
 }
 
-.power-core-btn {
-  color: rgba(255, 255, 255, 0.7);
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 2;
+.collapsed-action-btn {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 4px;
+    color: rgba(0, 255, 255, 0.5);
+    opacity: 0.7;
+    transition: all 0.15s ease;
 }
 
-.power-core-btn:hover {
-  color: #fff;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+.collapsed-action-btn:hover {
+    background-color: rgba(0, 255, 255, 0.1);
+    opacity: 1;
+    color: #00ffff !important;
 }
 
-.core-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.8) 0%, transparent 70%);
-  transition: all 0.4s ease;
-  border-radius: 50%;
-  opacity: 0;
-  z-index: 1;
+/* HUD Status Panel */
+.hud-panel {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    height: 22px;
+    padding: 0 8px;
+    background: rgba(0, 255, 255, 0.04);
+    border: 1px solid rgba(0, 255, 255, 0.2);
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+    font-size: 9px;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
 }
 
-.power-core-btn:hover .core-glow {
-  width: 40px;
-  height: 40px;
-  opacity: 0.6;
+.hud-scanline {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 255, 255, 0.03) 2px,
+        rgba(0, 255, 255, 0.03) 4px
+    );
+    pointer-events: none;
+    animation: scanline-move 3s linear infinite;
 }
 
-.core-active .core-icon {
-  color: #fbbf24; /* Amber for light/sun */
-  filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.5));
+@keyframes scanline-move {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 0 4px;
+    }
 }
 
-/* Sidebar Icon Redesign */
-.sidebar-icon-container {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(var(--v-theme-on-surface), 0.05);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  color: rgba(var(--v-theme-on-surface), 0.7);
+.hud-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 5px;
 }
 
-.sidebar-item:hover .sidebar-icon-container {
-  background-color: rgba(var(--v-theme-primary), 0.15);
-  transform: scale(1.1);
-  color: rgb(var(--v-theme-primary));
+.hud-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
-.v-list-item--active .sidebar-icon-container {
-  background: linear-gradient(135deg, rgb(var(--v-theme-primary)), rgba(var(--v-theme-primary), 0.8));
-  color: white !important;
-  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.4);
+.hud-dot.online {
+    background: #00ff88;
+    box-shadow: 0 0 4px #00ff88;
 }
 
-/* Deck Divider */
-.deck-divider {
-  width: 1px;
-  height: 24px;
-  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.2), transparent);
+.hud-dot.standby {
+    background: #ffaa00;
+    box-shadow: 0 0 4px #ffaa00;
 }
 
-/* Deck Buttons */
-.deck-btn {
-  color: rgba(255, 255, 255, 0.6);
-  transition: all 0.2s;
-  margin: 0 2px;
+.hud-dot.scanning {
+    background: #00aaff;
+    box-shadow: 0 0 4px #00aaff;
+    animation: hud-blink 1.5s ease-in-out infinite;
 }
 
-.deck-btn:hover {
-  color: #60a5fa; /* Blue-400 */
-  background: rgba(59, 130, 246, 0.1);
-  transform: scale(1.1);
+@keyframes hud-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
 }
 
-/* Status Text */
-.jedi-status-text {
-  font-size: 9px !important;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  opacity: 0.7;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.hud-label {
+    color: rgba(0, 255, 255, 0.5);
+    font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
-.status-dot {
-  width: 4px;
-  height: 4px;
-  background-color: #10b981; /* Emerald-500 */
-  border-radius: 50%;
-  margin-right: 6px;
-  box-shadow: 0 0 8px #10b981;
-  animation: pulse-status 3s infinite;
+.hud-divider {
+    width: 1px;
+    height: 12px;
+    background: rgba(0, 255, 255, 0.15);
+    flex-shrink: 0;
 }
 
-@keyframes pulse-status {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.5); }
+.footer-time {
+    font-size: 10px;
+    color: #00ffff;
+    font-family: "JetBrains Mono", monospace;
+    text-shadow: 0 0 6px rgba(0, 255, 255, 0.4);
+    text-align: center;
+}
+
+/* Resize Handle */
+.resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 6px;
+    height: 100%;
+    cursor: ew-resize;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+}
+
+.resize-handle:hover {
+    background-color: rgba(0, 255, 255, 0.1);
+}
+
+.resize-handle.is-resizing {
+    background-color: rgba(0, 255, 255, 0.15);
+}
+
+.resize-indicator {
+    width: 2px;
+    height: 32px;
+    border-radius: 2px;
+    background-color: rgba(0, 255, 255, 0.2);
+    transition: background-color 0.15s ease;
+}
+
+.resize-handle:hover .resize-indicator,
+.resize-handle.is-resizing .resize-indicator {
+    background-color: #00ffff;
+    width: 3px;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+/* =========================================
+   Light Theme Styles (Tatooine Outpost)
+   ========================================= */
+.light-theme .jedi-sidebar {
+    background: linear-gradient(180deg, #f5e6d3 0%, #efe0cc 100%);
+    border-right-color: rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .logo-area {
+    border-bottom-color: rgba(184, 134, 11, 0.3) !important;
+}
+
+.light-theme .sidebar-collapsed .logo-area {
+    background: radial-gradient(
+        circle at center,
+        rgba(205, 127, 50, 0.08) 0%,
+        transparent 70%
+    );
+}
+
+.light-theme .logo-shader-wrap :deep(.logo-shader-bg) {
+    filter: none;
+    opacity: 0.35;
+}
+
+.light-theme .logo-shader-wrap :deep(.shader-fps) {
+    color: rgba(107, 68, 35, 0.7);
+    text-shadow: 0 0 4px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .logo-glow {
+    background: radial-gradient(
+        circle,
+        rgba(205, 127, 50, 0.2) 0%,
+        transparent 70%
+    );
+}
+
+.light-theme .sidebar-title {
+    color: #cd7f32 !important;
+    text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .title-bracket {
+    color: #6b4423;
+}
+
+.light-theme .sidebar-subtitle {
+    color: #8b7355 !important;
+}
+
+.light-theme .sidebar-item::before {
+    background: #cd7f32;
+    box-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
+}
+
+.light-theme .sidebar-item.v-list-item--active::before {
+    opacity: 1;
+    transform: scaleY(1);
+}
+
+.light-theme .sidebar-item.v-list-item--active .sidebar-icon-container {
+    filter: drop-shadow(0 0 6px rgba(205, 127, 50, 0.4));
+}
+
+.light-theme .sidebar-item:hover :deep(.v-list-item) {
+    background: rgba(205, 127, 50, 0.1) !important;
+}
+
+.light-theme .nav-text {
+    color: #6b4423;
+}
+
+.light-theme .sidebar-item.v-list-item--active .nav-text {
+    color: #cd7f32;
+}
+
+.light-theme .nav-indicator {
+    background: #daa520;
+    box-shadow: 0 0 8px rgba(218, 165, 32, 0.4);
+}
+
+.light-theme .sidebar-footer {
+    border-top-color: rgba(184, 134, 11, 0.3);
+    background: linear-gradient(0deg, #f5e6d3 0%, transparent 100%);
+}
+
+.light-theme .footer-action-btn {
+    color: rgba(107, 68, 35, 0.5);
+}
+
+.light-theme .footer-action-btn:hover {
+    background-color: rgba(205, 127, 50, 0.15);
+    color: #cd7f32 !important;
+}
+
+.light-theme .collapsed-actions {
+    border-top-color: rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .collapsed-action-btn {
+    color: rgba(107, 68, 35, 0.5);
+}
+
+.light-theme .collapsed-action-btn:hover {
+    background-color: rgba(205, 127, 50, 0.15);
+    color: #cd7f32 !important;
+}
+
+.light-theme .hud-panel {
+    background: rgba(184, 134, 11, 0.08);
+    border-color: rgba(184, 134, 11, 0.25);
+}
+
+.light-theme .hud-scanline {
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(107, 68, 35, 0.03) 2px,
+        rgba(107, 68, 35, 0.03) 4px
+    );
+}
+
+.light-theme .hud-dot.online {
+    background: #daa520;
+    box-shadow: 0 0 4px rgba(218, 165, 32, 0.5);
+}
+
+.light-theme .hud-dot.standby {
+    background: #cd853f;
+    box-shadow: 0 0 4px rgba(205, 133, 63, 0.5);
+}
+
+.light-theme .hud-dot.scanning {
+    background: #cd7f32;
+    box-shadow: 0 0 4px rgba(205, 127, 50, 0.5);
+}
+
+.light-theme .hud-label {
+    color: rgba(107, 68, 35, 0.5);
+}
+
+.light-theme .hud-divider {
+    background: rgba(184, 134, 11, 0.2);
+}
+
+.light-theme .footer-time {
+    color: #cd7f32;
+}
+
+.light-theme .resize-indicator {
+    background-color: rgba(184, 134, 11, 0.3);
+}
+
+.light-theme .resize-handle:hover .resize-indicator,
+.light-theme .resize-handle.is-resizing .resize-indicator {
+    background-color: #cd7f32;
+    box-shadow: 0 0 8px rgba(205, 127, 50, 0.4);
 }
 </style>

@@ -39,7 +39,7 @@ export function validateHostInput(ip: string, domain: string): boolean {
  * @param host 主机信息
  * @returns 找到的主机条目
  */
-export function findHostEntry(group: Group, host: any): HostEntry | undefined {
+export function findHostEntry(group: Group, host: HostEntry): HostEntry | undefined {
   return group.hosts.find(h => h.domain === host.domain && h.ip === host.ip);
 }
 
@@ -49,7 +49,7 @@ export function findHostEntry(group: Group, host: any): HostEntry | undefined {
  * @param host 主机信息
  * @returns 找到的主机条目索引
  */
-export function findHostIndex(group: Group, host: any): number {
+export function findHostIndex(group: Group, host: HostEntry): number {
   return group.hosts.findIndex(h => h.domain === host.domain && h.ip === host.ip);
 }
 

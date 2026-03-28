@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useStorage } from '@/composables/useStorage'
 import { getWallpapers, setDesktopWallpaper, WallpaperMode } from '@/api/wallpaper'
 
@@ -26,6 +26,9 @@ const loaded = ref(false)
 let timer: ReturnType<typeof setInterval> | null = null
 
 export function useWallpaper() {
+  onUnmounted(() => {
+    stopAutoUpdateCheck()
+  })
 
   async function loadSettings() {
     if (loaded.value) return // Already loaded

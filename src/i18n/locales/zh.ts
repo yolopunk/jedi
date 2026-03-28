@@ -1,12 +1,26 @@
 export default {
   sidebar: {
-    title: 'Jedi 工具箱',
+    title: 'Jedi Command',
     subtitle: '开发者的原力',
     hostsManager: 'Hosts 管理',
     github: 'GitHub 仓库',
     status_connected: '已连接',
     wallpapers: '知识壁纸',
     podcast: '小宇宙',
+    chat: '对话',
+    system: '系统',
+    online: '在线',
+  },
+  header: {
+    systemOnline: '系统在线',
+    modulesActive: '模块活跃',
+    monitoring: '监控中',
+    console: 'JEDI 控制台',
+    rewind15s: '后退 15 秒',
+    play: '播放',
+    pause: '暂停',
+    forward15s: '前进 15 秒',
+    settings: '设置',
   },
   theme: {
     dark: '深色模式',
@@ -18,8 +32,8 @@ export default {
     memory: '内存',
   },
   about: {
-    title: '关于 Jedi 工具箱',
-    appName: 'Jedi 工具箱',
+    title: '关于 Jedi Command',
+    appName: 'Jedi Command',
     version: '版本 v{version}',
     description: '多功能开发辅助工具集',
     techStack: '基于 Tauri + Vue + Vuetify 构建',
@@ -37,6 +51,8 @@ export default {
     title: '应用设置',
     general: '常规设置',
     advanced: '高级设置',
+    wallpaper: '壁纸设置',
+    chat: 'AI 对话',
     autostart: '开机自启动',
     minimizeToTray: '最小化到托盘',
     autoUpdate: '自动检查更新',
@@ -46,20 +62,120 @@ export default {
     backupBtn: '备份',
     resetBtn: '重置',
     language: '语言',
-    wallpaper: '壁纸设置',
-    wpAutoUpdate: '自动更新壁纸',
-    wpFrequency: '更新频率 (天)',
-    wpCategories: '偏好分类',
-    wpLastUpdate: '上次更新: {time}',
+    theme: '主题',
+    themeMode: '主题模式',
+    themeDark: '深色',
+    themeLight: '浅色',
+    themeSystem: '跟随系统',
     checkUpdate: '检查更新',
     updateChecking: '检查中...',
     updateAvailable: '发现新版本 {version}',
     updateLatest: '已是最新版本',
     lastCheckTime: '上次检查: {time}',
     never: '从未',
+    close: '关闭',
+    categories: '{n} 个分类',
+    // Settings sections
+    aiProvider: 'AI 提供商',
+    providerConfig: '配置 AI 模型提供商 API 密钥',
+    chatSettings: '对话设置',
+    chatSettingsDesc: '配置 AI 对话的默认参数',
+    mcpServers: 'MCP 服务器',
+    mcpServersDesc: '配置 MCP (Model Context Protocol) 服务器',
+    // Status
+    configured: '已配置',
+    notConfigured: '未配置',
+    // Actions
+    edit: '编辑',
+    configure: '配置',
+    // Chat settings
+    temperature: '温度 (Temperature)',
+    temperatureDesc: '控制输出的随机性，值越高越有创意',
+    maxTokens: '最大令牌数',
+    maxTokensDesc: '单次响应的最大长度',
+    streamResponse: '流式响应',
+    streamResponseDesc: '实时显示 AI 响应内容',
+    // Dialog
+    apiKey: 'API Key',
+    apiEndpoint: 'API Endpoint (可选)',
+    // Wallpaper settings
+    wpAutoUpdate: '自动更新壁纸',
+    wpFrequency: '更新频率 (天)',
+    wpCategories: '壁纸分类',
+    wpLastUpdate: '上次更新: {time}',
+  },
+  chat: {
+    title: '对话',
+    newChat: '新对话',
+    history: '历史记录',
+    noHistory: '暂无对话记录',
+    inputPlaceholder: '输入消息...',
+    send: '发送',
+    stop: '停止生成',
+    copy: '复制',
+    regenerate: '重新生成',
+    delete: '删除',
+    rename: '重命名',
+    export: '导出',
+    clearContext: '清除上下文',
+    mcp: 'MCP',
+    welcome: {
+      title: '今天我能帮您什么？',
+      subtitle: '选择一个模型开始对话',
+    },
+    prompts: {
+      explain: {
+        title: '解释',
+        hint: '解释复杂的概念',
+      },
+      code: {
+        title: '代码',
+        hint: '生成或优化代码',
+      },
+      summarize: {
+        title: '摘要',
+        hint: '总结文本或文章',
+      },
+      brainstorm: {
+        title: '头脑风暴',
+        hint: '激发创意灵感',
+      },
+    },
+    roles: {
+      user: '你',
+      assistant: 'AI',
+    },
+    dialog: {
+      renameTitle: '重命名对话',
+      renamePlaceholder: '输入新名称',
+      cancel: '取消',
+      save: '保存',
+    },
+    confirm: {
+        delete: '确定要删除此对话吗？',
+        clear: '确定要清除当前对话历史吗？',
+    },
+    time: {
+        justNow: '刚刚',
+        minutesAgo: '{n}分钟前',
+        hoursAgo: '{n}小时前',
+        daysAgo: '{n}天前',
+    },
+    error: {
+      providerConfig: '请在设置中配置 AI 提供商...'
+    },
+    inputHint: '按 Enter 发送，Shift+Enter 换行',
+    searchPlaceholder: '搜索对话...',
+    modelSearchPlaceholder: '搜索模型...',
+    commandPlaceholder: '输入命令...',
   },
   hosts: {
+    validation: {
+      groupNameRequired: '分组名称不能为空',
+    },
     globalSwitch: {
+      enabledTooltip: '已启用 - 点击禁用',
+      disabledTooltip: '已禁用 - 点击启用',
       enabled: '已启用',
       disabled: '已禁用',
     },
@@ -74,10 +190,19 @@ export default {
     },
     table: {
       addHost: '添加条目',
+      ip: 'IP地址',
+      domain: '域名',
+      status: '状态',
+      actions: '操作',
+      noMore: '没有更多数据了',
+      search: '搜索',
+      entries: '条目',
+      active: '活跃',
     },
     dialog: {
       editTitle: '编辑条目',
       addTitle: '新增条目',
+      addHostTitle: '添加条目',
       renameGroupTitle: '重命名分组',
       deleteTitle: '确认删除',
       addGroupTitle: '添加分组',
@@ -97,6 +222,17 @@ export default {
       hostsListLabel: 'Hosts 列表',
       hostsListPlaceholder: '格式: IP 域名，每行一条\n例如:\n127.0.0.1 localhost\n192.168.1.1 router.local',
       hostsListHint: '每行一条记录，格式为: <code>IP地址 域名</code>',
+    },
+    // Table UI
+    console: {
+      title: 'HOSTS 管理控制台',
+      systemOnline: '系统在线',
+      hostsActive: 'Hosts 活跃',
+      monitoring: '监控中',
+      ipAddress: 'IP 地址',
+      domain: '域名',
+      status: '状态',
+      actions: '操作',
     },
   },
   podcast: {
@@ -119,12 +255,13 @@ export default {
     shows: '节目',
     locatePlaying: '定位播放',
     play: '播放',
+    chapters: '章节：',
     howToExportOpml: '如何导出 OPML？',
     exportGuide: 'OPML 导出指南',
-    exportGuideStep1: '1. 点击app 底部菜单栏【订阅】菜单',
-    exportGuideStep2: '2. 点击右上角【我的订阅】按钮',
-    exportGuideStep3: '3. 点击【我的订阅】页面右上角的分享按钮',
-    exportGuideStep4: '4. 选择要订阅的播客，然后点击底部的【导出OPML】按钮',
+    exportGuideStep1: '点击app 底部菜单栏【订阅】菜单',
+    exportGuideStep2: '点击右上角【我的订阅】按钮',
+    exportGuideStep3: '点击【我的订阅】页面右上角的分享按钮',
+    exportGuideStep4: '选择要订阅的播客，然后点击底部的【导出OPML】按钮',
   },
   common: {
     confirm: '确认',
@@ -152,6 +289,35 @@ export default {
     getCurrentError: '无法获取当前壁纸信息',
     openFolder: '打开文件位置',
     openFolderError: '打开文件位置失败',
+    viewDetails: '查看详情',
+    mode: '模式',
+    wallpaperMode: '壁纸模式',
+    modes: {
+      center: {
+        label: '居中 (Center)',
+        description: '图片居中，不缩放，周围留空'
+      },
+      crop: {
+        label: '裁剪/填充 (Crop)',
+        description: '图片按比例放大填满屏幕，多余部分裁剪'
+      },
+      fit: {
+        label: '适应 (Fit)',
+        description: '图片按比例缩放完整显示，可能有黑边'
+      },
+      span: {
+        label: '跨屏 (Span)',
+        description: '图片跨越所有显示器'
+      },
+      stretch: {
+        label: '拉伸 (Stretch)',
+        description: '图片强制拉伸填满屏幕，会变形'
+      },
+      tile: {
+        label: '平铺 (Tile)',
+        description: '图片按原大小重复平铺'
+      }
+    }
   },
   update: {
     title: '发现新版本',

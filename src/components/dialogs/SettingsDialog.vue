@@ -21,7 +21,6 @@
         <div class="tab-content">
           <GeneralSettingsTab v-if="settingsTab === 'general'" />
           <WallpaperSettingsTab v-if="settingsTab === 'wallpaper'" />
-          <ChatSettingsTab v-if="settingsTab === 'chat'" ref="chatTabRef" />
           <AdvancedSettingsTab v-if="settingsTab === 'advanced'" />
         </div>
       </v-card-text>
@@ -36,11 +35,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import GeneralSettingsTab from './settings/GeneralSettingsTab.vue'
 import WallpaperSettingsTab from './settings/WallpaperSettingsTab.vue'
-import ChatSettingsTab from './settings/ChatSettingsTab.vue'
 import AdvancedSettingsTab from './settings/AdvancedSettingsTab.vue'
 
 const { t } = useI18n()
@@ -48,7 +46,6 @@ const { t } = useI18n()
 const tabs = computed(() => [
   { value: 'general', label: t('settings.general') },
   { value: 'wallpaper', label: t('settings.wallpaper') },
-  { value: 'chat', label: t('settings.chat') },
   { value: 'advanced', label: t('settings.advanced') }
 ])
 
@@ -66,13 +63,6 @@ const dialogModel = computed({
 })
 
 const settingsTab = ref('general')
-const chatTabRef = ref<InstanceType<typeof ChatSettingsTab> | null>(null)
-
-watch(dialogModel, (newVal) => {
-  if (newVal && settingsTab.value === 'chat') {
-    chatTabRef.value?.loadSettings()
-  }
-})
 </script>
 
 <style scoped>

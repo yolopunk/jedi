@@ -168,6 +168,7 @@ const providerList = [
   { id: 'google', name: 'Google', defaultEndpoint: 'https://generativelanguage.googleapis.com' },
   { id: 'deepseek', name: 'DeepSeek', defaultEndpoint: 'https://api.deepseek.com' },
   { id: 'openrouter', name: 'OpenRouter', defaultEndpoint: 'https://openrouter.ai/api/v1' },
+  { id: 'ollama', name: 'Ollama', defaultEndpoint: 'http://localhost:11434/v1' },
 ]
 
 const showConfigDialog = ref(false)

@@ -21,7 +21,7 @@
               :class="{ selected: form.type === p.id }"
               @click="selectProvider(p)"
             >
-              <span class="chip-icon">{{ p.icon }}</span>
+              <ProviderIcon :provider-id="p.id" class="chip-icon" />
               <span class="chip-name">{{ p.name }}</span>
             </div>
           </div>
@@ -86,6 +86,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useAiChatStore } from '@/stores/aiChat'
+import ProviderIcon from '@/components/common/ProviderIcon.vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -99,12 +100,12 @@ const emit = defineEmits<{
 const store = useAiChatStore()
 
 const providers = [
-  { id: 'openai', name: 'OpenAI', icon: '○', endpoint: 'https://api.openai.com/v1' },
-  { id: 'anthropic', name: 'Anthropic', icon: '◎', endpoint: 'https://api.anthropic.com' },
-  { id: 'google', name: 'Google', icon: '⊕', endpoint: 'https://generativelanguage.googleapis.com' },
-  { id: 'deepseek', name: 'DeepSeek', icon: '▶', endpoint: 'https://api.deepseek.com' },
-  { id: 'openrouter', name: 'OpenRouter', icon: '◎', endpoint: 'https://openrouter.ai/api/v1' },
-  { id: 'ollama', name: 'Ollama', icon: '○', endpoint: 'http://localhost:11434/v1' },
+  { id: 'openai', name: 'OpenAI', endpoint: 'https://api.openai.com/v1' },
+  { id: 'anthropic', name: 'Anthropic', endpoint: 'https://api.anthropic.com' },
+  { id: 'google', name: 'Google', endpoint: 'https://generativelanguage.googleapis.com' },
+  { id: 'deepseek', name: 'DeepSeek', endpoint: 'https://api.deepseek.com' },
+  { id: 'openrouter', name: 'OpenRouter', endpoint: 'https://openrouter.ai/api/v1' },
+  { id: 'ollama', name: 'Ollama', endpoint: 'http://localhost:11434/v1' },
 ]
 
 const form = ref({

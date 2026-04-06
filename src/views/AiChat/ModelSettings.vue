@@ -26,7 +26,7 @@
             class="provider-item"
             :class="{ configured: isProviderConfigured(p.id) }"
           >
-            <div class="provider-icon">{{ providerIcon(p.id) }}</div>
+            <ProviderIcon :provider-id="p.id" class="provider-icon" />
             <div class="provider-info">
               <span class="provider-name">{{ p.name }}</span>
               <span class="provider-status">
@@ -153,6 +153,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useAiChatStore } from '@/stores/aiChat'
+import ProviderIcon from '@/components/common/ProviderIcon.vue'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{
@@ -191,10 +192,6 @@ watch(() => props.modelValue, (open) => {
     store.loadProviders()
   }
 })
-
-function providerIcon(id: string) {
-  return { openai: '○', anthropic: '◎', google: '⊕', deepseek: '▶', openrouter: '◎' }[id] || '○'
-}
 
 function isProviderConfigured(id: string | undefined) {
   return store.providers.some(p => p.provider === id && p.has_key)

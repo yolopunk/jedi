@@ -200,8 +200,8 @@
   "hotPaths": [
     {
       "path": "src/views/AiChat/ProviderForm.vue",
-      "accessCount": 40,
-      "lastAccessed": 1775475914927,
+      "accessCount": 44,
+      "lastAccessed": 1775481818289,
       "type": "file"
     },
     {
@@ -241,6 +241,12 @@
       "type": "file"
     },
     {
+      "path": "src/views/AiChat/ModelSettings.vue",
+      "accessCount": 11,
+      "lastAccessed": 1775481847709,
+      "type": "file"
+    },
+    {
       "path": "src-tauri/src/api/ai_chat/models_dev.rs",
       "accessCount": 10,
       "lastAccessed": 1775442042529,
@@ -256,12 +262,6 @@
       "path": "src/components/layout/AppSidebar.vue",
       "accessCount": 9,
       "lastAccessed": 1775440310883,
-      "type": "file"
-    },
-    {
-      "path": "src/views/AiChat/ModelSettings.vue",
-      "accessCount": 8,
-      "lastAccessed": 1775474597626,
       "type": "file"
     },
     {

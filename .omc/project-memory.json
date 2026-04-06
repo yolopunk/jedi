@@ -206,38 +206,38 @@
     },
     {
       "path": "src/views/AiChat/index.vue",
-      "accessCount": 36,
-      "lastAccessed": 1775482689616,
+      "accessCount": 40,
+      "lastAccessed": 1775485905319,
       "type": "file"
     },
     {
-      "path": "src/views/AiChat/ModelsBrowser.vue",
-      "accessCount": 22,
-      "lastAccessed": 1775474162216,
+      "path": "src/stores/aiChat.ts",
+      "accessCount": 38,
+      "lastAccessed": 1775486214652,
+      "type": "file"
+    },
+    {
+      "path": "src/views/AiChat/ModelSettings.vue",
+      "accessCount": 32,
+      "lastAccessed": 1775485903975,
       "type": "file"
     },
     {
       "path": "src",
-      "accessCount": 16,
-      "lastAccessed": 1775474666685,
+      "accessCount": 24,
+      "lastAccessed": 1775486049405,
       "type": "directory"
     },
     {
-      "path": "src/views/AiChat/ModelSettings.vue",
-      "accessCount": 15,
-      "lastAccessed": 1775482650072,
+      "path": "src/views/AiChat/ModelsBrowser.vue",
+      "accessCount": 23,
+      "lastAccessed": 1775485919492,
       "type": "file"
     },
     {
       "path": "src-tauri/src/main.rs",
       "accessCount": 12,
       "lastAccessed": 1775442106008,
-      "type": "file"
-    },
-    {
-      "path": "src/stores/aiChat.ts",
-      "accessCount": 12,
-      "lastAccessed": 1775475991823,
       "type": "file"
     },
     {
@@ -248,8 +248,8 @@
     },
     {
       "path": "src-tauri/src/api/ai_chat/models_dev.rs",
-      "accessCount": 10,
-      "lastAccessed": 1775442042529,
+      "accessCount": 11,
+      "lastAccessed": 1775486078710,
       "type": "file"
     },
     {
@@ -265,6 +265,18 @@
       "type": "file"
     },
     {
+      "path": "",
+      "accessCount": 9,
+      "lastAccessed": 1775485933270,
+      "type": "directory"
+    },
+    {
+      "path": "src/api/ai-chat.ts",
+      "accessCount": 9,
+      "lastAccessed": 1775486150637,
+      "type": "file"
+    },
+    {
       "path": "src/components/dialogs/SettingsDialog.vue",
       "accessCount": 8,
       "lastAccessed": 1775475968726,
@@ -272,8 +284,8 @@
     },
     {
       "path": "docs/superpowers/plans/2026-04-06-agent-architecture-implementation.md",
-      "accessCount": 7,
-      "lastAccessed": 1775473942314,
+      "accessCount": 8,
+      "lastAccessed": 1775485253499,
       "type": "file"
     },
     {
@@ -283,22 +295,10 @@
       "type": "file"
     },
     {
-      "path": "src/api/ai-chat.ts",
-      "accessCount": 6,
-      "lastAccessed": 1775465702276,
-      "type": "file"
-    },
-    {
       "path": "src/views/AiChat/ModelSelector.vue",
       "accessCount": 4,
       "lastAccessed": 1775474692683,
       "type": "file"
-    },
-    {
-      "path": "",
-      "accessCount": 3,
-      "lastAccessed": 1775398860161,
-      "type": "directory"
     },
     {
       "path": "src/views/hosts/HostsManager.vue",

@@ -1,0 +1,7 @@
+{
+  "tool_name": "mcp__plugin_oh-my-claudecode_t__lsp_diagnostics",
+  "tool_input_preview": "{\"file\":\"/Users/cynosure/workspace/github/jedi/src/views/AiChat/index.vue\"}",
+  "error": "No language server available for file type: /Users/cynosure/workspace/github/jedi/src/views/AiChat/index.vue\n\nUse lsp_servers tool to see available language servers.",
+  "timestamp": "2026-04-06T14:32:02.675Z",
+  "retry_count": 4
+}

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import type { ModelsDevResponse, ProviderInfo as ModelsDevProviderInfo, ModelInfo } from '@/types/models.dev'
+import type { ModelsDevResponse, ModelsDevProvider, ModelsDevModel } from '@/api/ai-chat'
 
 // 提供商信息（后端返回格式）
 export interface ProviderInfo {
@@ -100,9 +100,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
     modelsDevLoading.value = true
     modelsDevError.value = null
     try {
-      const response = await fetch('https://models.dev/api.json')
-      if (!response.ok) throw new Error('Failed to fetch')
-      modelsDevData.value = await response.json()
+      const data = await invoke<ModelsDevResponse>('fetch_models_dev', { forceRefresh: false })
+      modelsDevData.value = data
     } catch (e) {
       modelsDevError.value = 'Failed to load providers'
       console.error('fetchModelsDev error:', e)
@@ -111,12 +110,12 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
-  function getProvidersFromModelsDev(): ModelsDevProviderInfo[] {
+  function getProvidersFromModelsDev(): ModelsDevProvider[] {
     if (!modelsDevData.value) return []
     return Object.values(modelsDevData.value)
   }
 
-  function getModelsForProvider(providerId: string): ModelInfo[] {
+  function getModelsForProvider(providerId: string): ModelsDevModel[] {
     if (!modelsDevData.value) return []
     const provider = modelsDevData.value[providerId]
     if (!provider) return []

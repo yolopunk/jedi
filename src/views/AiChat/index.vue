@@ -298,8 +298,9 @@ const quickCommands = ref([
 
 // Computed
 const currentModelName = computed(() => {
-  const model = store.availableModels.find(m => m.id === store.selectedModelId)
-  return model?.name || 'UNKNOWN'
+  const models = store.getModelsForProvider(store.selectedProvider)
+  const model = models.find(m => m.id === store.selectedModelId)
+  return model?.name || store.selectedModelId || 'SELECT MODEL'
 })
 const connectionStatus = computed(() => store.availableModels.length > 0 ? 'CONNECTED' : 'OFFLINE')
 

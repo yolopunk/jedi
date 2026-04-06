@@ -93,51 +93,6 @@
           </v-card>
         </v-dialog>
 
-        <div class="divider-line my-4"></div>
-
-        <!-- Parameters -->
-        <div class="section-header">
-          <span class="section-title">PARAMETERS</span>
-        </div>
-
-        <div class="param-group">
-          <div class="param-row">
-            <span class="param-label">TEMPERATURE</span>
-            <span class="param-value">{{ localSettings.temperature.toFixed(1) }}</span>
-          </div>
-          <input
-            type="range"
-            v-model.number="localSettings.temperature"
-            min="0" max="2" step="0.1"
-            class="console-slider"
-          />
-        </div>
-
-        <div class="param-group">
-          <div class="param-row">
-            <span class="param-label">MAX TOKENS</span>
-          </div>
-          <div class="input-wrapper">
-            <span class="input-prompt">>></span>
-            <input
-              v-model.number="localSettings.maxTokens"
-              type="number"
-              min="256"
-              max="128000"
-              class="console-input"
-            />
-          </div>
-        </div>
-
-        <div class="param-group">
-          <div class="param-row">
-            <span class="param-label">STREAM RESPONSE</span>
-            <label class="toggle-switch" :class="{ active: localSettings.streamEnabled }">
-              <input type="checkbox" v-model="localSettings.streamEnabled" />
-              <span class="toggle-handle"></span>
-            </label>
-          </div>
-        </div>
       </v-card-text>
 
       <v-card-actions class="console-card-actions">
@@ -177,20 +132,12 @@ const configApiKey = ref('')
 const configEndpoint = ref('')
 const showKey = ref(false)
 
-const localSettings = ref({
-  temperature: 0.7,
-  maxTokens: 4096,
-  streamEnabled: true,
-})
-
 watch(() => props.modelValue, (open) => {
   if (open) {
-    localSettings.value = {
-      temperature: store.temperature,
-      maxTokens: store.maxTokens,
-      streamEnabled: store.streamEnabled,
-    }
     store.loadProviders()
+    if (!store.modelsDevData) {
+      store.fetchModelsDev()
+    }
   }
 })
 
@@ -222,10 +169,6 @@ async function deleteKey() {
 }
 
 function saveAndClose() {
-  store.temperature = localSettings.value.temperature
-  store.maxTokens = localSettings.value.maxTokens
-  store.streamEnabled = localSettings.value.streamEnabled
-  store.saveSettings()
   emit('update:modelValue', false)
 }
 </script>
@@ -301,12 +244,6 @@ function saveAndClose() {
   color: #00ff88;
 }
 
-.divider-line {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
-  margin: 16px 0;
-}
-
 .form-field {
   display: flex;
   flex-direction: column;
@@ -320,76 +257,4 @@ function saveAndClose() {
   color: #00ffff;
 }
 
-.param-group {
-  margin-bottom: 16px;
-}
-
-.param-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.param-label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: #a1a1aa;
-}
-
-.param-value {
-  font-size: 12px;
-  font-weight: 600;
-  color: #00ff88;
-}
-
-.console-slider {
-  width: 100%;
-  height: 4px;
-  -webkit-appearance: none;
-  background: rgba(0, 255, 255, 0.2);
-  border-radius: 2px;
-}
-
-.console-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #00ffff;
-  cursor: pointer;
-}
-
-.toggle-switch {
-  display: inline-flex;
-  align-items: center;
-  width: 40px;
-  height: 22px;
-  background: rgba(82, 82, 91, 0.3);
-  border: 1px solid rgba(82, 82, 91, 0.5);
-  border-radius: 11px;
-  cursor: pointer;
-}
-
-.toggle-switch input { display: none; }
-
-.toggle-switch.active {
-  background: rgba(0, 255, 136, 0.15);
-  border-color: rgba(0, 255, 136, 0.5);
-}
-
-.toggle-handle {
-  width: 16px;
-  height: 16px;
-  background: #52525b;
-  border-radius: 50%;
-  margin: 2px;
-  transition: all 0.2s;
-}
-
-.toggle-switch.active .toggle-handle {
-  background: #00ff88;
-  margin-left: 20px;
-}
 </style>

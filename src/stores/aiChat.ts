@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { fetchModelsDev as fetchModelsDevApi } from '@/api/ai-chat'
 import type { ModelsDevResponse, ModelsDevProvider, ModelsDevModel } from '@/api/ai-chat'
 
 // 提供商信息（后端返回格式）
@@ -100,7 +101,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
     modelsDevLoading.value = true
     modelsDevError.value = null
     try {
-      const data = await invoke<ModelsDevResponse>('fetch_models_dev', { forceRefresh: false })
+      const data = await fetchModelsDevApi(false)
       modelsDevData.value = data
     } catch (e) {
       modelsDevError.value = 'Failed to load providers'

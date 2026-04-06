@@ -1,309 +1,187 @@
 <template>
-  <v-dialog
-    :model-value="modelValue"
-    @update:model-value="$emit('update:modelValue', $event)"
-    max-width="600"
-    scrollable
-  >
-    <v-card class="provider-form-dialog">
-      <!-- Header -->
-      <v-card-title class="d-flex align-center pa-4">
-        <v-icon :icon="isEditing ? 'mdi-pencil' : 'mdi-plus'" start />
-        {{ isEditing ? 'Edit Provider' : 'Add Provider' }}
+  <v-dialog v-model="dialogModel" max-width="700" persistent>
+    <v-card class="scifi-card provider-form-dialog">
+      <v-card-title class="console-title-bar">
+        <span class="dialog-title">[ {{ isEditing ? 'EDIT_PROVIDER' : 'ADD_PROVIDER' }} ]</span>
         <v-spacer />
-        <v-btn
-          icon
-          variant="text"
-          @click="$emit('update:modelValue', false)"
-        >
-          <v-icon icon="mdi-close" />
-        </v-btn>
+        <button class="console-btn icon-only" @click="$emit('update:modelValue', false)">
+          <span class="btn-icon">✕</span>
+        </button>
       </v-card-title>
 
-      <v-divider />
+      <v-card-text class="console-card-text provider-form-content">
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+          <div
+            v-for="step in 3"
+            :key="step"
+            class="step-dot"
+            :class="{
+              active: currentStep === step,
+              completed: currentStep > step
+            }"
+          >
+            <span class="step-num">{{ step }}</span>
+            <span class="step-label">{{ stepLabels[step - 1] }}</span>
+          </div>
+        </div>
 
-      <!-- Content -->
-      <v-card-text class="pa-0">
-        <v-stepper v-model="currentStep" class="provider-stepper" hide-actions>
-          <v-stepper-header>
-            <v-stepper-item
-              :value="1"
-              :complete="currentStep > 1"
-              title="Provider Type"
-            />
-            <v-divider />
-            <v-stepper-item
-              :value="2"
-              :complete="currentStep > 2"
-              title="Configuration"
-            />
-            <v-divider />
-            <v-stepper-item
-              :value="3"
-              :complete="currentStep > 3"
-              title="Models"
-            />
-          </v-stepper-header>
+        <div class="divider-line"></div>
 
-          <v-stepper-window>
-            <!-- Step 1: Provider Type -->
-            <v-stepper-window-item :value="1">
-              <div class="step-content">
-                <div class="d-flex align-center justify-space-between mb-4">
-                  <h3 class="text-h6 mb-0">Select Provider Type</h3>
-                  <v-btn
-                    variant="outlined"
-                    size="small"
-                    :loading="loadingProviders"
-                    @click="showModelsDevProviders = !showModelsDevProviders; if (showModelsDevProviders && modelsDevProviders.length === 0) loadModelsDevProviders()"
-                  >
-                    <v-icon :icon="showModelsDevProviders ? 'mdi-chevron-up' : 'mdi-chevron-down'" start />
-                    {{ showModelsDevProviders ? 'Hide All Providers' : 'Show All Providers' }}
-                  </v-btn>
-                </div>
-
-                <!-- Default providers -->
-                <div v-if="!showModelsDevProviders" class="provider-types">
-                  <v-card
-                    v-for="type in providerTypes"
-                    :key="type.value"
-                    :class="['provider-type-card', { selected: form.type === type.value }]"
-                    variant="outlined"
-                    @click="form.type = type.value"
-                  >
-                    <div class="provider-type-content">
-                      <v-icon :icon="type.icon" size="32" color="primary" />
-                      <h4>{{ type.label }}</h4>
-                      <p>{{ type.description }}</p>
-                    </div>
-                  </v-card>
-                </div>
-
-                <!-- All models.dev providers -->
-                <div v-else class="provider-types all-providers">
-                  <v-card
-                    v-for="provider in modelsDevProviders"
-                    :key="provider.id"
-                    :class="['provider-type-card', { selected: form.type === provider.id }]"
-                    variant="outlined"
-                    @click="selectModelsDevProvider(provider)"
-                  >
-                    <div class="provider-type-content">
-                      <v-icon :icon="getProviderIcon(provider.id)" size="32" color="primary" />
-                      <h4>{{ provider.name }}</h4>
-                      <p>{{ provider.model_count }} models</p>
-                    </div>
-                  </v-card>
-                </div>
+        <!-- Step 1: Provider Type -->
+        <div v-if="currentStep === 1" class="step-panel">
+          <div class="panel-header">
+            <span class="step-title">SELECT PROVIDER TYPE</span>
+          </div>
+          <div class="provider-grid">
+            <div
+              v-for="type in providerTypes"
+              :key="type.value"
+              class="provider-type-card"
+              :class="{ selected: form.type === type.value }"
+              @click="form.type = type.value; form.name = type.label"
+            >
+              <div class="provider-icon">{{ type.icon }}</div>
+              <div class="provider-info">
+                <span class="provider-name">{{ type.label }}</span>
+                <span class="provider-desc">{{ type.description }}</span>
               </div>
-            </v-stepper-window-item>
+              <div v-if="form.type === type.value" class="selected-check">✓</div>
+            </div>
+          </div>
+        </div>
 
-            <!-- Step 2: Configuration -->
-            <v-stepper-window-item :value="2">
-              <div class="step-content">
-                <h3 class="text-h6 mb-4">Configure {{ selectedProviderType?.label }}</h3>
-
-                <v-form ref="configForm" v-model="configValid">
-                  <v-text-field
-                    v-model="form.name"
-                    label="Display Name"
-                    variant="outlined"
-                    :rules="[rules.required]"
-                    class="mb-4"
-                  >
-                    <template v-slot:prepend-inner>
-                      <v-icon icon="mdi-tag" />
-                    </template>
-                  </v-text-field>
-
-                  <v-text-field
-                    v-model="form.baseUrl"
-                    label="API Base URL"
-                    variant="outlined"
-                    :rules="[rules.required, rules.url]"
-                    :placeholder="defaultBaseUrl"
-                    class="mb-4"
-                  >
-                    <template v-slot:prepend-inner>
-                      <v-icon icon="mdi-link" />
-                    </template>
-                  </v-text-field>
-
-                  <v-text-field
-                    v-model="form.apiKey"
-                    label="API Key"
-                    variant="outlined"
-                    :type="showApiKey ? 'text' : 'password'"
-                    :rules="form.type !== 'ollama' ? [rules.required] : []"
-                    class="mb-4"
-                  >
-                    <template v-slot:prepend-inner>
-                      <v-icon icon="mdi-key" />
-                    </template>
-                    <template v-slot:append-inner>
-                      <v-btn
-                        icon
-                        variant="text"
-                        size="small"
-                        @click="showApiKey = !showApiKey"
-                      >
-                        <v-icon :icon="showApiKey ? 'mdi-eye-off' : 'mdi-eye'" />
-                      </v-btn>
-                    </template>
-                  </v-text-field>
-
-                  <v-alert
-                    v-if="form.type === 'ollama'"
-                    type="info"
-                    variant="tonal"
-                    class="mb-4"
-                  >
-                    Ollama runs locally and doesn't require an API key.
-                    Make sure Ollama is running on your machine.
-                  </v-alert>
-
-                  <v-switch
-                    v-model="form.isActive"
-                    label="Enable this provider"
-                    color="primary"
-                    hide-details
-                  />
-                </v-form>
+        <!-- Step 2: Configuration -->
+        <div v-if="currentStep === 2" class="step-panel">
+          <div class="panel-header">
+            <span class="step-title">CONFIGURE {{ selectedProviderType?.label?.toUpperCase() }}</span>
+          </div>
+          <div class="config-form">
+            <div class="form-field">
+              <label class="field-label">DISPLAY NAME</label>
+              <div class="input-wrapper">
+                <span class="input-prompt">>></span>
+                <input
+                  v-model="form.name"
+                  type="text"
+                  class="console-input"
+                  placeholder="My OpenAI"
+                />
               </div>
-            </v-stepper-window-item>
+            </div>
 
-            <!-- Step 3: Models -->
-            <v-stepper-window-item :value="3">
-              <div class="step-content">
-                <h3 class="text-h6 mb-2">Available Models</h3>
-                <p class="text-body-2 text-medium-emphasis mb-4">
-                  Select the models you want to use with this provider
-                </p>
-
-                <div class="d-flex align-center mb-4">
-                  <v-btn
-                    variant="outlined"
-                    prepend-icon="mdi-refresh"
-                    :loading="loadingModels"
-                    @click="fetchModels"
-                  >
-                    Fetch Models
-                  </v-btn>
-                  
-                  <v-btn
-                    variant="text"
-                    prepend-icon="mdi-plus"
-                    class="ml-2"
-                    @click="addCustomModel"
-                  >
-                    Add Custom
-                  </v-btn>
-                </div>
-
-                <div v-if="form.models.length === 0" class="empty-models">
-                  <v-icon icon="mdi-robot-off" size="48" color="surface-variant" />
-                  <p>No models added yet</p>
-                  <p class="text-caption">
-                    Fetch models from the provider or add custom models
-                  </p>
-                </div>
-
-                <div v-else class="models-list">
-                  <v-card
-                    v-for="(model, index) in form.models"
-                    :key="model.id"
-                    variant="outlined"
-                    class="model-card mb-2"
-                  >
-                    <div class="d-flex align-center pa-3">
-                      <v-checkbox
-                        v-model="model.enabled"
-                        hide-details
-                        class="mr-2"
-                      />
-                      
-                      <div class="flex-grow-1">
-                        <v-text-field
-                          v-model="model.id"
-                          label="Model ID"
-                          variant="outlined"
-                          density="compact"
-                          hide-details
-                          class="mb-2"
-                        />
-                        <v-text-field
-                          v-model="model.name"
-                          label="Display Name"
-                          variant="outlined"
-                          density="compact"
-                          hide-details
-                        />
-                      </div>
-
-                      <v-btn
-                        icon
-                        variant="text"
-                        size="small"
-                        color="error"
-                        class="ml-2"
-                        @click="removeModel(index)"
-                      >
-                        <v-icon icon="mdi-delete" />
-                      </v-btn>
-                    </div>
-                  </v-card>
-                </div>
+            <div class="form-field">
+              <label class="field-label">API BASE URL</label>
+              <div class="input-wrapper">
+                <span class="input-prompt">>></span>
+                <input
+                  v-model="form.baseUrl"
+                  type="text"
+                  class="console-input"
+                  :placeholder="defaultBaseUrl"
+                />
               </div>
-            </v-stepper-window-item>
-          </v-stepper-window>
-        </v-stepper>
+            </div>
+
+            <div class="form-field">
+              <label class="field-label">API KEY</label>
+              <div class="input-wrapper">
+                <span class="input-prompt">>></span>
+                <input
+                  v-model="form.apiKey"
+                  :type="showApiKey ? 'text' : 'password'"
+                  class="console-input"
+                  placeholder="sk-..."
+                />
+                <button class="console-btn icon-only small" @click="showApiKey = !showApiKey">
+                  <span class="btn-icon">{{ showApiKey ? '👁' : '👁‍🗨' }}</span>
+                </button>
+              </div>
+            </div>
+
+            <div v-if="form.type === 'ollama'" class="info-alert">
+              <span class="alert-icon">ℹ</span>
+              <span class="alert-text">Ollama runs locally and doesn't require an API key.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Models -->
+        <div v-if="currentStep === 3" class="step-panel">
+          <div class="panel-header">
+            <span class="step-title">SELECT MODELS</span>
+          </div>
+          <div class="models-actions">
+            <button class="console-btn" @click="fetchModels" :disabled="loadingModels">
+              <span class="btn-icon" :class="{ spinning: loadingModels }">↻</span>
+              <span class="btn-text">FETCH MODELS</span>
+            </button>
+            <button class="console-btn" @click="addCustomModel">
+              <span class="btn-icon">+</span>
+              <span class="btn-text">ADD CUSTOM</span>
+            </button>
+          </div>
+
+          <div v-if="form.models.length === 0" class="empty-models">
+            <span class="empty-icon">🤖</span>
+            <span class="empty-text">No models added yet</span>
+          </div>
+
+          <div v-else class="models-list">
+            <div
+              v-for="(model, index) in form.models"
+              :key="index"
+              class="model-item"
+            >
+              <label class="model-toggle">
+                <input type="checkbox" v-model="model.enabled" />
+                <span class="toggle-box"></span>
+              </label>
+              <div class="model-fields">
+                <input
+                  v-model="model.id"
+                  type="text"
+                  class="console-input model-input"
+                  placeholder="Model ID (e.g., gpt-4o)"
+                />
+                <input
+                  v-model="model.name"
+                  type="text"
+                  class="console-input model-input"
+                  placeholder="Display Name"
+                />
+              </div>
+              <button class="console-btn icon-only small danger" @click="removeModel(index)">
+                <span class="btn-icon">×</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </v-card-text>
 
-      <v-divider />
-
-      <!-- Footer -->
-      <v-card-actions class="pa-4">
-        <v-btn
-          v-if="currentStep > 1"
-          variant="text"
-          @click="currentStep--"
-        >
-          Back
-        </v-btn>
+      <v-card-actions class="console-card-actions">
+        <button v-if="currentStep > 1" class="console-btn" @click="currentStep--">
+          <span class="btn-text">BACK</span>
+        </button>
         <v-spacer />
-        <v-btn variant="text" @click="$emit('update:modelValue', false)">
-          Cancel
-        </v-btn>
-        <v-btn
-          v-if="currentStep < 3"
-          color="primary"
-          @click="nextStep"
-        >
-          Continue
-        </v-btn>
-        <v-btn
-          v-else
-          color="primary"
-          @click="saveProvider"
-        >
-          {{ isEditing ? 'Save Changes' : 'Add Provider' }}
-        </v-btn>
+        <button class="console-btn" @click="$emit('update:modelValue', false)">
+          <span class="btn-text">CANCEL</span>
+        </button>
+        <button v-if="currentStep < 3" class="console-btn primary" @click="nextStep">
+          <span class="btn-text">NEXT →</span>
+        </button>
+        <button v-else class="console-btn primary" @click="saveProvider">
+          <span class="btn-text">{{ isEditing ? 'SAVE CHANGES' : 'ADD PROVIDER' }}</span>
+        </button>
       </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { Provider } from '@/stores/aiChat'
-import { getModelsForProvider, getModelsProviders, type ModelsDevModel, type ProviderSummary } from '@/api/ai-chat'
-
-interface ProviderFormModel {
-  id: string
-  name: string
-  providerId: string
-  enabled: boolean
-}
+import { getModelsForProvider } from '@/api/ai-chat'
 
 const props = defineProps<{
   modelValue: boolean
@@ -313,99 +191,47 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'save', provider: Partial<Provider>): void
-  (e: 'close'): void
 }>()
 
-// Form state
 const currentStep = ref(1)
-const configForm = ref<{ validate: () => void } | null>(null)
-const configValid = ref(false)
 const showApiKey = ref(false)
 const loadingModels = ref(false)
-const loadingProviders = ref(false)
-const showModelsDevProviders = ref(false)
-const modelsDevProviders = ref<ProviderSummary[]>([])
 
-// Form data
 const form = ref({
   id: '',
   name: '',
   type: 'openai',
   baseUrl: '',
   apiKey: '',
-  isActive: true,
-  models: [] as ProviderFormModel[],
+  models: [] as { id: string; name: string; enabled: boolean }[],
 })
 
-// Provider types
+const stepLabels = ['TYPE', 'CONFIG', 'MODELS']
+
 const providerTypes = [
-  {
-    value: 'openai',
-    label: 'OpenAI',
-    icon: 'mdi-robot',
-    description: 'GPT-4, GPT-3.5, and more',
-    defaultBaseUrl: 'https://api.openai.com/v1',
-  },
-  {
-    value: 'anthropic',
-    label: 'Anthropic',
-    icon: 'mdi-brain',
-    description: 'Claude models',
-    defaultBaseUrl: 'https://api.anthropic.com/v1',
-  },
-  {
-    value: 'google',
-    label: 'Google AI',
-    icon: 'mdi-google',
-    description: 'Gemini models',
-    defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1',
-  },
-  {
-    value: 'ollama',
-    label: 'Ollama',
-    icon: 'mdi-llama',
-    description: 'Local LLMs',
-    defaultBaseUrl: 'http://localhost:11434/v1',
-  },
-  {
-    value: 'openrouter',
-    label: 'OpenRouter',
-    icon: 'mdi-router-wireless',
-    description: 'Multiple providers',
-    defaultBaseUrl: 'https://openrouter.ai/api/v1',
-  },
-  {
-    value: 'custom',
-    label: 'Custom',
-    icon: 'mdi-api',
-    description: 'OpenAI-compatible API',
-    defaultBaseUrl: '',
-  },
+  { value: 'openai', label: 'OpenAI', icon: '○', description: 'GPT-4, GPT-3.5 models', defaultBaseUrl: 'https://api.openai.com/v1' },
+  { value: 'anthropic', label: 'Anthropic', icon: '◎', description: 'Claude models', defaultBaseUrl: 'https://api.anthropic.com' },
+  { value: 'google', label: 'Google', icon: '⊕', description: 'Gemini models', defaultBaseUrl: 'https://generativelanguage.googleapis.com' },
+  { value: 'ollama', label: 'Ollama', icon: '○', description: 'Local LLMs', defaultBaseUrl: 'http://localhost:11434/v1' },
+  { value: 'openrouter', label: 'OpenRouter', icon: '◎', description: 'Multiple providers', defaultBaseUrl: 'https://openrouter.ai/api/v1' },
+  { value: 'deepseek', label: 'DeepSeek', icon: '▶', description: 'DeepSeek models', defaultBaseUrl: 'https://api.deepseek.com' },
 ]
 
-// Validation rules
-const rules = {
-  required: (v: string) => !!v || 'This field is required',
-  url: (v: string) => {
-    try {
-      new URL(v)
-      return true
-    } catch {
-      return 'Please enter a valid URL'
-    }
-  },
-}
+const dialogModel = computed({
+  get: () => props.modelValue,
+  set: (value) => emit('update:modelValue', value)
+})
 
-// Computed
 const isEditing = computed(() => !!props.provider)
-const selectedProviderType = computed(() => 
+
+const selectedProviderType = computed(() =>
   providerTypes.find(t => t.value === form.value.type)
 )
-const defaultBaseUrl = computed(() => 
+
+const defaultBaseUrl = computed(() =>
   selectedProviderType.value?.defaultBaseUrl || ''
 )
 
-// Watch for provider changes
 watch(() => props.provider, (provider) => {
   if (provider) {
     form.value = {
@@ -414,7 +240,6 @@ watch(() => props.provider, (provider) => {
       type: provider.type || 'openai',
       baseUrl: provider.baseUrl || '',
       apiKey: provider.apiKey || '',
-      isActive: provider.isActive ?? true,
       models: (provider.models || []).map(m => ({ ...m, enabled: true })),
     }
   } else {
@@ -422,18 +247,10 @@ watch(() => props.provider, (provider) => {
   }
 }, { immediate: true })
 
-// Reset form when dialog opens
 watch(() => props.modelValue, (value) => {
   if (value && !props.provider) {
     resetForm()
-    if (showModelsDevProviders.value) {
-      loadModelsDevProviders()
-    }
   }
-})
-
-onMounted(() => {
-  // Preload models.dev providers when component mounts
 })
 
 function resetForm() {
@@ -444,22 +261,13 @@ function resetForm() {
     type: 'openai',
     baseUrl: '',
     apiKey: '',
-    isActive: true,
     models: [],
   }
 }
 
 function nextStep() {
-  if (currentStep.value === 2) {
-    // Validate config form
-    if (!configValid.value) {
-      configForm.value?.validate()
-      return
-    }
-    // Set default base URL if empty
-    if (!form.value.baseUrl && defaultBaseUrl.value) {
-      form.value.baseUrl = defaultBaseUrl.value
-    }
+  if (currentStep.value === 2 && !form.value.baseUrl && defaultBaseUrl.value) {
+    form.value.baseUrl = defaultBaseUrl.value
   }
   currentStep.value++
 }
@@ -467,39 +275,25 @@ function nextStep() {
 async function fetchModels() {
   loadingModels.value = true
   try {
-    // 尝试从 models.dev 获取模型列表
-    try {
-      const modelsFromDev = await getModelsForProvider(form.value.type)
-      if (modelsFromDev && modelsFromDev.length > 0) {
-        form.value.models = modelsFromDev.map((model: ModelsDevModel) => ({
-          id: model.id,
-          name: model.name,
-          providerId: form.value.id || 'new',
-          enabled: true,
-        }))
-        return
+    const modelsFromDev = await getModelsForProvider(form.value.type)
+    if (modelsFromDev && modelsFromDev.length > 0) {
+      form.value.models = modelsFromDev.map((m: any) => ({
+        id: m.id,
+        name: m.name || m.id,
+        enabled: true,
+      }))
+    } else {
+      const defaults: Record<string, string[]> = {
+        openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
+        anthropic: ['claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022'],
+        google: ['gemini-2.0-flash', 'gemini-1.5-pro'],
+        ollama: ['llama2', 'mistral'],
+        openrouter: ['openai/gpt-4', 'anthropic/claude-3-opus'],
+        deepseek: ['deepseek-chat', 'deepseek-coder'],
       }
-    } catch (devError) {
-      console.warn('Failed to fetch from models.dev, falling back to defaults:', devError)
+      const ids = defaults[form.value.type] || []
+      form.value.models = ids.map(id => ({ id, name: id, enabled: true }))
     }
-
-    // 如果 models.dev 不可用，使用默认模型作为后备
-    const defaultModels: Record<string, string[]> = {
-      openai: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-      anthropic: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'],
-      google: ['gemini-pro', 'gemini-pro-vision'],
-      ollama: ['llama2', 'codellama', 'mistral'],
-      openrouter: ['openai/gpt-4', 'anthropic/claude-3-opus'],
-      custom: [],
-    }
-
-    const models = defaultModels[form.value.type] || []
-    form.value.models = models.map(id => ({
-      id,
-      name: id,
-      providerId: form.value.id || 'new',
-      enabled: true,
-    }))
   } catch (e) {
     console.error('Failed to fetch models:', e)
   } finally {
@@ -508,55 +302,11 @@ async function fetchModels() {
 }
 
 function addCustomModel() {
-  form.value.models.push({
-    id: '',
-    name: '',
-    providerId: form.value.id || 'new',
-    enabled: true,
-  })
+  form.value.models.push({ id: '', name: '', enabled: true })
 }
 
 function removeModel(index: number) {
   form.value.models.splice(index, 1)
-}
-
-function getProviderIcon(providerId: string): string {
-  const iconMap: Record<string, string> = {
-    'openai': 'mdi-robot',
-    'anthropic': 'mdi-brain',
-    'google': 'mdi-google',
-    'ollama-cloud': 'mdi-llama',
-    'cohere': 'mdi-wave',
-    'cloudflare-ai-gateway': 'mdi-cloud',
-    'inference': 'mdi-cpu-64-bit',
-    'io-net': 'mdi-lan',
-    'drun': 'mdi-china',
-    'moark': 'mdi-sparkles',
-    'bailing': 'mdi-lightning-bolt',
-    'minimax-coding-plan': 'mdi-code-tags',
-    'wandb': 'mdi-chart-bar',
-    'qiniu-ai': 'mdi-image'
-  }
-  return iconMap[providerId] || 'mdi-help-circle'
-}
-
-async function loadModelsDevProviders() {
-  loadingProviders.value = true
-  try {
-    modelsDevProviders.value = await getModelsProviders()
-  } catch (e) {
-    console.error('Failed to load models.dev providers:', e)
-  } finally {
-    loadingProviders.value = false
-  }
-}
-
-function selectModelsDevProvider(provider: ProviderSummary) {
-  form.value.type = provider.id
-  form.value.name = provider.name
-  if (provider.api) {
-    form.value.baseUrl = provider.api
-  }
 }
 
 function saveProvider() {
@@ -564,14 +314,12 @@ function saveProvider() {
     id: form.value.id || undefined,
     name: form.value.name,
     type: form.value.type,
-    baseUrl: form.value.baseUrl,
+    baseUrl: form.value.baseUrl || defaultBaseUrl.value,
     apiKey: form.value.apiKey || undefined,
-    isActive: form.value.isActive,
     models: form.value.models
       .filter(m => m.enabled && m.id)
       .map(({ enabled, ...model }) => model),
   }
-  
   emit('save', provider)
   emit('update:modelValue', false)
 }
@@ -579,101 +327,269 @@ function saveProvider() {
 
 <style scoped>
 .provider-form-dialog {
-  border-radius: 16px;
-  overflow: hidden;
+  border-radius: 8px;
 }
 
-.provider-stepper {
-  background: transparent;
+.provider-form-content {
+  padding: 20px 24px !important;
 }
 
-.provider-stepper :deep(.v-stepper-header) {
-  box-shadow: none;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.1);
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
-.step-content {
-  padding: 24px;
+.step-dot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.step-dot.active {
+  border-color: #00ffff;
+  background: rgba(0, 255, 255, 0.1);
+}
+
+.step-dot.completed {
+  border-color: #00ff88;
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.step-num {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 255, 255, 0.1);
+  font-size: 11px;
+  font-weight: 700;
+  color: #00ffff;
+}
+
+.step-dot.completed .step-num {
+  background: rgba(0, 255, 136, 0.2);
+  color: #00ff88;
+}
+
+.step-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #a1a1aa;
+}
+
+.divider-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
+  margin-bottom: 20px;
+}
+
+.step-panel {
   min-height: 300px;
 }
 
-.provider-types {
+.panel-header {
+  margin-bottom: 16px;
+}
+
+.step-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #00ff88;
+}
+
+.provider-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
-.provider-types.all-providers {
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-}
-
-.provider-types.all-providers .provider-type-content {
-  padding: 16px 12px;
-}
-
-.provider-types.all-providers .provider-type-content h4 {
-  font-size: 0.8125rem;
-}
-
 .provider-type-card {
-  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid rgba(0, 255, 255, 0.15);
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
+  transition: all 0.15s;
+  background: rgba(0, 0, 0, 0.2);
+  position: relative;
 }
 
 .provider-type-card:hover {
-  border-color: rgba(var(--v-theme-primary), 0.3);
+  border-color: rgba(0, 255, 255, 0.4);
+  background: rgba(0, 255, 255, 0.05);
 }
 
 .provider-type-card.selected {
-  border-color: rgb(var(--v-theme-primary));
-  background: rgba(var(--v-theme-primary), 0.1);
+  border-color: #00ffff;
+  background: rgba(0, 255, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.15);
 }
 
-.provider-type-content {
+.provider-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: rgba(0, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+.provider-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 20px 16px;
-  text-align: center;
+  gap: 2px;
 }
 
-.provider-type-content h4 {
-  margin-top: 12px;
-  font-size: 0.9375rem;
+.provider-name {
+  font-size: 13px;
   font-weight: 600;
+  color: #e4e4e7;
 }
 
-.provider-type-content p {
-  margin-top: 4px;
-  font-size: 0.75rem;
-  color: rgba(var(--v-theme-on-surface), 0.6);
+.provider-desc {
+  font-size: 10px;
+  color: #71717a;
+}
+
+.selected-check {
+  color: #00ffff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.config-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #00ffff;
+}
+
+.info-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(0, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.alert-icon {
+  color: #00ffff;
+}
+
+.alert-text {
+  font-size: 11px;
+  color: #a1a1aa;
+}
+
+.models-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
 }
 
 .empty-models {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   padding: 48px;
-  text-align: center;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  gap: 8px;
 }
 
-.empty-models p {
-  margin: 16px 0 0;
+.empty-icon {
+  font-size: 32px;
+}
+
+.empty-text {
+  font-size: 11px;
+  color: #52525b;
+  letter-spacing: 1px;
 }
 
 .models-list {
-  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
   overflow-y: auto;
 }
 
-.model-card {
-  border-radius: 8px;
+.model-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: 4px;
 }
 
-/* Scrollbar styling */
+.model-toggle {
+  cursor: pointer;
+}
+
+.model-toggle input {
+  display: none;
+}
+
+.toggle-box {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  border-radius: 3px;
+  transition: all 0.15s;
+}
+
+.model-toggle input:checked + .toggle-box {
+  background: #00ffff;
+  border-color: #00ffff;
+}
+
+.model-fields {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+}
+
+.model-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 11px;
+}
+
 .models-list::-webkit-scrollbar {
   width: 6px;
 }
@@ -683,14 +599,13 @@ function saveProvider() {
 }
 
 .models-list::-webkit-scrollbar-thumb {
-  background: rgba(var(--v-theme-on-surface), 0.2);
+  background: rgba(0, 255, 255, 0.2);
   border-radius: 3px;
 }
 
-/* Mobile responsive */
 @media (max-width: 600px) {
-  .provider-types {
-    grid-template-columns: repeat(2, 1fr);
+  .provider-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

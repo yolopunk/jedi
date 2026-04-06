@@ -2,449 +2,396 @@
   <v-dialog
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
-    max-width="800"
-    scrollable
+    max-width="600"
   >
-    <v-card class="settings-dialog">
-      <!-- Header -->
-      <v-card-title class="d-flex align-center pa-4">
-        <v-icon icon="mdi-cog" start />
-        Settings
+    <v-card class="scifi-card model-settings-dialog">
+      <v-card-title class="console-title-bar">
+        <span class="dialog-title">[ MODEL_SETTINGS ]</span>
         <v-spacer />
-        <v-btn
-          icon
-          variant="text"
-          @click="$emit('update:modelValue', false)"
-        >
-          <v-icon icon="mdi-close" />
-        </v-btn>
+        <button class="console-btn icon-only" @click="$emit('update:modelValue', false)">
+          <span class="btn-icon">✕</span>
+        </button>
       </v-card-title>
 
-      <v-divider />
+      <v-card-text class="console-card-text settings-content">
+        <!-- Providers List -->
+        <div class="section-header">
+          <span class="section-title">CONFIGURE PROVIDERS</span>
+        </div>
 
-      <!-- Content -->
-      <v-card-text class="pa-0">
-        <v-tabs v-model="activeTab" class="settings-tabs">
-          <v-tab value="providers">
-            <v-icon icon="mdi-cloud" start />
-            Providers
-          </v-tab>
-          <v-tab value="parameters">
-            <v-icon icon="mdi-tune-vertical" start />
-            Parameters
-          </v-tab>
-          <v-tab value="appearance">
-            <v-icon icon="mdi-palette" start />
-            Appearance
-          </v-tab>
-        </v-tabs>
-
-        <v-window v-model="activeTab" class="settings-content">
-          <!-- Providers Tab -->
-          <v-window-item value="providers">
-            <div class="tab-content">
-              <!-- Add Provider Button -->
-              <div class="d-flex justify-end mb-4">
-                <v-btn
-                  color="primary"
-                  prepend-icon="mdi-plus"
-                  @click="showProviderForm = true"
-                >
-                  Add Provider
-                </v-btn>
-              </div>
-
-              <!-- Providers List -->
-              <div v-if="providers.length === 0" class="empty-state">
-                <v-icon icon="mdi-cloud-off" size="48" color="surface-variant" />
-                <p>No providers configured</p>
-                <p class="text-caption">
-                  Add an AI provider to start chatting
-                </p>
-              </div>
-
-              <div v-else class="providers-list">
-                <v-card
-                  v-for="provider in providers"
-                  :key="provider.id"
-                  variant="outlined"
-                  class="provider-card mb-3"
-                >
-                  <div class="d-flex align-center pa-4">
-                    <div class="provider-icon mr-4">
-                      <v-avatar :color="provider.isActive ? 'primary' : 'surface-variant'" size="48">
-                        <v-icon :icon="getProviderIcon(provider.type || 'custom')" />
-                      </v-avatar>
-                    </div>
-
-                    <div class="provider-info flex-grow-1">
-                      <div class="d-flex align-center">
-                        <h3 class="text-h6">{{ provider.name }}</h3>
-                        <v-chip
-                          v-if="provider.isActive"
-                          color="success"
-                          size="small"
-                          class="ml-2"
-                        >
-                          Active
-                        </v-chip>
-                      </div>
-                      <p class="text-body-2 text-medium-emphasis mb-0">
-                        {{ provider.type }} · {{ (provider.models || []).length }} models
-                      </p>
-                    </div>
-
-                    <div class="provider-actions">
-                      <v-btn
-                        icon
-                        variant="text"
-                        size="small"
-                        @click="editProvider(provider)"
-                      >
-                        <v-icon icon="mdi-pencil" />
-                      </v-btn>
-                      <v-btn
-                        icon
-                        variant="text"
-                        size="small"
-                        color="error"
-                        @click="confirmDeleteProvider(provider)"
-                      >
-                        <v-icon icon="mdi-delete" />
-                      </v-btn>
-                    </div>
-                  </div>
-                </v-card>
-              </div>
+        <div class="providers-list">
+          <div
+            v-for="p in providerList"
+            :key="p.id"
+            class="provider-item"
+            :class="{ configured: isProviderConfigured(p.id) }"
+          >
+            <div class="provider-icon">{{ providerIcon(p.id) }}</div>
+            <div class="provider-info">
+              <span class="provider-name">{{ p.name }}</span>
+              <span class="provider-status">
+                {{ isProviderConfigured(p.id) ? 'CONFIGURED' : 'NOT CONFIGURED' }}
+              </span>
             </div>
-          </v-window-item>
+            <button class="console-btn small" @click="openConfig(p.id)">
+              {{ isProviderConfigured(p.id) ? 'EDIT' : 'CONFIGURE' }}
+            </button>
+          </div>
+        </div>
 
-          <!-- Parameters Tab -->
-          <v-window-item value="parameters">
-            <div class="tab-content">
-              <div class="parameter-group mb-6">
-                <h3 class="text-subtitle-1 font-weight-medium mb-3">
-                  Generation Parameters
-                </h3>
-
-                <v-slider
-                  v-model="localSettings.temperature"
-                  label="Temperature"
-                  :min="0"
-                  :max="2"
-                  :step="0.1"
-                  thumb-label
-                  class="mb-4"
-                >
-                  <template v-slot:append>
-                    <v-chip size="small">{{ localSettings.temperature }}</v-chip>
-                  </template>
-                </v-slider>
-
-                <v-slider
-                  v-model="localSettings.maxTokens"
-                  label="Max Tokens"
-                  :min="256"
-                  :max="32768"
-                  :step="256"
-                  thumb-label
-                  class="mb-4"
-                >
-                  <template v-slot:append>
-                    <v-chip size="small">{{ localSettings.maxTokens }}</v-chip>
-                  </template>
-                </v-slider>
-
-                <v-slider
-                  v-model="localSettings.topP"
-                  label="Top P"
-                  :min="0"
-                  :max="1"
-                  :step="0.05"
-                  thumb-label
-                  class="mb-4"
-                >
-                  <template v-slot:append>
-                    <v-chip size="small">{{ localSettings.topP }}</v-chip>
-                  </template>
-                </v-slider>
-
-                <v-switch
-                  v-model="localSettings.streamEnabled"
-                  label="Enable streaming responses"
-                  color="primary"
-                  hide-details
-                />
+        <!-- API Key Config Dialog -->
+        <v-dialog v-model="showConfigDialog" max-width="400">
+          <v-card class="scifi-card">
+            <v-card-title class="console-title-bar">
+              <span class="dialog-title">[ {{ currentProvider?.name }}_CONFIG ]</span>
+            </v-card-title>
+            <v-card-text class="console-card-text">
+              <div class="form-field">
+                <label class="field-label">API KEY</label>
+                <div class="input-wrapper">
+                  <span class="input-prompt">>></span>
+                  <input
+                    v-model="configApiKey"
+                    :type="showKey ? 'text' : 'password'"
+                    class="console-input"
+                    placeholder="sk-..."
+                  />
+                  <button class="console-btn icon-only small" @click="showKey = !showKey">
+                    <span class="btn-icon">{{ showKey ? '👁' : '👁‍🗨' }}</span>
+                  </button>
+                </div>
               </div>
-
-              <v-alert type="info" variant="tonal" class="mb-4">
-                These parameters control how the AI generates responses.
-                Higher temperature = more creative, lower = more focused.
-              </v-alert>
-            </div>
-          </v-window-item>
-
-          <!-- Appearance Tab -->
-          <v-window-item value="appearance">
-            <div class="tab-content">
-              <div class="parameter-group mb-6">
-                <h3 class="text-subtitle-1 font-weight-medium mb-3">
-                  Theme
-                </h3>
-
-                <v-radio-group v-model="localTheme" inline hide-details>
-                  <v-radio label="System" value="system" />
-                  <v-radio label="Light" value="light" />
-                  <v-radio label="Dark" value="dark" />
-                </v-radio-group>
+              <div class="form-field mt-3">
+                <label class="field-label">API ENDPOINT (OPTIONAL)</label>
+                <div class="input-wrapper">
+                  <span class="input-prompt">>></span>
+                  <input
+                    v-model="configEndpoint"
+                    type="text"
+                    class="console-input"
+                    :placeholder="currentProvider?.defaultEndpoint"
+                  />
+                </div>
               </div>
+            </v-card-text>
+            <v-card-actions class="console-card-actions">
+              <button
+                v-if="isProviderConfigured(currentProvider?.id)"
+                class="console-btn danger"
+                @click="deleteKey"
+              >
+                <span class="btn-text">DELETE</span>
+              </button>
+              <v-spacer />
+              <button class="console-btn" @click="showConfigDialog = false">
+                <span class="btn-text">CANCEL</span>
+              </button>
+              <button class="console-btn primary" @click="saveKey">
+                <span class="btn-text">SAVE</span>
+              </button>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
 
-              <div class="parameter-group mb-6">
-                <h3 class="text-subtitle-1 font-weight-medium mb-3">
-                  Font Size
-                </h3>
+        <div class="divider-line my-4"></div>
 
-                <v-slider
-                  v-model="localFontSize"
-                  label="Font Size"
-                  :min="12"
-                  :max="20"
-                  :step="1"
-                  thumb-label
-                >
-                  <template v-slot:append>
-                    <v-chip size="small">{{ localFontSize }}px</v-chip>
-                  </template>
-                </v-slider>
-              </div>
+        <!-- Parameters -->
+        <div class="section-header">
+          <span class="section-title">PARAMETERS</span>
+        </div>
 
-              <div class="parameter-group">
-                <v-switch
-                  v-model="localShowTimestamp"
-                  label="Show message timestamps"
-                  color="primary"
-                  hide-details
-                  class="mb-2"
-                />
+        <div class="param-group">
+          <div class="param-row">
+            <span class="param-label">TEMPERATURE</span>
+            <span class="param-value">{{ localSettings.temperature.toFixed(1) }}</span>
+          </div>
+          <input
+            type="range"
+            v-model.number="localSettings.temperature"
+            min="0" max="2" step="0.1"
+            class="console-slider"
+          />
+        </div>
 
-                <v-switch
-                  v-model="localCompactMode"
-                  label="Compact message layout"
-                  color="primary"
-                  hide-details
-                />
-              </div>
-            </div>
-          </v-window-item>
-        </v-window>
+        <div class="param-group">
+          <div class="param-row">
+            <span class="param-label">MAX TOKENS</span>
+          </div>
+          <div class="input-wrapper">
+            <span class="input-prompt">>></span>
+            <input
+              v-model.number="localSettings.maxTokens"
+              type="number"
+              min="256"
+              max="128000"
+              class="console-input"
+            />
+          </div>
+        </div>
+
+        <div class="param-group">
+          <div class="param-row">
+            <span class="param-label">STREAM RESPONSE</span>
+            <label class="toggle-switch" :class="{ active: localSettings.streamEnabled }">
+              <input type="checkbox" v-model="localSettings.streamEnabled" />
+              <span class="toggle-handle"></span>
+            </label>
+          </div>
+        </div>
       </v-card-text>
 
-      <v-divider />
-
-      <!-- Footer -->
-      <v-card-actions class="pa-4">
+      <v-card-actions class="console-card-actions">
         <v-spacer />
-        <v-btn variant="text" @click="$emit('update:modelValue', false)">
-          Cancel
-        </v-btn>
-        <v-btn color="primary" @click="saveSettings">
-          Save Changes
-        </v-btn>
+        <button class="console-btn" @click="saveAndClose">
+          <span class="btn-text">SAVE</span>
+        </button>
       </v-card-actions>
     </v-card>
-
-    <!-- Provider Form Dialog -->
-    <ProviderForm
-      v-model="showProviderForm"
-      :provider="editingProvider"
-      @save="handleSaveProvider"
-      @close="closeProviderForm"
-    />
-
-    <!-- Delete Confirmation Dialog -->
-    <v-dialog v-model="showDeleteConfirm" max-width="400">
-      <v-card>
-        <v-card-title class="text-h6">
-          Delete Provider?
-        </v-card-title>
-        <v-card-text>
-          Are you sure you want to delete <strong>{{ deletingProvider?.name }}</strong>?
-          This action cannot be undone.
-        </v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="showDeleteConfirm = false">
-            Cancel
-          </v-btn>
-          <v-btn color="error" @click="deleteProvider">
-            Delete
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { Provider } from '@/stores/aiChat'
-import ProviderForm from './ProviderForm.vue'
+import { useAiChatStore } from '@/stores/aiChat'
 
-const props = defineProps<{
-  modelValue: boolean
-  providers: Provider[]
-  settings: {
-    temperature: number
-    maxTokens: number
-    topP: number
-    streamEnabled: boolean
-  }
-}>()
-
+const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
-  (e: 'save-provider', provider: Partial<Provider>): void
-  (e: 'delete-provider', providerId: string): void
-  (e: 'update-settings', settings: any): void
 }>()
 
-// Tab state
-const activeTab = ref('providers')
+const store = useAiChatStore()
 
-// Provider form state
-const showProviderForm = ref(false)
-const editingProvider = ref<Provider | null>(null)
+const providerList = [
+  { id: 'openai', name: 'OpenAI', defaultEndpoint: 'https://api.openai.com/v1' },
+  { id: 'anthropic', name: 'Anthropic', defaultEndpoint: 'https://api.anthropic.com' },
+  { id: 'google', name: 'Google', defaultEndpoint: 'https://generativelanguage.googleapis.com' },
+  { id: 'deepseek', name: 'DeepSeek', defaultEndpoint: 'https://api.deepseek.com' },
+  { id: 'openrouter', name: 'OpenRouter', defaultEndpoint: 'https://openrouter.ai/api/v1' },
+]
 
-// Delete confirmation
-const showDeleteConfirm = ref(false)
-const deletingProvider = ref<Provider | null>(null)
+const showConfigDialog = ref(false)
+const currentProvider = ref<typeof providerList[0] | null>(null)
+const configApiKey = ref('')
+const configEndpoint = ref('')
+const showKey = ref(false)
 
-// Local settings
-const localSettings = ref({ ...props.settings })
-const localTheme = ref('system')
-const localFontSize = ref(14)
-const localShowTimestamp = ref(true)
-const localCompactMode = ref(false)
+const localSettings = ref({
+  temperature: 0.7,
+  maxTokens: 4096,
+  streamEnabled: true,
+})
 
-// Watch for settings changes
-watch(() => props.settings, (newSettings) => {
-  localSettings.value = { ...newSettings }
-}, { deep: true })
-
-// Provider helpers
-function getProviderIcon(type: string): string {
-  const icons: Record<string, string> = {
-    openai: 'mdi-openai',
-    anthropic: 'mdi-brain',
-    google: 'mdi-google',
-    azure: 'mdi-microsoft-azure',
-    ollama: 'mdi-robot',
-    openrouter: 'mdi-transit-connection',
-    deepseek: 'mdi-chip',
-    custom: 'mdi-tune',
+watch(() => props.modelValue, (open) => {
+  if (open) {
+    localSettings.value = {
+      temperature: store.temperature,
+      maxTokens: store.maxTokens,
+      streamEnabled: store.streamEnabled,
+    }
+    store.loadProviders()
   }
-  return icons[type] || 'mdi-cloud'
+})
+
+function providerIcon(id: string) {
+  return { openai: '○', anthropic: '◎', google: '⊕', deepseek: '▶', openrouter: '◎' }[id] || '○'
 }
 
-function editProvider(provider: Provider) {
-  editingProvider.value = provider
-  showProviderForm.value = true
+function isProviderConfigured(id: string | undefined) {
+  return store.providers.some(p => p.provider === id && p.has_key)
 }
 
-function confirmDeleteProvider(provider: Provider) {
-  deletingProvider.value = provider
-  showDeleteConfirm.value = true
+function openConfig(id: string) {
+  currentProvider.value = providerList.find(p => p.id === id) || null
+  configApiKey.value = ''
+  configEndpoint.value = ''
+  showConfigDialog.value = true
 }
 
-function deleteProvider() {
-  if (deletingProvider.value) {
-    emit('delete-provider', deletingProvider.value.id)
-    showDeleteConfirm.value = false
-    deletingProvider.value = null
-  }
+async function saveKey() {
+  if (!currentProvider.value) return
+  await store.saveApiKey(
+    currentProvider.value.id,
+    configApiKey.value,
+    configEndpoint.value || undefined
+  )
+  showConfigDialog.value = false
 }
 
-function handleSaveProvider(provider: Partial<Provider>) {
-  emit('save-provider', provider)
-  closeProviderForm()
+async function deleteKey() {
+  if (!currentProvider.value) return
+  await store.deleteApiKey(currentProvider.value.id)
+  showConfigDialog.value = false
 }
 
-function closeProviderForm() {
-  showProviderForm.value = false
-  editingProvider.value = null
-}
-
-function saveSettings() {
-  emit('update-settings', {
-    ...localSettings.value,
-    theme: localTheme.value,
-    fontSize: localFontSize.value,
-    showTimestamp: localShowTimestamp.value,
-    compactMode: localCompactMode.value,
-  })
+function saveAndClose() {
+  store.temperature = localSettings.value.temperature
+  store.maxTokens = localSettings.value.maxTokens
+  store.streamEnabled = localSettings.value.streamEnabled
+  store.saveSettings()
   emit('update:modelValue', false)
 }
 </script>
 
 <style scoped>
-.settings-dialog {
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.settings-tabs {
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.1);
-}
-
 .settings-content {
-  height: 400px;
-  overflow-y: auto;
+  padding: 20px !important;
 }
 
-.tab-content {
-  padding: 24px;
+.section-header {
+  margin-bottom: 12px;
 }
 
-.empty-state {
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #00ff88;
+}
+
+.providers-list {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+}
+
+.provider-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: 6px;
+}
+
+.provider-item.configured {
+  border-color: rgba(0, 255, 136, 0.3);
+  background: rgba(0, 255, 136, 0.03);
+}
+
+.provider-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 48px;
-  text-align: center;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  background: rgba(0, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 16px;
 }
 
-.empty-state p {
-  margin: 16px 0 0;
+.provider-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.provider-card {
-  border-radius: 12px;
-  transition: all 0.2s ease;
+.provider-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e4e4e7;
 }
 
-.provider-card:hover {
-  border-color: rgba(var(--v-theme-primary), 0.3);
+.provider-status {
+  font-size: 10px;
+  color: #52525b;
+  letter-spacing: 1px;
 }
 
-.parameter-group {
-  padding: 16px;
-  background: rgba(var(--v-theme-surface-variant), 0.3);
-  border-radius: 12px;
+.provider-item.configured .provider-status {
+  color: #00ff88;
 }
 
-/* Scrollbar styling */
-.settings-content::-webkit-scrollbar {
-  width: 8px;
+.divider-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.2), transparent);
+  margin: 16px 0;
 }
 
-.settings-content::-webkit-scrollbar-track {
-  background: transparent;
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.settings-content::-webkit-scrollbar-thumb {
-  background: rgba(var(--v-theme-on-surface), 0.2);
-  border-radius: 4px;
+.field-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #00ffff;
+}
+
+.param-group {
+  margin-bottom: 16px;
+}
+
+.param-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.param-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #a1a1aa;
+}
+
+.param-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00ff88;
+}
+
+.console-slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  background: rgba(0, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+.console-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #00ffff;
+  cursor: pointer;
+}
+
+.toggle-switch {
+  display: inline-flex;
+  align-items: center;
+  width: 40px;
+  height: 22px;
+  background: rgba(82, 82, 91, 0.3);
+  border: 1px solid rgba(82, 82, 91, 0.5);
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.toggle-switch input { display: none; }
+
+.toggle-switch.active {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: rgba(0, 255, 136, 0.5);
+}
+
+.toggle-handle {
+  width: 16px;
+  height: 16px;
+  background: #52525b;
+  border-radius: 50%;
+  margin: 2px;
+  transition: all 0.2s;
+}
+
+.toggle-switch.active .toggle-handle {
+  background: #00ff88;
+  margin-left: 20px;
 }
 </style>

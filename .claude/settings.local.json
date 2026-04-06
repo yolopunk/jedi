@@ -71,7 +71,13 @@
       "Bash(open:*)",
       "Read(//Users/cynosure/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/**)",
       "Read(//Users/cynosure/.claude/skills/**)",
-      "Skill(code-review:code-review)"
+      "Skill(code-review:code-review)",
+      "mcp__plugin_playwright_playwright__browser_press_key",
+      "mcp__plugin_playwright_playwright__browser_tabs",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "WebFetch(domain:models.dev)",
+      "Bash(python3 -c ':*)",
+      "Bash(pnpm tsc:*)"
     ]
   }
 }

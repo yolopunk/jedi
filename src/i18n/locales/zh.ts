@@ -8,6 +8,7 @@ export default {
     wallpapers: '知识壁纸',
     podcast: '小宇宙',
     chat: '对话',
+    models: '模型',
     system: '系统',
     online: '在线',
   },

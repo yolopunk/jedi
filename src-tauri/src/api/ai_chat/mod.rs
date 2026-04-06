@@ -1,10 +1,12 @@
 // AI Chat API 模块
 // Phase 1: 安全基础设施
 // Phase 2: 模型提供商抽象层和会话管理
+// Phase 3: Models.dev 集成
 
 pub(crate) mod models;
 pub(crate) mod security;
 pub(crate) mod sessions;
+pub(crate) mod models_dev;
 
 // 重新导出安全相关类型和 commands
 pub use security::{
@@ -20,4 +22,11 @@ pub use models::{send_chat_message, send_chat_message_stream, ModelProviderManag
 pub use sessions::{
   append_message, create_session, delete_session, get_session, list_sessions,
   ChatSessionManagerState,
+};
+
+// 重新导出 models.dev 相关类型和 commands
+pub use models_dev::{
+  fetch_models_dev, get_models_dev_provider, get_models_for_provider,
+  get_models_providers, search_models_dev, ModelsDevManagerState,
+  ModelsDevProvider, ModelsDevModel, ProviderSummary,
 };

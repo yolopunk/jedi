@@ -191,3 +191,101 @@ export async function hasApiKey(provider: string) {
 export async function listApiKeyProviders() {
   return await invoke<ProviderInfoResponse[]>('list_api_key_providers');
 }
+
+// ========== Models.dev API ==========
+
+export interface ModelsDevModalities {
+  input: string[]
+  output: string[]
+}
+
+export interface ModelsDevModelCost {
+  input?: number
+  output?: number
+  cache_read?: number
+  cache_write?: number
+}
+
+export interface ModelsDevModelLimits {
+  context?: number
+  input?: number
+  output?: number
+}
+
+export interface ModelsDevInterleavedConfig {
+  field: string
+}
+
+export interface ModelsDevModel {
+  id: string
+  name: string
+  family?: string
+  attachment: boolean
+  reasoning: boolean
+  tool_call: boolean
+  structured_output?: boolean
+  temperature: boolean
+  knowledge?: string
+  release_date?: string
+  last_updated?: string
+  modalities: ModelsDevModalities
+  open_weights: boolean
+  cost?: ModelsDevModelCost
+  limit?: ModelsDevModelLimits
+  interleaved?: ModelsDevInterleavedConfig
+}
+
+export interface ModelsDevProvider {
+  id: string
+  name: string
+  api?: string
+  doc?: string
+  npm?: string
+  env?: string[]
+  models: Record<string, ModelsDevModel>
+}
+
+export interface ProviderSummary {
+  id: string
+  name: string
+  api?: string
+  doc?: string
+  model_count: number
+}
+
+export type ModelsDevResponse = Record<string, ModelsDevProvider>
+
+/**
+ * 从 models.dev 获取所有提供商和模型信息
+ */
+export async function fetchModelsDev(forceRefresh?: boolean) {
+  return await invoke<ModelsDevResponse>('fetch_models_dev', { forceRefresh })
+}
+
+/**
+ * 获取指定提供商的信息
+ */
+export async function getModelsDevProvider(providerId: string) {
+  return await invoke<ModelsDevProvider | null>('get_models_dev_provider', { providerId })
+}
+
+/**
+ * 搜索模型（按名称或 ID）
+ */
+export async function searchModelsDev(query: string, providerFilter?: string) {
+  return await invoke<Array<[string, ModelsDevModel]>>('search_models_dev', { query, providerFilter })
+}
+
+/**
+ * 获取某个提供商的模型列表
+ */
+export async function getModelsForProvider(providerId: string) {
+  return await invoke<ModelsDevModel[]>('get_models_for_provider', { providerId })
+}
+
+/**
+ * 获取所有支持的提供商列表（精简信息）
+ */
+export async function getModelsProviders() {
+  return await invoke<ProviderSummary[]>('get_models_providers')
+}

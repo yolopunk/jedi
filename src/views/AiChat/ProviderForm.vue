@@ -49,9 +49,21 @@
             <!-- Step 1: Provider Type -->
             <v-stepper-window-item :value="1">
               <div class="step-content">
-                <h3 class="text-h6 mb-4">Select Provider Type</h3>
-                
-                <div class="provider-types">
+                <div class="d-flex align-center justify-space-between mb-4">
+                  <h3 class="text-h6 mb-0">Select Provider Type</h3>
+                  <v-btn
+                    variant="outlined"
+                    size="small"
+                    :loading="loadingProviders"
+                    @click="showModelsDevProviders = !showModelsDevProviders; if (showModelsDevProviders && modelsDevProviders.length === 0) loadModelsDevProviders()"
+                  >
+                    <v-icon :icon="showModelsDevProviders ? 'mdi-chevron-up' : 'mdi-chevron-down'" start />
+                    {{ showModelsDevProviders ? 'Hide All Providers' : 'Show All Providers' }}
+                  </v-btn>
+                </div>
+
+                <!-- Default providers -->
+                <div v-if="!showModelsDevProviders" class="provider-types">
                   <v-card
                     v-for="type in providerTypes"
                     :key="type.value"
@@ -63,6 +75,23 @@
                       <v-icon :icon="type.icon" size="32" color="primary" />
                       <h4>{{ type.label }}</h4>
                       <p>{{ type.description }}</p>
+                    </div>
+                  </v-card>
+                </div>
+
+                <!-- All models.dev providers -->
+                <div v-else class="provider-types all-providers">
+                  <v-card
+                    v-for="provider in modelsDevProviders"
+                    :key="provider.id"
+                    :class="['provider-type-card', { selected: form.type === provider.id }]"
+                    variant="outlined"
+                    @click="selectModelsDevProvider(provider)"
+                  >
+                    <div class="provider-type-content">
+                      <v-icon :icon="getProviderIcon(provider.id)" size="32" color="primary" />
+                      <h4>{{ provider.name }}</h4>
+                      <p>{{ provider.model_count }} models</p>
                     </div>
                   </v-card>
                 </div>
@@ -265,8 +294,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import type { Provider } from '@/stores/aiChat'
+import { getModelsForProvider, getModelsProviders, type ModelsDevModel, type ProviderSummary } from '@/api/ai-chat'
 
 interface ProviderFormModel {
   id: string
@@ -292,6 +322,9 @@ const configForm = ref<{ validate: () => void } | null>(null)
 const configValid = ref(false)
 const showApiKey = ref(false)
 const loadingModels = ref(false)
+const loadingProviders = ref(false)
+const showModelsDevProviders = ref(false)
+const modelsDevProviders = ref<ProviderSummary[]>([])
 
 // Form data
 const form = ref({
@@ -393,7 +426,14 @@ watch(() => props.provider, (provider) => {
 watch(() => props.modelValue, (value) => {
   if (value && !props.provider) {
     resetForm()
+    if (showModelsDevProviders.value) {
+      loadModelsDevProviders()
+    }
   }
+})
+
+onMounted(() => {
+  // Preload models.dev providers when component mounts
 })
 
 function resetForm() {
@@ -427,8 +467,23 @@ function nextStep() {
 async function fetchModels() {
   loadingModels.value = true
   try {
-    // TODO: Implement actual model fetching
-    // For now, add some default models based on provider type
+    // 尝试从 models.dev 获取模型列表
+    try {
+      const modelsFromDev = await getModelsForProvider(form.value.type)
+      if (modelsFromDev && modelsFromDev.length > 0) {
+        form.value.models = modelsFromDev.map((model: ModelsDevModel) => ({
+          id: model.id,
+          name: model.name,
+          providerId: form.value.id || 'new',
+          enabled: true,
+        }))
+        return
+      }
+    } catch (devError) {
+      console.warn('Failed to fetch from models.dev, falling back to defaults:', devError)
+    }
+
+    // 如果 models.dev 不可用，使用默认模型作为后备
     const defaultModels: Record<string, string[]> = {
       openai: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
       anthropic: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'],
@@ -437,7 +492,7 @@ async function fetchModels() {
       openrouter: ['openai/gpt-4', 'anthropic/claude-3-opus'],
       custom: [],
     }
-    
+
     const models = defaultModels[form.value.type] || []
     form.value.models = models.map(id => ({
       id,
@@ -463,6 +518,45 @@ function addCustomModel() {
 
 function removeModel(index: number) {
   form.value.models.splice(index, 1)
+}
+
+function getProviderIcon(providerId: string): string {
+  const iconMap: Record<string, string> = {
+    'openai': 'mdi-robot',
+    'anthropic': 'mdi-brain',
+    'google': 'mdi-google',
+    'ollama-cloud': 'mdi-llama',
+    'cohere': 'mdi-wave',
+    'cloudflare-ai-gateway': 'mdi-cloud',
+    'inference': 'mdi-cpu-64-bit',
+    'io-net': 'mdi-lan',
+    'drun': 'mdi-china',
+    'moark': 'mdi-sparkles',
+    'bailing': 'mdi-lightning-bolt',
+    'minimax-coding-plan': 'mdi-code-tags',
+    'wandb': 'mdi-chart-bar',
+    'qiniu-ai': 'mdi-image'
+  }
+  return iconMap[providerId] || 'mdi-help-circle'
+}
+
+async function loadModelsDevProviders() {
+  loadingProviders.value = true
+  try {
+    modelsDevProviders.value = await getModelsProviders()
+  } catch (e) {
+    console.error('Failed to load models.dev providers:', e)
+  } finally {
+    loadingProviders.value = false
+  }
+}
+
+function selectModelsDevProvider(provider: ProviderSummary) {
+  form.value.type = provider.id
+  form.value.name = provider.name
+  if (provider.api) {
+    form.value.baseUrl = provider.api
+  }
 }
 
 function saveProvider() {
@@ -507,6 +601,18 @@ function saveProvider() {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 12px;
+}
+
+.provider-types.all-providers {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.provider-types.all-providers .provider-type-content {
+  padding: 16px 12px;
+}
+
+.provider-types.all-providers .provider-type-content h4 {
+  font-size: 0.8125rem;
 }
 
 .provider-type-card {

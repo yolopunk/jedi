@@ -23,10 +23,17 @@ use crate::api::ai_chat::{
   validate_key,
   validate_message,
   validate_url,
+  // Phase 3: Models.dev 集成
+  fetch_models_dev,
+  get_models_dev_provider,
+  get_models_for_provider,
+  get_models_providers,
+  search_models_dev,
   AuditLoggerState,
   ChatSessionManagerState,
   KeyringManagerState,
   ModelProviderManagerState,
+  ModelsDevManagerState,
 };
 use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
@@ -74,6 +81,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .expect("Failed to initialize keyring manager for models");
   let model_provider_manager_state = ModelProviderManagerState::new(keyring_manager_for_models);
 
+  // Phase 3: 初始化 models.dev 管理器状态
+  let models_dev_manager_state = ModelsDevManagerState::new();
+
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_shell::init())
@@ -90,6 +100,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Phase 2: 管理新增状态
     .manage(chat_session_manager_state)
     .manage(model_provider_manager_state)
+    // Phase 3: 管理 models.dev 状态
+    .manage(models_dev_manager_state)
     .setup(|app| {
       // 创建主窗口
       let mut win_builder =
@@ -178,7 +190,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       list_sessions,
       get_session,
       delete_session,
-      append_message
+      append_message,
+      // Phase 3: Models.dev commands
+      fetch_models_dev,
+      get_models_dev_provider,
+      get_models_for_provider,
+      get_models_providers,
+      search_models_dev
     ])
     .build(tauri::generate_context!())?;
 

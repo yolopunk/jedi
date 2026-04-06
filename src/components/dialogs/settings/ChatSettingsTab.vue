@@ -5,6 +5,13 @@
       <span class="section-desc">{{ t('settings.providerConfig') }}</span>
     </div>
 
+    <div class="mb-4">
+      <button class="console-btn" @click="showModelsBrowser = true">
+        <span class="btn-icon">📚</span>
+        <span class="btn-text">BROWSE ALL MODELS</span>
+      </button>
+    </div>
+
     <div class="provider-list">
       <div
         v-for="provider in providerList"
@@ -160,6 +167,9 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Models Browser Dialog -->
+    <ModelsBrowser v-model="showModelsBrowser" @select="handleModelSelect" />
   </div>
 </template>
 
@@ -167,9 +177,17 @@
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAiChatStore, type McpServer } from '@/stores/aiChat'
+import ModelsBrowser from '@/views/AiChat/ModelsBrowser.vue'
+import type { ModelsDevModel } from '@/api/ai-chat'
 
 const { t } = useI18n()
 const store = useAiChatStore()
+
+const showModelsBrowser = ref(false)
+
+function handleModelSelect(model: ModelsDevModel, provider: string) {
+  console.log('Selected model:', model, 'from provider:', provider)
+}
 
 const providerList = [
   { id: 'openai', name: 'OpenAI', defaultEndpoint: 'https://api.openai.com/v1' },
@@ -487,5 +505,9 @@ defineExpose({ loadSettings })
 
 .mb-3 {
   margin-bottom: 12px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
 }
 </style>

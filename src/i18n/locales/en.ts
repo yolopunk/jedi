@@ -8,6 +8,7 @@ export default {
     wallpapers: 'Knowledge Wall',
     podcast: 'Xiaoyuzhou',
     chat: 'Chat',
+    models: 'Models',
     system: 'SYSTEM',
     online: 'ONLINE',
   },

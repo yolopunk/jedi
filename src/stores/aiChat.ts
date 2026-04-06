@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import type { ModelsDevResponse, ProviderInfo as ModelsDevProviderInfo, ModelInfo } from '@/types/models.dev'
 
 // 提供商信息（后端返回格式）
 export interface ProviderInfo {
@@ -64,42 +65,6 @@ export interface Session {
   updated_at: string
 }
 
-// 预定义的提供商配置
-export const PROVIDER_CONFIGS: Record<string, { name: string; models: Model[] }> = {
-  openai: {
-    name: 'OpenAI',
-    models: [
-      { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', contextLength: 128000 },
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai', contextLength: 128000 },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'openai', contextLength: 128000 },
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'openai', contextLength: 16384 },
-    ],
-  },
-  anthropic: {
-    name: 'Anthropic',
-    models: [
-      { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'anthropic', contextLength: 200000 },
-      { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', provider: 'anthropic', contextLength: 200000 },
-      { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', provider: 'anthropic', contextLength: 200000 },
-    ],
-  },
-  google: {
-    name: 'Google (Gemini)',
-    models: [
-      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'google', contextLength: 1048576 },
-      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'google', contextLength: 1048576 },
-      { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'google', contextLength: 1048576 },
-    ],
-  },
-  deepseek: {
-    name: 'DeepSeek',
-    models: [
-      { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'deepseek', contextLength: 64000 },
-      { id: 'deepseek-coder', name: 'DeepSeek Coder', provider: 'deepseek', contextLength: 128000 },
-    ],
-  },
-}
-
 // 预定义的MCP服务器
 export const DEFAULT_MCP_SERVERS: McpServer[] = [
   { id: 'hosts', name: 'Hosts Manager', description: '管理系统Hosts文件', enabled: false, icon: 'mdi-dns' },
@@ -115,6 +80,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const streamingContent = ref<string>('')
+  const modelsDevData = ref<ModelsDevResponse | null>(null)
+  const modelsDevLoading = ref(false)
+  const modelsDevError = ref<string | null>(null)
 
   // UI State
   const selectedModelId = ref<string | null>(null)
@@ -126,6 +94,34 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const temperature = ref<number>(0.7)
   const maxTokens = ref<number>(4096)
   const streamEnabled = ref<boolean>(true)
+
+  // Models.dev data
+  async function fetchModelsDev() {
+    modelsDevLoading.value = true
+    modelsDevError.value = null
+    try {
+      const response = await fetch('https://models.dev/api.json')
+      if (!response.ok) throw new Error('Failed to fetch')
+      modelsDevData.value = await response.json()
+    } catch (e) {
+      modelsDevError.value = 'Failed to load providers'
+      console.error('fetchModelsDev error:', e)
+    } finally {
+      modelsDevLoading.value = false
+    }
+  }
+
+  function getProvidersFromModelsDev(): ModelsDevProviderInfo[] {
+    if (!modelsDevData.value) return []
+    return Object.values(modelsDevData.value)
+  }
+
+  function getModelsForProvider(providerId: string): ModelInfo[] {
+    if (!modelsDevData.value) return []
+    const provider = modelsDevData.value[providerId]
+    if (!provider) return []
+    return Object.values(provider.models)
+  }
 
   // Computed
   const currentSession = computed(() =>
@@ -139,10 +135,17 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const availableModels = computed(() => {
     const models: (Model & { providerName: string })[] = []
     for (const provider of configuredProviders.value) {
-      const config = PROVIDER_CONFIGS[provider.provider]
-      if (config) {
-        config.models.forEach(model => {
-          models.push({ ...model, providerName: config.name })
+      const providerData = getProvidersFromModelsDev().find(p => p.id === provider.provider)
+      if (providerData) {
+        const providerModels = getModelsForProvider(provider.provider)
+        providerModels.forEach(model => {
+          models.push({
+            id: model.id,
+            name: model.name,
+            provider: provider.provider,
+            contextLength: model.limit?.context,
+            providerName: providerData.name,
+          })
         })
       }
     }
@@ -419,6 +422,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
     isLoading,
     error,
     streamingContent,
+    modelsDevData,
+    modelsDevLoading,
+    modelsDevError,
     selectedModelId,
     selectedProvider,
     enabledMcpServers,
@@ -434,6 +440,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
     selectedModel,
 
     // Actions
+    fetchModelsDev,
+    getProvidersFromModelsDev,
+    getModelsForProvider,
     loadProviders,
     saveApiKey,
     deleteApiKey,

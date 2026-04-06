@@ -7,28 +7,7 @@
 
     <div class="chat-console-layout">
       <!-- 左侧：Skills 面板 -->
-      <div class="mcp-panel">
-        <div class="panel-header">
-          <span class="panel-title">// SKILLS</span>
-          <span class="panel-status online">READY</span>
-        </div>
-        <div class="mcp-skills-list">
-          <div
-            v-for="skill in mcpSkills"
-            :key="skill.id"
-            class="mcp-skill-item"
-            :class="{ active: activeSkill === skill.id }"
-            @click="toggleSkill(skill.id)"
-          >
-            <div class="skill-indicator" :class="{ enabled: skill.enabled }"></div>
-            <span class="skill-name">{{ skill.name }}</span>
-            <span class="skill-hotkey">{{ skill.hotkey }}</span>
-          </div>
-        </div>
-        <div class="panel-footer">
-          <span class="footer-text">TYPE /SKILL FOR HELP</span>
-        </div>
-      </div>
+      <SkillPanel />
 
       <!-- 主聊天区域 -->
       <div class="chat-console-area">
@@ -276,27 +255,18 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useAiChatStore } from '@/stores/aiChat'
+import { useSkillsStore } from '@/stores/skills'
 import { sharedMd, renderSafe } from '@/utils/markdown'
+import SkillPanel from './SkillPanel.vue'
 
 const store = useAiChatStore()
+const skillsStore = useSkillsStore()
 
 // UI State
 const inputText = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
 const showScrollButton = ref(false)
-const activeSkill = ref<string | null>(null)
-
-// Skills - Teach procedures that can be invoked in chat
-// These are like "recipes" that Claude can follow when activated
-const mcpSkills = ref([
-  { id: 'terminal', name: 'TERMINAL', enabled: true, hotkey: 'F1', desc: 'Execute system commands' },
-  { id: 'filesystem', name: 'FILE_SYS', enabled: true, hotkey: 'F2', desc: 'Read/write files' },
-  { id: 'hosts', name: 'HOSTS_MGR', enabled: true, hotkey: 'F3', desc: 'Manage hosts file' },
-  { id: 'podcast', name: 'PODCAST', enabled: true, hotkey: 'F4', desc: 'Manage podcasts' },
-  { id: 'wallpaper', name: 'WALLPAPER', enabled: false, hotkey: 'F5', desc: 'Change wallpapers' },
-  { id: 'browser', name: 'BROWSER', enabled: false, hotkey: 'F6', desc: 'Web browsing' },
-])
 
 // Boot sequence
 const bootSequence = [
@@ -360,14 +330,6 @@ function showSessionMenu(session: any) {
 }
 
 // Actions
-function toggleSkill(skillId: string) {
-  const skill = mcpSkills.value.find(s => s.id === skillId)
-  if (skill) {
-    skill.enabled = !skill.enabled
-    activeSkill.value = skill.enabled ? skillId : null
-  }
-}
-
 function executeCommand(cmd: typeof quickCommands.value[0]) {
   if (!store.currentSession) {
     store.createSession()
@@ -462,6 +424,7 @@ watch(() => store.streamingContent, () => {
 })
 
 onMounted(() => {
+  skillsStore.loadFromStorage()
   scrollToBottom()
 })
 </script>

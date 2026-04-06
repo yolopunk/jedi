@@ -27,7 +27,7 @@
               <span class="status-dot"></span>
               <span class="status-text">{{ connectionStatus }}</span>
             </div>
-            <div class="model-display">
+            <div class="model-display" @click="showModelSettings = true">
               <span class="model-label">MODEL:</span>
               <span class="model-name">{{ currentModelName }}</span>
             </div>
@@ -252,6 +252,9 @@
       <!-- 右侧：Agent Trace 面板 -->
       <AgentTrace v-if="agentStore.tracePanelOpen" />
     </div>
+
+    <!-- Model Settings Dialog -->
+    <ModelSettings v-model="showModelSettings" />
   </div>
 </template>
 
@@ -263,6 +266,7 @@ import { useAgentStore } from '@/stores/agent'
 import { sharedMd, renderSafe } from '@/utils/markdown'
 import SkillPanel from './SkillPanel.vue'
 import AgentTrace from './AgentTrace.vue'
+import ModelSettings from './ModelSettings.vue'
 
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()
@@ -273,6 +277,7 @@ const inputText = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
 const showScrollButton = ref(false)
+const showModelSettings = ref(false)
 
 // Boot sequence
 const bootSequence = [

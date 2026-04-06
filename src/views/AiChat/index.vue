@@ -248,6 +248,9 @@
           </div>
         </div>
       </div>
+
+      <!-- 右侧：Agent Trace 面板 -->
+      <AgentTrace v-if="agentStore.tracePanelOpen" />
     </div>
   </div>
 </template>
@@ -256,11 +259,14 @@
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useAiChatStore } from '@/stores/aiChat'
 import { useSkillsStore } from '@/stores/skills'
+import { useAgentStore } from '@/stores/agent'
 import { sharedMd, renderSafe } from '@/utils/markdown'
 import SkillPanel from './SkillPanel.vue'
+import AgentTrace from './AgentTrace.vue'
 
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()
+const agentStore = useAgentStore()
 
 // UI State
 const inputText = ref('')

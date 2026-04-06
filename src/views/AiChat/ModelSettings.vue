@@ -69,7 +69,7 @@
                     v-model="configEndpoint"
                     type="text"
                     class="console-input"
-                    :placeholder="currentProvider?.defaultEndpoint"
+                    :placeholder="currentProvider?.api"
                   />
                 </div>
               </div>
@@ -106,7 +106,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAiChatStore } from '@/stores/aiChat'
 import ProviderIcon from '@/components/common/ProviderIcon.vue'
 
@@ -117,17 +117,10 @@ const emit = defineEmits<{
 
 const store = useAiChatStore()
 
-const providerList = [
-  { id: 'openai', name: 'OpenAI', defaultEndpoint: 'https://api.openai.com/v1' },
-  { id: 'anthropic', name: 'Anthropic', defaultEndpoint: 'https://api.anthropic.com' },
-  { id: 'google', name: 'Google', defaultEndpoint: 'https://generativelanguage.googleapis.com' },
-  { id: 'deepseek', name: 'DeepSeek', defaultEndpoint: 'https://api.deepseek.com' },
-  { id: 'openrouter', name: 'OpenRouter', defaultEndpoint: 'https://openrouter.ai/api/v1' },
-  { id: 'ollama', name: 'Ollama', defaultEndpoint: 'http://localhost:11434/v1' },
-]
+const providerList = computed(() => store.getProvidersFromModelsDev())
 
 const showConfigDialog = ref(false)
-const currentProvider = ref<typeof providerList[0] | null>(null)
+const currentProvider = ref<any>(null)
 const configApiKey = ref('')
 const configEndpoint = ref('')
 const showKey = ref(false)
@@ -146,9 +139,10 @@ function isProviderConfigured(id: string | undefined) {
 }
 
 function openConfig(id: string) {
-  currentProvider.value = providerList.find(p => p.id === id) || null
+  const providers = store.getProvidersFromModelsDev()
+  currentProvider.value = providers.find(p => p.id === id) || null
   configApiKey.value = ''
-  configEndpoint.value = ''
+  configEndpoint.value = currentProvider.value?.api || ''
   showConfigDialog.value = true
 }
 

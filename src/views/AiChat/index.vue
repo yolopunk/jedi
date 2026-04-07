@@ -263,6 +263,7 @@ import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useAiChatStore } from '@/stores/aiChat'
 import { useSkillsStore } from '@/stores/skills'
 import { useAgentStore } from '@/stores/agent'
+import { useModelsDevStore } from '@/stores/modelsDev'
 import { sharedMd, renderSafe } from '@/utils/markdown'
 import SkillPanel from './SkillPanel.vue'
 import AgentTrace from './AgentTrace.vue'
@@ -271,6 +272,7 @@ import ModelSettings from './ModelSettings.vue'
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()
 const agentStore = useAgentStore()
+const modelsDevStore = useModelsDevStore()
 
 // UI State
 const inputText = ref('')
@@ -298,11 +300,9 @@ const quickCommands = ref([
 
 // Computed
 const currentModelName = computed(() => {
-  const models = store.getModelsForProvider(store.selectedProvider)
-  const model = models.find(m => m.id === store.selectedModelId)
-  return model?.name || store.selectedModelId || 'SELECT MODEL'
+  return modelsDevStore.selectedModel?.name || 'SELECT MODEL'
 })
-const connectionStatus = computed(() => store.availableModels.length > 0 ? 'CONNECTED' : 'OFFLINE')
+const connectionStatus = computed(() => modelsDevStore.allProviders.length > 0 ? 'CONNECTED' : 'OFFLINE')
 
 const displayMessages = computed(() => {
   return store.currentSession?.messages || []
@@ -435,8 +435,9 @@ watch(() => store.streamingContent, () => {
   scrollToBottom()
 })
 
-onMounted(() => {
+onMounted(async () => {
   skillsStore.loadFromStorage()
+  await modelsDevStore.fetchProviders()
   scrollToBottom()
 })
 </script>

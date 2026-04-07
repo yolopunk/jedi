@@ -178,6 +178,12 @@ export default {
     searchPlaceholder: 'Search conversations...',
     modelSearchPlaceholder: 'Search models...',
     commandPlaceholder: 'Enter command...',
+    selectProvider: 'Select Provider',
+    popular: 'Popular',
+    other: 'Other',
+    custom: 'Custom',
+    configured: 'Configured',
+    notConfigured: 'Not Configured',
   },
   hosts: {
     validation: {

@@ -1,7 +1,7 @@
 {
   "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"pnpm vue-tsc --noEmit 2>&1\",\"description\":\"Verify TypeScript passes\"}",
-  "error": "Exit code 2\nsrc/views/AiChat/components/ModelSettings.vue(431,13): error TS2304: Cannot find name 'props'.",
-  "timestamp": "2026-04-07T14:03:06.449Z",
+  "tool_input_preview": "{\"command\":\"pnpm vue-tsc --noEmit 2>&1\",\"description\":\"Check TypeScript\"}",
+  "error": "Exit code 2\nsrc/views/AiChat/components/ModelSettings.vue(83,34): error TS18047: 'e.target' is possibly 'null'.\nsrc/views/AiChat/components/ModelSettings.vue(83,43): error TS2339: Property 'style' does not exist on type 'EventTarget'.\nsrc/views/AiChat/components/ModelSettings.vue(125,34): error TS18047: 'e.target' is possibly 'null'.\nsrc/views/AiChat/components/ModelSettings.vue(125,43): error TS2339: Property 'style' does not exist on type 'EventTarget'.\nsrc/views/AiChat/components/ModelSetting...",
+  "timestamp": "2026-04-07T14:18:53.696Z",
   "retry_count": 1
 }

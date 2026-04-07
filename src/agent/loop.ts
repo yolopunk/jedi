@@ -1,6 +1,7 @@
 // src/agent/loop.ts
 
 import type { AgentState, AgentStep, AgentConfig, AgentEvent } from './types'
+import { useModelsDevStore } from '@/stores/modelsDev'
 import { skillRegistry } from '@/skills/registry'
 
 type EventHandler = (event: AgentEvent) => void
@@ -27,6 +28,18 @@ export class AgentLoop {
 
   constructor(config: AgentConfig) {
     this.config = config
+  }
+
+  /**
+   * Get the currently selected provider and model from modelsDevStore.
+   * Use this when sending chat messages or creating completions.
+   */
+  protected getModelInfo(): { providerId: string | null; modelId: string | null } {
+    const modelsDevStore = useModelsDevStore()
+    return {
+      providerId: modelsDevStore.selectedProviderId,
+      modelId: modelsDevStore.selectedModelId,
+    }
   }
 
   getState(): AgentState {

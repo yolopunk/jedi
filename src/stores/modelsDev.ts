@@ -4,7 +4,7 @@ import {
   fetchModelsDev as fetchModelsDevApi,
   getModelsForProvider as getModelsForProviderApi,
 } from '@/api/modelsDev'
-import type { ModelsDevProvider, ModelsDevModel, ProviderCategory } from '@/types/modelsDev'
+import type { ModelsDevProvider, ModelsDevModel } from '@/types/modelsDev'
 import { useProviderConfigStore } from './providerConfig'
 
 // Popular provider IDs (hardcoded for now — could be from config/API)

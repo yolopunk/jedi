@@ -80,7 +80,7 @@
         block
         color="primary"
         :disabled="!store.selectedProviderId"
-        @click="$emit('configure', store.selectedProviderId)"
+        @click="handleConfigureClick"
       >
         <v-icon icon="mdi-cog" start />
         Configure Selected Provider
@@ -100,6 +100,12 @@ const emit = defineEmits<{
 
 const store = useModelsDevStore()
 const activeTab = ref<'popular' | 'other' | 'custom'>('popular')
+
+function handleConfigureClick() {
+  if (store.selectedProviderId) {
+    emit('configure', store.selectedProviderId)
+  }
+}
 
 const displayedProviders = computed(() => {
   switch (activeTab.value) {

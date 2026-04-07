@@ -133,12 +133,12 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted } from 'vue'
-import type { Model } from '@/stores/aiChat'
+import type { ModelsDevModel } from '@/types/modelsDev'
 
 const props = defineProps<{
   disabled?: boolean
   isLoading?: boolean
-  selectedModel?: Model | null
+  selectedModel?: ModelsDevModel | null
   streamEnabled?: boolean
   maxChars?: number
   placeholder?: string

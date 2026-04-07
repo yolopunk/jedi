@@ -7,7 +7,7 @@ export type ModelsDevResponse = Record<string, ModelsDevProvider>
  * Fetch all providers and models from models.dev
  */
 export async function fetchModelsDev(forceRefresh?: boolean): Promise<ModelsDevResponse> {
-  return await invoke<ModelsDevResponse>('fetch_model_dev', { forceRefresh })
+  return await invoke<ModelsDevResponse>('fetch_models_dev', { forceRefresh })
 }
 
 /**

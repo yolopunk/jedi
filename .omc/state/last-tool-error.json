@@ -1,7 +1,7 @@
 {
-  "tool_name": "Read",
-  "tool_input_preview": "{\"file_path\":\"/Users/cynosure/workspace/github/jedi/src/views/AiChat/ProviderForm.vue\"}",
-  "error": "File does not exist. Note: your current working directory is /Users/cynosure/workspace/github/jedi.",
-  "timestamp": "2026-04-07T12:53:48.692Z",
-  "retry_count": 2
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"pnpm vue-tsc --noEmit 2>&1\",\"description\":\"Verify TypeScript passes\"}",
+  "error": "Exit code 2\nsrc/views/AiChat/components/ModelSettings.vue(431,13): error TS2304: Cannot find name 'props'.",
+  "timestamp": "2026-04-07T14:03:06.449Z",
+  "retry_count": 1
 }

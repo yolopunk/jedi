@@ -1,35 +1,51 @@
 <template>
-  <v-dialog v-model="dialogModel" max-width="800">
-    <v-card class="scifi-card">
-      <v-card-title class="console-title-bar">
-        <span class="dialog-title">[ SYSTEM_CONFIG ]</span>
-      </v-card-title>
-      <v-card-text class="console-card-text settings-content">
-        <!-- Tabs -->
-        <div class="settings-tabs">
-          <button
-            v-for="tab in tabs"
-            :key="tab.value"
-            class="tab-button"
-            :class="{ active: settingsTab === tab.value }"
-            @click="settingsTab = tab.value"
-          >
-            <span class="tab-text">{{ tab.label }}</span>
-          </button>
+  <v-dialog
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
+    max-width="640"
+  >
+    <v-card class="model-settings-card">
+      <!-- Header -->
+      <div class="card-header">
+        <div class="header-brand">
+          <div class="brand-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h2>Settings</h2>
+            <p>Configure application preferences</p>
+          </div>
         </div>
-
-        <div class="tab-content">
-          <GeneralSettingsTab v-if="settingsTab === 'general'" />
-          <WallpaperSettingsTab v-if="settingsTab === 'wallpaper'" />
-          <AdvancedSettingsTab v-if="settingsTab === 'advanced'" />
-        </div>
-      </v-card-text>
-      <v-card-actions class="console-card-actions">
-        <v-spacer></v-spacer>
-        <button class="console-btn" @click="dialogModel = false">
-          <span class="btn-text">{{ t('settings.close') }}</span>
+        <button class="close-btn" @click="$emit('update:modelValue', false)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+          </svg>
         </button>
-      </v-card-actions>
+      </div>
+
+      <!-- Tabs -->
+      <div class="settings-tabs">
+        <button
+          v-for="tab in tabs"
+          :key="tab.value"
+          class="tab-btn"
+          :class="{ active: settingsTab === tab.value }"
+          @click="settingsTab = tab.value"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="card-body">
+        <GeneralSettingsTab v-if="settingsTab === 'general'" />
+        <WallpaperSettingsTab v-if="settingsTab === 'wallpaper'" />
+        <AdvancedSettingsTab v-if="settingsTab === 'advanced'" />
+      </div>
     </v-card>
   </v-dialog>
 </template>
@@ -49,135 +65,135 @@ const tabs = computed(() => [
   { value: 'advanced', label: t('settings.advanced') }
 ])
 
-const props = defineProps<{
-  modelValue: boolean;
-}>()
-
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-}>()
-
-const dialogModel = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
+defineProps<{ modelValue: boolean }>()
+defineEmits<{ (e: 'update:modelValue', value: boolean): void }>()
 
 const settingsTab = ref('general')
 </script>
 
 <style scoped>
-.settings-content {
-  padding: 0 !important;
+.model-settings-card {
+  background: #0a0e14 !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(20, 30, 40, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  border-radius: 10px;
+  color: #00ffff;
+}
+
+.brand-text h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.brand-text p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.close-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 107, 107, 0.1);
+  border-color: rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
 }
 
 .settings-tabs {
   display: flex;
   gap: 4px;
-  padding: 12px 16px 8px;
+  padding: 12px 16px;
   background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
 }
 
-.tab-button {
+.tab-btn {
   padding: 8px 16px;
   background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: #52525b;
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 1px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.tab-button:hover {
-  background: rgba(0, 255, 255, 0.05);
-  color: #a1a1aa;
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.tab-button.active {
+.tab-btn.active {
   background: rgba(0, 255, 255, 0.1);
+  border-color: rgba(0, 255, 255, 0.25);
   color: #00ffff;
 }
 
-.tab-content {
-  padding: 16px;
-  max-height: 400px;
+.card-body {
+  flex: 1;
   overflow-y: auto;
+  padding: 20px;
 }
 
-/* Custom scrollbar */
-.tab-content::-webkit-scrollbar {
-  width: 6px;
+::-webkit-scrollbar {
+  width: 4px;
 }
 
-.tab-content::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.tab-content::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 255, 0.2);
-  border-radius: 3px;
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
 }
 
-.tab-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 255, 255, 0.3);
-}
-
-/* =========================================
-   Light Theme Styles
-   ========================================= */
-.light-theme .scifi-card {
-  background: linear-gradient(135deg, #efe0cc 0%, #e8d4bc 100%);
-  border-color: rgba(184, 134, 11, 0.3);
-}
-
-.light-theme .scifi-card::before {
-  background: linear-gradient(90deg, transparent, #cd7f32, transparent);
-}
-
-.light-theme .console-title-bar {
-  background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
-  border-bottom-color: rgba(184, 134, 11, 0.3);
-}
-
-.light-theme .dialog-title {
-  color: #cd7f32;
-  text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
-}
-
-.light-theme .console-card-text {
-  background: #f5e6d3;
-}
-
-.light-theme .settings-tabs {
-  background: #e8d4bc;
-  border-bottom-color: rgba(184, 134, 11, 0.25);
-}
-
-.light-theme .tab-button {
-  color: #6b4423;
-}
-
-.light-theme .tab-button:hover {
-  color: #cd7f32;
-}
-
-.light-theme .tab-button.active {
-  color: #cd7f32;
-}
-
-.light-theme .tab-text {
-  color: inherit;
-}
-
-.light-theme .tab-content::-webkit-scrollbar-thumb {
-  background: rgba(184, 134, 11, 0.3);
-}
-
-.light-theme .tab-content::-webkit-scrollbar-thumb:hover {
-  background: rgba(184, 134, 11, 0.5);
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 </style>

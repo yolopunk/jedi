@@ -766,9 +766,15 @@ onUnmounted(() => {
 .image-wrapper {
   position: relative;
   overflow: hidden;
+  aspect-ratio: 16 / 10;
 }
 
 .wallpaper-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   transition: transform 0.5s ease;
 }
 

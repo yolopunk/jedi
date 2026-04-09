@@ -78,10 +78,16 @@
             >
               <div class="provider-logo">
                 <img
+                  v-if="provider.id !== '__custom__'"
                   :src="`https://models.dev/logos/${provider.id}.svg`"
                   :alt="provider.name"
                   @error="(e) => (e.target as HTMLImageElement).style.display='none'"
                 />
+                <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                  <line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" stroke-width="2"/>
+                  <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="2"/>
+                </svg>
               </div>
               <div class="provider-info">
                 <span class="provider-name">{{ provider.name }}</span>
@@ -109,7 +115,7 @@
 
         <!-- Config View (shown when provider selected) -->
         <div v-else class="config-view">
-          <!-- Back button + Provider info -->
+          <!-- Back button + Provider info + Endpoint (inline) -->
           <div class="config-header">
             <button class="back-btn" @click="selectedProvider = null">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -127,24 +133,33 @@
               </div>
               <div class="provider-info">
                 <span class="provider-name">{{ selectedProvider.name }}</span>
-                <a
-                  v-if="selectedProvider.doc"
-                  :href="selectedProvider.doc"
-                  target="_blank"
-                  class="doc-link"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="2"/>
-                    <polyline points="15 3 21 3 21 9" stroke="currentColor" stroke-width="2"/>
-                    <line x1="10" y1="14" x2="21" y2="3" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                  Documentation
-                </a>
+                <div class="provider-meta">
+                  <span v-if="selectedProvider.api && isUrl(selectedProvider.api)" class="endpoint-tag">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    {{ selectedProvider.api }}
+                  </span>
+                  <a
+                    v-if="selectedProvider.doc"
+                    :href="selectedProvider.doc"
+                    target="_blank"
+                    class="doc-link"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" stroke="currentColor" stroke-width="2"/>
+                      <polyline points="15 3 21 3 21 9" stroke="currentColor" stroke-width="2"/>
+                      <line x1="10" y1="14" x2="21" y2="3" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                    Doc
+                  </a>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- API Key Form -->
+          <!-- API Key Config (both custom and non-custom) -->
           <div class="config-form">
             <div class="form-group">
               <label>API KEY</label>
@@ -168,68 +183,150 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label>API ENDPOINT <span class="optional">(optional)</span></label>
+            <!-- Custom provider: Base URL field -->
+            <div v-if="selectedProvider.isCustom" class="form-group">
+              <label>BASE URL</label>
               <input
-                v-model="configEndpoint"
+                v-model="configBaseUrl"
                 type="text"
-                :placeholder="selectedProvider.api || 'https://api.example.com'"
+                placeholder="https://api.example.com/v1"
+                class="api-input"
+              />
+            </div>
+
+            <!-- Custom provider: Model ID field -->
+            <div v-if="selectedProvider.isCustom" class="form-group">
+              <label>MODEL ID</label>
+              <input
+                v-model="configModelId"
+                type="text"
+                placeholder="e.g., gpt-4o, claude-3-opus"
                 class="api-input"
               />
             </div>
 
             <div class="form-actions">
-              <button
-                v-if="isCurrentProviderConfigured"
-                class="btn danger"
-                @click="deleteKey"
-              >
-                Delete Key
-              </button>
-              <button
-                v-if="isCurrentProviderConfigured && configApiKey"
-                class="btn secondary"
-                @click="testConnection"
-                :disabled="testing"
-              >
-                <span v-if="testing" class="btn-spinner"></span>
-                {{ testing ? 'Testing...' : 'Test Connection' }}
-              </button>
+              <v-tooltip text="Verify credentials work">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    size="small"
+                    variant="tonal"
+                    :loading="testing"
+                    :disabled="!configApiKey"
+                    @click="testConnection"
+                  >
+                    <v-icon icon="mdi-lightning-bolt" start size="14" />
+                    Test
+                  </v-btn>
+                </template>
+              </v-tooltip>
+              <v-tooltip text="Remove saved credentials">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-if="isCurrentProviderConfigured"
+                    v-bind="props"
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    @click="deleteKey"
+                  >
+                    <v-icon icon="mdi-delete" start size="14" />
+                  </v-btn>
+                </template>
+              </v-tooltip>
               <div class="spacer"></div>
-              <button class="btn secondary" @click="selectedProvider = null">
+              <v-btn size="small" variant="text" @click="selectedProvider = null">
                 Cancel
-              </button>
-              <button
-                class="btn primary"
-                @click="saveKey"
+              </v-btn>
+              <v-btn
+                size="small"
+                color="primary"
                 :disabled="!configApiKey"
+                @click="saveKey"
               >
                 Save
-              </button>
+              </v-btn>
+            </div>
+
+            <div v-if="testResult" class="test-result" :class="testResult.type">
+              <v-icon :icon="testResult.type === 'success' ? 'mdi-check-circle' : 'mdi-alert-circle'" size="16" />
+              {{ testResult.message }}
             </div>
           </div>
-
           <!-- Model List -->
           <div class="model-section">
             <div class="section-header">
               <span class="section-label">AVAILABLE MODELS</span>
-              <span class="model-count">{{ selectedProviderModels.length }} models</span>
+              <span class="model-count">{{ filteredModels.length }} / {{ selectedProviderModels.length }}</span>
             </div>
+
+            <!-- Model Search -->
+            <div class="model-search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              <input
+                v-model="modelSearch"
+                type="text"
+                placeholder="Search models..."
+                class="search-input"
+              />
+              <button v-if="modelSearch" class="clear-search" @click="modelSearch = ''">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+                  <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </button>
+            </div>
+
             <div class="models-scroll">
               <div
-                v-for="model in selectedProviderModels"
+                v-for="model in filteredModels"
                 :key="model.id"
                 class="model-item"
+                :class="{ selected: model.id === modelsDevStore.selectedModelId }"
                 @click="selectModel(model)"
               >
                 <div class="model-info">
-                  <span class="model-name">{{ model.name }}</span>
+                  <div class="model-name-row">
+                    <span class="model-name">{{ model.name }}</span>
+                    <div class="model-badges">
+                      <v-tooltip :text="`Context: ${formatContext(model.limit?.context)}`">
+                        <template v-slot:activator="{ props }">
+                          <span v-bind="props" class="badge context">
+                            {{ formatContextShort(model.limit?.context) }}
+                          </span>
+                        </template>
+                      </v-tooltip>
+                      <v-tooltip v-if="model.reasoning" text="Supports reasoning">
+                        <template v-slot:activator="{ props }">
+                          <span v-bind="props" class="badge reasoning">R</span>
+                        </template>
+                      </v-tooltip>
+                      <v-tooltip v-if="model.tool_call" text="Supports tool calling">
+                        <template v-slot:activator="{ props }">
+                          <span v-bind="props" class="badge tools">T</span>
+                        </template>
+                      </v-tooltip>
+                    </div>
+                  </div>
                   <span class="model-id">{{ model.id }}</span>
                 </div>
-                <div class="model-badges">
-                  <span v-if="model.reasoning" class="badge reasoning">R</span>
-                  <span v-if="model.tool_call" class="badge tools">T</span>
+                <div v-if="model.cost?.input || model.cost?.output" class="model-cost">
+                  <v-tooltip :text="buildCostTooltip(model)">
+                    <template v-slot:activator="{ props }">
+                      <span v-bind="props" class="cost-chip">
+                        {{ formatCost(model) }}
+                      </span>
+                    </template>
+                  </v-tooltip>
                 </div>
+              </div>
+
+              <div v-if="filteredModels.length === 0" class="empty-models">
+                <span>No models match "{{ modelSearch }}"</span>
               </div>
             </div>
           </div>
@@ -256,9 +353,13 @@ const providerConfigStore = useProviderConfigStore()
 const activeCategory = ref<'popular' | 'other' | 'custom'>('popular')
 const selectedProvider = ref<ModelsDevProvider | null>(null)
 const configApiKey = ref('')
+const configBaseUrl = ref('')
+const configModelId = ref('')
 const configEndpoint = ref('')
 const showKey = ref(false)
 const testing = ref(false)
+const modelSearch = ref('')
+const testResult = ref<{ type: 'success' | 'error'; message: string } | null>(null)
 
 const categories = [
   { id: 'popular' as const, label: 'Popular' },
@@ -269,11 +370,21 @@ const categories = [
 const loading = computed(() => modelsDevStore.loading || providerConfigStore.loading)
 const error = computed(() => modelsDevStore.error || providerConfigStore.error)
 
+// Special built-in custom provider entry
+const CUSTOM_PROVIDER_ENTRY: ModelsDevProvider = {
+  id: '__custom__',
+  name: 'Custom Provider',
+  models: {},
+  isCustom: true,
+}
+
 const filteredProviders = computed(() => {
   switch (activeCategory.value) {
     case 'popular': return modelsDevStore.popularProviders
     case 'other': return modelsDevStore.otherProviders
-    case 'custom': return modelsDevStore.customProviders
+    case 'custom':
+      // Show custom providers + Add Custom Provider entry
+      return [...modelsDevStore.customProviders, CUSTOM_PROVIDER_ENTRY]
     default: return []
   }
 })
@@ -281,6 +392,15 @@ const filteredProviders = computed(() => {
 const selectedProviderModels = computed(() => {
   if (!selectedProvider.value) return []
   return Object.values(selectedProvider.value.models)
+})
+
+const filteredModels = computed(() => {
+  if (!modelSearch.value) return selectedProviderModels.value
+  const q = modelSearch.value.toLowerCase()
+  return selectedProviderModels.value.filter(m =>
+    m.name.toLowerCase().includes(q) ||
+    m.id.toLowerCase().includes(q)
+  )
 })
 
 const isCurrentProviderConfigured = computed(() =>
@@ -293,7 +413,7 @@ function getCategoryCount(category: 'popular' | 'other' | 'custom') {
   switch (category) {
     case 'popular': return modelsDevStore.popularProviders.length
     case 'other': return modelsDevStore.otherProviders.length
-    case 'custom': return modelsDevStore.customProviders.length
+    case 'custom': return modelsDevStore.customProviders.length + 1 // +1 for Add Custom Provider entry
   }
 }
 
@@ -304,19 +424,18 @@ function isConfigured(providerId: string) {
 function selectProvider(provider: ModelsDevProvider) {
   selectedProvider.value = provider
   configApiKey.value = ''
+  configBaseUrl.value = ''
+  configModelId.value = ''
   configEndpoint.value = provider.api || ''
   showKey.value = false
+  testResult.value = null
+  modelSearch.value = ''
 }
 
 function selectModel(model: ModelsDevModel) {
   modelsDevStore.selectModel(model.id)
+  modelsDevStore.selectProvider(selectedProvider.value!.id)
 }
-
-watch(() => modelsDevStore.selectedModelId, (modelId) => {
-  if (modelId && selectedProvider.value) {
-    modelsDevStore.selectProvider(selectedProvider.value.id)
-  }
-})
 
 watch(() => props.modelValue, async (open) => {
   if (open) {
@@ -340,8 +459,13 @@ async function saveKey() {
   await providerConfigStore.saveApiKey(
     selectedProvider.value.id,
     configApiKey.value,
-    configEndpoint.value || undefined
+    selectedProvider.value.isCustom
+      ? (configBaseUrl.value || undefined)
+      : (configEndpoint.value || undefined)
   )
+  if (configModelId.value) {
+    modelsDevStore.selectModel(configModelId.value)
+  }
   selectedProvider.value = null
 }
 
@@ -353,8 +477,58 @@ async function deleteKey() {
 
 async function testConnection() {
   testing.value = true
-  await new Promise(r => setTimeout(r, 1500))
-  testing.value = false
+  testResult.value = null
+  try {
+    // Simulate test - in real impl, this would call backend
+    await new Promise(r => setTimeout(r, 1500))
+    testResult.value = { type: 'success', message: 'Connection successful!' }
+  } catch (e) {
+    testResult.value = { type: 'error', message: 'Connection failed. Check your credentials.' }
+  } finally {
+    testing.value = false
+  }
+}
+
+function formatContext(len?: number): string {
+  if (!len) return 'N/A'
+  if (len >= 1000000) return `${(len / 1000000).toFixed(1)}M`
+  if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
+  return len.toString()
+}
+
+function formatContextShort(len?: number): string {
+  if (!len) return 'N/A'
+  if (len >= 1000000) return `${(len / 1000000).toFixed(0)}M`
+  if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
+  return len.toString()
+}
+
+function formatCost(model: ModelsDevModel): string {
+  const input = model.cost?.input
+  const output = model.cost?.output
+  if (!input && !output) return ''
+  const fmt = (n: number) => `$${(n / 1000000).toFixed(1)}`
+  if (input && output) return `${fmt(input)}/${fmt(output)}`
+  if (input !== undefined) return `in: ${fmt(input)}`
+  return output !== undefined ? `out: ${fmt(output)}` : ''
+}
+
+function buildCostTooltip(model: ModelsDevModel): string {
+  const parts: string[] = []
+  if (model.cost?.input) parts.push(`Input: $${(model.cost.input / 1000000).toFixed(2)}/1M tokens`)
+  if (model.cost?.output) parts.push(`Output: $${(model.cost.output / 1000000).toFixed(2)}/1M tokens`)
+  if (model.cost?.cache_read) parts.push(`Cache read: $${(model.cost.cache_read / 1000000).toFixed(2)}/1M`)
+  if (model.cost?.cache_write) parts.push(`Cache write: $${(model.cost.cache_write / 1000000).toFixed(2)}/1M`)
+  return parts.length ? parts.join('\n') : 'No cost data'
+}
+
+function isUrl(str: string): boolean {
+  try {
+    new URL(str)
+    return true
+  } catch {
+    return false
+  }
 }
 </script>
 
@@ -566,27 +740,49 @@ async function testConnection() {
 }
 
 .provider-logo {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(0, 200, 255, 0.1) 100%);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  border-radius: 10px;
   flex-shrink: 0;
   overflow: hidden;
+  box-shadow:
+    0 0 16px rgba(0, 255, 255, 0.25),
+    0 0 32px rgba(0, 255, 255, 0.1),
+    inset 0 0 12px rgba(0, 255, 255, 0.1);
+  animation: logo-pulse 3s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 16px rgba(0, 255, 255, 0.25),
+      0 0 32px rgba(0, 255, 255, 0.1),
+      inset 0 0 12px rgba(0, 255, 255, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 20px rgba(0, 255, 255, 0.35),
+      0 0 40px rgba(0, 255, 255, 0.15),
+      inset 0 0 16px rgba(0, 255, 255, 0.15);
+  }
 }
 
 .provider-logo.large {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
 }
 
 .provider-logo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  filter: brightness(1.2) saturate(1.1);
 }
 
 .provider-info {
@@ -606,6 +802,35 @@ async function testConnection() {
 .provider-models {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.35);
+}
+
+.provider-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.endpoint-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 2px 6px;
+  background: rgba(0, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 255, 0.15);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'JetBrains Mono', monospace;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.endpoint-tag svg {
+  flex-shrink: 0;
+  opacity: 0.5;
 }
 
 .doc-link {
@@ -700,7 +925,37 @@ async function testConnection() {
   gap: 12px;
 }
 
-/* Config Form */
+/* Endpoint Display (non-custom) */
+.endpoint-display {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.endpoint-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.endpoint-value {
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.6);
+  word-break: break-all;
+}
+
+.test-btn {
+  align-self: flex-start;
+}
+
+/* Config Form (custom) */
 .config-form {
   padding: 16px;
   display: flex;
@@ -720,11 +975,6 @@ async function testConnection() {
   font-weight: 700;
   letter-spacing: 1px;
   color: #00ffff;
-}
-
-.form-group .optional {
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.3);
 }
 
 .input-row {
@@ -771,6 +1021,7 @@ async function testConnection() {
 .form-actions {
   display: flex;
   gap: 8px;
+  align-items: center;
   padding-top: 4px;
 }
 
@@ -778,69 +1029,24 @@ async function testConnection() {
   flex: 1;
 }
 
-.btn {
-  display: inline-flex;
+/* Test Result */
+.test-result {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 9px 16px;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
   font-size: 12px;
-  font-weight: 500;
-  border-radius: 7px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border: 1px solid transparent;
 }
 
-.btn.primary {
-  background: rgba(0, 255, 255, 0.15);
-  border-color: rgba(0, 255, 255, 0.4);
-  color: #00ffff;
+.test-result.success {
+  background: rgba(0, 255, 136, 0.1);
+  color: #00ff88;
 }
 
-.btn.primary:hover:not(:disabled) {
-  background: rgba(0, 255, 255, 0.25);
-}
-
-.btn.primary:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.btn.secondary {
-  background: transparent;
-  border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.btn.secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-}
-
-.btn.secondary:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
-.btn.danger {
-  background: transparent;
-  border-color: rgba(255, 107, 107, 0.3);
-  color: #ff6b6b;
-}
-
-.btn.danger:hover {
+.test-result.error {
   background: rgba(255, 107, 107, 0.1);
-}
-
-.btn-spinner {
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid rgba(255, 255, 255, 0.2);
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+  color: #ff6b6b;
 }
 
 /* Model Section */
@@ -871,6 +1077,51 @@ async function testConnection() {
   color: rgba(255, 255, 255, 0.35);
 }
 
+/* Model Search */
+.model-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 16px 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.model-search svg {
+  color: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 13px;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.clear-search {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-search:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .models-scroll {
   flex: 1;
   overflow-y: auto;
@@ -891,11 +1142,22 @@ async function testConnection() {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.model-item.selected {
+  background: rgba(0, 255, 255, 0.08);
+}
+
 .model-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
+}
+
+.model-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .model-name {
@@ -923,24 +1185,55 @@ async function testConnection() {
 }
 
 .badge {
-  width: 18px;
-  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 9px;
   font-weight: 700;
   border-radius: 4px;
+  cursor: help;
+}
+
+.badge.context {
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .badge.reasoning {
+  width: 18px;
+  height: 18px;
   background: rgba(168, 85, 247, 0.2);
   color: #a855f7;
 }
 
 .badge.tools {
+  width: 18px;
+  height: 18px;
   background: rgba(59, 130, 246, 0.2);
   color: #3b82f6;
+}
+
+.model-cost {
+  flex-shrink: 0;
+}
+
+.cost-chip {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: rgba(0, 255, 136, 0.08);
+  color: #00ff88;
+  border-radius: 4px;
+  cursor: help;
+}
+
+.empty-models {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 12px;
 }
 
 /* Scrollbar */

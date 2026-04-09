@@ -1,182 +1,275 @@
 <template>
-  <!-- 删除确认对话框 -->
-  <v-dialog v-model="dialogModel" max-width="420" persistent>
-    <v-card class="scifi-card dialog-danger">
-      <div class="dialog-decorator danger"></div>
-      <v-card-title class="console-title-bar danger">
-        <span class="dialog-icon danger">⬡</span>
-        <span class="dialog-title">{{ $t('hosts.dialog.deleteTitle') }}</span>
-        <v-spacer></v-spacer>
-        <button class="close-btn" @click="closeDialog">✕</button>
-      </v-card-title>
-      <v-card-text class="console-card-text">
-        <div class="delete-warning-icon">⚠</div>
-        <p class="delete-confirm-text">{{ $t('hosts.dialog.deleteConfirm') }}</p>
-        <div v-if="host" class="mt-3 pa-3 host-info-box">
-          <div class="d-flex align-center mb-1">
-            <span class="term-cyan mr-2">▸</span>
-            <span class="font-weight-medium">{{ $t('hosts.dialog.ipLabel') }}：</span>
-            <span class="ml-2">{{ host.ip }}</span>
+  <v-dialog
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
+    max-width="420"
+  >
+    <v-card class="model-settings-card danger-card">
+      <!-- Header -->
+      <div class="card-header danger">
+        <div class="header-brand">
+          <div class="brand-icon danger">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="1.5"/>
+              <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2"/>
+              <circle cx="12" cy="17" r="1" fill="currentColor"/>
+            </svg>
           </div>
-          <div class="d-flex align-center">
-            <span class="term-cyan mr-2">▸</span>
-            <span class="font-weight-medium">{{ $t('hosts.dialog.domainLabel') }}：</span>
-            <span class="ml-2">{{ host.domain }}</span>
+          <div class="brand-text">
+            <h2>Confirm Delete</h2>
+            <p>This action cannot be undone</p>
           </div>
         </div>
-        <p class="text-body-2 mt-4 term-red">{{ $t('hosts.dialog.deleteWarning') }}</p>
-      </v-card-text>
-      <v-card-actions class="console-card-actions">
-        <button class="console-btn" @click="closeDialog">
-          {{ $t('common.cancel') }}
+        <button class="close-btn" @click="$emit('update:modelValue', false)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+          </svg>
         </button>
-        <v-spacer></v-spacer>
-        <button class="console-btn danger" @click="confirmDelete">
-          {{ $t('hosts.dialog.deleteBtn') }}
-        </button>
-      </v-card-actions>
+      </div>
+
+      <!-- Content -->
+      <div class="card-body">
+        <div class="warning-icon">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2"/>
+            <circle cx="12" cy="17" r="1" fill="currentColor"/>
+          </svg>
+        </div>
+
+        <p class="confirm-text">Are you sure you want to delete this host entry?</p>
+
+        <div v-if="host" class="host-info">
+          <div class="info-row">
+            <span class="info-label">IP</span>
+            <span class="info-value">{{ host.ip }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Domain</span>
+            <span class="info-value">{{ host.domain }}</span>
+          </div>
+        </div>
+
+        <p class="danger-hint">This operation is irreversible.</p>
+      </div>
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <v-btn variant="text" @click="$emit('update:modelValue', false)">
+          Cancel
+        </v-btn>
+        <v-btn variant="tonal" color="error" @click="confirmDelete">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          Delete
+        </v-btn>
+      </div>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import type { HostEntry } from '@/types/hosts'
 
-// 定义组件属性
 const props = defineProps<{
-  modelValue: boolean;
-  host: HostEntry | null;
+  modelValue: boolean
+  host: HostEntry | null
 }>()
 
-// 定义组件事件
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-  (e: 'delete', host: HostEntry): void;
+  (e: 'update:modelValue', value: boolean): void
+  (e: 'delete', host: HostEntry): void
 }>()
 
-// 对话框状态
-const dialogModel = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
-
-// 关闭对话框
-function closeDialog() {
-  dialogModel.value = false
-}
-
-// 确认删除
 function confirmDelete() {
   if (props.host) {
     emit('delete', props.host)
   }
-  closeDialog()
+  emit('update:modelValue', false)
 }
 </script>
 
 <style scoped>
-.dialog-danger {
-  box-shadow: 0 0 40px rgba(255, 68, 68, 0.15);
+.model-settings-card {
+  background: #0a0e14 !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.dialog-decorator.danger {
-  background: linear-gradient(90deg, transparent, #ff4444, transparent);
+.danger-card {
+  border: 1px solid rgba(255, 107, 107, 0.2);
 }
 
-.console-title-bar.danger {
-  border-bottom-color: rgba(255, 68, 68, 0.3);
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(20, 30, 40, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
-.dialog-icon.danger {
-  color: #ff4444;
+.card-header.danger {
+  background: rgba(255, 50, 50, 0.05);
+  border-bottom-color: rgba(255, 107, 107, 0.15);
 }
 
-.delete-warning-icon {
-  font-size: 48px;
-  text-align: center;
-  margin-bottom: 16px;
-  animation: pulse-warning 2s infinite;
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-@keyframes pulse-warning {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.1); }
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  border-radius: 10px;
+  color: #00ffff;
 }
 
-.delete-confirm-text {
-  text-align: center;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
+.brand-icon.danger {
+  background: linear-gradient(135deg, rgba(255, 50, 50, 0.15) 0%, rgba(255, 107, 107, 0.05) 100%);
+  border-color: rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
 }
 
-.host-info-box {
-  background-color: var(--jedi-bg-surface-hover);
-  border-radius: 8px;
-  border: 1px solid var(--jedi-border);
-}
-
-.dialog-title {
-  font-size: 12px;
+.brand-text h2 {
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: 1px;
-  color: #ff4444;
+  color: #ffffff;
+}
+
+.brand-text p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.card-header.danger .brand-text h2 {
+  color: #ff6b6b;
 }
 
 .close-btn {
-  background: none;
-  border: none;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
   color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  font-size: 14px;
-  padding: 4px 8px;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  color: #ff4444;
+  background: rgba(255, 107, 107, 0.1);
+  border-color: rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
 }
 
-.term-red {
-  color: #ff4444;
+.card-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-/* =========================================
-   Light Theme Styles (Tatooine Outpost)
-   ========================================= */
-.light-theme .dialog-danger {
-  box-shadow: 0 0 30px rgba(178, 34, 34, 0.2);
+.warning-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 107, 107, 0.08);
+  border-radius: 50%;
+  color: #ff6b6b;
+  margin-bottom: 16px;
 }
 
-.light-theme .dialog-decorator.danger {
-  background: linear-gradient(90deg, transparent, #b22222, transparent);
+.confirm-text {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
 }
 
-.light-theme .console-title-bar.danger {
-  border-bottom-color: rgba(178, 34, 34, 0.4);
+.host-info {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  width: 100%;
 }
 
-.light-theme .dialog-icon.danger {
-  color: #b22222;
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
 }
 
-.light-theme .delete-confirm-text {
-  color: rgba(61, 41, 20, 0.9);
+.info-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
 }
 
-.light-theme .dialog-title {
-  color: #b22222;
+.info-value {
+  font-size: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #00ffff;
 }
 
-.light-theme .close-btn {
-  color: rgba(107, 68, 35, 0.6);
+.danger-hint {
+  margin: 16px 0 0;
+  font-size: 11px;
+  color: rgba(255, 107, 107, 0.7);
 }
 
-.light-theme .close-btn:hover {
-  color: #b22222;
+.card-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
-.light-theme .term-red {
-  color: #b22222;
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 </style>

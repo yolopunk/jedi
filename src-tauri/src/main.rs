@@ -53,6 +53,7 @@ use sysinfo::{Networks, System};
 use tauri::RunEvent::WindowEvent;
 use tauri::{Manager, RunEvent, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 
+mod agent;
 mod api;
 mod config;
 mod mcp;

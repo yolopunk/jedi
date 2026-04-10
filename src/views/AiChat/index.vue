@@ -166,7 +166,7 @@
               <span class="prompt-cursor">█</span>
             </div>
             <div class="input-wrapper">
-              <button class="slash-btn" @click="showCommands = true" title="Commands">
+              <button class="slash-btn" @click="showCommands = !showCommands" title="Commands">
                 <span>/</span>
               </button>
               <textarea
@@ -178,6 +178,11 @@
                 @keydown="handleKeydown"
                 @input="autoResize"
               ></textarea>
+              <CommandPalette
+                :visible="showCommands"
+                @select="handleCommandSelect"
+                @close="showCommands = false"
+              />
             </div>
             <div class="input-actions">
               <button
@@ -247,13 +252,6 @@
 
     <!-- Agent Pool Panel -->
     <AgentPoolPanel />
-
-    <!-- Command Palette -->
-    <CommandPalette
-      :visible="showCommands"
-      @close="showCommands = false"
-      @select="handleCommandSelect"
-    />
   </div>
 </template>
 

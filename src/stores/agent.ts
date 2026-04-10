@@ -3,6 +3,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { AgentLoop } from '@/agent/loop'
+import { scheduleTask } from '@/agent/pool'
 import type { AgentState, AgentConfig, AgentEvent } from '@/agent/types'
 
 const defaultConfig: AgentConfig = {
@@ -44,6 +45,17 @@ export const useAgentStore = defineStore('agent', () => {
     await loop!.run(message)
   }
 
+  async function runWithPool(prompt: string, description: string): Promise<string> {
+    const workerId = await scheduleTask({
+      id: `task-${Date.now()}`,
+      description,
+      prompt,
+      tools: ['read', 'edit', 'bash', 'search'],
+      abort_on_error: true
+    })
+    return workerId
+  }
+
   async function executeSkill(skillId: string, args: any): Promise<any> {
     if (!loop) initLoop()
     return await loop!.executeSkill(skillId, args)
@@ -71,6 +83,6 @@ export const useAgentStore = defineStore('agent', () => {
   return {
     config, state, traceLog, tracePanelOpen,
     isRunning, history, currentStatus,
-    initLoop, run, executeSkill, abort, reset, toggleTracePanel
+    initLoop, run, runWithPool, executeSkill, abort, reset, toggleTracePanel
   }
 })

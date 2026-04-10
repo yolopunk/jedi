@@ -267,7 +267,7 @@ import { useAiChatStore } from '@/stores/aiChat'
 import { useSkillsStore } from '@/stores/skills'
 import { useAgentStore } from '@/stores/agent'
 import { useModelsDevStore } from '@/stores/modelsDev'
-import { SLASH_COMMANDS } from '@/agent/slashCommands'
+import { SLASH_COMMANDS, formatCommandPrompt } from '@/agent/slashCommands'
 import { sharedMd, renderSafe } from '@/utils/markdown'
 import SkillPanel from './SkillPanel.vue'
 import AgentTrace from './AgentTrace.vue'
@@ -377,14 +377,27 @@ async function handleSend() {
   if (!inputText.value.trim() || store.isLoading) return
 
   const content = inputText.value.trim()
-  inputText.value = ''
-  autoResize()
+  const prompt = formatCommandPrompt(content)
 
-  try {
-    await store.sendMessage(content)
-    scrollToBottom()
-  } catch (e) {
-    console.error('Failed to send message:', e)
+  if (content.startsWith('/agent')) {
+    const desc = content.slice(6).trim() || 'Worker task'
+    inputText.value = ''
+    autoResize()
+    try {
+      await agentStore.runWithPool(prompt, desc)
+      scrollToBottom()
+    } catch (e) {
+      console.error('Failed to run with pool:', e)
+    }
+  } else {
+    inputText.value = ''
+    autoResize()
+    try {
+      await store.sendMessage(content)
+      scrollToBottom()
+    } catch (e) {
+      console.error('Failed to send message:', e)
+    }
   }
 }
 

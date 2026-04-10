@@ -47,6 +47,8 @@ use crate::api::podcast::{
 use crate::api::wallpapers::{
   get_current_wallpaper, get_wallpapers, set_desktop_wallpaper, show_in_folder, sync_wallpapers,
 };
+use crate::agent::commands::{init_pool, get_pool_status, schedule_task, stop_worker, remove_worker, PoolState};
+use crate::agent::pool::AgentPool;
 use crate::utils::logger;
 use std::sync::Mutex;
 use sysinfo::{Networks, System};
@@ -103,6 +105,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .manage(model_provider_manager_state)
     // Phase 3: 管理 models.dev 状态
     .manage(models_dev_manager_state)
+    // Agent pool state
+    .manage(PoolState(tokio::sync::Mutex::new(AgentPool::new(4))))
     .setup(|app| {
       // 创建主窗口
       let mut win_builder =
@@ -197,7 +201,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       get_models_dev_provider,
       get_models_for_provider,
       get_models_providers,
-      search_models_dev
+      search_models_dev,
+      // Agent pool commands
+      init_pool,
+      get_pool_status,
+      schedule_task,
+      stop_worker,
+      remove_worker
     ])
     .build(tauri::generate_context!())?;
 

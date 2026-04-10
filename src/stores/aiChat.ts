@@ -200,6 +200,13 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
+  // Add a message to the current session
+  function addMessage(message: ChatMessage) {
+    if (currentSession.value) {
+      currentSession.value.messages.push(message)
+    }
+  }
+
   // Save settings to localStorage
   function saveSettings() {
     try {
@@ -233,5 +240,6 @@ export const useAiChatStore = defineStore('aiChat', () => {
     toggleMcpServer,
     loadSettings,
     saveSettings,
+    addMessage,
   }
 })

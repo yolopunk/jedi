@@ -267,6 +267,7 @@ import { useAiChatStore } from '@/stores/aiChat'
 import { useSkillsStore } from '@/stores/skills'
 import { useAgentStore } from '@/stores/agent'
 import { useModelsDevStore } from '@/stores/modelsDev'
+import { setOnWorkerCompleteCallback } from '@/agent/useAgentPool'
 import { SLASH_COMMANDS, formatCommandPrompt } from '@/agent/slashCommands'
 import { sharedMd, renderSafe } from '@/utils/markdown'
 import SkillPanel from './SkillPanel.vue'
@@ -459,6 +460,16 @@ onMounted(async () => {
   skillsStore.loadFromStorage()
   await modelsDevStore.fetchProviders()
   scrollToBottom()
+
+  // Set up worker completion callback
+  setOnWorkerCompleteCallback((worker) => {
+    const status = worker.status === 'completed' ? 'completed' : 'failed'
+    const result = worker.result || worker.error || 'Finished'
+    store.addMessage({
+      role: 'system',
+      content: `Worker "${worker.description}" ${status}: ${result}`
+    })
+  })
 })
 </script>
 

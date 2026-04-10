@@ -59,20 +59,6 @@
                   <span class="boot-content">{{ line }}</span>
                 </div>
               </div>
-              <div class="quick-commands">
-                <div
-                  v-for="cmd in quickCommands"
-                  :key="cmd.text"
-                  class="command-card"
-                  @click="executeCommand(cmd)"
-                >
-                  <div class="command-icon">{{ cmd.icon }}</div>
-                  <div class="command-text">
-                    <div class="command-title">{{ cmd.title }}</div>
-                    <div class="command-desc">{{ cmd.desc }}</div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -180,6 +166,9 @@
               <span class="prompt-cursor">█</span>
             </div>
             <div class="input-wrapper">
+              <button class="slash-btn" @click="showCommands = true" title="Commands">
+                <span>/</span>
+              </button>
               <textarea
                 ref="inputRef"
                 v-model="inputText"
@@ -258,6 +247,13 @@
 
     <!-- Agent Pool Panel -->
     <AgentPoolPanel />
+
+    <!-- Command Palette -->
+    <CommandPalette
+      :visible="showCommands"
+      @close="showCommands = false"
+      @select="handleCommandSelect"
+    />
   </div>
 </template>
 
@@ -274,6 +270,7 @@ import SkillPanel from './SkillPanel.vue'
 import AgentTrace from './AgentTrace.vue'
 import ModelSettings from './ModelSettings.vue'
 import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
+import CommandPalette from '@/components/CommandPalette.vue'
 
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()
@@ -284,6 +281,7 @@ const modelsDevStore = useModelsDevStore()
 const inputText = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
+const showCommands = ref(false)
 const showScrollButton = ref(false)
 const showModelSettings = ref(false)
 
@@ -295,16 +293,6 @@ const bootSequence = [
   'Calibrating Lightsaber Matrix...',
   'System online. Awaiting input.'
 ]
-
-// Quick commands
-const quickCommands = computed(() =>
-  SLASH_COMMANDS.map(cmd => ({
-    icon: cmd.icon,
-    title: cmd.name,
-    desc: cmd.description,
-    text: cmd.name + ' '
-  }))
-)
 
 // Computed
 const currentModelName = computed(() => {
@@ -350,11 +338,11 @@ function showSessionMenu(session: any) {
 }
 
 // Actions
-function executeCommand(cmd: typeof quickCommands.value[0]) {
+function handleCommandSelect(cmd: typeof SLASH_COMMANDS[0]) {
   if (!store.currentSession) {
     store.createSession()
   }
-  inputText.value = cmd.text
+  inputText.value = cmd.name + ' '
   nextTick(() => {
     inputRef.value?.focus()
   })

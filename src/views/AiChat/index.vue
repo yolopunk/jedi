@@ -267,6 +267,7 @@ import { useAiChatStore } from '@/stores/aiChat'
 import { useSkillsStore } from '@/stores/skills'
 import { useAgentStore } from '@/stores/agent'
 import { useModelsDevStore } from '@/stores/modelsDev'
+import { SLASH_COMMANDS } from '@/agent/slashCommands'
 import { sharedMd, renderSafe } from '@/utils/markdown'
 import SkillPanel from './SkillPanel.vue'
 import AgentTrace from './AgentTrace.vue'
@@ -295,12 +296,14 @@ const bootSequence = [
 ]
 
 // Quick commands
-const quickCommands = ref([
-  { icon: '🧠', title: 'Explain Concept', desc: 'Teach me something new', text: 'Please explain this concept in detail: ' },
-  { icon: '⚡', title: 'Write Code', desc: 'Generate implementation', text: 'Help me write code for: ' },
-  { icon: '📝', title: 'Summarize', desc: 'Condense information', text: 'Summarize the following content:\n\n' },
-  { icon: '💡', title: 'Brainstorm', desc: 'Generate ideas', text: 'Help me brainstorm ideas for: ' },
-])
+const quickCommands = computed(() =>
+  SLASH_COMMANDS.map(cmd => ({
+    icon: cmd.icon,
+    title: cmd.name,
+    desc: cmd.description,
+    text: cmd.name + ' '
+  }))
+)
 
 // Computed
 const currentModelName = computed(() => {

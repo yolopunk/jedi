@@ -255,6 +255,9 @@
 
     <!-- Model Settings Dialog -->
     <ModelSettings v-model="showModelSettings" />
+
+    <!-- Agent Pool Panel -->
+    <AgentPoolPanel />
   </div>
 </template>
 
@@ -268,6 +271,7 @@ import { sharedMd, renderSafe } from '@/utils/markdown'
 import SkillPanel from './SkillPanel.vue'
 import AgentTrace from './AgentTrace.vue'
 import ModelSettings from './ModelSettings.vue'
+import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
 
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()

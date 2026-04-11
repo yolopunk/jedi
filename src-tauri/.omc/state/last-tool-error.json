@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"git add src-tauri/src/agent/mod.rs src-tauri/src/agent/pool.rs src-tauri/src/api/ai_chat/mod.rs && git commit -m \\\"$(cat <<'EOF'\\nfix(rust): resolve compiler warnings\\n\\n- Remove unused re...",
+  "error": "Exit code 128\nwarning: could not open directory 'src-tauri/src-tauri/src/': No such file or directory\nfatal: pathspec 'src-tauri/src/agent/mod.rs' did not match any files",
+  "timestamp": "2026-04-11T08:47:46.009Z",
+  "retry_count": 1
+}

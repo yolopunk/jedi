@@ -273,7 +273,13 @@ fn parse_provider(s: &str) -> Result<ModelProvider, String> {
   match s.to_lowercase().as_str() {
     "openai" | "open_ai" => Ok(ModelProvider::OpenAi),
     "anthropic" => Ok(ModelProvider::Anthropic),
+    "google" => Ok(ModelProvider::Google),
     "ollama" => Ok(ModelProvider::Ollama),
+    "cohere" => Ok(ModelProvider::Cohere),
+    "deepseek" => Ok(ModelProvider::DeepSeek),
+    "moonshot" => Ok(ModelProvider::Moonshot),
+    "zhipuai" | "zhipu" => Ok(ModelProvider::ZhipuAI),
+    "minimax" => Ok(ModelProvider::MiniMax),
     s if s.starts_with("custom:") => {
       let name = s.strip_prefix("custom:").unwrap_or_default().to_string();
       if name.is_empty() {

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1775537844346,
+  "lastScanned": 1775897858521,
   "projectRoot": "/Users/cynosure/workspace/github/jedi",
   "techStack": {
     "languages": [
@@ -76,7 +76,7 @@
       "path": "dist",
       "purpose": "Distribution/build output",
       "fileCount": 6,
-      "lastAccessed": 1775537843970,
+      "lastAccessed": 1775897858025,
       "keyFiles": [
         "1Capture_2026-03-24_18.01.27.png",
         "back.png",
@@ -89,14 +89,14 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 0,
-      "lastAccessed": 1775537843971,
+      "lastAccessed": 1775897858494,
       "keyFiles": []
     },
     "logs": {
       "path": "logs",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1775537844335,
+      "lastAccessed": 1775897858496,
       "keyFiles": [
         "app.log.2026-03-07"
       ]
@@ -105,7 +105,7 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 5,
-      "lastAccessed": 1775537844337,
+      "lastAccessed": 1775897858508,
       "keyFiles": [
         "1Capture_2026-03-24_18.01.27.png",
         "back.png",
@@ -117,7 +117,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 2,
-      "lastAccessed": 1775537844338,
+      "lastAccessed": 1775897858509,
       "keyFiles": [
         "free-port.js",
         "release.js"
@@ -127,7 +127,7 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 4,
-      "lastAccessed": 1775537844338,
+      "lastAccessed": 1775897858510,
       "keyFiles": [
         "App.vue",
         "main.ts",
@@ -139,7 +139,7 @@
       "path": "src-tauri",
       "purpose": null,
       "fileCount": 6,
-      "lastAccessed": 1775537844339,
+      "lastAccessed": 1775897858512,
       "keyFiles": [
         "Cargo.lock",
         "Cargo.toml",
@@ -152,17 +152,17 @@
       "path": "dist/assets",
       "purpose": "Static assets",
       "fileCount": 2,
-      "lastAccessed": 1775537844341,
+      "lastAccessed": 1775897858513,
       "keyFiles": [
-        "index-Bxg3Nwmr.css",
-        "index-tRi8tcI6.js"
+        "index-BJQxXjQ8.css",
+        "index-DHEcWX9z.js"
       ]
     },
     "src/api": {
       "path": "src/api",
       "purpose": "API routes",
-      "fileCount": 7,
-      "lastAccessed": 1775537844342,
+      "fileCount": 8,
+      "lastAccessed": 1775897858517,
       "keyFiles": [
         "ai-chat.ts",
         "app.ts",
@@ -173,7 +173,7 @@
       "path": "src/assets",
       "purpose": "Static assets",
       "fileCount": 3,
-      "lastAccessed": 1775537844343,
+      "lastAccessed": 1775897858518,
       "keyFiles": [
         "fonts.css",
         "style.css",
@@ -183,23 +183,37 @@
     "src/components": {
       "path": "src/components",
       "purpose": "UI components",
-      "fileCount": 0,
-      "lastAccessed": 1775537844343,
-      "keyFiles": []
+      "fileCount": 1,
+      "lastAccessed": 1775897858518,
+      "keyFiles": [
+        "CommandPalette.vue"
+      ]
     }
   },
   "hotPaths": [
     {
-      "path": "src/stores/aiChat.ts",
-      "accessCount": 71,
-      "lastAccessed": 1775567594786,
+      "path": "src/views/AiChat/index.vue",
+      "accessCount": 160,
+      "lastAccessed": 1775923032053,
       "type": "file"
     },
     {
-      "path": "src/views/AiChat/index.vue",
-      "accessCount": 56,
-      "lastAccessed": 1775567583848,
+      "path": "src/views/AiChat/ModelSettings.vue",
+      "accessCount": 99,
+      "lastAccessed": 1775922874876,
       "type": "file"
+    },
+    {
+      "path": "src/stores/aiChat.ts",
+      "accessCount": 90,
+      "lastAccessed": 1775923018763,
+      "type": "file"
+    },
+    {
+      "path": "src",
+      "accessCount": 49,
+      "lastAccessed": 1775923000948,
+      "type": "directory"
     },
     {
       "path": "src/views/AiChat/ProviderForm.vue",
@@ -208,16 +222,16 @@
       "type": "file"
     },
     {
-      "path": "src/views/AiChat/ModelSettings.vue",
-      "accessCount": 38,
-      "lastAccessed": 1775570342542,
-      "type": "file"
+      "path": "",
+      "accessCount": 33,
+      "lastAccessed": 1775903058126,
+      "type": "directory"
     },
     {
-      "path": "src",
-      "accessCount": 33,
-      "lastAccessed": 1775567582621,
-      "type": "directory"
+      "path": "src-tauri/src/main.rs",
+      "accessCount": 27,
+      "lastAccessed": 1775785882640,
+      "type": "file"
     },
     {
       "path": "src/views/AiChat/ModelsBrowser.vue",
@@ -226,33 +240,21 @@
       "type": "file"
     },
     {
-      "path": "",
-      "accessCount": 23,
-      "lastAccessed": 1775567591744,
-      "type": "directory"
+      "path": "src-tauri/src/api/ai_chat/models_dev.rs",
+      "accessCount": 16,
+      "lastAccessed": 1775899180137,
+      "type": "file"
     },
     {
       "path": "src/views/AiChat/ModelSelector.vue",
-      "accessCount": 15,
-      "lastAccessed": 1775568154365,
-      "type": "file"
-    },
-    {
-      "path": "src-tauri/src/api/ai_chat/models_dev.rs",
-      "accessCount": 13,
-      "lastAccessed": 1775566446938,
-      "type": "file"
-    },
-    {
-      "path": "src-tauri/src/main.rs",
-      "accessCount": 13,
-      "lastAccessed": 1775570063598,
+      "accessCount": 16,
+      "lastAccessed": 1775905341245,
       "type": "file"
     },
     {
       "path": "src/api/ai-chat.ts",
-      "accessCount": 12,
-      "lastAccessed": 1775566411648,
+      "accessCount": 13,
+      "lastAccessed": 1775905317852,
       "type": "file"
     },
     {
@@ -268,15 +270,15 @@
       "type": "file"
     },
     {
-      "path": "src/components/layout/AppSidebar.vue",
-      "accessCount": 9,
-      "lastAccessed": 1775440310883,
+      "path": "src/components/dialogs/SettingsDialog.vue",
+      "accessCount": 11,
+      "lastAccessed": 1775786012285,
       "type": "file"
     },
     {
-      "path": "src/components/dialogs/SettingsDialog.vue",
-      "accessCount": 8,
-      "lastAccessed": 1775475968726,
+      "path": "src/components/layout/AppSidebar.vue",
+      "accessCount": 9,
+      "lastAccessed": 1775440310883,
       "type": "file"
     },
     {
@@ -286,9 +288,15 @@
       "type": "file"
     },
     {
+      "path": "src-tauri/src/utils/security/keyring.rs",
+      "accessCount": 8,
+      "lastAccessed": 1775903937765,
+      "type": "file"
+    },
+    {
       "path": "src/views/AiChat/ChatInput.vue",
-      "accessCount": 7,
-      "lastAccessed": 1775568079038,
+      "accessCount": 8,
+      "lastAccessed": 1775905341490,
       "type": "file"
     },
     {
@@ -310,15 +318,21 @@
       "type": "file"
     },
     {
-      "path": "src/views/hosts/HostsManager.vue",
-      "accessCount": 3,
-      "lastAccessed": 1775411332850,
+      "path": "src-tauri/src/api/ai_chat/security.rs",
+      "accessCount": 5,
+      "lastAccessed": 1775903912301,
       "type": "file"
     },
     {
       "path": "src/skills/registry.ts",
+      "accessCount": 4,
+      "lastAccessed": 1775785551573,
+      "type": "file"
+    },
+    {
+      "path": "src/views/hosts/HostsManager.vue",
       "accessCount": 3,
-      "lastAccessed": 1775469089703,
+      "lastAccessed": 1775411332850,
       "type": "file"
     },
     {
@@ -334,15 +348,21 @@
       "type": "file"
     },
     {
-      "path": "src-tauri/src/api/ai_chat/models.rs",
-      "accessCount": 2,
-      "lastAccessed": 1775398701923,
+      "path": "src-tauri/Cargo.toml",
+      "accessCount": 3,
+      "lastAccessed": 1775749944191,
       "type": "file"
     },
     {
-      "path": "src-tauri/Cargo.toml",
+      "path": "src-tauri",
+      "accessCount": 3,
+      "lastAccessed": 1775899162222,
+      "type": "directory"
+    },
+    {
+      "path": "src-tauri/src/api/ai_chat/models.rs",
       "accessCount": 2,
-      "lastAccessed": 1775410953402,
+      "lastAccessed": 1775398701923,
       "type": "file"
     },
     {
@@ -370,10 +390,10 @@
       "type": "file"
     },
     {
-      "path": "src-tauri",
+      "path": "src/skills/types.ts",
       "accessCount": 2,
-      "lastAccessed": 1775566440498,
-      "type": "directory"
+      "lastAccessed": 1775785558691,
+      "type": "file"
     },
     {
       "path": "src/api/app.ts",
@@ -436,18 +456,6 @@
       "type": "file"
     },
     {
-      "path": "src-tauri/src/utils/security/keyring.rs",
-      "accessCount": 1,
-      "lastAccessed": 1775398993277,
-      "type": "file"
-    },
-    {
-      "path": "src-tauri/src/api/ai_chat/security.rs",
-      "accessCount": 1,
-      "lastAccessed": 1775398993966,
-      "type": "file"
-    },
-    {
       "path": "src-tauri/src/utils/security/audit_log.rs",
       "accessCount": 1,
       "lastAccessed": 1775398994945,
@@ -475,12 +483,6 @@
       "path": "src/views/podcast/PodcastManager.vue",
       "accessCount": 1,
       "lastAccessed": 1775407171967,
-      "type": "file"
-    },
-    {
-      "path": "src/skills/types.ts",
-      "accessCount": 1,
-      "lastAccessed": 1775468858341,
       "type": "file"
     },
     {

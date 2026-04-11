@@ -138,7 +138,7 @@
                     <div class="message-meta">
                       <span class="meta-item model-tag">
                         <span class="meta-label">MODEL:</span>
-                        <span class="meta-value">{{ message.model || 'N/A' }}</span>
+                        <span class="meta-value">{{ store.currentSession?.model || 'N/A' }}</span>
                       </span>
                       <span class="meta-item copy-btn" @click="handleCopyMessage(message.content)">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -466,10 +466,6 @@ async function handleSend() {
 }
 
 function handleCopyMessage(content: string) {
-  navigator.clipboard.writeText(content)
-}
-
-function copyMessage(content: string) {
   navigator.clipboard.writeText(content)
 }
 

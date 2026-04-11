@@ -15,8 +15,20 @@ pub enum ModelProvider {
   OpenAi,
   /// Anthropic
   Anthropic,
-  /// Ollama (本地，不需要 API Key)
+  /// Google (Gemini)
+  Google,
+  /// Ollama (本地)
   Ollama,
+  /// Cohere
+  Cohere,
+  /// DeepSeek
+  DeepSeek,
+  /// Moonshot
+  Moonshot,
+  /// ZhipuAI
+  ZhipuAI,
+  /// MiniMax
+  MiniMax,
   /// 自定义提供商
   Custom(String),
 }
@@ -26,7 +38,13 @@ impl fmt::Display for ModelProvider {
     match self {
       ModelProvider::OpenAi => write!(f, "openai"),
       ModelProvider::Anthropic => write!(f, "anthropic"),
+      ModelProvider::Google => write!(f, "google"),
       ModelProvider::Ollama => write!(f, "ollama"),
+      ModelProvider::Cohere => write!(f, "cohere"),
+      ModelProvider::DeepSeek => write!(f, "deepseek"),
+      ModelProvider::Moonshot => write!(f, "moonshot"),
+      ModelProvider::ZhipuAI => write!(f, "zhipuai"),
+      ModelProvider::MiniMax => write!(f, "minimax"),
       ModelProvider::Custom(name) => write!(f, "custom:{}", name),
     }
   }
@@ -253,7 +271,13 @@ impl KeyringManager {
     let known_providers = vec![
       ModelProvider::OpenAi,
       ModelProvider::Anthropic,
+      ModelProvider::Google,
       ModelProvider::Ollama,
+      ModelProvider::Cohere,
+      ModelProvider::DeepSeek,
+      ModelProvider::Moonshot,
+      ModelProvider::ZhipuAI,
+      ModelProvider::MiniMax,
     ];
 
     let mut result = Vec::new();
@@ -317,7 +341,13 @@ mod tests {
   fn test_model_provider_display() {
     assert_eq!(ModelProvider::OpenAi.to_string(), "openai");
     assert_eq!(ModelProvider::Anthropic.to_string(), "anthropic");
+    assert_eq!(ModelProvider::Google.to_string(), "google");
     assert_eq!(ModelProvider::Ollama.to_string(), "ollama");
+    assert_eq!(ModelProvider::Cohere.to_string(), "cohere");
+    assert_eq!(ModelProvider::DeepSeek.to_string(), "deepseek");
+    assert_eq!(ModelProvider::Moonshot.to_string(), "moonshot");
+    assert_eq!(ModelProvider::ZhipuAI.to_string(), "zhipuai");
+    assert_eq!(ModelProvider::MiniMax.to_string(), "minimax");
     assert_eq!(
       ModelProvider::Custom("my-provider".to_string()).to_string(),
       "custom:my-provider"

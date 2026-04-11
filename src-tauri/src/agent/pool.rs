@@ -46,7 +46,7 @@ impl AgentPool {
             .collect()
     }
 
-    pub fn schedule(&self, spec: TaskSpec) -> Result<String, String> {
+    pub fn schedule(&self, _spec: TaskSpec) -> Result<String, String> {
         let workers = self.workers.blocking_lock();
 
         // Check if we have room for more workers

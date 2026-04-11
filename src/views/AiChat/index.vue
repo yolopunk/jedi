@@ -11,16 +11,12 @@
 
       <!-- 主聊天区域 -->
       <div class="chat-console-area">
-        <!-- 顶部状态栏 -->
-        <div class="console-header">
-          <div class="header-left">
-            <div class="terminal-prompt">
-              <span class="prompt-user">jedi</span>
-              <span class="prompt-separator">@</span>
-              <span class="prompt-host">holocron</span>
-              <span class="prompt-path">~/chat</span>
-              <span class="prompt-cursor">▶</span>
-            </div>
+        <!-- Hologram Header -->
+        <div class="chat-header">
+          <div class="header-logo">
+            <span class="menu-icon">☰</span>
+            <span class="holocron">HOLOCRON</span>
+            <span class="path">/chat</span>
           </div>
           <div class="header-right">
             <div class="status-badge">
@@ -275,6 +271,7 @@ import { useAiChatStore } from '@/stores/aiChat'
 import { useSkillsStore } from '@/stores/skills'
 import { useAgentStore } from '@/stores/agent'
 import { useModelsDevStore } from '@/stores/modelsDev'
+import { useProviderConfigStore } from '@/stores/providerConfig'
 import { setOnWorkerCompleteCallback } from '@/agent/useAgentPool'
 import { SLASH_COMMANDS, formatCommandPrompt } from '@/agent/slashCommands'
 import { sharedMd, renderSafe } from '@/utils/markdown'
@@ -289,6 +286,7 @@ const store = useAiChatStore()
 const skillsStore = useSkillsStore()
 const agentStore = useAgentStore()
 const modelsDevStore = useModelsDevStore()
+const providerConfigStore = useProviderConfigStore()
 
 // UI State
 const inputText = ref('')
@@ -314,7 +312,7 @@ function selectModelFromDropdown(model: any) {
   showModelDropdown.value = false
 }
 
-function handleAttachmentSelect(action: string) {
+function handleAttachmentSelect(_action: string) {
   showAttachmentMenu.value = false
   // Handle: attachment, skills, web-search - can be implemented later
 }
@@ -449,10 +447,6 @@ async function handleSend() {
       console.error('Failed to send message:', e)
     }
   }
-}
-
-function handleStop() {
-  console.log('Stop generation')
 }
 
 function handleCopyMessage(content: string) {

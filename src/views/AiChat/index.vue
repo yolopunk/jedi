@@ -27,9 +27,9 @@
               <span class="status-dot"></span>
               <span class="status-text">{{ connectionStatus }}</span>
             </div>
-            <div class="model-display" @click="showModelSettings = true">
-              <span class="model-label">MODEL:</span>
-              <span class="model-name">{{ currentModelName }}</span>
+            <div class="provider-display" @click="showModelSettings = true">
+              <span class="provider-label">PROVIDER:</span>
+              <span class="provider-name">{{ currentProviderName }}</span>
             </div>
           </div>
         </div>
@@ -119,7 +119,7 @@
                   <div class="message-content ai-message">
                     <div class="message-header">
                       <span class="message-role">&lt;R2D2_OUTPUT&gt;</span>
-                      <span class="message-model">[{{ currentModelName }}]</span>
+                      <span class="message-model">[{{ currentProviderName }}]</span>
                     </div>
                     <div class="message-body">
                       <div class="markdown-body" v-html="renderMessage(message.content)"></div>
@@ -293,8 +293,8 @@ const bootSequence = [
 ]
 
 // Computed
-const currentModelName = computed(() => {
-  return modelsDevStore.selectedModel?.name || 'SELECT MODEL'
+const currentProviderName = computed(() => {
+  return modelsDevStore.selectedProvider?.name?.toUpperCase() || 'SELECT PROVIDER'
 })
 const connectionStatus = computed(() => {
   if (modelsDevStore.selectedModel) return 'CONNECTED'

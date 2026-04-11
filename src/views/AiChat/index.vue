@@ -152,10 +152,34 @@
           </div>
         </div>
 
-        <!-- 输入区域 - AI Chat 风格 -->
+        <!-- 输入区域 - 全息终端风格 -->
         <div class="input-console">
-          <div class="input-row">
-            <!-- Left toolbar: / and + buttons -->
+          <!-- 输入框 -->
+          <div class="input-wrapper">
+            <textarea
+              ref="inputRef"
+              v-model="inputText"
+              class="console-input"
+              :placeholder="$t('chat.commandPlaceholder')"
+              rows="1"
+              @keydown="handleKeydown"
+              @input="autoResize"
+            ></textarea>
+            <CommandPalette
+              :visible="showCommands"
+              @select="handleCommandSelect"
+              @close="showCommands = false"
+            />
+            <AttachmentMenu
+              v-if="showAttachmentMenu"
+              @close="showAttachmentMenu = false"
+              @select="handleAttachmentSelect"
+            />
+          </div>
+
+          <!-- 底部操作栏 -->
+          <div class="input-actions">
+            <!-- 左下角: 工具栏 -->
             <div class="input-toolbar">
               <button class="toolbar-btn" @click="showCommands = !showCommands" title="Commands (/)">
                 <span>/</span>
@@ -165,61 +189,38 @@
               </button>
             </div>
 
-            <AttachmentMenu
-              v-if="showAttachmentMenu"
-              @close="showAttachmentMenu = false"
-              @select="handleAttachmentSelect"
-            />
-
-            <!-- Textarea wrapper -->
-            <div class="input-wrapper">
-              <textarea
-                ref="inputRef"
-                v-model="inputText"
-                class="console-input"
-                :placeholder="$t('chat.commandPlaceholder')"
-                rows="1"
-                @keydown="handleKeydown"
-                @input="autoResize"
-              ></textarea>
-              <CommandPalette
-                :visible="showCommands"
-                @select="handleCommandSelect"
-                @close="showCommands = false"
-              />
-            </div>
-
-            <!-- Right: Model dropdown -->
-            <div class="model-selector">
-              <button class="model-dropdown-btn" @click="showModelDropdown = !showModelDropdown">
-                <span class="model-dropdown-name">{{ currentModelName }}</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                  <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2"/>
-                </svg>
-              </button>
-              <div v-if="showModelDropdown" class="model-dropdown-menu">
-                <div
-                  v-for="model in selectedProviderModels"
-                  :key="model.id"
-                  class="model-dropdown-item"
-                  :class="{ selected: model.id === modelsDevStore.selectedModelId }"
-                  @click="selectModelFromDropdown(model)"
-                >
-                  <span class="model-item-name">{{ model.name }}</span>
-                  <span class="model-item-context">{{ formatContextShort(model.limit?.context) }}</span>
+            <!-- 右下角: Model选择 + 发送 -->
+            <div class="input-right">
+              <div class="model-selector">
+                <button class="model-dropdown-btn" @click="showModelDropdown = !showModelDropdown">
+                  <span class="model-dropdown-name">{{ currentModelName }}</span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </button>
+                <div v-if="showModelDropdown" class="model-dropdown-menu">
+                  <div
+                    v-for="model in selectedProviderModels"
+                    :key="model.id"
+                    class="model-dropdown-item"
+                    :class="{ selected: model.id === modelsDevStore.selectedModelId }"
+                    @click="selectModelFromDropdown(model)"
+                  >
+                    <span class="model-item-name">{{ model.name }}</span>
+                    <span class="model-item-context">{{ formatContextShort(model.limit?.context) }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Send button -->
-            <button
-              class="send-btn"
-              :class="{ disabled: !inputText.trim() || store.isLoading }"
-              @click="handleSend"
-              :disabled="!inputText.trim() || store.isLoading"
-            >
-              <span class="send-icon">↑</span>
-            </button>
+              <button
+                class="send-btn"
+                :class="{ disabled: !inputText.trim() || store.isLoading }"
+                @click="handleSend"
+                :disabled="!inputText.trim() || store.isLoading"
+              >
+                <span class="send-icon">↑</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

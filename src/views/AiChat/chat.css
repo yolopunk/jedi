@@ -764,6 +764,60 @@
   background: rgba(96, 165, 250, 0.1);
 }
 
+/* Hover 元数据 */
+.message-meta {
+  display: none;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+  opacity: 0.6;
+  font-size: 11px;
+  color: var(--hologram-text-muted);
+  transition: opacity 0.15s;
+}
+
+.console-message:hover .message-meta {
+  display: flex;
+  opacity: 1;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.meta-item:hover {
+  background: rgba(0, 212, 255, 0.15);
+  border-color: rgba(0, 212, 255, 0.3);
+  color: var(--hologram-primary);
+}
+
+.model-tag .meta-label {
+  color: var(--hologram-text-muted);
+}
+
+.model-tag .meta-value {
+  color: var(--hologram-primary);
+  font-weight: 600;
+}
+
+.meta-item.time {
+  cursor: default;
+}
+
+.meta-item.time:hover {
+  background: rgba(0, 212, 255, 0.08);
+  border-color: rgba(0, 212, 255, 0.15);
+  color: var(--hologram-text-muted);
+}
+
 .action-icon {
   font-size: 11px;
 }

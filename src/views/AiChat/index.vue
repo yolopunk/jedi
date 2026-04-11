@@ -134,6 +134,28 @@
                         <span class="action-label">REGEN</span>
                       </button>
                     </div>
+                    <!-- Hover 元数据 -->
+                    <div class="message-meta">
+                      <span class="meta-item model-tag">
+                        <span class="meta-label">MODEL:</span>
+                        <span class="meta-value">{{ message.model || 'N/A' }}</span>
+                      </span>
+                      <span class="meta-item copy-btn" @click="copyMessage(message.content)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                          <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        复制
+                      </span>
+                      <span class="meta-item retry-btn" @click="retryMessage(message)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                          <path d="M1 4v6h6M23 20v-6h-6" stroke="currentColor" stroke-width="2"/>
+                          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        重试
+                      </span>
+                      <span class="meta-item time">{{ formatTimestamp(message.timestamp) }}</span>
+                    </div>
                   </div>
                 </template>
               </div>
@@ -452,6 +474,15 @@ async function handleSend() {
 
 function handleCopyMessage(content: string) {
   navigator.clipboard.writeText(content)
+}
+
+function copyMessage(content: string) {
+  navigator.clipboard.writeText(content)
+}
+
+function retryMessage(message: any) {
+  // Re-send the message - implement based on store structure
+  store.sendMessage(message.content)
 }
 
 function handleRegenerate() {

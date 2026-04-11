@@ -169,6 +169,12 @@
               </button>
             </div>
 
+            <AttachmentMenu
+              v-if="showAttachmentMenu"
+              @close="showAttachmentMenu = false"
+              @select="handleAttachmentSelect"
+            />
+
             <!-- Textarea wrapper -->
             <div class="input-wrapper">
               <textarea
@@ -277,6 +283,7 @@ import AgentTrace from './AgentTrace.vue'
 import ModelSettings from './ModelSettings.vue'
 import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
 import CommandPalette from '@/components/CommandPalette.vue'
+import AttachmentMenu from '@/components/AttachmentMenu.vue'
 
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()

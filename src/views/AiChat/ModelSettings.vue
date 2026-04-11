@@ -66,6 +66,12 @@
                 <span class="pill-count">{{ getCategoryCount(cat.id) }}</span>
               </button>
             </div>
+            <input
+              v-model="providerSearch"
+              type="text"
+              class="provider-search"
+              placeholder="Search providers..."
+            />
           </div>
 
           <div class="providers-scroll">
@@ -351,6 +357,7 @@ const modelsDevStore = useModelsDevStore()
 const providerConfigStore = useProviderConfigStore()
 
 const activeCategory = ref<'popular' | 'other' | 'custom'>('popular')
+const providerSearch = ref('')
 const selectedProvider = ref<ModelsDevProvider | null>(null)
 const configApiKey = ref('')
 const configBaseUrl = ref('')
@@ -379,14 +386,16 @@ const CUSTOM_PROVIDER_ENTRY: ModelsDevProvider = {
 }
 
 const filteredProviders = computed(() => {
+  let providers: ModelsDevProvider[]
   switch (activeCategory.value) {
-    case 'popular': return modelsDevStore.popularProviders
-    case 'other': return modelsDevStore.otherProviders
-    case 'custom':
-      // Show custom providers + Add Custom Provider entry
-      return [...modelsDevStore.customProviders, CUSTOM_PROVIDER_ENTRY]
+    case 'popular': providers = modelsDevStore.popularProviders; break
+    case 'other': providers = modelsDevStore.otherProviders; break
+    case 'custom': providers = [...modelsDevStore.customProviders, CUSTOM_PROVIDER_ENTRY]; break
     default: return []
   }
+  if (!providerSearch.value) return providers
+  const q = providerSearch.value.toLowerCase()
+  return providers.filter(p => p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q))
 })
 
 const selectedProviderModels = computed(() => {
@@ -677,6 +686,27 @@ function isUrl(str: string): boolean {
 .category-pills {
   display: flex;
   gap: 6px;
+}
+
+.provider-search {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 12px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.provider-search:focus {
+  border-color: rgba(0, 255, 255, 0.3);
+}
+
+.provider-search::placeholder {
+  color: rgba(255, 255, 255, 0.3);
 }
 
 .pill {

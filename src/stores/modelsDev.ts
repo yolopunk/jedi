@@ -14,7 +14,7 @@ const POPULAR_PROVIDER_IDS = new Set([
   'google',
   'deepseek',
   'moonshot',
-  'zhipu',
+  'zhipuai',
   'minimax',
 ])
 

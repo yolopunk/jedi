@@ -227,25 +227,23 @@
                   </v-btn>
                 </template>
               </v-tooltip>
-              <v-tooltip text="Remove saved credentials">
-                <template v-slot:activator="{ props }">
-                  <v-btn
-                    v-if="isCurrentProviderConfigured"
-                    v-bind="props"
-                    size="small"
-                    variant="outlined"
-                    color="error"
-                    @click="deleteKey"
-                  >
-                    <v-icon icon="mdi-delete" start size="14" />
-                  </v-btn>
-                </template>
-              </v-tooltip>
+              <button
+                v-if="isCurrentProviderConfigured"
+                class="delete-btn"
+                title="Remove saved credentials"
+                @click="deleteKey"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                Remove Key
+              </button>
               <div class="spacer"></div>
               <v-btn size="small" variant="text" @click="selectedProvider = null">
                 Cancel
               </v-btn>
               <v-btn
+                v-if="!isCurrentProviderConfigured"
                 size="small"
                 color="primary"
                 :disabled="!configApiKey"
@@ -356,7 +354,7 @@ defineEmits<{
 const modelsDevStore = useModelsDevStore()
 const providerConfigStore = useProviderConfigStore()
 
-const activeCategory = ref<'popular' | 'other' | 'custom'>('popular')
+const activeCategory = ref<'popular' | 'configured' | 'other' | 'custom'>('popular')
 const providerSearch = ref('')
 const selectedProvider = ref<ModelsDevProvider | null>(null)
 const configApiKey = ref('')
@@ -370,6 +368,7 @@ const testResult = ref<{ type: 'success' | 'error'; message: string } | null>(nu
 
 const categories = [
   { id: 'popular' as const, label: 'Popular' },
+  { id: 'configured' as const, label: 'Configured' },
   { id: 'other' as const, label: 'Other' },
   { id: 'custom' as const, label: 'Custom' },
 ]
@@ -389,6 +388,7 @@ const filteredProviders = computed(() => {
   let providers: ModelsDevProvider[]
   switch (activeCategory.value) {
     case 'popular': providers = modelsDevStore.popularProviders; break
+    case 'configured': providers = [...modelsDevStore.popularProviders, ...modelsDevStore.otherProviders].filter(p => isConfigured(p.id)); break
     case 'other': providers = modelsDevStore.otherProviders; break
     case 'custom': providers = [...modelsDevStore.customProviders, CUSTOM_PROVIDER_ENTRY]; break
     default: return []
@@ -418,11 +418,13 @@ const isCurrentProviderConfigured = computed(() =>
     : false
 )
 
-function getCategoryCount(category: 'popular' | 'other' | 'custom') {
+function getCategoryCount(category: string) {
   switch (category) {
     case 'popular': return modelsDevStore.popularProviders.length
+    case 'configured': return modelsDevStore.popularProviders.filter(p => isConfigured(p.id)).length + modelsDevStore.otherProviders.filter(p => isConfigured(p.id)).length
     case 'other': return modelsDevStore.otherProviders.length
     case 'custom': return modelsDevStore.customProviders.length + 1 // +1 for Add Custom Provider entry
+    default: return 0
   }
 }
 
@@ -1059,6 +1061,29 @@ function isUrl(str: string): boolean {
   flex: 1;
 }
 
+.delete-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 6px;
+  color: #ff6b6b;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.delete-btn:hover {
+  background: rgba(255, 107, 107, 0.15);
+  border-color: rgba(255, 107, 107, 0.5);
+}
+
+.delete-btn svg {
+  flex-shrink: 0;
+}
+
 /* Test Result */
 .test-result {
   display: flex;
@@ -1240,8 +1265,8 @@ function isUrl(str: string): boolean {
 .badge.tools {
   width: 18px;
   height: 18px;
-  background: rgba(59, 130, 246, 0.2);
-  color: #3b82f6;
+  background: rgba(0, 212, 255, 0.2);
+  color: #00d4ff;
 }
 
 .model-cost {

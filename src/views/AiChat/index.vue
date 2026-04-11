@@ -296,7 +296,11 @@ const bootSequence = [
 const currentModelName = computed(() => {
   return modelsDevStore.selectedModel?.name || 'SELECT MODEL'
 })
-const connectionStatus = computed(() => modelsDevStore.allProviders.length > 0 ? 'CONNECTED' : 'OFFLINE')
+const connectionStatus = computed(() => {
+  if (modelsDevStore.selectedModel) return 'CONNECTED'
+  if (modelsDevStore.allProviders.length === 0) return 'OFFLINE'
+  return 'NO MODEL'
+})
 
 const displayMessages = computed(() => {
   return store.currentSession?.messages || []
@@ -444,7 +448,10 @@ watch(() => store.streamingContent, () => {
 
 onMounted(async () => {
   skillsStore.loadFromStorage()
-  await modelsDevStore.fetchProviders()
+  await Promise.all([
+    modelsDevStore.fetchProviders(),
+    providerConfigStore.loadConfiguredProviders()
+  ])
   scrollToBottom()
 
   // Set up worker completion callback

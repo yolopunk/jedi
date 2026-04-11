@@ -385,7 +385,11 @@ function showSessionMenu(session: any) {
 // Actions
 function handleCommandSelect(cmd: typeof SLASH_COMMANDS[0]) {
   if (!store.currentSession) {
-    store.createSession()
+    store.createSession(
+      '新对话',
+      modelsDevStore.selectedProviderId || 'openai',
+      modelsDevStore.selectedModelId || 'gpt-4o-mini'
+    )
   }
   inputText.value = cmd.name + ' '
   nextTick(() => {
@@ -394,7 +398,11 @@ function handleCommandSelect(cmd: typeof SLASH_COMMANDS[0]) {
 }
 
 function handleNewSession() {
-  store.createSession()
+  store.createSession(
+    '新对话',
+    modelsDevStore.selectedProviderId || 'openai',
+    modelsDevStore.selectedModelId || 'gpt-4o-mini'
+  )
   nextTick(() => {
     inputRef.value?.focus()
   })
@@ -426,6 +434,14 @@ async function handleSend() {
   } else {
     inputText.value = ''
     autoResize()
+    // Create session with selected provider/model if needed
+    if (!store.currentSession) {
+      await store.createSession(
+        '新对话',
+        modelsDevStore.selectedProviderId || 'openai',
+        modelsDevStore.selectedModelId || 'gpt-4o-mini'
+      )
+    }
     try {
       await store.sendMessage(content)
       scrollToBottom()

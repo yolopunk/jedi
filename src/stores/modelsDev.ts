@@ -13,10 +13,9 @@ const POPULAR_PROVIDER_IDS = new Set([
   'anthropic',
   'google',
   'deepseek',
-  'xai',
-  'mistral',
   'moonshot',
   'zhipu',
+  'minimax',
 ])
 
 export const useModelsDevStore = defineStore('modelsDev', () => {

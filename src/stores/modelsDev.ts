@@ -27,6 +27,8 @@ export const useModelsDevStore = defineStore('modelsDev', () => {
   // Selection state
   const selectedProviderId = ref<string | null>(null)
   const selectedModelId = ref<string | null>(null)
+  const lastSelectedProviderId = ref<string | null>(null)
+  const lastSelectedModelId = ref<string | null>(null)
 
   // Provider config store reference
   const providerConfigStore = useProviderConfigStore()
@@ -92,6 +94,16 @@ export const useModelsDevStore = defineStore('modelsDev', () => {
         const firstConfigured = allProviders.value.find(p => isProviderConfigured(p.id))
         selectedProviderId.value = firstConfigured?.id || allProviders.value[0]?.id || null
       }
+      loadPersistedSelection()
+      if (lastSelectedProviderId.value && !selectedProviderId.value) {
+        const provider = providersData.value[lastSelectedProviderId.value]
+        if (provider && providerConfigStore.isProviderConfigured(lastSelectedProviderId.value)) {
+          selectedProviderId.value = lastSelectedProviderId.value
+          if (lastSelectedModelId.value && provider.models[lastSelectedModelId.value]) {
+            selectedModelId.value = lastSelectedModelId.value
+          }
+        }
+      }
     } catch (e: any) {
       error.value = e.toString()
     } finally {
@@ -105,18 +117,41 @@ export const useModelsDevStore = defineStore('modelsDev', () => {
 
   function selectProvider(providerId: string): void {
     selectedProviderId.value = providerId
-    // Clear model selection when provider changes
+    lastSelectedProviderId.value = providerId
     selectedModelId.value = null
+    persistSelection()
   }
 
   function selectModel(modelId: string): void {
     selectedModelId.value = modelId
+    lastSelectedModelId.value = modelId
+    persistSelection()
   }
 
   function getProviderModels(providerId: string): ModelsDevModel[] {
     const provider = providersData.value[providerId]
     if (!provider) return []
     return Object.values(provider.models)
+  }
+
+  function persistSelection() {
+    localStorage.setItem('jedi-last-model', JSON.stringify({
+      providerId: lastSelectedProviderId.value,
+      modelId: lastSelectedModelId.value
+    }))
+  }
+
+  function loadPersistedSelection() {
+    try {
+      const saved = localStorage.getItem('jedi-last-model')
+      if (saved) {
+        const { providerId, modelId } = JSON.parse(saved)
+        lastSelectedProviderId.value = providerId
+        lastSelectedModelId.value = modelId
+      }
+    } catch (e) {
+      console.error('Failed to load last model selection:', e)
+    }
   }
 
   return {
@@ -126,6 +161,8 @@ export const useModelsDevStore = defineStore('modelsDev', () => {
     error,
     selectedProviderId,
     selectedModelId,
+    lastSelectedProviderId,
+    lastSelectedModelId,
 
     // Computed
     allProviders,

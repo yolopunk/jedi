@@ -156,19 +156,21 @@
           </div>
         </div>
 
-        <!-- 输入区域 - 终端风格 -->
+        <!-- 输入区域 - AI Chat 风格 -->
         <div class="input-console">
           <div class="input-row">
-            <div class="input-prompt">
-              <span class="prompt-user">jedi</span>
-              <span class="prompt-separator">:</span>
-              <span class="prompt-path">~</span>
-              <span class="prompt-cursor">█</span>
-            </div>
-            <div class="input-wrapper">
-              <button class="slash-btn" @click="showCommands = !showCommands" title="Commands">
+            <!-- Left toolbar: / and + buttons -->
+            <div class="input-toolbar">
+              <button class="toolbar-btn" @click="showCommands = !showCommands" title="Commands (/)">
                 <span>/</span>
               </button>
+              <button class="toolbar-btn" @click="showAttachmentMenu = !showAttachmentMenu" title="Add (attachment, skills, web search)">
+                <span>+</span>
+              </button>
+            </div>
+
+            <!-- Textarea wrapper -->
+            <div class="input-wrapper">
               <textarea
                 ref="inputRef"
                 v-model="inputText"
@@ -184,32 +186,38 @@
                 @close="showCommands = false"
               />
             </div>
-            <div class="input-actions">
-              <button
-                class="send-btn"
-                :class="{ disabled: !inputText.trim() || store.isLoading }"
-                @click="handleSend"
-                :disabled="!inputText.trim() || store.isLoading"
-              >
-                <span class="send-icon">⚡</span>
-                <span class="send-label">TRANSMIT</span>
+
+            <!-- Right: Model dropdown -->
+            <div class="model-selector">
+              <button class="model-dropdown-btn" @click="showModelDropdown = !showModelDropdown">
+                <span class="model-dropdown-name">{{ currentModelName }}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2"/>
+                </svg>
               </button>
-              <button
-                v-if="store.isLoading"
-                class="stop-btn"
-                @click="handleStop"
-              >
-                <span class="stop-icon">⬛</span>
-                <span class="stop-label">ABORT</span>
-              </button>
+              <div v-if="showModelDropdown" class="model-dropdown-menu">
+                <div
+                  v-for="model in selectedProviderModels"
+                  :key="model.id"
+                  class="model-dropdown-item"
+                  :class="{ selected: model.id === modelsDevStore.selectedModelId }"
+                  @click="selectModelFromDropdown(model)"
+                >
+                  <span class="model-item-name">{{ model.name }}</span>
+                  <span class="model-item-context">{{ formatContextShort(model.limit?.context) }}</span>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="input-footer">
-            <span class="footer-hint">Press ENTER to send, SHIFT+ENTER for new line</span>
-            <span class="footer-shortcuts">
-              <span class="shortcut">↑↓ History</span>
-              <span class="shortcut">Ctrl+C Stop</span>
-            </span>
+
+            <!-- Send button -->
+            <button
+              class="send-btn"
+              :class="{ disabled: !inputText.trim() || store.isLoading }"
+              @click="handleSend"
+              :disabled="!inputText.trim() || store.isLoading"
+            >
+              <span class="send-icon">↑</span>
+            </button>
           </div>
         </div>
       </div>
@@ -282,6 +290,34 @@ const inputRef = ref<HTMLTextAreaElement | null>(null)
 const showCommands = ref(false)
 const showScrollButton = ref(false)
 const showModelSettings = ref(false)
+const showAttachmentMenu = ref(false)
+const showModelDropdown = ref(false)
+
+// Computed
+const selectedProviderModels = computed(() => {
+  return modelsDevStore.selectedProviderModels
+})
+
+const currentModelName = computed(() => {
+  return modelsDevStore.selectedModel?.name || 'SELECT MODEL'
+})
+
+function selectModelFromDropdown(model: any) {
+  modelsDevStore.selectModel(model.id)
+  showModelDropdown.value = false
+}
+
+function handleAttachmentSelect(action: string) {
+  showAttachmentMenu.value = false
+  // Handle: attachment, skills, web-search - can be implemented later
+}
+
+function formatContextShort(len?: number): string {
+  if (!len) return 'N/A'
+  if (len >= 1000000) return `${(len / 1000000).toFixed(0)}M`
+  if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
+  return len.toString()
+}
 
 // Boot sequence
 const bootSequence = [

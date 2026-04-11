@@ -1647,6 +1647,7 @@
   cursor: pointer;
   transition: background 0.15s;
   margin-bottom: 2px;
+  box-sizing: border-box;
 }
 
 .model-dropdown-item:hover {

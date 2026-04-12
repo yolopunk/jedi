@@ -1,97 +1,82 @@
 <template>
   <div class="chat-input-wrapper">
     <div class="input-container">
-      <!-- Main Input Area -->
-      <div class="input-main">
+      <!-- Unified Input Bar -->
+      <div class="input-bar" :class="{ 'is-loading': isLoading }">
+        <!-- Attach Button -->
+        <v-btn
+          icon
+          variant="text"
+          size="small"
+          class="attach-btn"
+          :disabled="disabled || isLoading"
+          @click="showAttachMenu = !showAttachMenu"
+        >
+          <v-icon icon="mdi-plus" size="20" />
+          <v-menu
+            v-model="showAttachMenu"
+            activator="parent"
+            location="top start"
+          >
+            <v-list density="compact" min-width="160">
+              <v-list-item @click="$emit('attach-image')">
+                <template v-slot:prepend>
+                  <v-icon icon="mdi-image" size="18" />
+                </template>
+                <v-list-item-title>Attach Image</v-list-item-title>
+              </v-list-item>
+              <v-list-item @click="$emit('attach-file')">
+                <template v-slot:prepend>
+                  <v-icon icon="mdi-file-document" size="18" />
+                </template>
+                <v-list-item-title>Attach File</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-menu>
+        </v-btn>
+
+        <!-- Text Input -->
         <v-textarea
           ref="inputRef"
           v-model="inputText"
           :placeholder="placeholder"
           :disabled="disabled || isLoading"
           :rows="1"
-          :max-rows="8"
+          :max-rows="6"
           auto-grow
           hide-details
-          variant="solo"
+          variant="plain"
           class="chat-textarea"
           @keydown="handleKeydown"
           @paste="handlePaste"
+        />
+
+        <!-- Send / Stop Button -->
+        <v-btn
+          v-if="isLoading"
+          icon
+          variant="flat"
+          size="small"
+          color="error"
+          class="action-btn stop-btn"
+          @click="$emit('stop')"
         >
-          <template v-slot:prepend-inner>
-            <v-btn
-              icon
-              variant="text"
-              size="small"
-              class="attach-btn"
-              @click="showAttachMenu = !showAttachMenu"
-            >
-              <v-icon icon="mdi-plus" />
-              <v-menu
-                v-model="showAttachMenu"
-                activator="parent"
-                location="top"
-              >
-                <v-list density="compact">
-                  <v-list-item @click="$emit('attach-image')">
-                    <template v-slot:prepend>
-                      <v-icon icon="mdi-image" />
-                    </template>
-                    <v-list-item-title>Attach Image</v-list-item-title>
-                  </v-list-item>
-                  <v-list-item @click="$emit('attach-file')">
-                    <template v-slot:prepend>
-                      <v-icon icon="mdi-file-document" />
-                    </template>
-                    <v-list-item-title>Attach File</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-              </v-menu>
-            </v-btn>
-          </template>
-
-          <template v-slot:append-inner>
-            <div class="input-actions">
-              <v-btn
-                v-if="inputText.trim()"
-                icon
-                :color="canSend ? 'primary' : 'default'"
-                :disabled="!canSend"
-                size="small"
-                class="send-btn"
-                @click="handleSend"
-              >
-                <v-icon icon="mdi-send" size="20" />
-                <v-tooltip activator="parent" location="top">
-                  Send (Enter)
-                </v-tooltip>
-              </v-btn>
-              
-              <v-btn
-                v-else-if="isLoading"
-                icon
-                color="error"
-                size="small"
-                class="stop-btn"
-                @click="$emit('stop')"
-              >
-                <v-icon icon="mdi-stop" size="20" />
-                <v-tooltip activator="parent" location="top">
-                  Stop Generation
-                </v-tooltip>
-              </v-btn>
-
-              <v-btn
-                v-else
-                icon
-                disabled
-                size="small"
-                class="send-btn disabled"
-              >
-                <v-icon icon="mdi-send" size="20" />
-              </v-btn>
-            </div>
-          </template>
-        </v-textarea>
+          <v-icon icon="mdi-stop" size="20" />
+          <v-tooltip activator="parent" location="top">Stop</v-tooltip>
+        </v-btn>
+        <v-btn
+          v-else
+          icon
+          variant="flat"
+          size="small"
+          :color="canSend ? 'primary' : 'default'"
+          :disabled="!canSend"
+          class="action-btn send-btn"
+          @click="handleSend"
+        >
+          <v-icon icon="mdi-send" size="20" />
+          <v-tooltip activator="parent" location="top">Send (Enter)</v-tooltip>
+        </v-btn>
       </div>
 
       <!-- Bottom Bar -->
@@ -103,7 +88,7 @@
             variant="outlined"
             class="model-chip"
           >
-            <v-icon icon="mdi-brain" start size="16" />
+            <v-icon icon="mdi-brain" start size="14" />
             {{ selectedModel.name }}
           </v-chip>
 
@@ -113,7 +98,7 @@
             variant="text"
             class="stream-chip"
           >
-            <v-icon icon="mdi-lightning-bolt" start size="16" />
+            <v-icon icon="mdi-lightning-bolt" start size="14" />
             Stream
           </v-chip>
         </div>
@@ -121,9 +106,6 @@
         <div class="footer-right">
           <span class="char-count" :class="{ 'over-limit': charCount > maxChars }">
             {{ charCount }}/{{ maxChars }}
-          </span>
-          <span class="shortcut-hint">
-            <kbd>Enter</kbd> to send, <kbd>Shift+Enter</kbd> for new line
           </span>
         </div>
       </div>
@@ -223,8 +205,8 @@ defineExpose({ focus, setText })
 
 <style scoped>
 .chat-input-wrapper {
-  padding: 16px 24px 24px;
-  background: linear-gradient(to top, rgba(var(--v-theme-background), 1) 80%, transparent);
+  padding: 12px 20px 20px;
+  background: linear-gradient(to top, rgba(var(--v-theme-background), 1) 80%, transparent));
 }
 
 .input-container {
@@ -232,60 +214,80 @@ defineExpose({ focus, setText })
   margin: 0 auto;
 }
 
-.input-main {
-  position: relative;
-}
-
-.chat-textarea {
-  border-radius: 24px !important;
-  overflow: hidden;
-}
-
-.chat-textarea :deep(.v-field) {
+/* Unified Input Bar - Telegram style */
+.input-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 8px 8px 8px 12px;
+  background: rgba(var(--v-theme-surface-variant), 0.6);
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
   border-radius: 24px;
-  padding: 12px 16px;
-  background: rgba(var(--v-theme-surface-variant), 0.5);
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
   transition: all 0.2s ease;
 }
 
-.chat-textarea :deep(.v-field:hover) {
-  border-color: rgba(var(--v-theme-on-surface), 0.2);
+.input-bar:focus-within {
+  border-color: rgba(var(--v-theme-primary), 0.5);
+  box-shadow: 0 0 0 3px rgba(var(--v-theme-primary), 0.1);
 }
 
-.chat-textarea :deep(.v-field--focused) {
-  border-color: rgb(var(--v-theme-primary));
-  box-shadow: 0 0 0 2px rgba(var(--v-theme-primary), 0.2);
+.input-bar.is-loading {
+  background: rgba(var(--v-theme-surface-variant), 0.4);
+}
+
+/* Attach Button */
+.attach-btn {
+  flex-shrink: 0;
+  margin-right: 4px;
+  color: rgba(var(--v-theme-on-surface), 0.6);
+}
+
+.attach-btn:hover {
+  color: rgb(var(--v-theme-primary));
+}
+
+/* Text Input */
+.chat-textarea {
+  flex: 1;
+  min-width: 0;
 }
 
 .chat-textarea :deep(textarea) {
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1.5;
-  max-height: 200px;
+  max-height: 150px;
   overflow-y: auto;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .chat-textarea :deep(textarea::placeholder) {
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  color: rgba(var(--v-theme-on-surface), 0.4);
 }
 
-.attach-btn {
-  margin-left: -8px;
+/* Remove default textarea styling */
+.chat-textarea :deep(.v-field) {
+  background: transparent !important;
+  padding: 0;
 }
 
-.input-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-right: -8px;
+.chat-textarea :deep(.v-field__input) {
+  padding: 0;
+  min-height: unset;
+}
+
+/* Action Buttons */
+.action-btn {
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
 .send-btn {
   transition: all 0.2s ease;
 }
 
-.send-btn:not(.disabled):hover {
-  transform: scale(1.1);
+.send-btn:not(:disabled):hover {
+  transform: scale(1.08);
 }
 
 .stop-btn {
@@ -293,16 +295,17 @@ defineExpose({ focus, setText })
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
+/* Bottom Bar */
 .input-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 8px;
-  padding: 0 8px;
+  padding: 0 16px;
 }
 
 .footer-left {
@@ -311,71 +314,64 @@ defineExpose({ focus, setText })
 }
 
 .model-chip {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
+  height: 24px;
 }
 
 .stream-chip {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   opacity: 0.6;
+  height: 24px;
 }
 
 .footer-right {
   display: flex;
   align-items: center;
-  gap: 16px;
 }
 
 .char-count {
-  font-size: 0.75rem;
-  color: rgba(var(--v-theme-on-surface), 0.5);
+  font-size: 0.7rem;
+  color: rgba(var(--v-theme-on-surface), 0.4);
 }
 
 .char-count.over-limit {
   color: rgb(var(--v-theme-error));
 }
 
-.shortcut-hint {
-  font-size: 0.75rem;
-  color: rgba(var(--v-theme-on-surface), 0.4);
-}
-
-.shortcut-hint kbd {
-  display: inline-block;
-  padding: 2px 6px;
-  font-size: 0.7rem;
-  font-family: inherit;
-  background: rgba(var(--v-theme-surface-variant), 0.5);
-  border-radius: 4px;
-  border: 1px solid rgba(var(--v-theme-on-surface), 0.1);
-}
-
 /* Dark mode adjustments */
-:global(.v-theme--dark) .chat-textarea :deep(.v-field) {
-  background: rgba(255, 255, 255, 0.05);
+:global(.v-theme--dark) .input-bar {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
-:global(.v-theme--dark) .shortcut-hint kbd {
-  background: rgba(255, 255, 255, 0.1);
+:global(.v-theme--dark) .input-bar:focus-within {
+  border-color: rgba(var(--v-theme-primary), 0.6);
+  box-shadow: 0 0 0 3px rgba(var(--v-theme-primary), 0.15);
 }
 
 /* Mobile responsive */
 @media (max-width: 600px) {
   .chat-input-wrapper {
-    padding: 12px 16px 16px;
+    padding: 10px 14px 14px;
+  }
+
+  .input-bar {
+    padding: 6px 6px 6px 10px;
+    border-radius: 20px;
   }
 
   .input-footer {
-    flex-direction: column;
-    gap: 8px;
+    padding: 0 10px;
   }
 
-  .footer-right {
-    width: 100%;
-    justify-content: space-between;
+  .footer-left {
+    gap: 6px;
   }
 
-  .shortcut-hint {
-    display: none;
+  .model-chip,
+  .stream-chip {
+    font-size: 0.65rem;
+    height: 22px;
   }
 }
 </style>

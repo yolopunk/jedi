@@ -103,7 +103,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
-  async function sendMessage(content: string) {
+  async function sendMessage(content: string): Promise<void> {
     if (!currentSession.value) {
       // Create a new session if none exists
       await createSession()
@@ -122,26 +122,48 @@ export const useAiChatStore = defineStore('aiChat', () => {
     streamingContent.value = ''
     error.value = null
 
+    // 流式响应收集
+    let fullContent = ''
+
     try {
       // 流式响应
       const requestId = `req-${Date.now()}`
 
-      // 监听流式事件
-      const unlisten = await listen<string>('chat-stream-chunk', (event) => {
-        streamingContent.value += event.payload
-      })
+      // 监听流式事件 - 事件名必须与后端 send_chat_message_stream 中的格式匹配
+      // StreamEvent 枚举序列化后格式: {"Content":{"text":"..."}} 或 {"Done":null} 或 {"Error":{"message":"..."}}
+      const unlisten = await listen<{ Content?: { text?: string } } | { Done?: null } | { Error?: { message?: string } }>(
+        `chat-stream-${requestId}`,
+        (event) => {
+          const payload = event.payload as { Content?: { text?: string } } | { Done?: null } | { Error?: { message?: string } }
+          if ('Content' in payload && payload.Content?.text) {
+            fullContent += payload.Content.text
+            streamingContent.value = fullContent
+          }
+          if ('Done' in payload) {
+            // 流结束
+          }
+          if ('Error' in payload && payload.Error?.message) {
+            throw new Error(payload.Error.message)
+          }
+        }
+      )
 
       try {
-        const response = await invoke('send_chat_message_stream', {
+        // 启动流式请求
+        await invoke('send_chat_message_stream', {
           provider: session.provider,
           model: session.model,
           messages: session.messages,
           requestId,
         })
 
+        // 等待一段时间让流完成（简单粗暴的方式）
+        // 更好的方式是监听 done 事件
+        await new Promise(resolve => setTimeout(resolve, 3000))
+
         const assistantMessage: ChatMessage = {
           role: 'assistant',
-          content: response as string,
+          content: fullContent || streamingContent.value,
           timestamp: Date.now()
         }
         session.messages.push(assistantMessage)

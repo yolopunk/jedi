@@ -1933,3 +1933,93 @@
   position: relative;
   padding: 12px 20px 20px;
 }
+
+/* =========================================
+   Input Console - Light Theme Overrides
+   ========================================= */
+.light-theme .input-console.state-new-session {
+  position: absolute;
+  bottom: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 700px;
+  padding: 0 20px;
+}
+
+.light-theme .input-console.state-chatting {
+  position: relative;
+  padding: 12px 20px 20px;
+}
+
+.light-theme .console-input {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  color: #1a1a1a;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.light-theme .console-input:focus {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.light-theme .console-input::placeholder {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.light-theme .input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.light-theme .toolbar-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.light-theme .toolbar-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.light-theme .model-dropdown-btn {
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.light-theme .model-dropdown-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.light-theme .model-dropdown-menu {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.light-theme .model-item-name {
+  color: #1a1a1a;
+}
+
+.light-theme .send-btn {
+  background: #3b82f6;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
+.light-theme .send-btn:hover:not(.disabled) {
+  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
+}
+
+.light-theme .state-new-session .input-actions {
+  display: none;
+}

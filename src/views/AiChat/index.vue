@@ -168,7 +168,7 @@
         </div>
 
         <!-- 输入区域 - 全息终端风格 -->
-        <div class="input-console">
+        <div class="input-console" :class="inputConsoleState">
           <!-- 输入框 -->
           <div class="input-wrapper">
             <textarea
@@ -361,6 +361,11 @@ const connectionStatus = computed(() => {
 
 const displayMessages = computed(() => {
   return store.currentSession?.messages || []
+})
+
+const inputConsoleState = computed(() => {
+  const hasMessages = store.currentSession?.messages.length > 0
+  return hasMessages ? 'state-chatting' : 'state-new-session'
 })
 
 function renderMessage(content: string) {

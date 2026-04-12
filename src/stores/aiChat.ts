@@ -124,29 +124,37 @@ export const useAiChatStore = defineStore('aiChat', () => {
 
     // 流式响应收集
     let fullContent = ''
+    let streamDone = false
+    let streamError: string | null = null
 
     try {
       // 流式响应
       const requestId = `req-${Date.now()}`
 
-      // 监听流式事件 - 事件名必须与后端 send_chat_message_stream 中的格式匹配
-      // StreamEvent 枚举序列化后格式: {"Content":{"text":"..."}} 或 {"Done":null} 或 {"Error":{"message":"..."}}
-      const unlisten = await listen<{ Content?: { text?: string } } | { Done?: null } | { Error?: { message?: string } }>(
-        `chat-stream-${requestId}`,
-        (event) => {
-          const payload = event.payload as { Content?: { text?: string } } | { Done?: null } | { Error?: { message?: string } }
-          if ('Content' in payload && payload.Content?.text) {
-            fullContent += payload.Content.text
-            streamingContent.value = fullContent
+      // 创建一个 Promise，在收到 Done 事件时 resolve
+      const waitForStreamDone = new Promise<void>((resolve, reject) => {
+        listen(
+          `chat-stream-${requestId}`,
+          (event) => {
+            const payload = event.payload as { Content?: { text?: string } } | { Done?: null } | { Error?: { message?: string } }
+            if ('Content' in payload && payload.Content?.text) {
+              fullContent += payload.Content.text
+              streamingContent.value = fullContent
+            }
+            if ('Done' in payload) {
+              streamDone = true
+              resolve()
+            }
+            if ('Error' in payload && payload.Error?.message) {
+              streamError = payload.Error.message
+              reject(new Error(streamError))
+            }
           }
-          if ('Done' in payload) {
-            // 流结束
-          }
-          if ('Error' in payload && payload.Error?.message) {
-            throw new Error(payload.Error.message)
-          }
-        }
-      )
+        ).then((unlisten) => {
+          // Store unlisten for cleanup
+          ;(window as any).__streamUnlisten = unlisten
+        })
+      })
 
       try {
         // 启动流式请求
@@ -157,9 +165,17 @@ export const useAiChatStore = defineStore('aiChat', () => {
           requestId,
         })
 
-        // 等待一段时间让流完成（简单粗暴的方式）
-        // 更好的方式是监听 done 事件
-        await new Promise(resolve => setTimeout(resolve, 3000))
+        // 等待流结束（通过 Done 事件触发）
+        // 添加超时保护
+        await Promise.race([
+          waitForStreamDone,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout (30s)')), 30000))
+        ])
+
+        if (!streamDone && !streamError) {
+          // 兜底：如果没收到 Done 事件但有内容，也允许通过
+          console.warn('Stream finished without explicit Done event')
+        }
 
         const assistantMessage: ChatMessage = {
           role: 'assistant',
@@ -168,7 +184,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
         }
         session.messages.push(assistantMessage)
       } finally {
-        unlisten()
+        // 清理监听器
+        const unlisten = (window as any).__streamUnlisten
+        if (unlisten) unlisten()
+        delete (window as any).__streamUnlisten
       }
 
       // 更新会话

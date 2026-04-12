@@ -1393,6 +1393,8 @@
   background: #cd7f32;
 }
 
+/* --- DEPRECATED: old warm-theme input console styles (replaced by glassmorphism) --- */
+/*
 .light-theme .input-console {
   background: linear-gradient(0deg, rgba(239, 224, 204, 0.95) 0%, rgba(239, 224, 204, 0.8) 100%);
   border-top: 1px solid #b8860b;
@@ -1443,6 +1445,8 @@
 .light-theme .shortcut {
   color: #b8a080;
 }
+*/
+/* --- DEPRECATED: old warm-theme input console styles above --- */
 
 .light-theme .mcp-skill-item {
   border-left-color: transparent;

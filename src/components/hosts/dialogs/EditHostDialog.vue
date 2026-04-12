@@ -1,95 +1,106 @@
 <template>
-  <!-- 编辑条目对话框 -->
-  <v-dialog v-model="dialogModel" max-width="480" persistent>
-    <v-card class="scifi-card dialog-with-glow">
-      <div class="dialog-decorator"></div>
-      <v-card-title class="console-title-bar">
-        <span class="dialog-icon">⬡</span>
-        <span class="dialog-title">{{ $t('hosts.dialog.editTitle') }}</span>
-        <v-spacer></v-spacer>
-        <button class="close-btn" @click="closeDialog">✕</button>
-      </v-card-title>
-      <v-card-text class="console-card-text">
-        <div class="form-section">
-          <label class="input-label">
-            <span class="label-icon">▸</span>
-            {{ $t('hosts.dialog.ipLabel') }}
+  <v-dialog
+    :model-value="modelValue"
+    @update:model-value="$emit('update:modelValue', $event)"
+    max-width="480"
+    persistent
+  >
+    <v-card class="model-settings-card">
+      <!-- Header -->
+      <div class="card-header">
+        <div class="header-brand">
+          <div class="brand-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h2>Edit Host Entry</h2>
+            <p>Modify IP and domain</p>
+          </div>
+        </div>
+        <button class="close-btn" @click="closeDialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
+            <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>
+              <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2"/>
+              <line x1="12" y1="12" x2="14" y2="14" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            IP Address
           </label>
           <div class="input-wrapper">
             <span class="input-prefix">IP</span>
             <input
               v-model="hostIp"
               type="text"
-              class="console-input with-prefix"
-              :placeholder="$t('hosts.dialog.ipPlaceholder')"
+              class="form-input with-prefix"
+              placeholder="192.168.1.1"
               @keyup.enter="confirmEdit"
             />
           </div>
         </div>
 
-        <div class="form-section">
-          <label class="input-label">
-            <span class="label-icon">▸</span>
-            {{ $t('hosts.dialog.domainLabel') }}
+        <div class="form-group">
+          <label class="form-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            Domain
           </label>
           <div class="input-wrapper">
-            <span class="input-prefix">🌐</span>
+            <span class="input-prefix">URL</span>
             <input
               v-model="hostDomain"
               type="text"
-              class="console-input with-prefix"
-              :placeholder="$t('hosts.dialog.domainPlaceholder')"
+              class="form-input with-prefix"
+              placeholder="example.com"
               @keyup.enter="confirmEdit"
             />
           </div>
         </div>
-      </v-card-text>
-      <v-card-actions class="console-card-actions">
-        <button class="console-btn" @click="closeDialog">
-          {{ $t('common.cancel') }}
-        </button>
-        <v-spacer></v-spacer>
-        <button class="console-btn primary" @click="confirmEdit">
-          {{ $t('common.confirm') }}
-        </button>
-      </v-card-actions>
+      </div>
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <v-btn variant="text" @click="closeDialog">Cancel</v-btn>
+        <v-spacer />
+        <v-btn variant="tonal" color="primary" @click="confirmEdit">Save Changes</v-btn>
+      </div>
     </v-card>
   </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { validateHostInput } from '@/utils/hostsUtils'
 import type { HostEntry } from '@/types/hosts'
 
-// 定义组件属性
 const props = defineProps<{
-  modelValue: boolean;
-  host: HostEntry | null;
+  modelValue: boolean
+  host: HostEntry | null
 }>()
 
-// 定义组件事件
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-  (e: 'edit', data: {
-    originalHost: HostEntry;
-    ip: string;
-    domain: string;
-  }): void;
-  (e: 'error', message: string): void;
+  (e: 'update:modelValue', value: boolean): void
+  (e: 'edit', data: { originalHost: HostEntry; ip: string; domain: string }): void
+  (e: 'error', message: string): void
 }>()
 
-// 对话框状态
-const dialogModel = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
-
-// 表单数据
 const hostIp = ref('')
 const hostDomain = ref('')
 
-// 监听主机数据变化
 watch(() => props.host, (newHost) => {
   if (newHost) {
     hostIp.value = newHost.ip
@@ -97,226 +108,197 @@ watch(() => props.host, (newHost) => {
   }
 }, { immediate: true })
 
-// 关闭对话框
 function closeDialog() {
-  dialogModel.value = false
-  resetForm()
+  emit('update:modelValue', false)
 }
 
-// 重置表单
-function resetForm() {
-  hostIp.value = ''
-  hostDomain.value = ''
-}
-
-// 确认编辑
 function confirmEdit() {
-  // 验证输入
   if (!validateHostInput(hostIp.value, hostDomain.value)) {
-    emit('error', 'IP和域名不能为空')
+    emit('error', 'IP and domain cannot be empty')
     return
   }
-
-  // 验证编辑数据
   if (!props.host) {
-    emit('error', '编辑数据丢失')
+    emit('error', 'Host data lost')
     return
   }
-
-  // 提交编辑事件
   emit('edit', {
     originalHost: props.host,
     ip: hostIp.value.trim(),
     domain: hostDomain.value.trim()
   })
-
-  // 关闭对话框
   closeDialog()
 }
 </script>
 
 <style scoped>
-.dialog-with-glow {
-  position: relative;
-  box-shadow: 0 0 40px rgba(0, 255, 255, 0.15);
+.model-settings-card {
+  background: #0a0e14 !important;
+  border-radius: 16px !important;
+  overflow: hidden;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
 }
 
-.console-title-bar {
-  display: flex !important;
-  align-items: center !important;
-  flex-wrap: nowrap !important;
-  gap: 8px;
-  padding: 12px 16px;
-}
-
-.dialog-decorator {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #00ffff, transparent);
-  opacity: 0.6;
-}
-
-.dialog-icon {
-  color: #00ffff;
-  margin-right: 8px;
-  font-size: 14px;
-}
-
-.dialog-title {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 1px;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  font-size: 14px;
-  padding: 4px 8px;
-  transition: color 0.2s;
-}
-
-.close-btn:hover {
-  color: #ff4444;
-}
-
-.form-section {
-  margin-bottom: 20px;
-}
-
-.input-label {
+.card-header {
   display: flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 12px;
-  margin-bottom: 8px;
-  letter-spacing: 1px;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(20, 30, 40, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
-.label-icon {
-  color: #00ff88;
-  margin-right: 8px;
-}
-
-.input-wrapper {
-  position: relative;
+.header-brand {
   display: flex;
   align-items: center;
-  background: rgba(5, 5, 8, 0.9);
-  border: 1px solid #1a1a3a;
-  border-radius: 4px;
-  padding: 8px 12px;
+  gap: 12px;
 }
 
-.input-prefix {
+.brand-icon {
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 12px;
-  background: rgba(0, 255, 255, 0.05);
-  border-right: 1px solid rgba(0, 255, 255, 0.2);
-  min-width: 50px;
   justify-content: center;
-}
-
-.console-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  border-radius: 10px;
   color: #00ffff;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
 }
 
-.console-input::placeholder {
-  color: #52525b;
-}
-
-.console-input.with-prefix {
-  padding-left: 12px;
-}
-
-/* =========================================
-   Light Theme Styles (Tatooine Outpost)
-   ========================================= */
-.light-theme .dialog-with-glow {
-  box-shadow: 0 0 30px rgba(184, 134, 11, 0.2);
-}
-
-.light-theme .dialog-decorator {
-  background: linear-gradient(90deg, transparent, #cd7f32, transparent);
-}
-
-.light-theme .dialog-icon {
-  color: #cd7f32;
-}
-
-.light-theme .close-btn {
-  color: rgba(107, 68, 35, 0.6);
-}
-
-.light-theme .close-btn:hover {
-  color: #b22222;
-}
-
-.light-theme .input-label {
-  color: rgba(61, 41, 20, 0.8);
-}
-
-.light-theme .label-icon {
-  color: #cd7f32;
-}
-
-.light-theme .input-wrapper {
-  background: #faf3e8;
-  border-color: #d4a574;
-}
-
-.light-theme .input-prefix {
-  color: rgba(107, 68, 35, 0.7);
-  background: rgba(205, 127, 50, 0.08);
-  border-right: 1px solid rgba(205, 127, 50, 0.25);
-}
-
-.light-theme .console-input {
-  color: #3d2914;
-}
-
-.light-theme .console-input::placeholder {
-  color: #8b7355;
-}
-
-.light-theme .console-btn.primary {
-  border-color: #cd7f32;
-  background: #cd7f32;
+.brand-text h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
   color: #ffffff;
 }
 
-.light-theme .console-btn.primary:hover {
-  background: #b8860b;
+.brand-text p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
 }
 
-.light-theme .dialog-title {
-  color: #3d2914;
+.close-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.light-theme .scifi-card {
-  background: linear-gradient(135deg, #efe0cc 0%, #e8d4bc 100%);
+.close-btn:hover {
+  background: rgba(255, 107, 107, 0.1);
+  border-color: rgba(255, 107, 107, 0.3);
+  color: #ff6b6b;
 }
 
-.light-theme .console-card-text {
-  background: #faf3e8;
+.card-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.light-theme .console-card-actions {
-  background: linear-gradient(0deg, #e8d4bc 0%, #efe0cc 100%);
-  border-top: 1px solid #b8860b;
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+.form-label svg {
+  color: #00ff88;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 255, 255, 0.03);
+  border: 1px solid rgba(0, 255, 255, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.input-wrapper:focus-within {
+  border-color: rgba(0, 255, 255, 0.4);
+  box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.1);
+}
+
+.input-prefix {
+  padding: 12px 14px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(0, 255, 255, 0.6);
+  background: rgba(0, 255, 255, 0.05);
+  border-right: 1px solid rgba(0, 255, 255, 0.12);
+  min-width: 52px;
+  text-align: center;
+}
+
+.form-input {
+  flex: 1;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+
+.form-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.form-input.with-prefix {
+  padding-left: 12px;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 </style>

@@ -7,50 +7,25 @@
 
     <div class="chat-console-layout">
       <!-- 左侧：Skills 面板 -->
-      <div class="mcp-panel">
-        <div class="panel-header">
-          <span class="panel-title">// SKILLS</span>
-          <span class="panel-status online">READY</span>
-        </div>
-        <div class="mcp-skills-list">
-          <div
-            v-for="skill in mcpSkills"
-            :key="skill.id"
-            class="mcp-skill-item"
-            :class="{ active: activeSkill === skill.id }"
-            @click="toggleSkill(skill.id)"
-          >
-            <div class="skill-indicator" :class="{ enabled: skill.enabled }"></div>
-            <span class="skill-name">{{ skill.name }}</span>
-            <span class="skill-hotkey">{{ skill.hotkey }}</span>
-          </div>
-        </div>
-        <div class="panel-footer">
-          <span class="footer-text">TYPE /SKILL FOR HELP</span>
-        </div>
-      </div>
+      <SkillPanel />
 
       <!-- 主聊天区域 -->
       <div class="chat-console-area">
-        <!-- 顶部状态栏 -->
-        <div class="console-header">
-          <div class="header-left">
-            <div class="terminal-prompt">
-              <span class="prompt-user">jedi</span>
-              <span class="prompt-separator">@</span>
-              <span class="prompt-host">holocron</span>
-              <span class="prompt-path">~/chat</span>
-              <span class="prompt-cursor">▶</span>
-            </div>
+        <!-- Hologram Header -->
+        <div class="chat-header">
+          <div class="header-logo">
+            <span class="menu-icon">☰</span>
+            <span class="holocron">HOLOCRON</span>
+            <span class="path">/chat</span>
           </div>
           <div class="header-right">
             <div class="status-badge">
               <span class="status-dot"></span>
               <span class="status-text">{{ connectionStatus }}</span>
             </div>
-            <div class="model-display">
-              <span class="model-label">MODEL:</span>
-              <span class="model-name">{{ currentModelName }}</span>
+            <div class="provider-display" @click="showModelSettings = true">
+              <span class="provider-label">PROVIDER:</span>
+              <span class="provider-name">{{ currentProviderName }}</span>
             </div>
           </div>
         </div>
@@ -80,20 +55,6 @@
                   <span class="boot-content">{{ line }}</span>
                 </div>
               </div>
-              <div class="quick-commands">
-                <div
-                  v-for="cmd in quickCommands"
-                  :key="cmd.text"
-                  class="command-card"
-                  @click="executeCommand(cmd)"
-                >
-                  <div class="command-icon">{{ cmd.icon }}</div>
-                  <div class="command-text">
-                    <div class="command-title">{{ cmd.title }}</div>
-                    <div class="command-desc">{{ cmd.desc }}</div>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -120,9 +81,6 @@
                     </div>
                   </div>
                   <div class="message-content user-message">
-                    <div class="message-header">
-                      <span class="message-role">&lt;USER_INPUT&gt;</span>
-                    </div>
                     <div class="message-body">
                       <div class="markdown-body" v-html="renderMessage(message.content)"></div>
                     </div>
@@ -152,25 +110,29 @@
                     </div>
                   </div>
                   <div class="message-content ai-message">
-                    <div class="message-header">
-                      <span class="message-role">&lt;R2D2_OUTPUT&gt;</span>
-                      <span class="message-model">[{{ currentModelName }}]</span>
+                    <div class="message-meta">
+                      <span class="model-badge">{{ currentModelName }}</span>
                     </div>
                     <div class="message-body">
                       <div class="markdown-body" v-html="renderMessage(message.content)"></div>
                     </div>
                     <div class="message-actions">
-                      <button class="action-btn" @click="handleCopyMessage(message.content)">
-                        <span class="action-icon">⧉</span>
-                        <span class="action-label">COPY</span>
+                      <button class="action-btn" @click="handleCopyMessage(message.content)" title="Copy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="9" y="9" width="13" height="13" rx="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
                       </button>
                       <button
                         v-if="index === displayMessages.length - 1"
                         class="action-btn"
                         @click="handleRegenerate"
+                        title="Regenerate"
                       >
-                        <span class="action-icon">↻</span>
-                        <span class="action-label">REGEN</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M23 4v6h-6M1 20v-6h6"/>
+                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
                       </button>
                     </div>
                   </div>
@@ -191,53 +153,73 @@
           </div>
         </div>
 
-        <!-- 输入区域 - 终端风格 -->
-        <div class="input-console">
-          <div class="input-row">
-            <div class="input-prompt">
-              <span class="prompt-user">jedi</span>
-              <span class="prompt-separator">:</span>
-              <span class="prompt-path">~</span>
-              <span class="prompt-cursor">█</span>
-            </div>
-            <div class="input-wrapper">
-              <textarea
-                ref="inputRef"
-                v-model="inputText"
-                class="console-input"
-                :placeholder="$t('chat.commandPlaceholder')"
-                rows="1"
-                @keydown="handleKeydown"
-                @input="autoResize"
-              ></textarea>
-            </div>
-            <div class="input-actions">
-              <button
-                class="send-btn"
-                :class="{ disabled: !inputText.trim() || store.isLoading }"
-                @click="handleSend"
-                :disabled="!inputText.trim() || store.isLoading"
-              >
-                <span class="send-icon">⚡</span>
-                <span class="send-label">TRANSMIT</span>
+        <!-- 输入区域 -->
+        <div class="input-console" :class="inputConsoleState">
+          <!-- 统一胶囊容器 -->
+          <div class="input-bar">
+            <!-- 左侧工具栏 -->
+            <button class="toolbar-btn" @click="showCommands = !showCommands" title="Commands (/)">
+              <span>/</span>
+            </button>
+            <button class="toolbar-btn" @click="showAttachmentMenu = !showAttachmentMenu" title="Add">
+              <span>+</span>
+            </button>
+
+            <!-- 输入框（自动撑满） -->
+            <textarea
+              ref="inputRef"
+              v-model="inputText"
+              class="chat-input"
+              :placeholder="$t('chat.commandPlaceholder')"
+              rows="1"
+              @keydown="handleKeydown"
+              @input="autoResize"
+            ></textarea>
+
+            <!-- Model选择器 -->
+            <div class="model-selector">
+              <button class="model-dropdown-btn" @click="showModelDropdown = !showModelDropdown">
+                <span class="model-dropdown-name">{{ currentModelName }}</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                  <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2"/>
+                </svg>
               </button>
-              <button
-                v-if="store.isLoading"
-                class="stop-btn"
-                @click="handleStop"
-              >
-                <span class="stop-icon">⬛</span>
-                <span class="stop-label">ABORT</span>
-              </button>
+              <div v-if="showModelDropdown" class="model-dropdown-menu">
+                <div
+                  v-for="model in selectedProviderModels"
+                  :key="model.id"
+                  class="model-dropdown-item"
+                  :class="{ selected: model.id === modelsDevStore.selectedModelId }"
+                  @click="selectModelFromDropdown(model)"
+                >
+                  <span class="model-item-name">{{ model.name }}</span>
+                  <span class="model-item-context">{{ formatContextShort(model.limit?.context) }}</span>
+                </div>
+              </div>
             </div>
+
+            <!-- 发送按钮 -->
+            <button
+              class="send-btn"
+              :class="{ disabled: !inputText.trim() || store.isLoading }"
+              @click="handleSend"
+              :disabled="!inputText.trim() || store.isLoading"
+            >
+              <span class="send-icon">↑</span>
+            </button>
           </div>
-          <div class="input-footer">
-            <span class="footer-hint">Press ENTER to send, SHIFT+ENTER for new line</span>
-            <span class="footer-shortcuts">
-              <span class="shortcut">↑↓ History</span>
-              <span class="shortcut">Ctrl+C Stop</span>
-            </span>
-          </div>
+
+          <!-- 浮层（独立于胶囊容器） -->
+          <CommandPalette
+            :visible="showCommands"
+            @select="handleCommandSelect"
+            @close="showCommands = false"
+          />
+          <AttachmentMenu
+            v-if="showAttachmentMenu"
+            @close="showAttachmentMenu = false"
+            @select="handleAttachmentSelect"
+          />
         </div>
       </div>
 
@@ -269,34 +251,77 @@
           </div>
         </div>
       </div>
+
+      <!-- 右侧：Agent Trace 面板 -->
+      <AgentTrace v-if="agentStore.tracePanelOpen" />
     </div>
+
+    <!-- Model Settings Dialog -->
+    <ModelSettings v-model="showModelSettings" />
+
+    <!-- Agent Pool Panel -->
+    <AgentPoolPanel />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useAiChatStore } from '@/stores/aiChat'
+import { useSkillsStore } from '@/stores/skills'
+import { useAgentStore } from '@/stores/agent'
+import { useModelsDevStore } from '@/stores/modelsDev'
+import { useProviderConfigStore } from '@/stores/providerConfig'
+import { setOnWorkerCompleteCallback } from '@/agent/useAgentPool'
+import { SLASH_COMMANDS, formatCommandPrompt } from '@/agent/slashCommands'
 import { sharedMd, renderSafe } from '@/utils/markdown'
+import SkillPanel from './SkillPanel.vue'
+import AgentTrace from './AgentTrace.vue'
+import ModelSettings from './ModelSettings.vue'
+import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
+import CommandPalette from '@/components/CommandPalette.vue'
+import AttachmentMenu from '@/components/AttachmentMenu.vue'
 
 const store = useAiChatStore()
+const skillsStore = useSkillsStore()
+const agentStore = useAgentStore()
+const modelsDevStore = useModelsDevStore()
+const providerConfigStore = useProviderConfigStore()
 
 // UI State
 const inputText = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
+const showCommands = ref(false)
 const showScrollButton = ref(false)
-const activeSkill = ref<string | null>(null)
+const showModelSettings = ref(false)
+const showAttachmentMenu = ref(false)
+const showModelDropdown = ref(false)
 
-// Skills - Teach procedures that can be invoked in chat
-// These are like "recipes" that Claude can follow when activated
-const mcpSkills = ref([
-  { id: 'terminal', name: 'TERMINAL', enabled: true, hotkey: 'F1', desc: 'Execute system commands' },
-  { id: 'filesystem', name: 'FILE_SYS', enabled: true, hotkey: 'F2', desc: 'Read/write files' },
-  { id: 'hosts', name: 'HOSTS_MGR', enabled: true, hotkey: 'F3', desc: 'Manage hosts file' },
-  { id: 'podcast', name: 'PODCAST', enabled: true, hotkey: 'F4', desc: 'Manage podcasts' },
-  { id: 'wallpaper', name: 'WALLPAPER', enabled: false, hotkey: 'F5', desc: 'Change wallpapers' },
-  { id: 'browser', name: 'BROWSER', enabled: false, hotkey: 'F6', desc: 'Web browsing' },
-])
+// Computed
+const selectedProviderModels = computed(() => {
+  return modelsDevStore.selectedProviderModels
+})
+
+const currentModelName = computed(() => {
+  return modelsDevStore.selectedModel?.name || 'SELECT MODEL'
+})
+
+function selectModelFromDropdown(model: any) {
+  modelsDevStore.selectModel(model.id)
+  showModelDropdown.value = false
+}
+
+function handleAttachmentSelect(_action: string) {
+  showAttachmentMenu.value = false
+  // Handle: attachment, skills, web-search - can be implemented later
+}
+
+function formatContextShort(len?: number): string {
+  if (!len) return 'N/A'
+  if (len >= 1000000) return `${(len / 1000000).toFixed(0)}M`
+  if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
+  return len.toString()
+}
 
 // Boot sequence
 const bootSequence = [
@@ -307,23 +332,22 @@ const bootSequence = [
   'System online. Awaiting input.'
 ]
 
-// Quick commands
-const quickCommands = ref([
-  { icon: '🧠', title: 'Explain Concept', desc: 'Teach me something new', text: 'Please explain this concept in detail: ' },
-  { icon: '⚡', title: 'Write Code', desc: 'Generate implementation', text: 'Help me write code for: ' },
-  { icon: '📝', title: 'Summarize', desc: 'Condense information', text: 'Summarize the following content:\n\n' },
-  { icon: '💡', title: 'Brainstorm', desc: 'Generate ideas', text: 'Help me brainstorm ideas for: ' },
-])
-
 // Computed
-const currentModelName = computed(() => {
-  const model = store.availableModels.find(m => m.id === store.selectedModelId)
-  return model?.name || 'UNKNOWN'
+const currentProviderName = computed(() => {
+  return modelsDevStore.selectedProvider?.name?.toUpperCase() || 'SELECT PROVIDER'
 })
-const connectionStatus = computed(() => store.availableModels.length > 0 ? 'CONNECTED' : 'OFFLINE')
+const connectionStatus = computed(() => {
+  if (modelsDevStore.selectedModel) return 'CONNECTED'
+  if (modelsDevStore.allProviders.length === 0) return 'OFFLINE'
+  return 'NO MODEL'
+})
 
 const displayMessages = computed(() => {
   return store.currentSession?.messages || []
+})
+
+const inputConsoleState = computed(() => {
+  return displayMessages.value.length > 0 ? 'state-chatting' : 'state-new-session'
 })
 
 function renderMessage(content: string) {
@@ -360,26 +384,26 @@ function showSessionMenu(session: any) {
 }
 
 // Actions
-function toggleSkill(skillId: string) {
-  const skill = mcpSkills.value.find(s => s.id === skillId)
-  if (skill) {
-    skill.enabled = !skill.enabled
-    activeSkill.value = skill.enabled ? skillId : null
-  }
-}
-
-function executeCommand(cmd: typeof quickCommands.value[0]) {
+function handleCommandSelect(cmd: typeof SLASH_COMMANDS[0]) {
   if (!store.currentSession) {
-    store.createSession()
+    store.createSession(
+      '新对话',
+      modelsDevStore.selectedProviderId || 'openai',
+      modelsDevStore.selectedModelId || 'gpt-4o-mini'
+    )
   }
-  inputText.value = cmd.text
+  inputText.value = cmd.name + ' '
   nextTick(() => {
     inputRef.value?.focus()
   })
 }
 
 function handleNewSession() {
-  store.createSession()
+  store.createSession(
+    '新对话',
+    modelsDevStore.selectedProviderId || 'openai',
+    modelsDevStore.selectedModelId || 'gpt-4o-mini'
+  )
   nextTick(() => {
     inputRef.value?.focus()
   })
@@ -396,19 +420,36 @@ async function handleSend() {
   if (!inputText.value.trim() || store.isLoading) return
 
   const content = inputText.value.trim()
-  inputText.value = ''
-  autoResize()
+  const prompt = formatCommandPrompt(content)
 
-  try {
-    await store.sendMessage(content)
-    scrollToBottom()
-  } catch (e) {
-    console.error('Failed to send message:', e)
+  if (content.startsWith('/agent')) {
+    const desc = content.slice(6).trim() || 'Worker task'
+    inputText.value = ''
+    autoResize()
+    try {
+      await agentStore.runWithPool(prompt, desc)
+      scrollToBottom()
+    } catch (e) {
+      console.error('Failed to run with pool:', e)
+    }
+  } else {
+    inputText.value = ''
+    autoResize()
+    // Create session with selected provider/model if needed
+    if (!store.currentSession) {
+      await store.createSession(
+        '新对话',
+        modelsDevStore.selectedProviderId || 'openai',
+        modelsDevStore.selectedModelId || 'gpt-4o-mini'
+      )
+    }
+    try {
+      await store.sendMessage(content)
+      scrollToBottom()
+    } catch (e) {
+      console.error('Failed to send message:', e)
+    }
   }
-}
-
-function handleStop() {
-  console.log('Stop generation')
 }
 
 function handleCopyMessage(content: string) {
@@ -461,8 +502,23 @@ watch(() => store.streamingContent, () => {
   scrollToBottom()
 })
 
-onMounted(() => {
+onMounted(async () => {
+  skillsStore.loadFromStorage()
+  await Promise.all([
+    modelsDevStore.fetchProviders(),
+    providerConfigStore.loadConfiguredProviders()
+  ])
   scrollToBottom()
+
+  // Set up worker completion callback
+  setOnWorkerCompleteCallback((worker) => {
+    const status = worker.status === 'completed' ? 'completed' : 'failed'
+    const result = worker.result || worker.error || 'Finished'
+    store.addMessage({
+      role: 'system',
+      content: `Worker "${worker.description}" ${status}: ${result}`
+    })
+  })
 })
 </script>
 

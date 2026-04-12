@@ -77,7 +77,23 @@
       "mcp__plugin_playwright_playwright__browser_snapshot",
       "WebFetch(domain:models.dev)",
       "Bash(python3 -c ':*)",
-      "Bash(pnpm tsc:*)"
+      "Bash(pnpm tsc:*)",
+      "Bash(brew list:*)",
+      "Bash(sudo rm:*)",
+      "Bash(brew install:*)",
+      "Bash(npm --version)",
+      "Bash(pkgutil --pkgs)",
+      "Bash(rm -rf /usr/local/bin/node /usr/local/bin/npm)",
+      "Bash(rm -rf /usr/local/lib/node_modules)",
+      "Bash(rm -rf /usr/local/include/node)",
+      "Bash(rm -f /usr/local/share/man/man1/node.1)",
+      "Bash(pnpm --version)",
+      "Bash(fnm current:*)",
+      "Bash(fnm list:*)",
+      "Bash(/usr/local/bin/fnm completions:*)",
+      "Bash(~/.local/share/fnm/node-versions/v25.9.0/installation/bin/node:*)",
+      "Bash(mdfind -name \"openclaw\")",
+      "Bash(launchctl list:*)"
     ]
   }
 }

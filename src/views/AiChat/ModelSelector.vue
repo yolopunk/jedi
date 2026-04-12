@@ -61,8 +61,8 @@
 
               <v-list-item-title>{{ model.name }}</v-list-item-title>
 
-              <v-list-item-subtitle v-if="model.contextLength">
-                {{ formatContext(model.contextLength) }} context
+              <v-list-item-subtitle v-if="model.limit?.context">
+                {{ formatContext(model.limit.context) }} context
               </v-list-item-subtitle>
             </v-list-item>
           </template>
@@ -79,11 +79,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Model } from '@/stores/aiChat'
+import type { ModelsDevModel } from '@/types/modelsDev'
 
 const props = defineProps<{
   modelValue: string | null
-  models: (Model & { providerName?: string })[]
+  models: (ModelsDevModel & { providerName?: string })[]
   disabled?: boolean
 }>()
 
@@ -109,7 +109,7 @@ const filteredModels = computed(() => {
 })
 
 const groupedModels = computed(() => {
-  const groups: Record<string, (Model & { providerName?: string })[]> = {}
+  const groups: Record<string, (ModelsDevModel & { providerName?: string })[]> = {}
   
   for (const model of filteredModels.value) {
     const provider = model.providerName || 'Unknown'

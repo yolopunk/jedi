@@ -1,21 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
-
-// 提供商信息（后端返回格式）
-export interface ProviderInfo {
-  provider: string
-  has_key: boolean
-}
-
-// Model 接口
-export interface Model {
-  id: string
-  name: string
-  provider: string
-  contextLength?: number
-}
+import { streamText } from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'
+import { createAnthropic } from '@ai-sdk/anthropic'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+import { useProviderConfigStore } from './providerConfig'
+import { useModelsDevStore } from './modelsDev'
 
 // MCP Server 接口
 export interface McpServer {
@@ -26,7 +17,7 @@ export interface McpServer {
   icon?: string
 }
 
-// 消息格式（后端期望格式）
+// 消息格式
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
@@ -37,21 +28,6 @@ export interface ChatMessage {
 
 // 兼容旧组件的类型导出
 export interface Message extends ChatMessage { }
-
-// 兼容旧组件的Provider类型
-export interface Provider {
-  id: string
-  name: string
-  provider?: string
-  providerId?: string
-  apiKey?: string
-  endpoint?: string
-  baseUrl?: string
-  enabled: boolean
-  isActive?: boolean
-  type?: string
-  models?: any[]
-}
 
 // 会话格式
 export interface Session {
@@ -64,42 +40,6 @@ export interface Session {
   updated_at: string
 }
 
-// 预定义的提供商配置
-export const PROVIDER_CONFIGS: Record<string, { name: string; models: Model[] }> = {
-  openai: {
-    name: 'OpenAI',
-    models: [
-      { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', contextLength: 128000 },
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'openai', contextLength: 128000 },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'openai', contextLength: 128000 },
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'openai', contextLength: 16384 },
-    ],
-  },
-  anthropic: {
-    name: 'Anthropic',
-    models: [
-      { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4', provider: 'anthropic', contextLength: 200000 },
-      { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', provider: 'anthropic', contextLength: 200000 },
-      { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', provider: 'anthropic', contextLength: 200000 },
-    ],
-  },
-  google: {
-    name: 'Google (Gemini)',
-    models: [
-      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'google', contextLength: 1048576 },
-      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', provider: 'google', contextLength: 1048576 },
-      { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'google', contextLength: 1048576 },
-    ],
-  },
-  deepseek: {
-    name: 'DeepSeek',
-    models: [
-      { id: 'deepseek-chat', name: 'DeepSeek Chat', provider: 'deepseek', contextLength: 64000 },
-      { id: 'deepseek-coder', name: 'DeepSeek Coder', provider: 'deepseek', contextLength: 128000 },
-    ],
-  },
-}
-
 // 预定义的MCP服务器
 export const DEFAULT_MCP_SERVERS: McpServer[] = [
   { id: 'hosts', name: 'Hosts Manager', description: '管理系统Hosts文件', enabled: false, icon: 'mdi-dns' },
@@ -107,103 +47,66 @@ export const DEFAULT_MCP_SERVERS: McpServer[] = [
   { id: 'browser', name: 'Browser', description: '网页浏览和搜索', enabled: false, icon: 'mdi-web' },
 ]
 
+// ========== AI SDK Provider 工厂 ==========
+
+function createProviderClient(providerId: string, settings: { apiKey: string; baseURL?: string }) {
+  // If there's a custom baseURL, determine which SDK to use based on the API format
+  if (settings.baseURL) {
+    // Check if the endpoint uses Anthropic API format
+    if (settings.baseURL.includes('anthropic') || providerId === 'anthropic') {
+      return createAnthropic({
+        apiKey: settings.apiKey,
+        baseURL: settings.baseURL,
+      })
+    }
+    // Otherwise use OpenAI-compatible
+    return createOpenAICompatible({
+      name: providerId,
+      apiKey: settings.apiKey,
+      baseURL: settings.baseURL,
+    })
+  }
+
+  // For providers without custom baseURL, use official SDKs
+  switch (providerId) {
+    case 'openai':
+      return createOpenAI({
+        apiKey: settings.apiKey,
+      })
+    case 'anthropic':
+      return createAnthropic({
+        apiKey: settings.apiKey,
+      })
+    default:
+      // For unknown providers without baseURL, throw an error - they need to specify an endpoint
+      throw new Error(`Provider ${providerId} requires a baseURL endpoint to be configured`)
+  }
+}
+
+// ========== Store ==========
+
 export const useAiChatStore = defineStore('aiChat', () => {
   // State
-  const providers = ref<ProviderInfo[]>([])
   const sessions = ref<Session[]>([])
   const currentSessionId = ref<string | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const streamingContent = ref<string>('')
 
-  // UI State
-  const selectedModelId = ref<string | null>(null)
-  const selectedProvider = ref<string>('openai')
+  // MCP State
   const enabledMcpServers = ref<string[]>([])
   const mcpServers = ref<McpServer[]>([...DEFAULT_MCP_SERVERS])
 
-  // Chat settings
-  const temperature = ref<number>(0.7)
-  const maxTokens = ref<number>(4096)
-  const streamEnabled = ref<boolean>(true)
+  // Stores
+  const providerConfigStore = useProviderConfigStore()
+  const modelsDevStore = useModelsDevStore()
 
   // Computed
   const currentSession = computed(() =>
     sessions.value.find(s => s.id === currentSessionId.value) || null
   )
 
-  const configuredProviders = computed(() =>
-    providers.value.filter(p => p.has_key)
-  )
-
-  const availableModels = computed(() => {
-    const models: (Model & { providerName: string })[] = []
-    for (const provider of configuredProviders.value) {
-      const config = PROVIDER_CONFIGS[provider.provider]
-      if (config) {
-        config.models.forEach(model => {
-          models.push({ ...model, providerName: config.name })
-        })
-      }
-    }
-    return models
-  })
-
-  const selectedModel = computed(() => {
-    if (!selectedModelId.value) return null
-    return availableModels.value.find(m => m.id === selectedModelId.value) || null
-  })
-
-  // Initialize with default model
-  function initializeDefaultModel() {
-    if (availableModels.value.length > 0 && !selectedModelId.value) {
-      selectedModelId.value = availableModels.value[0].id
-      selectedProvider.value = availableModels.value[0].provider
-    }
-  }
-
   // Actions
-  async function loadProviders() {
-    try {
-      providers.value = await invoke('list_api_key_providers')
-      error.value = null
-      initializeDefaultModel()
-    } catch (e) {
-      error.value = `加载提供商失败: ${e}`
-      console.error('Failed to load providers:', e)
-    }
-  }
-
-  async function saveApiKey(provider: string, key: string, endpoint?: string) {
-    try {
-      await invoke('store_api_key', {
-        request: {
-          provider,
-          key,
-          endpoint: endpoint || null
-        }
-      })
-      await loadProviders()
-      error.value = null
-    } catch (e) {
-      error.value = `保存 API Key 失败: ${e}`
-      console.error('Failed to save API key:', e)
-      throw e
-    }
-  }
-
-  async function deleteApiKey(provider: string) {
-    try {
-      await invoke('delete_api_key', { provider })
-      await loadProviders()
-      error.value = null
-    } catch (e) {
-      error.value = `删除 API Key 失败: ${e}`
-      console.error('Failed to delete API key:', e)
-      throw e
-    }
-  }
-
   async function loadSessions() {
     try {
       sessions.value = await invoke('list_sessions')
@@ -214,15 +117,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
-  async function createSession(title: string = '新对话', provider?: string, model?: string) {
-    const useProvider = provider || selectedProvider.value
-    const useModel = model || selectedModelId.value || 'gpt-4o-mini'
-
+  async function createSession(title: string = '新对话', provider: string = 'openai', model: string = 'gpt-4o-mini') {
     try {
       const session = await invoke('create_session', {
-        title,
-        provider: useProvider,
-        model: useModel
+        request: { title, provider, model }
       })
       sessions.value.unshift(session as Session)
       currentSessionId.value = (session as Session).id
@@ -237,7 +135,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
 
   async function deleteSession(sessionId: string) {
     try {
-      await invoke('delete_session', { sessionId })
+      await invoke('delete_session', { session_id: sessionId })
       sessions.value = sessions.value.filter(s => s.id !== sessionId)
       if (currentSessionId.value === sessionId) {
         currentSessionId.value = sessions.value[0]?.id || null
@@ -250,31 +148,19 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
-  async function sendMessage(content: string, options?: {
-    stream?: boolean
-    temperature?: number
-    maxTokens?: number
-  }) {
+  async function sendMessage(content: string): Promise<void> {
+    const provider = modelsDevStore.selectedProviderId || 'openai'
+    const model = modelsDevStore.selectedModelId || 'gpt-4o-mini'
+
+    // Create session if needed
     if (!currentSession.value) {
-      // Create a new session if none exists
-      await createSession()
-      if (!currentSession.value) {
-        throw new Error('没有活动的会话')
-      }
+      await createSession('新对话', provider, model)
     }
 
-    const session = currentSession.value
+    const session = currentSession.value!
     const userMessage: ChatMessage = { role: 'user', content, timestamp: Date.now() }
 
-    // Update session with selected model and provider
-    if (selectedModelId.value) {
-      session.model = selectedModelId.value
-    }
-    if (selectedProvider.value) {
-      session.provider = selectedProvider.value
-    }
-
-    // 添加用户消息
+    // Add user message locally
     session.messages.push(userMessage)
 
     isLoading.value = true
@@ -282,63 +168,61 @@ export const useAiChatStore = defineStore('aiChat', () => {
     error.value = null
 
     try {
-      const useStream = options?.stream ?? streamEnabled.value
-      if (useStream) {
-        // 流式响应
-        const requestId = `req-${Date.now()}`
-
-        // 监听流式事件
-        const unlisten = await listen<string>('chat-stream-chunk', (event) => {
-          streamingContent.value += event.payload
-        })
-
-        try {
-          const response = await invoke('send_chat_message_stream', {
-            provider: session.provider,
-            model: session.model,
-            messages: session.messages,
-            temperature: options?.temperature ?? temperature.value,
-            maxTokens: options?.maxTokens ?? maxTokens.value,
-            requestId,
-          })
-
-          const assistantMessage: ChatMessage = {
-            role: 'assistant',
-            content: response as string,
-            timestamp: Date.now()
-          }
-          session.messages.push(assistantMessage)
-        } finally {
-          unlisten()
-        }
-      } else {
-        // 非流式响应
-        const response = await invoke('send_chat_message', {
-          provider: session.provider,
-          model: session.model,
-          messages: session.messages,
-          temperature: options?.temperature ?? temperature.value,
-          maxTokens: options?.maxTokens ?? maxTokens.value,
-        })
-
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: response as string,
-          timestamp: Date.now()
-        }
-        session.messages.push(assistantMessage)
+      // Get API key for provider
+      const apiKeyInfo = await providerConfigStore.getApiKey(provider)
+      if (!apiKeyInfo) {
+        throw new Error(`API key not configured for provider: ${provider}`)
       }
 
-      // 更新会话
-      await invoke('append_message', {
-        sessionId: session.id,
-        message: session.messages[session.messages.length - 1],
+      // Create provider client
+      const providerClient = createProviderClient(provider, {
+        apiKey: apiKeyInfo.key,
+        baseURL: apiKeyInfo.endpoint,
       })
 
-    } catch (e) {
+      // Convert messages to AI SDK format
+      type AIMessage = { role: 'user' | 'assistant' | 'system'; content: string }
+      const aiMessages: AIMessage[] = session.messages.map(m => ({
+        role: m.role as AIMessage['role'],
+        content: m.content,
+      }))
+
+      // Use streamText for streaming
+      const result = streamText({
+        model: providerClient.languageModel(model),
+        messages: aiMessages,
+      })
+
+      // Collect streaming response
+      let fullContent = ''
+      for await (const chunk of result.fullStream) {
+        if (chunk.type === 'text-delta') {
+          fullContent += (chunk as any).delta ?? (chunk as any).text ?? ''
+          streamingContent.value = fullContent
+        }
+      }
+
+      // Add assistant message
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: fullContent,
+        timestamp: Date.now()
+      }
+      session.messages.push(assistantMessage)
+
+      // Persist to backend
+      await invoke('append_message', {
+        request: {
+          session_id: session.id,
+          role: 'assistant',
+          content: fullContent,
+        }
+      })
+
+    } catch (e: any) {
       error.value = `发送消息失败: ${e}`
       console.error('Failed to send message:', e)
-      // 移除失败的用户消息
+      // Remove failed user message
       session.messages.pop()
       throw e
     } finally {
@@ -362,26 +246,12 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
-  // Set selected model
-  function setSelectedModel(modelId: string) {
-    selectedModelId.value = modelId
-    const model = availableModels.value.find(m => m.id === modelId)
-    if (model) {
-      selectedProvider.value = model.provider
-    }
-  }
-
   // Load settings from localStorage
   function loadSettings() {
     try {
       const saved = localStorage.getItem('chat-settings')
       if (saved) {
         const settings = JSON.parse(saved)
-        if (settings.temperature !== undefined) temperature.value = settings.temperature
-        if (settings.maxTokens !== undefined) maxTokens.value = settings.maxTokens
-        if (settings.streamEnabled !== undefined) streamEnabled.value = settings.streamEnabled
-        if (settings.selectedModelId) selectedModelId.value = settings.selectedModelId
-        if (settings.selectedProvider) selectedProvider.value = settings.selectedProvider
         if (settings.enabledMcpServers) enabledMcpServers.value = settings.enabledMcpServers
 
         // Sync MCP server enabled states
@@ -394,15 +264,17 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
+  // Add a message to the current session
+  function addMessage(message: ChatMessage) {
+    if (currentSession.value) {
+      currentSession.value.messages.push(message)
+    }
+  }
+
   // Save settings to localStorage
   function saveSettings() {
     try {
       const settings = {
-        temperature: temperature.value,
-        maxTokens: maxTokens.value,
-        streamEnabled: streamEnabled.value,
-        selectedModelId: selectedModelId.value,
-        selectedProvider: selectedProvider.value,
         enabledMcpServers: enabledMcpServers.value,
       }
       localStorage.setItem('chat-settings', JSON.stringify(settings))
@@ -413,37 +285,25 @@ export const useAiChatStore = defineStore('aiChat', () => {
 
   return {
     // State
-    providers,
     sessions,
     currentSessionId,
     isLoading,
     error,
     streamingContent,
-    selectedModelId,
-    selectedProvider,
     enabledMcpServers,
     mcpServers,
-    temperature,
-    maxTokens,
-    streamEnabled,
 
     // Computed
     currentSession,
-    configuredProviders,
-    availableModels,
-    selectedModel,
 
     // Actions
-    loadProviders,
-    saveApiKey,
-    deleteApiKey,
     loadSessions,
     createSession,
     deleteSession,
     sendMessage,
     toggleMcpServer,
-    setSelectedModel,
     loadSettings,
     saveSettings,
+    addMessage,
   }
 })

@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"pnpm build\",\"timeout\":300000,\"description\":\"Run frontend build\"}",
+  "error": "Exit code 2\n\n> jedi@0.3.0 build /Users/cynosure/workspace/github/jedi\n> vue-tsc --noEmit && vite build\n\nsrc/views/AiChat/index.vue(141,61): error TS2339: Property 'model' does not exist on type '{ role: \"system\" | \"user\" | \"assistant\"; content: string; timestamp?: number | undefined; isStreaming?: boolean | undefined; error?: string | undefined; }'.\nsrc/views/AiChat/index.vue(472,10): error TS6133: 'copyMessage' is declared but its value is never read.\n ELIFECYCLE  Command failed with exit code ...",
+  "timestamp": "2026-04-11T15:56:25.778Z",
+  "retry_count": 1
+}

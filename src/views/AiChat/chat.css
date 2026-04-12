@@ -1,4 +1,26 @@
 /* 主容器 */
+:root {
+  /* Hologram Color Palette */
+  --hologram-bg: #0a0a0f;
+  --hologram-primary: #00d4ff;
+  --hologram-dark: #0891b2;
+  --hologram-glow: rgba(0, 212, 255, 0.3);
+  --hologram-glow-strong: rgba(0, 212, 255, 0.5);
+  --hologram-surface: rgba(0, 20, 40, 0.6);
+  --hologram-surface-light: rgba(0, 20, 40, 0.8);
+  --hologram-text: #e0f7ff;
+  --hologram-text-muted: #64748b;
+
+  /* Effects */
+  --hologram-blur: blur(12px);
+  --hologram-shadow: 0 0 20px rgba(0, 212, 255, 0.3), inset 0 0 20px rgba(0, 212, 255, 0.05);
+
+  /* Border Radius */
+  --radius-card: 12px;
+  --radius-button: 10px;
+  --radius-input: 10px;
+}
+
 .chat-console-page {
   height: 100%;
   width: 100%;
@@ -39,7 +61,7 @@
 .panel-title {
   font-size: 10px;
   letter-spacing: 2px;
-  color: #60a5fa;
+  color: #00d4ff;
   text-transform: uppercase;
   font-weight: 700;
   text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
@@ -82,7 +104,7 @@
 
 .mcp-skill-item.active {
   background: rgba(96, 165, 250, 0.1);
-  border-left-color: #60a5fa;
+  border-left-color: #00d4ff;
 }
 
 .skill-indicator {
@@ -125,7 +147,7 @@
 
 .footer-text {
   font-size: 9px;
-  color: #60a5fa;
+  color: #00d4ff;
   letter-spacing: 2px;
   text-transform: uppercase;
   animation: pulse 2s ease-in-out infinite;
@@ -162,7 +184,70 @@
   z-index: 0;
 }
 
-/* 控制台头部 */
+/* Hologram Header */
+.chat-header {
+  height: 48px;
+  padding: 0 16px;
+  background: var(--hologram-surface-light);
+  border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+  box-shadow: 0 2px 20px rgba(0, 212, 255, 0.1);
+  backdrop-filter: var(--hologram-blur);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--hologram-text-muted);
+}
+
+.header-logo .menu-icon {
+  color: var(--hologram-primary);
+}
+
+.header-logo .holocron {
+  color: var(--hologram-primary);
+  text-shadow: 0 0 10px var(--hologram-glow);
+}
+
+.header-logo .path {
+  color: var(--hologram-text-muted);
+}
+
+.provider-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.provider-display:hover {
+  border-color: var(--hologram-glow-strong);
+  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+}
+
+.provider-label {
+  font-size: 10px;
+  color: var(--hologram-text-muted);
+  letter-spacing: 1px;
+}
+
+.provider-name {
+  font-size: 12px;
+  color: var(--hologram-primary);
+  font-weight: 600;
+}
+
+/* Legacy console header */
 .console-header {
   display: flex;
   align-items: center;
@@ -187,7 +272,7 @@
   gap: 4px;
 }
 
-.prompt-user { color: #60a5fa; font-weight: 700; }
+.prompt-user { color: #00d4ff; font-weight: 700; }
 .prompt-separator { color: #52525b; }
 .prompt-host { color: #a855f7; font-weight: 700; }
 .prompt-path { color: #71717a; }
@@ -238,7 +323,7 @@
 
 .model-name {
   font-size: 11px;
-  color: #60a5fa;
+  color: #00d4ff;
   font-weight: 700;
   padding: 3px 8px;
   background: rgba(96, 165, 250, 0.1);
@@ -338,7 +423,7 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 4px solid #60a5fa;
+  border: 4px solid #00d4ff;
   box-shadow: 0 0 20px rgba(96, 165, 250, 0.4);
 }
 
@@ -386,7 +471,7 @@
 }
 
 .boot-prefix {
-  color: #60a5fa;
+  color: #00d4ff;
   font-weight: 700;
 }
 
@@ -467,8 +552,8 @@
 }
 
 .avatar-container {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
   display: flex;
@@ -495,14 +580,14 @@
 .avatar-text {
   color: white;
   font-weight: 900;
-  font-size: 11px;
+  font-size: 9px;
   letter-spacing: 1px;
 }
 
 /* R2-D2 头像 */
 .r2d2-avatar {
-  width: 48px;
-  height: 56px;
+  width: 36px;
+  height: 42px;
   position: relative;
 }
 
@@ -518,7 +603,7 @@
   left: 4px;
   right: 4px;
   height: 24px;
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #00d4ff 0%, #00d4ff 100%);
   border-radius: 24px 24px 8px 8px;
   box-shadow: 0 4px 15px rgba(96, 165, 250, 0.4);
 }
@@ -592,7 +677,7 @@
 .wave {
   width: 4px;
   height: 12px;
-  background: #60a5fa;
+  background: #00d4ff;
   border-radius: 2px;
   animation: waveBounce 0.6s ease-in-out infinite;
 }
@@ -615,34 +700,15 @@
   margin-bottom: 8px;
 }
 
-.message-role {
-  font-size: 10px;
-  color: #60a5fa;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-
-.user-message .message-role {
-  color: #a855f7;
-}
-
-.message-model {
-  font-size: 9px;
-  color: #52525b;
-  padding: 2px 6px;
-  background: rgba(96, 165, 250, 0.1);
-  border-radius: 2px;
-}
-
 .message-body {
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
-  padding: 16px;
+  padding: 10px 14px;
   border-left: 2px solid;
 }
 
 .ai-message .message-body {
-  border-left-color: #60a5fa;
+  border-left-color: #00d4ff;
   box-shadow: 0 0 20px rgba(96, 165, 250, 0.05);
 }
 
@@ -652,32 +718,54 @@
 }
 
 .message-actions {
+  display: none;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.console-message:hover .message-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
 }
 
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
   background: transparent;
-  border: 1px solid #27272a;
+  border: none;
   border-radius: 4px;
-  color: #71717a;
-  font-size: 9px;
-  font-weight: 700;
+  color: #52525b;
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: inherit;
 }
 
 .action-btn:hover {
-  border-color: #60a5fa;
-  color: #60a5fa;
+  color: #00d4ff;
   background: rgba(96, 165, 250, 0.1);
 }
+
+/* Model badge in AI message */
+.message-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.model-badge {
+  font-size: 9px;
+  color: var(--hologram-text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+/* Hover 元数据 - removed */
 
 .action-icon {
   font-size: 11px;
@@ -695,13 +783,13 @@
 .streaming-cursor {
   width: 8px;
   height: 16px;
-  background: #60a5fa;
+  background: #00d4ff;
   animation: blink 0.8s step-end infinite;
 }
 
 .streaming-text {
   font-size: 11px;
-  color: #60a5fa;
+  color: #00d4ff;
   font-weight: 700;
   letter-spacing: 2px;
 }
@@ -715,7 +803,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #60a5fa;
+  background: #00d4ff;
   animation: dotPulse 1s ease-in-out infinite;
 }
 
@@ -727,70 +815,9 @@
   50% { opacity: 1; transform: scale(1); }
 }
 
-/* 输入区域 */
-.input-console {
-  padding: 16px 20px 20px;
-  background: linear-gradient(0deg, rgba(10, 10, 15, 0.95) 0%, rgba(10, 10, 15, 0.8) 100%);
-  border-top: 1px solid #1a1a24;
-  position: relative;
-  z-index: 2;
-}
+/* (Old input styles removed - using new AI chat styles below) */
 
-.input-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.input-prompt {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  padding-bottom: 8px;
-  flex-shrink: 0;
-}
-
-.input-wrapper {
-  flex: 1;
-  min-width: 0;
-}
-
-.console-input {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid #27272a;
-  border-radius: 6px;
-  padding: 12px 14px;
-  color: #e4e4e7;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  resize: none;
-  outline: none;
-  transition: all 0.15s ease;
-}
-
-.console-input:focus {
-  border-color: #60a5fa;
-  box-shadow: 0 0 20px rgba(96, 165, 250, 0.15), inset 0 0 0 1px rgba(96, 165, 250, 0.3);
-}
-
-.console-input::placeholder {
-  color: #52525b;
-}
-
-.input-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 4px;
-  flex-shrink: 0;
-}
-
-.send-btn, .stop-btn {
+.stop-btn {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -804,25 +831,6 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.15s ease;
-}
-
-.send-btn {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-  color: #0a0a0f;
-  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.3);
-}
-
-.send-btn:hover:not(.disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(96, 165, 250, 0.4);
-}
-
-.send-btn.disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.stop-btn {
   background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
   color: #0a0a0f;
   box-shadow: 0 4px 15px rgba(248, 113, 113, 0.3);
@@ -875,7 +883,7 @@
   background: rgba(96, 165, 250, 0.1);
   border: 1px solid rgba(96, 165, 250, 0.2);
   border-radius: 4px;
-  color: #60a5fa;
+  color: #00d4ff;
   font-family: inherit;
   font-size: 10px;
   font-weight: 700;
@@ -909,7 +917,7 @@
 
 .session-item.active {
   background: rgba(96, 165, 250, 0.1);
-  border-right-color: #60a5fa;
+  border-right-color: #00d4ff;
 }
 
 .session-dot {
@@ -921,7 +929,7 @@
 }
 
 .session-item.active .session-dot {
-  background: #60a5fa;
+  background: #00d4ff;
   box-shadow: 0 0 8px rgba(96, 165, 250, 0.5);
 }
 
@@ -1219,19 +1227,6 @@
   background: linear-gradient(135deg, rgba(184, 134, 11, 0.4), transparent);
 }
 
-.light-theme .message-role {
-  color: #cd7f32;
-}
-
-.light-theme .user-message .message-role {
-  color: #b8860b;
-}
-
-.light-theme .message-model {
-  color: #9a7b5a;
-  background: rgba(205, 127, 50, 0.1);
-}
-
 .light-theme .message-body {
   background: rgba(107, 68, 35, 0.03);
 }
@@ -1303,6 +1298,8 @@
   background: #cd7f32;
 }
 
+/* --- DEPRECATED: old warm-theme input console styles (replaced by glassmorphism) --- */
+/*
 .light-theme .input-console {
   background: linear-gradient(0deg, rgba(239, 224, 204, 0.95) 0%, rgba(239, 224, 204, 0.8) 100%);
   border-top: 1px solid #b8860b;
@@ -1353,6 +1350,8 @@
 .light-theme .shortcut {
   color: #b8a080;
 }
+*/
+/* --- DEPRECATED: old warm-theme input console styles above --- */
 
 .light-theme .mcp-skill-item {
   border-left-color: transparent;
@@ -1410,3 +1409,547 @@
 .light-theme ::-webkit-scrollbar-thumb:hover {
   background: rgba(184, 134, 11, 0.6);
 }
+
+/* =========================================
+   Input Bar - Unified Capsule (Reference Image 1)
+   ========================================= */
+
+/* Container */
+.input-console {
+  padding: 16px 20px;
+  background: transparent;
+  border-top: none;
+  position: relative;
+  z-index: 2;
+}
+
+/* 状态 A: 新会话 - 居中悬浮 */
+.input-console.state-new-session {
+  position: absolute;
+  bottom: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 700px;
+  padding: 0 20px;
+}
+
+
+/* 统一胶囊容器 - 参考图1风格 */
+.input-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.input-bar:focus-within {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* 输入框 - 完全融入容器，无独立边框 */
+.chat-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
+  max-height: 160px;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  color: var(--hologram-text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  line-height: 1.5;
+}
+
+.chat-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* 工具栏按钮 - 小圆形 */
+.toolbar-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+}
+
+/* Model 选择器 - 药丸文字 */
+.model-selector {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.model-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.model-dropdown-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.model-dropdown-btn svg {
+  opacity: 0.5;
+}
+
+/* Model 下拉菜单 */
+.model-dropdown-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: rgba(10, 15, 25, 0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.model-dropdown-menu::-webkit-scrollbar {
+  width: 5px;
+}
+
+.model-dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.model-dropdown-menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.model-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  box-sizing: border-box;
+}
+
+.model-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.model-dropdown-item.selected {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.model-item-name {
+  font-size: 13px;
+  color: var(--hologram-text);
+}
+
+.model-dropdown-item.selected .model-item-name::after {
+  content: ' ✓';
+  color: #3b82f6;
+}
+
+.model-item-context {
+  font-size: 10px;
+  color: var(--hologram-text-muted);
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+}
+
+/* 发送按钮 - 亮蓝圆形 */
+.send-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3b82f6;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+}
+
+.send-btn:hover:not(.disabled) {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+}
+
+.send-btn.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* =========================================
+   Input Console - Glassmorphism Style
+   ========================================= */
+
+.input-console {
+  padding: 16px 20px;
+  background: transparent;
+  border-top: none;
+  position: relative;
+  z-index: 2;
+}
+
+/* 状态 A: 新会话 - 居中悬浮 */
+.input-console.state-new-session {
+  position: absolute;
+  bottom: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 700px;
+  padding: 0 20px;
+}
+
+/* 输入框容器 - 胶囊形状 */
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* 输入框主体 */
+.console-input {
+  width: 100%;
+  min-height: 48px;
+  max-height: 160px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  color: var(--hologram-text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.console-input:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.console-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* 底部操作栏 - 一行布局 */
+.input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.input-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.input-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 工具栏按钮 - 圆形 */
+.toolbar-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+}
+
+/* Model 选择器 - 文字下拉 */
+.model-selector {
+  position: relative;
+}
+
+.model-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.model-dropdown-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.model-dropdown-btn svg {
+  opacity: 0.6;
+}
+
+/* Model 下拉菜单 */
+.model-dropdown-menu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 8px;
+  min-width: 220px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: rgba(10, 15, 25, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.model-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  box-sizing: border-box;
+}
+
+.model-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.model-dropdown-item.selected {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.model-item-name {
+  font-size: 13px;
+  color: var(--hologram-text);
+}
+
+.model-dropdown-item.selected .model-item-name::after {
+  content: ' ✓';
+  color: #3b82f6;
+}
+
+.model-item-context {
+  font-size: 10px;
+  color: var(--hologram-text-muted);
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+}
+
+/* 发送按钮 - 亮蓝圆形 */
+.send-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3b82f6;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+
+.send-btn:hover:not(.disabled) {
+  transform: scale(1.08);
+  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.5);
+}
+
+.send-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+
+/* 状态 B: 聊天进行时输入框靠近底部 */
+.input-console.state-chatting {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 20px 20px;
+}
+
+/* =========================================
+   Input Bar - Light Theme Overrides
+   ========================================= */
+.light-theme .input-console.state-new-session {
+  position: absolute;
+  bottom: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 700px;
+  padding: 0 20px;
+}
+
+.light-theme .input-console.state-chatting {
+  position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 20px 20px;
+}
+
+.light-theme .input-bar {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .input-bar:focus-within {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(59, 130, 246, 0.25);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.light-theme .chat-input {
+  color: #1a1a1a;
+}
+
+.light-theme .chat-input::placeholder {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.light-theme .toolbar-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.light-theme .toolbar-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.light-theme .model-dropdown-btn {
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.light-theme .model-dropdown-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.9);
+}
+
+.light-theme .model-dropdown-menu {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.light-theme .model-item-name {
+  color: #1a1a1a;
+}
+
+.light-theme .model-item-context {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .send-btn {
+  background: #3b82f6;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+
+.light-theme .send-btn:hover:not(.disabled) {
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+

@@ -169,6 +169,12 @@ export default {
     searchPlaceholder: '搜索对话...',
     modelSearchPlaceholder: '搜索模型...',
     commandPlaceholder: '输入命令...',
+    selectProvider: '选择提供商',
+    popular: '热门',
+    other: '其他',
+    custom: '自定义',
+    configured: '已配置',
+    notConfigured: '未配置',
   },
   hosts: {
     validation: {

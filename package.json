@@ -12,6 +12,9 @@
     "release": "node scripts/release.js"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.69",
+    "@ai-sdk/openai": "^3.0.52",
+    "@ai-sdk/openai-compatible": "2.0.41",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/plugin-autostart": "^2.5.1",
     "@tauri-apps/plugin-process": "^2.3.1",
@@ -21,6 +24,7 @@
     "@tresjs/cientos": "^5.2.4",
     "@tresjs/core": "^5.3.2",
     "@types/markdown-it": "^14.1.2",
+    "ai": "^6.0.158",
     "dayjs": "^1.11.19",
     "dompurify": "^3.1.7",
     "highlight.js": "^11.10.0",

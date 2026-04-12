@@ -1505,133 +1505,154 @@
   background: rgba(184, 134, 11, 0.6);
 }
 
-/* --- DEPRECATED: new input styles below --- */
-/* Input area hologram style */
+/* =========================================
+   Input Bar - Unified Capsule (Reference Image 1)
+   ========================================= */
+
+/* Container */
 .input-console {
   padding: 16px 20px;
-  background: var(--hologram-surface);
-  border-top: 1px solid rgba(0, 212, 255, 0.15);
-  backdrop-filter: var(--hologram-blur);
+  background: transparent;
+  border-top: none;
   position: relative;
   z-index: 2;
 }
 
-.input-wrapper {
-  position: relative;
+/* 状态 A: 新会话 - 居中悬浮 */
+.input-console.state-new-session {
+  position: absolute;
+  bottom: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 100%;
+  max-width: 700px;
+  padding: 0 20px;
 }
 
-.input-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
+/* 状态 B: 聊天进行时 */
+.input-console.state-chatting {
+  padding: 12px 20px 20px;
 }
 
-.input-toolbar {
-  display: flex;
-  gap: 8px;
-}
-
-.input-right {
+/* 统一胶囊容器 - 参考图1风格 */
+.input-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
 }
 
-.toolbar-btn {
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 212, 255, 0.05);
-  border: 1px solid rgba(0, 212, 255, 0.2);
-  border-radius: 8px;
-  color: rgba(0, 212, 255, 0.8);
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.15s;
+.input-bar:focus-within {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
 }
 
-.toolbar-btn:hover {
-  background: rgba(0, 212, 255, 0.12);
-  border-color: rgba(0, 212, 255, 0.4);
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
-  color: var(--hologram-primary);
-}
-
-.console-input {
-  width: 100%;
-  min-height: 44px;
+/* 输入框 - 完全融入容器，无独立边框 */
+.chat-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 36px;
   max-height: 160px;
-  padding: 10px 16px;
-  background: rgba(0, 10, 20, 0.6);
-  border: 1px solid rgba(0, 212, 255, 0.15);
-  border-radius: 10px;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   color: var(--hologram-text);
   font-size: 14px;
   font-family: inherit;
   resize: none;
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  line-height: 1.5;
 }
 
-.console-input:focus {
-  border-color: rgba(0, 212, 255, 0.4);
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.15),
-              inset 0 0 10px rgba(0, 212, 255, 0.05);
+.chat-input::placeholder {
+  color: rgba(255, 255, 255, 0.45);
 }
 
-.console-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+/* 工具栏按钮 - 小圆形 */
+.toolbar-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+}
+
+/* Model 选择器 - 药丸文字 */
 .model-selector {
   position: relative;
+  flex-shrink: 0;
 }
 
 .model-dropdown-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: rgba(0, 212, 255, 0.1);
-  border: 1px solid rgba(0, 212, 255, 0.3);
-  border-radius: 8px;
-  color: var(--hologram-primary);
+  gap: 5px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.65);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15s ease;
+  white-space: nowrap;
 }
 
 .model-dropdown-btn:hover {
-  background: rgba(0, 212, 255, 0.15);
-  border-color: rgba(0, 212, 255, 0.5);
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
 }
 
+.model-dropdown-btn svg {
+  opacity: 0.5;
+}
+
+/* Model 下拉菜单 */
 .model-dropdown-menu {
   position: absolute;
-  bottom: 100%;
+  bottom: calc(100% + 8px);
   right: 0;
-  margin-bottom: 8px;
-  min-width: 240px;
-  max-height: 300px;
+  min-width: 200px;
+  max-height: 280px;
   overflow-y: auto;
-  background: rgba(0, 20, 40, 0.95);
-  border: 1px solid rgba(0, 212, 255, 0.25);
-  border-radius: 10px;
+  background: rgba(10, 15, 25, 0.92);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   padding: 6px;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 0 30px rgba(0, 212, 255, 0.2),
-              0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
   z-index: 100;
 }
 
 .model-dropdown-menu::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .model-dropdown-menu::-webkit-scrollbar-track {
@@ -1639,7 +1660,7 @@
 }
 
 .model-dropdown-menu::-webkit-scrollbar-thumb {
-  background: rgba(0, 212, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 3px;
 }
 
@@ -1647,21 +1668,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 9px 12px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.15s;
-  margin-bottom: 2px;
+  transition: background 0.12s;
   box-sizing: border-box;
 }
 
 .model-dropdown-item:hover {
-  background: rgba(0, 212, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .model-dropdown-item.selected {
-  background: rgba(0, 212, 255, 0.15);
-  border: 1px solid rgba(0, 212, 255, 0.3);
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .model-item-name {
@@ -1669,45 +1689,48 @@
   color: var(--hologram-text);
 }
 
+.model-dropdown-item.selected .model-item-name::after {
+  content: ' ✓';
+  color: #3b82f6;
+}
+
 .model-item-context {
   font-size: 10px;
   color: var(--hologram-text-muted);
   padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   border-radius: 4px;
 }
 
-.model-dropdown-item.selected .model-item-name::after {
-  content: ' ✓';
-  color: var(--hologram-primary);
-}
-
+/* 发送按钮 - 亮蓝圆形 */
 .send-btn {
-  width: 44px;
-  height: 44px;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 212, 255, 0.1));
-  border: 1px solid rgba(0, 212, 255, 0.4);
-  border-radius: 10px;
-  color: var(--hologram-primary);
-  font-size: 18px;
+  background: #3b82f6;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 15px;
   cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
 }
 
 .send-btn:hover:not(.disabled) {
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(0, 212, 255, 0.15));
-  box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
 }
 
 .send-btn.disabled {
-  opacity: 0.4;
+  opacity: 0.35;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
-/* --- DEPRECATED: new input styles above --- */
 
 /* =========================================
    Input Console - Glassmorphism Style
@@ -1935,7 +1958,7 @@
 }
 
 /* =========================================
-   Input Console - Light Theme Overrides
+   Input Bar - Light Theme Overrides
    ========================================= */
 .light-theme .input-console.state-new-session {
   position: absolute;
@@ -1953,37 +1976,32 @@
   padding: 12px 20px 20px;
 }
 
-.light-theme .console-input {
+.light-theme .input-bar {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 24px;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .input-bar:focus-within {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(59, 130, 246, 0.25);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.light-theme .chat-input {
   color: #1a1a1a;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
-.light-theme .console-input:focus {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: rgba(59, 130, 246, 0.3);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
-
-.light-theme .console-input::placeholder {
+.light-theme .chat-input::placeholder {
   color: rgba(0, 0, 0, 0.35);
-}
-
-.light-theme .input-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 12px;
 }
 
 .light-theme .toolbar-btn {
   background: rgba(0, 0, 0, 0.05);
   border-color: rgba(0, 0, 0, 0.1);
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(0, 0, 0, 0.45);
 }
 
 .light-theme .toolbar-btn:hover {
@@ -1998,6 +2016,7 @@
 
 .light-theme .model-dropdown-btn:hover {
   background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.15);
   color: rgba(0, 0, 0, 0.9);
 }
 
@@ -2011,12 +2030,16 @@
   color: #1a1a1a;
 }
 
+.light-theme .model-item-context {
+  background: rgba(0, 0, 0, 0.05);
+}
+
 .light-theme .send-btn {
   background: #3b82f6;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
 }
 
 .light-theme .send-btn:hover:not(.disabled) {
-  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 

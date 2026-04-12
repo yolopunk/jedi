@@ -364,7 +364,7 @@ const displayMessages = computed(() => {
 })
 
 const inputConsoleState = computed(() => {
-  const hasMessages = store.currentSession?.messages.length > 0
+  const hasMessages = (store.currentSession?.messages?.length ?? 0) > 0
   return hasMessages ? 'state-chatting' : 'state-new-session'
 })
 

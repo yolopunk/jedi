@@ -4,7 +4,9 @@
 use keyring::Entry;
 use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fmt;
+use std::sync::Mutex;
 
 use super::audit_log::{AuditLogger, OperationResult, SecurityEvent, SecurityEventType};
 
@@ -110,6 +112,8 @@ impl Drop for ApiKey {
 pub struct KeyringManager {
   service_name: String,
   audit_logger: AuditLogger,
+  /// 内存缓存：避免频繁访问 keychain
+  cache: Mutex<HashMap<String, Option<ApiKey>>>,
 }
 
 impl KeyringManager {
@@ -119,6 +123,7 @@ impl KeyringManager {
     Ok(Self {
       service_name: "jedi-chat".to_string(),
       audit_logger,
+      cache: Mutex::new(HashMap::new()),
     })
   }
 
@@ -165,11 +170,28 @@ impl KeyringManager {
 
     let _ = self.audit_logger.log_event(event);
 
+    // 写入成功后更新缓存
+    if result.is_ok() {
+      if let Ok(mut cache) = self.cache.lock().map_err(|e| format!("Lock error: {}", e)) {
+        cache.insert(api_key.provider.to_string(), Some(api_key));
+      }
+    }
+
     result
   }
 
-  /// 读取 API Key
+  /// 读取 API Key（带缓存）
   pub fn get_api_key(&self, provider: ModelProvider) -> Result<Option<ApiKey>, String> {
+    let cache_key = provider.to_string();
+
+    // 先查缓存
+    {
+      let cache = self.cache.lock().map_err(|e| format!("Lock error: {}", e))?;
+      if let Some(cached) = cache.get(&cache_key) {
+        return Ok(cached.clone());
+      }
+    }
+
     let entry_name = self.get_entry_name(&provider);
 
     // 记录审计事件
@@ -205,6 +227,13 @@ impl KeyringManager {
 
       Ok(Some(ApiKey::new(provider, key, endpoint)))
     })();
+
+    // 写入缓存
+    if let Ok(ref val) = result {
+      if let Ok(mut cache) = self.cache.lock().map_err(|e| format!("Lock error: {}", e)) {
+        cache.insert(cache_key, val.clone());
+      }
+    }
 
     if let Err(ref e) = result {
       event = event.with_result(OperationResult::Failure);
@@ -252,6 +281,13 @@ impl KeyringManager {
     }
 
     let _ = self.audit_logger.log_event(event);
+
+    // 删除成功后更新缓存
+    if result.is_ok() {
+      if let Ok(mut cache) = self.cache.lock().map_err(|e| format!("Lock error: {}", e)) {
+        cache.remove(&provider.to_string());
+      }
+    }
 
     result
   }

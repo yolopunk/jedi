@@ -9,6 +9,7 @@ use crate::utils::security::{
   ChatMessageValidation, KeyringManager, ModelProvider, OperationResult, SecurityEvent,
   SecurityEventType, ValidationResult,
 };
+use secrecy::ExposeSecret;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
@@ -248,13 +249,24 @@ pub struct StoreApiKeyRequest {
   pub endpoint: Option<String>,
 }
 
-/// API Key 信息响应（不包含实际 Key）
+/// API Key 信息响应（不包含实际 Key，仅用于显示）
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiKeyInfoResponse {
   /// 提供商
   pub provider: String,
   /// 脱敏显示的 Key
   pub masked_key: String,
+  /// API 端点
+  pub endpoint: Option<String>,
+}
+
+/// API Key 响应（包含实际 Key，供前端 AI SDK 使用）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiKeyResponse {
+  /// 提供商
+  pub provider: String,
+  /// 实际 API Key
+  pub key: String,
   /// API 端点
   pub endpoint: Option<String>,
 }
@@ -325,6 +337,27 @@ pub async fn get_api_key_info(
   Ok(api_key.map(|key| ApiKeyInfoResponse {
     provider: key.provider().to_string(),
     masked_key: key.mask_key(),
+    endpoint: key.endpoint().map(|s| s.to_string()),
+  }))
+}
+
+/// Tauri command: 获取 API Key（返回实际 key，供前端 AI SDK 使用）
+#[tauri::command]
+pub async fn get_api_key(
+  state: State<'_, KeyringManagerState>,
+  provider: String,
+) -> Result<Option<ApiKeyResponse>, String> {
+  let provider_enum = parse_provider(&provider)?;
+
+  let manager = state
+    .manager
+    .lock()
+    .map_err(|e| format!("Lock error: {}", e))?;
+  let api_key = manager.get_api_key(provider_enum)?;
+
+  Ok(api_key.map(|key| ApiKeyResponse {
+    provider: key.provider().to_string(),
+    key: key.key().expose_secret().to_string(),
     endpoint: key.endpoint().map(|s| s.to_string()),
   }))
 }

@@ -81,9 +81,6 @@
                     </div>
                   </div>
                   <div class="message-content user-message">
-                    <div class="message-header">
-                      <span class="message-role">&lt;USER_INPUT&gt;</span>
-                    </div>
                     <div class="message-body">
                       <div class="markdown-body" v-html="renderMessage(message.content)"></div>
                     </div>
@@ -113,41 +110,30 @@
                     </div>
                   </div>
                   <div class="message-content ai-message">
-                    <div class="message-header">
-                      <span class="message-role">&lt;R2D2_OUTPUT&gt;</span>
-                      <span class="message-model">[{{ currentProviderName }}]</span>
+                    <div class="message-meta">
+                      <span class="model-badge">{{ currentModelName }}</span>
                     </div>
                     <div class="message-body">
                       <div class="markdown-body" v-html="renderMessage(message.content)"></div>
                     </div>
                     <div class="message-actions">
-                      <button class="action-btn" @click="handleCopyMessage(message.content)">
-                        <span class="action-icon">⧉</span>
-                        <span class="action-label">COPY</span>
+                      <button class="action-btn" @click="handleCopyMessage(message.content)" title="Copy">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="9" y="9" width="13" height="13" rx="2"/>
+                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
                       </button>
                       <button
                         v-if="index === displayMessages.length - 1"
                         class="action-btn"
                         @click="handleRegenerate"
+                        title="Regenerate"
                       >
-                        <span class="action-icon">↻</span>
-                        <span class="action-label">REGEN</span>
-                      </button>
-                    </div>
-                    <!-- Hover 元数据 -->
-                    <div class="message-meta">
-                      <span class="meta-item model-tag">
-                        <span class="meta-label">MODEL:</span>
-                        <span class="meta-value">{{ store.currentSession?.model || 'N/A' }}</span>
-                      </span>
-                      <span class="meta-item copy-btn" @click="handleCopyMessage(message.content)">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                          <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/>
-                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M23 4v6h-6M1 20v-6h6"/>
+                          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                         </svg>
-                        复制
-                      </span>
-                      <span class="meta-item time">{{ formatTimestamp(message.timestamp) }}</span>
+                      </button>
                     </div>
                   </div>
                 </template>
@@ -361,8 +347,7 @@ const displayMessages = computed(() => {
 })
 
 const inputConsoleState = computed(() => {
-  const hasMessages = (store.currentSession?.messages?.length ?? 0) > 0
-  return hasMessages ? 'state-chatting' : 'state-new-session'
+  return displayMessages.value.length > 0 ? 'state-chatting' : 'state-new-session'
 })
 
 function renderMessage(content: string) {

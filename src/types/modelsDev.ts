@@ -61,3 +61,9 @@ export interface ConfiguredProvider {
   provider: string
   has_key: boolean
 }
+
+export interface ApiKeyResponse {
+  provider: string
+  key: string
+  endpoint?: string
+}

@@ -80,35 +80,46 @@
               :key="provider.id"
               class="provider-item"
               :class="{ configured: isConfigured(provider.id) }"
-              @click="selectProvider(provider)"
             >
-              <div class="provider-logo">
-                <img
-                  v-if="provider.id !== '__custom__'"
-                  :src="`https://models.dev/logos/${provider.id}.svg`"
-                  :alt="provider.name"
-                  @error="(e) => (e.target as HTMLImageElement).style.display='none'"
-                />
-                <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
-                  <line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" stroke-width="2"/>
-                  <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="2"/>
-                </svg>
+              <div class="provider-main" @click="handleProviderClick(provider)">
+                <div class="provider-logo">
+                  <img
+                    v-if="provider.id !== '__custom__'"
+                    :src="`https://models.dev/logos/${provider.id}.svg`"
+                    :alt="provider.name"
+                    @error="(e) => (e.target as HTMLImageElement).style.display='none'"
+                  />
+                  <svg v-else width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                    <line x1="12" y1="8" x2="12" y2="16" stroke="currentColor" stroke-width="2"/>
+                    <line x1="8" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </div>
+                <div class="provider-info">
+                  <span class="provider-name">{{ provider.name }}</span>
+                  <span class="provider-models">{{ Object.keys(provider.models).length }} models</span>
+                </div>
+                <div class="provider-status">
+                  <span v-if="isConfigured(provider.id)" class="status-badge configured">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                    Ready
+                  </span>
+                  <span v-else class="status-badge">
+                    Not set
+                  </span>
+                </div>
               </div>
-              <div class="provider-info">
-                <span class="provider-name">{{ provider.name }}</span>
-                <span class="provider-models">{{ Object.keys(provider.models).length }} models</span>
-              </div>
-              <div class="provider-status">
-                <span v-if="isConfigured(provider.id)" class="status-badge configured">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                  Ready
-                </span>
-                <span v-else class="status-badge">
-                  Not set
-                </span>
-              </div>
-              <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <!-- Select button for configured providers -->
+              <button
+                v-if="isConfigured(provider.id)"
+                class="select-btn"
+                :class="{ active: modelsDevStore.selectedProviderId === provider.id }"
+                @click.stop="selectProviderDirectly(provider)"
+              >
+                {{ modelsDevStore.selectedProviderId === provider.id ? 'Using' : 'Select' }}
+              </button>
+              <!-- Chevron for unconfigured providers (click to configure) -->
+              <svg v-else class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <polyline points="9 18 15 12 9 6" stroke="currentColor" stroke-width="2"/>
               </svg>
             </div>
@@ -448,6 +459,35 @@ function selectModel(model: ModelsDevModel) {
   modelsDevStore.selectProvider(selectedProvider.value!.id)
 }
 
+// Handle provider main area click - opens config for all providers
+function handleProviderClick(provider: ModelsDevProvider) {
+  // Always open config view, but populate endpoint from stored config if configured
+  selectProvider(provider)
+  // If provider is configured, load its stored endpoint
+  if (isConfigured(provider.id)) {
+    // Load stored endpoint for this provider
+    loadStoredEndpoint(provider.id)
+  }
+}
+
+async function loadStoredEndpoint(providerId: string) {
+  try {
+    const keyInfo = await providerConfigStore.getApiKey(providerId)
+    if (keyInfo?.endpoint) {
+      configEndpoint.value = keyInfo.endpoint
+    }
+  } catch (e) {
+    console.warn('Failed to load stored endpoint:', e)
+  }
+}
+
+// Directly switch to a configured provider and close dialog
+function selectProviderDirectly(provider: ModelsDevProvider) {
+  modelsDevStore.selectProvider(provider.id)
+  // Close the dialog
+  emit('update:modelValue', false)
+}
+
 watch(() => props.modelValue, async (open) => {
   if (open) {
     selectedProvider.value = null
@@ -759,8 +799,22 @@ function isUrl(str: string): boolean {
   gap: 12px;
   padding: 12px;
   border-radius: 10px;
-  cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.provider-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  cursor: pointer;
+}
+
+.provider-main:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  margin: -4px;
+  padding: 4px;
 }
 
 .provider-item:hover {
@@ -769,6 +823,31 @@ function isUrl(str: string): boolean {
 
 .provider-item.configured {
   background: rgba(0, 255, 136, 0.03);
+}
+
+.select-btn {
+  padding: 6px 14px;
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 6px;
+  color: #00ffff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.select-btn:hover {
+  background: rgba(0, 255, 255, 0.2);
+  border-color: rgba(0, 255, 255, 0.5);
+}
+
+.select-btn.active {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: rgba(0, 255, 136, 0.4);
+  color: #00ff88;
+  cursor: default;
 }
 
 .provider-logo {

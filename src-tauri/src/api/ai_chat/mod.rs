@@ -10,7 +10,7 @@ pub(crate) mod models_dev;
 
 // 重新导出安全相关类型和 commands
 pub use security::{
-  delete_api_key, encode_html_entities, get_api_key_info, has_api_key, list_api_key_providers,
+  delete_api_key, encode_html_entities, get_api_key, get_api_key_info, has_api_key, list_api_key_providers,
   log_security_event, query_security_logs, sanitize, store_api_key, validate_input, validate_key,
   validate_message, validate_url, AuditLoggerState, KeyringManagerState,
 };

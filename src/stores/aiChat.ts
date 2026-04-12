@@ -1,7 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
+import { streamText } from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'
+import { createAnthropic } from '@ai-sdk/anthropic'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
+import { useProviderConfigStore } from './providerConfig'
+import { useModelsDevStore } from './modelsDev'
 
 // MCP Server 接口
 export interface McpServer {
@@ -12,7 +17,7 @@ export interface McpServer {
   icon?: string
 }
 
-// 消息格式（后端期望格式）
+// 消息格式
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant'
   content: string
@@ -42,6 +47,44 @@ export const DEFAULT_MCP_SERVERS: McpServer[] = [
   { id: 'browser', name: 'Browser', description: '网页浏览和搜索', enabled: false, icon: 'mdi-web' },
 ]
 
+// ========== AI SDK Provider 工厂 ==========
+
+function createProviderClient(providerId: string, settings: { apiKey: string; baseURL?: string }) {
+  // If there's a custom baseURL, determine which SDK to use based on the API format
+  if (settings.baseURL) {
+    // Check if the endpoint uses Anthropic API format
+    if (settings.baseURL.includes('anthropic') || providerId === 'anthropic') {
+      return createAnthropic({
+        apiKey: settings.apiKey,
+        baseURL: settings.baseURL,
+      })
+    }
+    // Otherwise use OpenAI-compatible
+    return createOpenAICompatible({
+      name: providerId,
+      apiKey: settings.apiKey,
+      baseURL: settings.baseURL,
+    })
+  }
+
+  // For providers without custom baseURL, use official SDKs
+  switch (providerId) {
+    case 'openai':
+      return createOpenAI({
+        apiKey: settings.apiKey,
+      })
+    case 'anthropic':
+      return createAnthropic({
+        apiKey: settings.apiKey,
+      })
+    default:
+      // For unknown providers without baseURL, throw an error - they need to specify an endpoint
+      throw new Error(`Provider ${providerId} requires a baseURL endpoint to be configured`)
+  }
+}
+
+// ========== Store ==========
+
 export const useAiChatStore = defineStore('aiChat', () => {
   // State
   const sessions = ref<Session[]>([])
@@ -53,6 +96,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
   // MCP State
   const enabledMcpServers = ref<string[]>([])
   const mcpServers = ref<McpServer[]>([...DEFAULT_MCP_SERVERS])
+
+  // Stores
+  const providerConfigStore = useProviderConfigStore()
+  const modelsDevStore = useModelsDevStore()
 
   // Computed
   const currentSession = computed(() =>
@@ -73,9 +120,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
   async function createSession(title: string = '新对话', provider: string = 'openai', model: string = 'gpt-4o-mini') {
     try {
       const session = await invoke('create_session', {
-        title,
-        provider,
-        model
+        request: { title, provider, model }
       })
       sessions.value.unshift(session as Session)
       currentSessionId.value = (session as Session).id
@@ -90,7 +135,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
 
   async function deleteSession(sessionId: string) {
     try {
-      await invoke('delete_session', { sessionId })
+      await invoke('delete_session', { session_id: sessionId })
       sessions.value = sessions.value.filter(s => s.id !== sessionId)
       if (currentSessionId.value === sessionId) {
         currentSessionId.value = sessions.value[0]?.id || null
@@ -104,102 +149,80 @@ export const useAiChatStore = defineStore('aiChat', () => {
   }
 
   async function sendMessage(content: string): Promise<void> {
+    const provider = modelsDevStore.selectedProviderId || 'openai'
+    const model = modelsDevStore.selectedModelId || 'gpt-4o-mini'
+
+    // Create session if needed
     if (!currentSession.value) {
-      // Create a new session if none exists
-      await createSession()
-      if (!currentSession.value) {
-        throw new Error('没有活动的会话')
-      }
+      await createSession('新对话', provider, model)
     }
 
-    const session = currentSession.value
+    const session = currentSession.value!
     const userMessage: ChatMessage = { role: 'user', content, timestamp: Date.now() }
 
-    // 添加用户消息
+    // Add user message locally
     session.messages.push(userMessage)
 
     isLoading.value = true
     streamingContent.value = ''
     error.value = null
 
-    // 流式响应收集
-    let fullContent = ''
-    let streamDone = false
-    let streamError: string | null = null
-
     try {
-      // 流式响应
-      const requestId = `req-${Date.now()}`
-
-      // 创建一个 Promise，在收到 Done 事件时 resolve
-      const waitForStreamDone = new Promise<void>((resolve, reject) => {
-        listen(
-          `chat-stream-${requestId}`,
-          (event) => {
-            const payload = event.payload as { Content?: { text?: string } } | { Done?: null } | { Error?: { message?: string } }
-            if ('Content' in payload && payload.Content?.text) {
-              fullContent += payload.Content.text
-              streamingContent.value = fullContent
-            }
-            if ('Done' in payload) {
-              streamDone = true
-              resolve()
-            }
-            if ('Error' in payload && payload.Error?.message) {
-              streamError = payload.Error.message
-              reject(new Error(streamError))
-            }
-          }
-        ).then((unlisten) => {
-          // Store unlisten for cleanup
-          ;(window as any).__streamUnlisten = unlisten
-        })
-      })
-
-      try {
-        // 启动流式请求
-        await invoke('send_chat_message_stream', {
-          provider: session.provider,
-          model: session.model,
-          messages: session.messages,
-          requestId,
-        })
-
-        // 等待流结束（通过 Done 事件触发）
-        // 添加超时保护
-        await Promise.race([
-          waitForStreamDone,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Stream timeout (30s)')), 30000))
-        ])
-
-        if (!streamDone && !streamError) {
-          // 兜底：如果没收到 Done 事件但有内容，也允许通过
-          console.warn('Stream finished without explicit Done event')
-        }
-
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: fullContent || streamingContent.value,
-          timestamp: Date.now()
-        }
-        session.messages.push(assistantMessage)
-      } finally {
-        // 清理监听器
-        const unlisten = (window as any).__streamUnlisten
-        if (unlisten) unlisten()
-        delete (window as any).__streamUnlisten
+      // Get API key for provider
+      const apiKeyInfo = await providerConfigStore.getApiKey(provider)
+      if (!apiKeyInfo) {
+        throw new Error(`API key not configured for provider: ${provider}`)
       }
 
-      // 更新会话
-      await invoke('append_message', {
-        sessionId: session.id,
-        message: session.messages[session.messages.length - 1],
+      // Create provider client
+      const providerClient = createProviderClient(provider, {
+        apiKey: apiKeyInfo.key,
+        baseURL: apiKeyInfo.endpoint,
       })
 
-    } catch (e) {
+      // Convert messages to AI SDK format
+      type AIMessage = { role: 'user' | 'assistant' | 'system'; content: string }
+      const aiMessages: AIMessage[] = session.messages.map(m => ({
+        role: m.role as AIMessage['role'],
+        content: m.content,
+      }))
+
+      // Use streamText for streaming
+      const result = streamText({
+        model: providerClient.languageModel(model),
+        messages: aiMessages,
+      })
+
+      // Collect streaming response
+      let fullContent = ''
+      for await (const chunk of result.fullStream) {
+        if (chunk.type === 'text-delta') {
+          fullContent += (chunk as any).delta ?? (chunk as any).text ?? ''
+          streamingContent.value = fullContent
+        }
+      }
+
+      // Add assistant message
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: fullContent,
+        timestamp: Date.now()
+      }
+      session.messages.push(assistantMessage)
+
+      // Persist to backend
+      await invoke('append_message', {
+        request: {
+          session_id: session.id,
+          role: 'assistant',
+          content: fullContent,
+        }
+      })
+
+    } catch (e: any) {
       error.value = `发送消息失败: ${e}`
       console.error('Failed to send message:', e)
-      // 移除失败的用户消息
+      // Remove failed user message
       session.messages.pop()
       throw e
     } finally {

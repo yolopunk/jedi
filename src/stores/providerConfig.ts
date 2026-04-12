@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
-import type { ConfiguredProvider } from '@/types/modelsDev'
+import type { ConfiguredProvider, ApiKeyResponse } from '@/types/modelsDev'
 
 export const useProviderConfigStore = defineStore('providerConfig', () => {
   const configuredProviders = ref<ConfiguredProvider[]>([])
@@ -36,6 +36,10 @@ export const useProviderConfigStore = defineStore('providerConfig', () => {
     return await invoke<boolean>('has_api_key', { provider })
   }
 
+  async function getApiKey(provider: string): Promise<ApiKeyResponse | null> {
+    return await invoke<ApiKeyResponse | null>('get_api_key', { provider })
+  }
+
   function isProviderConfigured(providerId: string): boolean {
     return configuredProviders.value.some(p => p.provider === providerId && p.has_key)
   }
@@ -48,6 +52,7 @@ export const useProviderConfigStore = defineStore('providerConfig', () => {
     saveApiKey,
     deleteApiKey,
     hasApiKey,
+    getApiKey,
     isProviderConfigured,
   }
 })

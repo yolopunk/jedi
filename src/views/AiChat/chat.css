@@ -552,8 +552,8 @@
 }
 
 .avatar-container {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
   background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
   display: flex;
@@ -580,14 +580,14 @@
 .avatar-text {
   color: white;
   font-weight: 900;
-  font-size: 11px;
+  font-size: 9px;
   letter-spacing: 1px;
 }
 
 /* R2-D2 头像 */
 .r2d2-avatar {
-  width: 48px;
-  height: 56px;
+  width: 36px;
+  height: 42px;
   position: relative;
 }
 
@@ -700,29 +700,10 @@
   margin-bottom: 8px;
 }
 
-.message-role {
-  font-size: 10px;
-  color: #00d4ff;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-
-.user-message .message-role {
-  color: #a855f7;
-}
-
-.message-model {
-  font-size: 9px;
-  color: #52525b;
-  padding: 2px 6px;
-  background: rgba(96, 165, 250, 0.1);
-  border-radius: 2px;
-}
-
 .message-body {
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
-  padding: 16px;
+  padding: 10px 14px;
   border-left: 2px solid;
 }
 
@@ -737,87 +718,54 @@
 }
 
 .message-actions {
+  display: none;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.console-message:hover .message-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
 }
 
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
   background: transparent;
-  border: 1px solid #27272a;
+  border: none;
   border-radius: 4px;
-  color: #71717a;
-  font-size: 9px;
-  font-weight: 700;
+  color: #52525b;
   cursor: pointer;
   transition: all 0.15s ease;
   font-family: inherit;
 }
 
 .action-btn:hover {
-  border-color: #00d4ff;
   color: #00d4ff;
   background: rgba(96, 165, 250, 0.1);
 }
 
-/* Hover 元数据 */
+/* Model badge in AI message */
 .message-meta {
-  display: none;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 8px 0;
-  opacity: 0.6;
-  font-size: 11px;
-  color: var(--hologram-text-muted);
-  transition: opacity 0.15s;
-}
-
-.console-message:hover .message-meta,
-.console-message .message-meta:hover {
   display: flex;
-  opacity: 1;
-}
-
-.meta-item {
-  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 4px 8px;
-  background: rgba(0, 212, 255, 0.08);
-  border: 1px solid rgba(0, 212, 255, 0.15);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.15s;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
-.meta-item:hover {
-  background: rgba(0, 212, 255, 0.15);
-  border-color: rgba(0, 212, 255, 0.3);
-  color: var(--hologram-primary);
-}
-
-.model-tag .meta-label {
+.model-badge {
+  font-size: 9px;
   color: var(--hologram-text-muted);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
 }
 
-.model-tag .meta-value {
-  color: var(--hologram-primary);
-  font-weight: 600;
-}
-
-.meta-item.time {
-  cursor: default;
-}
-
-.meta-item.time:hover {
-  background: rgba(0, 212, 255, 0.08);
-  border-color: rgba(0, 212, 255, 0.15);
-  color: var(--hologram-text-muted);
-}
+/* Hover 元数据 - removed */
 
 .action-icon {
   font-size: 11px;
@@ -1279,19 +1227,6 @@
   background: linear-gradient(135deg, rgba(184, 134, 11, 0.4), transparent);
 }
 
-.light-theme .message-role {
-  color: #cd7f32;
-}
-
-.light-theme .user-message .message-role {
-  color: #b8860b;
-}
-
-.light-theme .message-model {
-  color: #9a7b5a;
-  background: rgba(205, 127, 50, 0.1);
-}
-
 .light-theme .message-body {
   background: rgba(107, 68, 35, 0.03);
 }
@@ -1315,36 +1250,6 @@
   border-color: #cd7f32;
   color: #cd7f32;
   background: rgba(205, 127, 50, 0.1);
-}
-
-.light-theme .message-meta {
-  background: rgba(205, 127, 50, 0.05);
-}
-
-.light-theme .meta-item {
-  background: rgba(205, 127, 50, 0.08);
-  border-color: rgba(205, 127, 50, 0.2);
-  color: #6b4423;
-}
-
-.light-theme .meta-item:hover {
-  background: rgba(205, 127, 50, 0.15);
-  border-color: rgba(205, 127, 50, 0.35);
-  color: #cd7f32;
-}
-
-.light-theme .model-tag .meta-label {
-  color: #9a7b5a;
-}
-
-.light-theme .model-tag .meta-value {
-  color: #cd7f32;
-}
-
-.light-theme .meta-item.time:hover {
-  background: rgba(205, 127, 50, 0.08);
-  border-color: rgba(205, 127, 50, 0.2);
-  color: #6b4423;
 }
 
 .light-theme .streaming-cursor {
@@ -1530,10 +1435,6 @@
   padding: 0 20px;
 }
 
-/* 状态 B: 聊天进行时 */
-.input-console.state-chatting {
-  padding: 12px 20px 20px;
-}
 
 /* 统一胶囊容器 - 参考图1风格 */
 .input-bar {
@@ -1742,7 +1643,6 @@
   border-top: none;
   position: relative;
   z-index: 2;
-  transition: all 0.3s ease;
 }
 
 /* 状态 A: 新会话 - 居中悬浮 */
@@ -1954,6 +1854,11 @@
 /* 状态 B: 聊天进行时输入框靠近底部 */
 .input-console.state-chatting {
   position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+  max-width: 100%;
   padding: 12px 20px 20px;
 }
 
@@ -1973,6 +1878,11 @@
 
 .light-theme .input-console.state-chatting {
   position: relative;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 100%;
+  max-width: 100%;
   padding: 12px 20px 20px;
 }
 

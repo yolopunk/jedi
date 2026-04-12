@@ -1927,10 +1927,6 @@
   box-shadow: none;
 }
 
-/* 状态 A: 新会话时隐藏底部操作栏 */
-.state-new-session .input-actions {
-  display: none;
-}
 
 /* 状态 B: 聊天进行时输入框靠近底部 */
 .input-console.state-chatting {
@@ -2024,6 +2020,3 @@
   box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
 }
 
-.light-theme .state-new-session .input-actions {
-  display: none;
-}

@@ -1501,6 +1501,7 @@
   background: rgba(184, 134, 11, 0.6);
 }
 
+/* --- DEPRECATED: new input styles below --- */
 /* Input area hologram style */
 .input-console {
   padding: 16px 20px;
@@ -1701,4 +1702,234 @@
 .send-btn.disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+/* --- DEPRECATED: new input styles above --- */
+
+/* =========================================
+   Input Console - Glassmorphism Style
+   ========================================= */
+
+.input-console {
+  padding: 16px 20px;
+  background: transparent;
+  border-top: none;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+/* 状态 A: 新会话 - 居中悬浮 */
+.input-console.state-new-session {
+  position: absolute;
+  bottom: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  max-width: 700px;
+  padding: 0 20px;
+}
+
+/* 输入框容器 - 胶囊形状 */
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* 输入框主体 */
+.console-input {
+  width: 100%;
+  min-height: 48px;
+  max-height: 160px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  color: var(--hologram-text);
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.console-input:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.console-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* 底部操作栏 - 一行布局 */
+.input-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.input-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.input-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 工具栏按钮 - 圆形 */
+.toolbar-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toolbar-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  transform: scale(1.05);
+}
+
+/* Model 选择器 - 文字下拉 */
+.model-selector {
+  position: relative;
+}
+
+.model-dropdown-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.model-dropdown-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.model-dropdown-btn svg {
+  opacity: 0.6;
+}
+
+/* Model 下拉菜单 */
+.model-dropdown-menu {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 8px;
+  min-width: 220px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: rgba(10, 15, 25, 0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.model-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  box-sizing: border-box;
+}
+
+.model-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.model-dropdown-item.selected {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.model-item-name {
+  font-size: 13px;
+  color: var(--hologram-text);
+}
+
+.model-dropdown-item.selected .model-item-name::after {
+  content: ' ✓';
+  color: #3b82f6;
+}
+
+.model-item-context {
+  font-size: 10px;
+  color: var(--hologram-text-muted);
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+}
+
+/* 发送按钮 - 亮蓝圆形 */
+.send-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3b82f6;
+  border: none;
+  border-radius: 50%;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+}
+
+.send-btn:hover:not(.disabled) {
+  transform: scale(1.08);
+  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.5);
+}
+
+.send-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* 状态 A: 新会话时隐藏底部操作栏 */
+.state-new-session .input-actions {
+  display: none;
+}
+
+/* 状态 B: 聊天进行时输入框靠近底部 */
+.input-console.state-chatting {
+  position: relative;
+  padding: 12px 20px 20px;
 }

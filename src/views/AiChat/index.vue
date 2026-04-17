@@ -6,9 +6,6 @@
     <div class="crt-vignette"></div>
 
     <div class="chat-console-layout">
-      <!-- 左侧：Skills 面板 -->
-      <SkillPanel />
-
       <!-- 主聊天区域 -->
       <div class="chat-console-area">
         <!-- Hologram Header -->
@@ -35,24 +32,53 @@
           <!-- 欢迎界面 -->
           <div v-if="!store.currentSession || store.currentSession.messages.length === 0" class="boot-screen">
             <div class="boot-content">
-              <div class="boot-logo">
-                <!-- BB-8 风格动画 -->
-                <div class="bb8-container">
-                  <div class="bb8-body">
-                    <div class="bb8-head">
-                      <div class="bb8-eye left"></div>
-                      <div class="bb8-eye right"></div>
-                    </div>
-                    <div class="bb8-circle"></div>
-                    <div class="bb8-line horizontal"></div>
-                    <div class="bb8-line vertical"></div>
+              <div class="boot-messages-layout">
+                <!-- 左侧消息列 -->
+                <div class="message-column left">
+                  <div
+                    v-for="(msg, i) in displayedLeftMessages"
+                    :key="`left-${i}`"
+                    class="boot-message-bubble left"
+                    :style="{ animationDelay: `${i * 0.5}s` }"
+                  >
+                    <span class="msg-prefix">[SYSTEM]</span>
+                    <span class="msg-text">{{ msg }}</span>
+                    <span class="typing-cursor" v-if="i === displayedLeftMessages.length - 1 && isTyping"></span>
                   </div>
                 </div>
-              </div>
-              <div class="boot-text">
-                <div class="boot-line" v-for="(line, i) in bootSequence" :key="i">
-                  <span class="boot-prefix">[SYSTEM]</span>
-                  <span class="boot-content">{{ line }}</span>
+
+                <!-- 中心BB-8机器人 -->
+                <div class="boot-logo">
+                  <!-- BB-8 风格动画 -->
+                  <div class="bb8-container">
+                    <div class="bb8-body">
+                      <div class="bb8-head">
+                        <div class="bb8-eye left"></div>
+                        <div class="bb8-eye right"></div>
+                      </div>
+                      <div class="bb8-circle"></div>
+                      <div class="bb8-line horizontal"></div>
+                      <div class="bb8-line vertical"></div>
+                    </div>
+                    <!-- 思考时的声波动画 -->
+                    <div class="sound-waves">
+                      <span v-for="i in 3" :key="i" class="wave" :style="{ animationDelay: `${i * 0.1}s` }"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 右侧消息列 -->
+                <div class="message-column right">
+                  <div
+                    v-for="(msg, i) in displayedRightMessages"
+                    :key="`right-${i}`"
+                    class="boot-message-bubble right"
+                    :style="{ animationDelay: `${i * 0.5}s` }"
+                  >
+                    <span class="msg-prefix">[SYSTEM]</span>
+                    <span class="msg-text">{{ msg }}</span>
+                    <span class="typing-cursor" v-if="i === displayedRightMessages.length - 1 && isTyping"></span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -224,15 +250,23 @@
       </div>
 
       <!-- 右侧：会话历史 -->
-      <div class="history-panel">
+      <div class="history-panel" :class="{ collapsed: isHistoryCollapsed }">
         <div class="panel-header">
           <span class="panel-title">// SESSION LOG</span>
+          <button class="toggle-btn" @click="isHistoryCollapsed = !isHistoryCollapsed" title="Toggle session panel">
+            <svg v-if="isHistoryCollapsed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
           <button class="new-session-btn" @click="handleNewSession">
             <span class="btn-icon">+</span>
-            <span class="btn-text">NEW</span>
+            <span class="btn-text" v-if="!isHistoryCollapsed">NEW</span>
           </button>
         </div>
-        <div class="session-list">
+        <div class="session-list" v-if="!isHistoryCollapsed">
           <div
             v-for="session in store.sessions"
             :key="session.id"
@@ -265,7 +299,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, watch } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useAiChatStore } from '@/stores/aiChat'
 import { useSkillsStore } from '@/stores/skills'
 import { useAgentStore } from '@/stores/agent'
@@ -274,7 +308,6 @@ import { useProviderConfigStore } from '@/stores/providerConfig'
 import { setOnWorkerCompleteCallback } from '@/agent/useAgentPool'
 import { SLASH_COMMANDS, formatCommandPrompt } from '@/agent/slashCommands'
 import { sharedMd, renderSafe } from '@/utils/markdown'
-import SkillPanel from './SkillPanel.vue'
 import AgentTrace from './AgentTrace.vue'
 import ModelSettings from './ModelSettings.vue'
 import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
@@ -296,6 +329,29 @@ const showScrollButton = ref(false)
 const showModelSettings = ref(false)
 const showAttachmentMenu = ref(false)
 const showModelDropdown = ref(false)
+const isHistoryCollapsed = ref(false)
+
+// Boot state animation
+const displayedLeftMessages = ref<string[]>([])
+const displayedRightMessages = ref<string[]>([])
+const isTyping = ref(false)
+const currentMessageIndex = ref(0)
+const currentCharIndex = ref(0)
+const typingSpeed = 50 // ms per character
+const messagePause = 2000 // ms pause after message completes
+
+// Boot sequence messages
+const bootSequence = [
+  'Initializing Holocron Interface...',
+  'Loading R2-D2 Neural Core...',
+  'Connecting to Jedi Archives...',
+  'Calibrating Lightsaber Matrix...',
+  'System online. Awaiting input.',
+  'May the Force be with you.',
+  'What can I help you build today?',
+  'Need assistance with code debugging?',
+  'I can help optimize your workflow.'
+]
 
 // Computed
 const selectedProviderModels = computed(() => {
@@ -323,14 +379,6 @@ function formatContextShort(len?: number): string {
   return len.toString()
 }
 
-// Boot sequence
-const bootSequence = [
-  'Initializing Holocron Interface...',
-  'Loading R2-D2 Neural Core...',
-  'Connecting to Jedi Archives...',
-  'Calibrating Lightsaber Matrix...',
-  'System online. Awaiting input.'
-]
 
 // Computed
 const currentProviderName = computed(() => {
@@ -502,6 +550,57 @@ watch(() => store.streamingContent, () => {
   scrollToBottom()
 })
 
+// Boot typing animation
+let typingInterval: number | null = null
+
+function startTypingAnimation() {
+  // Reset state
+  displayedLeftMessages.value = []
+  displayedRightMessages.value = []
+  currentMessageIndex.value = 0
+  currentCharIndex.value = 0
+
+  function typeNextCharacter() {
+    const currentMessage = bootSequence[currentMessageIndex.value]
+    const isLeftSide = currentMessageIndex.value % 2 === 0 // Even index on left, odd on right
+    const targetArray = isLeftSide ? displayedLeftMessages : displayedRightMessages
+
+    // Start new message if needed
+    if (currentCharIndex.value === 0) {
+      isTyping.value = true
+      // 最多保留3条消息，多了就删掉最旧的
+      if (targetArray.value.length >= 3) {
+        targetArray.value.shift()
+      }
+      targetArray.value.push('')
+    }
+
+    // Add next character
+    if (currentCharIndex.value < currentMessage.length) {
+      targetArray.value[targetArray.value.length - 1] = currentMessage.slice(0, currentCharIndex.value + 1)
+      currentCharIndex.value++
+      typingInterval = window.setTimeout(typeNextCharacter, typingSpeed)
+    } else {
+      // Message complete
+      isTyping.value = false
+      currentCharIndex.value = 0
+      currentMessageIndex.value = (currentMessageIndex.value + 1) % bootSequence.length
+
+      // Pause before next message
+      typingInterval = window.setTimeout(typeNextCharacter, messagePause)
+    }
+  }
+
+  typeNextCharacter()
+}
+
+function stopTypingAnimation() {
+  if (typingInterval) {
+    clearTimeout(typingInterval)
+    typingInterval = null
+  }
+}
+
 onMounted(async () => {
   skillsStore.loadFromStorage()
   await Promise.all([
@@ -509,6 +608,9 @@ onMounted(async () => {
     providerConfigStore.loadConfiguredProviders()
   ])
   scrollToBottom()
+
+  // Start boot animation
+  startTypingAnimation()
 
   // Set up worker completion callback
   setOnWorkerCompleteCallback((worker) => {
@@ -519,6 +621,10 @@ onMounted(async () => {
       content: `Worker "${worker.description}" ${status}: ${result}`
     })
   })
+})
+
+onUnmounted(() => {
+  stopTypingAnimation()
 })
 </script>
 

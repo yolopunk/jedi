@@ -237,106 +237,104 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
 import {
-    mdiEthernet,
-    mdiServer,
-    mdiCpu64Bit,
-    mdiMemory,
-    mdiDownload,
-    mdiUpload,
-    mdiPlay,
-    mdiPause,
-} from "@mdi/js";
-import { getOsInfo } from "@/api/hosts";
-import { OsInfo } from "@/types/os";
-import { useUpdate } from "@/composables/useUpdate";
-import { useAudioPlayer } from "@/composables/useAudioPlayer";
-import UpdateDialog from "@/components/dialogs/UpdateDialog.vue";
-import pkg from "../../../package.json";
+  mdiCpu64Bit,
+  mdiDownload,
+  mdiEthernet,
+  mdiMemory,
+  mdiPause,
+  mdiPlay,
+  mdiServer,
+  mdiUpload,
+} from '@mdi/js'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { getOsInfo } from '@/api/hosts'
+import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
+import { useAudioPlayer } from '@/composables/useAudioPlayer'
+import { useUpdate } from '@/composables/useUpdate'
+import type { OsInfo } from '@/types/os'
+import pkg from '../../../package.json'
 
-const appVersion = pkg.version;
+const appVersion = pkg.version
 
 // Audio player
-const { currentPlaying, isPaused, togglePlay } = useAudioPlayer();
+const { currentPlaying, isPaused, togglePlay } = useAudioPlayer()
 
 // Update composable
-const { hasUpdate, updateInfo, isChecking, isInstalling, installUpdate } =
-    useUpdate();
+const { hasUpdate, updateInfo, isChecking, isInstalling, installUpdate } = useUpdate()
 
-const showUpdateDialog = ref(false);
+const showUpdateDialog = ref(false)
 
 const handleInstallUpdate = async () => {
-    try {
-        await installUpdate();
-        showUpdateDialog.value = false;
-    } catch (error) {
-        console.error("Failed to install update:", error);
-    }
-};
+  try {
+    await installUpdate()
+    showUpdateDialog.value = false
+  } catch (error) {
+    console.error('Failed to install update:', error)
+  }
+}
 
 // 系统信息
-const osInfo = ref<OsInfo | null>(null);
+const osInfo = ref<OsInfo | null>(null)
 
 // 刷新间隔 (毫秒)
-const REFRESH_INTERVAL = 3000;
+const REFRESH_INTERVAL = 3000
 
-let refreshTimer: number | null = null;
+let refreshTimer: number | null = null
 
 // 格式化百分比
 function formatPercentage(value?: number): string {
-    if (value === undefined) return "0%";
-    return `${Math.round(value)}%`;
+  if (value === undefined) return '0%'
+  return `${Math.round(value)}%`
 }
 
 // 格式化网络速率
 function formatNetworkSpeed(bytes?: number): string {
-    if (bytes === undefined) return "0 B/s";
+  if (bytes === undefined) return '0 B/s'
 
-    if (bytes < 1024) {
-        return `${bytes}B/s`;
-    } else if (bytes < 1024 * 1024) {
-        return `${(bytes / 1024).toFixed(0)}K/s`;
-    } else {
-        return `${(bytes / (1024 * 1024)).toFixed(1)}M/s`;
-    }
+  if (bytes < 1024) {
+    return `${bytes}B/s`
+  } else if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(0)}K/s`
+  } else {
+    return `${(bytes / (1024 * 1024)).toFixed(1)}M/s`
+  }
 }
 
 // 格式化数据大小
 function formatDataSize(bytes?: number): string {
-    if (bytes === undefined) return "0 B";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024)
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  if (bytes === undefined) return '0 B'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
 function getMemoryUsagePercentage(): number {
-    if (!osInfo.value?.metrics) return 0;
-    const { memory_used, memory_total } = osInfo.value.metrics;
-    if (!memory_total) return 0;
-    return (memory_used / memory_total) * 100;
+  if (!osInfo.value?.metrics) return 0
+  const { memory_used, memory_total } = osInfo.value.metrics
+  if (!memory_total) return 0
+  return (memory_used / memory_total) * 100
 }
 
 async function refreshOsInfo() {
-    try {
-        const info = await getOsInfo();
-        osInfo.value = info;
-    } catch (error) {
-        console.error("Failed to get OS info:", error);
-    }
+  try {
+    const info = await getOsInfo()
+    osInfo.value = info
+  } catch (error) {
+    console.error('Failed to get OS info:', error)
+  }
 }
 
 onMounted(async () => {
-    await refreshOsInfo();
+  await refreshOsInfo()
 
-    refreshTimer = window.setInterval(refreshOsInfo, REFRESH_INTERVAL);
-});
+  refreshTimer = window.setInterval(refreshOsInfo, REFRESH_INTERVAL)
+})
 
 onUnmounted(() => {
-    if (refreshTimer) clearInterval(refreshTimer);
-});
+  if (refreshTimer) clearInterval(refreshTimer)
+})
 </script>
 
 <style scoped>

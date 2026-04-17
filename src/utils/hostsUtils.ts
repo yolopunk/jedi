@@ -4,7 +4,7 @@
  */
 
 import { open } from '@tauri-apps/plugin-shell'
-import { Group, HostEntry } from '@/types/hosts'
+import type { Group, HostEntry } from '@/types/hosts'
 
 /**
  * 将hosts数组转换为数据表格项目
@@ -18,7 +18,7 @@ export function getHostsAsItems(hosts: HostEntry[]) {
       domain: host.domain,
       ip: host.ip,
       enabled: !host.disabled,
-      originalMap: host
+      originalMap: host,
     }
   })
 }
@@ -40,7 +40,7 @@ export function validateHostInput(ip: string, domain: string): boolean {
  * @returns 找到的主机条目
  */
 export function findHostEntry(group: Group, host: HostEntry): HostEntry | undefined {
-  return group.hosts.find(h => h.domain === host.domain && h.ip === host.ip);
+  return group.hosts.find(h => h.domain === host.domain && h.ip === host.ip)
 }
 
 /**
@@ -50,7 +50,7 @@ export function findHostEntry(group: Group, host: HostEntry): HostEntry | undefi
  * @returns 找到的主机条目索引
  */
 export function findHostIndex(group: Group, host: HostEntry): number {
-  return group.hosts.findIndex(h => h.domain === host.domain && h.ip === host.ip);
+  return group.hosts.findIndex(h => h.domain === host.domain && h.ip === host.ip)
 }
 
 /**
@@ -59,7 +59,7 @@ export function findHostIndex(group: Group, host: HostEntry): number {
  * @param enabled 是否启用
  */
 export function updateHostEntryStatus(hostEntry: HostEntry, enabled: boolean): void {
-  hostEntry.disabled = !enabled;
+  hostEntry.disabled = !enabled
 }
 
 /**
@@ -69,7 +69,7 @@ export function updateHostEntryStatus(hostEntry: HostEntry, enabled: boolean): v
 export function enableAllHosts(groups: Group[]): void {
   for (const group of groups) {
     for (const host of group.hosts) {
-      host.disabled = false;
+      host.disabled = false
     }
   }
 }
@@ -81,7 +81,7 @@ export function enableAllHosts(groups: Group[]): void {
 export function disableAllHosts(groups: Group[]): void {
   for (const group of groups) {
     for (const host of group.hosts) {
-      host.disabled = true;
+      host.disabled = true
     }
   }
 }

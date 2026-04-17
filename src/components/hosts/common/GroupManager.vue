@@ -46,31 +46,31 @@
 </template>
 
 <script setup lang="ts">
-import { mdiDomain, mdiPlus, mdiPencil } from '@mdi/js'
-import { Group } from '@/types/hosts'
+import { mdiDomain, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed } from 'vue'
+import type { Group } from '@/types/hosts'
 
 // 定义组件属性
 const props = defineProps<{
-  modelValue: string;
-  groups: Group[];
+  modelValue: string
+  groups: Group[]
 }>()
 
 // 定义组件事件
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void;
-  (e: 'add-group'): void;
-  (e: 'rename-group', value: string): void;
+  (e: 'update:modelValue', value: string): void
+  (e: 'add-group'): void
+  (e: 'rename-group', value: string): void
 }>()
 
 // 计算属性：当前选中的标签
 const selectedTab = computed({
   get: () => props.modelValue,
-  set: (value) => {
+  set: value => {
     if (value !== 'add-group') {
       emit('update:modelValue', value)
     }
-  }
+  },
 })
 </script>
 

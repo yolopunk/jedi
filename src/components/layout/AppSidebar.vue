@@ -193,131 +193,124 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue";
-import {
-    mdiDns,
-    mdiWallpaper,
-    mdiPodcast,
-    mdiRobot,
-    mdiCog,
-    mdiGithub,
-} from "@mdi/js";
-import { useThemeToggle } from "@/composables/useTheme";
-import LogoShaderBg from "@/components/common/LogoShaderBg.vue";
+import { mdiCog, mdiDns, mdiGithub, mdiPodcast, mdiRobot, mdiWallpaper } from '@mdi/js'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
+import LogoShaderBg from '@/components/common/LogoShaderBg.vue'
+import { useThemeToggle } from '@/composables/useTheme'
 
 const props = defineProps<{
-    collapsed?: boolean;
-}>();
+  collapsed?: boolean
+}>()
 
 const emit = defineEmits<{
-    (e: "show-settings"): void;
-    (e: "open-github"): void;
-    (e: "update:width", width: number): void;
-    (e: "toggle-sidebar"): void;
-}>();
+  (e: 'show-settings'): void
+  (e: 'open-github'): void
+  (e: 'update:width', width: number): void
+  (e: 'toggle-sidebar'): void
+}>()
 
-const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle();
+const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
 
 const navItems = [
-    { to: "/chat", icon: mdiRobot, label: "CHAT", tooltipKey: "sidebar.chat" },
-    { to: "/hosts", icon: mdiDns, label: "HOSTS", tooltipKey: "sidebar.hostsManager" },
-    { to: "/wallpapers", icon: mdiWallpaper, label: "WALLPAPER", tooltipKey: "sidebar.wallpapers" },
-    { to: "/podcast", icon: mdiPodcast, label: "PODCAST", tooltipKey: "sidebar.podcast" },
-];
+  { to: '/chat', icon: mdiRobot, label: 'CHAT', tooltipKey: 'sidebar.chat' },
+  { to: '/hosts', icon: mdiDns, label: 'HOSTS', tooltipKey: 'sidebar.hostsManager' },
+  { to: '/wallpapers', icon: mdiWallpaper, label: 'WALLPAPER', tooltipKey: 'sidebar.wallpapers' },
+  { to: '/podcast', icon: mdiPodcast, label: 'PODCAST', tooltipKey: 'sidebar.podcast' },
+]
 
 // Sidebar width and resize
-const width = ref(200);
-const minWidth = 64;
-const expandThreshold = 150;
-const maxWidth = 220;
-const isResizing = ref(false);
-const isCollapsed = ref(false);
-const currentTime = ref("");
+const width = ref(200)
+const minWidth = 64
+const expandThreshold = 150
+const maxWidth = 220
+const isResizing = ref(false)
+const isCollapsed = ref(false)
+const currentTime = ref('')
 
-let startX = 0;
-let startWidth = 0;
-let timeInterval: number | null = null;
+let startX = 0
+let startWidth = 0
+let timeInterval: number | null = null
 
 // Watch for external collapse prop changes
 watch(
-    () => props.collapsed,
-    (newVal) => {
-        if (newVal !== undefined) {
-            isCollapsed.value = newVal;
-        }
-    },
-);
+  () => props.collapsed,
+  newVal => {
+    if (newVal !== undefined) {
+      isCollapsed.value = newVal
+    }
+  }
+)
 
 // Resize functions
 function startResize(e: MouseEvent) {
-    isResizing.value = true;
-    startX = e.clientX;
-    startWidth = isCollapsed.value ? minWidth : width.value;
-    document.addEventListener("mousemove", doResize);
-    document.addEventListener("mouseup", stopResize);
-    document.body.style.cursor = "ew-resize";
-    document.body.style.userSelect = "none";
-    document.body.classList.add("no-transition");
+  isResizing.value = true
+  startX = e.clientX
+  startWidth = isCollapsed.value ? minWidth : width.value
+  document.addEventListener('mousemove', doResize)
+  document.addEventListener('mouseup', stopResize)
+  document.body.style.cursor = 'ew-resize'
+  document.body.style.userSelect = 'none'
+  document.body.classList.add('no-transition')
 }
 
 function doResize(e: MouseEvent) {
-    if (!isResizing.value) return;
-    const delta = e.clientX - startX;
-    let newWidth = startWidth + delta;
+  if (!isResizing.value) return
+  const delta = e.clientX - startX
+  let newWidth = startWidth + delta
 
-    if (newWidth < expandThreshold) {
-        isCollapsed.value = true;
-        newWidth = minWidth;
-    } else {
-        isCollapsed.value = false;
-        newWidth = Math.min(maxWidth, Math.max(expandThreshold, newWidth));
-        width.value = newWidth;
-    }
+  if (newWidth < expandThreshold) {
+    isCollapsed.value = true
+    newWidth = minWidth
+  } else {
+    isCollapsed.value = false
+    newWidth = Math.min(maxWidth, Math.max(expandThreshold, newWidth))
+    width.value = newWidth
+  }
 
-    emit("update:width", newWidth);
+  emit('update:width', newWidth)
 }
 
 function stopResize() {
-    isResizing.value = false;
-    document.removeEventListener("mousemove", doResize);
-    document.removeEventListener("mouseup", stopResize);
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-    document.body.classList.remove("no-transition");
-    saveWidth(width.value);
+  isResizing.value = false
+  document.removeEventListener('mousemove', doResize)
+  document.removeEventListener('mouseup', stopResize)
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+  document.body.classList.remove('no-transition')
+  saveWidth(width.value)
 }
 
 function updateTime() {
-    const now = new Date();
-    currentTime.value = now.toLocaleTimeString("en-US", { hour12: false });
+  const now = new Date()
+  currentTime.value = now.toLocaleTimeString('en-US', { hour12: false })
 }
 
 onMounted(() => {
-    const savedWidth = localStorage.getItem("jedi-sidebar-width");
-    if (savedWidth) {
-        const parsed = parseInt(savedWidth, 10);
-        if (!isNaN(parsed) && parsed >= expandThreshold && parsed <= maxWidth) {
-            width.value = parsed;
-            isCollapsed.value = false;
-        } else {
-            isCollapsed.value = true;
-        }
+  const savedWidth = localStorage.getItem('jedi-sidebar-width')
+  if (savedWidth) {
+    const parsed = parseInt(savedWidth, 10)
+    if (!isNaN(parsed) && parsed >= expandThreshold && parsed <= maxWidth) {
+      width.value = parsed
+      isCollapsed.value = false
+    } else {
+      isCollapsed.value = true
     }
-    updateTime();
-    timeInterval = window.setInterval(updateTime, 1000);
-});
+  }
+  updateTime()
+  timeInterval = window.setInterval(updateTime, 1000)
+})
 
 function saveWidth(newWidth: number) {
-    localStorage.setItem("jedi-sidebar-width", newWidth.toString());
+  localStorage.setItem('jedi-sidebar-width', newWidth.toString())
 }
 
 onUnmounted(() => {
-    document.removeEventListener("mousemove", doResize);
-    document.removeEventListener("mouseup", stopResize);
-    if (timeInterval) {
-        clearInterval(timeInterval);
-    }
-});
+  document.removeEventListener('mousemove', doResize)
+  document.removeEventListener('mouseup', stopResize)
+  if (timeInterval) {
+    clearInterval(timeInterval)
+  }
+})
 </script>
 
 <style scoped>

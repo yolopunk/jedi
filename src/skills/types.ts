@@ -2,11 +2,14 @@
 
 export interface ParameterSchema {
   type: 'object'
-  properties: Record<string, {
-    type: 'string' | 'number' | 'boolean' | 'array' | 'object'
-    description: string
-    required?: boolean
-  }>
+  properties: Record<
+    string,
+    {
+      type: 'string' | 'number' | 'boolean' | 'array' | 'object'
+      description: string
+      required?: boolean
+    }
+  >
   required?: string[]
 }
 

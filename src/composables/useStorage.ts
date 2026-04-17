@@ -29,7 +29,7 @@ export function useStorage() {
       const s = await initStore()
       if (s) {
         // 使用Tauri存储
-        return await s.get(key) as T
+        return (await s.get(key)) as T
       } else {
         // 降级使用localStorage
         const value = localStorage.getItem(key)
@@ -60,6 +60,6 @@ export function useStorage() {
 
   return {
     getItem,
-    setItem
+    setItem,
   }
 }

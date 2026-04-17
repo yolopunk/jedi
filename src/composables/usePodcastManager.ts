@@ -1,12 +1,12 @@
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
-  getSubscriptions,
-  removeSubscription,
   fetchEpisodes,
+  getSubscriptions,
   importOpml,
-  refreshSubscription,
   type PodcastEpisode,
-  type PodcastSubscription
+  type PodcastSubscription,
+  refreshSubscription,
+  removeSubscription,
 } from '@/api/podcast'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useSnackbar } from '@/composables/useSnackbar'
@@ -19,11 +19,9 @@ export function usePodcastManager() {
   const loading = ref(false)
   const searchQuery = ref('')
 
-  const EPISODES_PAGE_SIZE = 30
-  const visibleEpisodeCount = ref(EPISODES_PAGE_SIZE)
-  const visibleEpisodes = computed(() =>
-    episodes.value.slice(0, visibleEpisodeCount.value)
-  )
+  const EpisodesPageSize = 30
+  const visibleEpisodeCount = ref(EpisodesPageSize)
+  const visibleEpisodes = computed(() => episodes.value.slice(0, visibleEpisodeCount.value))
   const episodesLoadMoreTrigger = ref<HTMLElement | null>(null)
   let episodesObserver: IntersectionObserver | null = null
 
@@ -56,7 +54,7 @@ export function usePodcastManager() {
     currentView.value = 'detail'
     episodesLoading.value = true
     episodes.value = []
-    visibleEpisodeCount.value = EPISODES_PAGE_SIZE
+    visibleEpisodeCount.value = EpisodesPageSize
 
     try {
       episodes.value = await fetchEpisodes(sub.rss_url)
@@ -240,7 +238,7 @@ export function usePodcastManager() {
       if (!entry.isIntersecting) return
       if (visibleEpisodeCount.value >= episodes.value.length) return
       visibleEpisodeCount.value = Math.min(
-        visibleEpisodeCount.value + EPISODES_PAGE_SIZE,
+        visibleEpisodeCount.value + EpisodesPageSize,
         episodes.value.length
       )
     })

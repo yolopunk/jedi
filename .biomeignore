@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+src-tauri/target/
+src-tauri/gen/
+
+# IDE and system files
+.vscode/
+.idea/
+.git/
+.github/
+.DS_Store
+
+# Configuration files
+*.config.js
+*.d.ts
+
+# Claude skill directories
+.claude/
+.omc/

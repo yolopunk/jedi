@@ -74,13 +74,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useWallpaper } from '@/composables/useWallpaper'
 import { getWallpapers } from '@/api/wallpaper'
+import { useWallpaper } from '@/composables/useWallpaper'
 
 const { t } = useI18n()
-const { settings: wallpaperSettings, saveSettings: saveWallpaperSettings, loadSettings } = useWallpaper()
+const {
+  settings: wallpaperSettings,
+  saveSettings: saveWallpaperSettings,
+  loadSettings,
+} = useWallpaper()
 const allCategories = ref<string[]>([])
 
 async function toggleCategory(cat: string) {

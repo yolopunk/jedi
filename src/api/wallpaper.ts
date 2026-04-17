@@ -1,16 +1,16 @@
 /**
  * 壁纸管理 API
  */
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from '@tauri-apps/api/core'
 
 export interface WallpaperItem {
-  id: string;
-  title: string;
-  url: string;
-  category: string;
-  tags: string[];
-  description: string;
-  content: string;
+  id: string
+  title: string
+  url: string
+  category: string
+  tags: string[]
+  description: string
+  content: string
 }
 
 export enum WallpaperMode {
@@ -19,14 +19,14 @@ export enum WallpaperMode {
   Fit = 'Fit',
   Span = 'Span',
   Stretch = 'Stretch',
-  Tile = 'Tile'
+  Tile = 'Tile',
 }
 
 export interface WallpaperConfig {
-  auto_update: boolean;
-  frequency_hours: number;
-  selected_categories: string[];
-  last_update_ts: number;
+  auto_update: boolean
+  frequency_hours: number
+  selected_categories: string[]
+  last_update_ts: number
 }
 
 /**
@@ -34,10 +34,10 @@ export interface WallpaperConfig {
  */
 export async function getWallpapers(): Promise<WallpaperItem[]> {
   try {
-    return await invoke<WallpaperItem[]>('get_wallpapers');
+    return await invoke<WallpaperItem[]>('get_wallpapers')
   } catch (error) {
-    console.error('Failed to get wallpapers:', error);
-    throw error;
+    console.error('Failed to get wallpapers:', error)
+    throw error
   }
 }
 
@@ -46,10 +46,10 @@ export async function getWallpapers(): Promise<WallpaperItem[]> {
  */
 export async function syncWallpapers(): Promise<void> {
   try {
-    await invoke('sync_wallpapers');
+    await invoke('sync_wallpapers')
   } catch (error) {
-    console.error('Failed to sync wallpapers:', error);
-    throw error;
+    console.error('Failed to sync wallpapers:', error)
+    throw error
   }
 }
 
@@ -62,8 +62,8 @@ export async function setDesktopWallpaper(url: string, mode?: WallpaperMode): Pr
   try {
     await invoke('set_desktop_wallpaper', { url, mode })
   } catch (error) {
-    console.error('Failed to set desktop wallpaper:', error);
-    throw error;
+    console.error('Failed to set desktop wallpaper:', error)
+    throw error
   }
 }
 

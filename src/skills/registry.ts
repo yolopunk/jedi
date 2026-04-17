@@ -1,11 +1,11 @@
 // src/skills/registry.ts
 
-import type { Skill } from './types'
-import { terminalSkill } from './terminal'
+import { browserSkill } from './browser'
 import { filesystemSkill } from './filesystem'
 import { hostsSkill } from './hosts'
-import { browserSkill } from './browser'
 import { podcastSkill } from './podcast'
+import { terminalSkill } from './terminal'
+import type { Skill } from './types'
 import { wallpaperSkill } from './wallpaper'
 
 export class SkillRegistry {

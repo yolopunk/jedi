@@ -78,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { ModelsDevModel } from '@/types/modelsDev'
 
 const props = defineProps<{
@@ -87,9 +87,7 @@ const props = defineProps<{
   disabled?: boolean
 }>()
 
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
-}>()
+const emit = defineEmits<(e: 'update:modelValue', value: string) => void>()
 
 const showMenu = ref(false)
 const searchQuery = ref('')
@@ -100,17 +98,16 @@ const selectedModel = computed(() => {
 
 const filteredModels = computed(() => {
   if (!searchQuery.value) return props.models
-  
+
   const query = searchQuery.value.toLowerCase()
-  return props.models.filter(m => 
-    m.name.toLowerCase().includes(query) ||
-    m.providerName?.toLowerCase().includes(query)
+  return props.models.filter(
+    m => m.name.toLowerCase().includes(query) || m.providerName?.toLowerCase().includes(query)
   )
 })
 
 const groupedModels = computed(() => {
   const groups: Record<string, (ModelsDevModel & { providerName?: string })[]> = {}
-  
+
   for (const model of filteredModels.value) {
     const provider = model.providerName || 'Unknown'
     if (!groups[provider]) {
@@ -118,7 +115,7 @@ const groupedModels = computed(() => {
     }
     groups[provider].push(model)
   }
-  
+
   return Object.entries(groups).map(([name, models]) => ({
     name,
     models,

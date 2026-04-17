@@ -169,7 +169,7 @@ async function confirmAdd() {
           name: groupName.value,
           isRemote: true,
           url: remoteUrl.value,
-          hosts: matchedGroup.hosts
+          hosts: matchedGroup.hosts,
         })
         closeDialog()
       } else {
@@ -204,13 +204,13 @@ async function confirmAdd() {
       .map(item => ({
         domain: item!.domain,
         ip: item!.ip,
-        disabled: false
+        disabled: false,
       }))
 
     emit('add', {
       name: groupName.value,
       isRemote: false,
-      hosts: hostsArray
+      hosts: hostsArray,
     })
     closeDialog()
   }

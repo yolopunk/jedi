@@ -120,22 +120,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { HostEntry } from '@/types/hosts'
-
-import GroupManager from '@/components/hosts/common/GroupManager.vue'
-import HostsTable from '@/components/hosts/tables/HostsTable.vue'
+import { getOsInfo } from '@/api/hosts'
 import EmptyState from '@/components/hosts/common/EmptyState.vue'
+import GlobalSwitchFab from '@/components/hosts/common/GlobalSwitchFab.vue'
+import GroupManager from '@/components/hosts/common/GroupManager.vue'
+import NotificationSnackbar from '@/components/hosts/common/NotificationSnackbar.vue'
 import AddGroupDialog from '@/components/hosts/dialogs/AddGroupDialog.vue'
 import AddHostDialog from '@/components/hosts/dialogs/AddHostDialog.vue'
-import EditHostDialog from '@/components/hosts/dialogs/EditHostDialog.vue'
 import DeleteConfirmDialog from '@/components/hosts/dialogs/DeleteConfirmDialog.vue'
-import NotificationSnackbar from '@/components/hosts/common/NotificationSnackbar.vue'
-import GlobalSwitchFab from '@/components/hosts/common/GlobalSwitchFab.vue'
-
-import { getOsInfo } from '@/api/hosts'
+import EditHostDialog from '@/components/hosts/dialogs/EditHostDialog.vue'
+import HostsTable from '@/components/hosts/tables/HostsTable.vue'
 import { useHostsData } from '@/composables/useHostsData'
+import type { HostEntry } from '@/types/hosts'
 
 const { t } = useI18n()
 
@@ -144,7 +142,7 @@ const dialogs = ref({
   addHost: false,
   editHost: false,
   deleteConfirm: false,
-  renameGroup: false
+  renameGroup: false,
 })
 
 const currentAddGroupName = ref('')
@@ -179,7 +177,7 @@ const {
   editHost,
   updateHostStatus,
   confirmDeleteHost,
-  renameGroup
+  renameGroup,
 } = useHostsData(showNotification)
 
 function openAddHostDialog(groupName: string) {
@@ -221,7 +219,6 @@ onMounted(async () => {
   await getOsInfo()
   await loadSystemHosts()
 })
-
 </script>
 
 <style scoped>

@@ -1,14 +1,14 @@
 // src/skills/browser.ts
 
-import type { Skill, ParameterSchema } from './types'
+import type { ParameterSchema, Skill } from './types'
 
 const parameters: ParameterSchema = {
   type: 'object',
   properties: {
     operation: { type: 'string', description: 'search, navigate', required: true },
-    query: { type: 'string', description: 'Search query or URL', required: true }
+    query: { type: 'string', description: 'Search query or URL', required: true },
   },
-  required: ['operation', 'query']
+  required: ['operation', 'query'],
 }
 
 async function executeBrowser(args: any): Promise<any> {
@@ -23,5 +23,5 @@ export const browserSkill: Skill = {
   enabled: false,
   autoCallable: true,
   parameters,
-  execute: executeBrowser
+  execute: executeBrowser,
 }

@@ -84,8 +84,8 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { validateHostInput } from '@/utils/hostsUtils'
 import type { HostEntry } from '@/types/hosts'
+import { validateHostInput } from '@/utils/hostsUtils'
 
 const props = defineProps<{
   modelValue: boolean
@@ -101,12 +101,16 @@ const emit = defineEmits<{
 const hostIp = ref('')
 const hostDomain = ref('')
 
-watch(() => props.host, (newHost) => {
-  if (newHost) {
-    hostIp.value = newHost.ip
-    hostDomain.value = newHost.domain
-  }
-}, { immediate: true })
+watch(
+  () => props.host,
+  newHost => {
+    if (newHost) {
+      hostIp.value = newHost.ip
+      hostDomain.value = newHost.domain
+    }
+  },
+  { immediate: true }
+)
 
 function closeDialog() {
   emit('update:modelValue', false)
@@ -124,7 +128,7 @@ function confirmEdit() {
   emit('edit', {
     originalHost: props.host,
     ip: hostIp.value.trim(),
-    domain: hostDomain.value.trim()
+    domain: hostDomain.value.trim(),
   })
   closeDialog()
 }

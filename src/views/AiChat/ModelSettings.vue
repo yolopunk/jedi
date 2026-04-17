@@ -352,15 +352,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
-import type { ModelsDevProvider, ModelsDevModel } from '@/types/modelsDev'
+import type { ModelsDevModel, ModelsDevProvider } from '@/types/modelsDev'
 
 const props = defineProps<{ modelValue: boolean }>()
-defineEmits<{
-  (e: 'update:modelValue', value: boolean): void
-}>()
+defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 
 const modelsDevStore = useModelsDevStore()
 const providerConfigStore = useProviderConfigStore()
@@ -398,11 +396,22 @@ const CUSTOM_PROVIDER_ENTRY: ModelsDevProvider = {
 const filteredProviders = computed(() => {
   let providers: ModelsDevProvider[]
   switch (activeCategory.value) {
-    case 'popular': providers = modelsDevStore.popularProviders; break
-    case 'configured': providers = [...modelsDevStore.popularProviders, ...modelsDevStore.otherProviders].filter(p => isConfigured(p.id)); break
-    case 'other': providers = modelsDevStore.otherProviders; break
-    case 'custom': providers = [...modelsDevStore.customProviders, CUSTOM_PROVIDER_ENTRY]; break
-    default: return []
+    case 'popular':
+      providers = modelsDevStore.popularProviders
+      break
+    case 'configured':
+      providers = [...modelsDevStore.popularProviders, ...modelsDevStore.otherProviders].filter(p =>
+        isConfigured(p.id)
+      )
+      break
+    case 'other':
+      providers = modelsDevStore.otherProviders
+      break
+    case 'custom':
+      providers = [...modelsDevStore.customProviders, CUSTOM_PROVIDER_ENTRY]
+      break
+    default:
+      return []
   }
   if (!providerSearch.value) return providers
   const q = providerSearch.value.toLowerCase()
@@ -417,9 +426,8 @@ const selectedProviderModels = computed(() => {
 const filteredModels = computed(() => {
   if (!modelSearch.value) return selectedProviderModels.value
   const q = modelSearch.value.toLowerCase()
-  return selectedProviderModels.value.filter(m =>
-    m.name.toLowerCase().includes(q) ||
-    m.id.toLowerCase().includes(q)
+  return selectedProviderModels.value.filter(
+    m => m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q)
   )
 })
 
@@ -431,11 +439,19 @@ const isCurrentProviderConfigured = computed(() =>
 
 function getCategoryCount(category: string) {
   switch (category) {
-    case 'popular': return modelsDevStore.popularProviders.length
-    case 'configured': return modelsDevStore.popularProviders.filter(p => isConfigured(p.id)).length + modelsDevStore.otherProviders.filter(p => isConfigured(p.id)).length
-    case 'other': return modelsDevStore.otherProviders.length
-    case 'custom': return modelsDevStore.customProviders.length + 1 // +1 for Add Custom Provider entry
-    default: return 0
+    case 'popular':
+      return modelsDevStore.popularProviders.length
+    case 'configured':
+      return (
+        modelsDevStore.popularProviders.filter(p => isConfigured(p.id)).length +
+        modelsDevStore.otherProviders.filter(p => isConfigured(p.id)).length
+      )
+    case 'other':
+      return modelsDevStore.otherProviders.length
+    case 'custom':
+      return modelsDevStore.customProviders.length + 1 // +1 for Add Custom Provider entry
+    default:
+      return 0
   }
 }
 
@@ -488,20 +504,23 @@ function selectProviderDirectly(provider: ModelsDevProvider) {
   emit('update:modelValue', false)
 }
 
-watch(() => props.modelValue, async (open) => {
-  if (open) {
-    selectedProvider.value = null
-    await Promise.all([
-      providerConfigStore.loadConfiguredProviders(),
-      modelsDevStore.fetchProviders()
-    ])
+watch(
+  () => props.modelValue,
+  async open => {
+    if (open) {
+      selectedProvider.value = null
+      await Promise.all([
+        providerConfigStore.loadConfiguredProviders(),
+        modelsDevStore.fetchProviders(),
+      ])
+    }
   }
-})
+)
 
 async function retryLoad() {
   await Promise.all([
     providerConfigStore.loadConfiguredProviders(),
-    modelsDevStore.fetchProviders(true)
+    modelsDevStore.fetchProviders(true),
   ])
 }
 
@@ -511,8 +530,8 @@ async function saveKey() {
     selectedProvider.value.id,
     configApiKey.value,
     selectedProvider.value.isCustom
-      ? (configBaseUrl.value || undefined)
-      : (configEndpoint.value || undefined)
+      ? configBaseUrl.value || undefined
+      : configEndpoint.value || undefined
   )
   if (configModelId.value) {
     modelsDevStore.selectModel(configModelId.value)
@@ -567,9 +586,12 @@ function formatCost(model: ModelsDevModel): string {
 function buildCostTooltip(model: ModelsDevModel): string {
   const parts: string[] = []
   if (model.cost?.input) parts.push(`Input: $${(model.cost.input / 1000000).toFixed(2)}/1M tokens`)
-  if (model.cost?.output) parts.push(`Output: $${(model.cost.output / 1000000).toFixed(2)}/1M tokens`)
-  if (model.cost?.cache_read) parts.push(`Cache read: $${(model.cost.cache_read / 1000000).toFixed(2)}/1M`)
-  if (model.cost?.cache_write) parts.push(`Cache write: $${(model.cost.cache_write / 1000000).toFixed(2)}/1M`)
+  if (model.cost?.output)
+    parts.push(`Output: $${(model.cost.output / 1000000).toFixed(2)}/1M tokens`)
+  if (model.cost?.cache_read)
+    parts.push(`Cache read: $${(model.cost.cache_read / 1000000).toFixed(2)}/1M`)
+  if (model.cost?.cache_write)
+    parts.push(`Cache write: $${(model.cost.cache_write / 1000000).toFixed(2)}/1M`)
   return parts.length ? parts.join('\n') : 'No cost data'
 }
 

@@ -224,118 +224,123 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
-import { useI18n } from "vue-i18n";
-import { getHostsAsItems, openDomainLink } from "@/utils/hostsUtils";
-import { Group, HostEntry } from "@/types/hosts";
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import type { Group, HostEntry } from '@/types/hosts'
+import { getHostsAsItems, openDomainLink } from '@/utils/hostsUtils'
 
-const { t } = useI18n();
+const { t } = useI18n()
 
 const props = defineProps<{
-    currentGroup: Group;
-    search?: string;
-    loading?: boolean;
-}>();
+  currentGroup: Group
+  search?: string
+  loading?: boolean
+}>()
 
 const emit = defineEmits<{
-    (e: "update:search", value: string): void;
-    (e: "update-status", host: HostEntry, enabled: boolean): void;
-    (e: "edit-host", host: HostEntry): void;
-    (e: "delete-host", host: HostEntry): void;
-    (e: "add-host", name: string): void;
-    (e: "open-domain", domain: string, message: string): void;
-}>();
+  (e: 'update:search', value: string): void
+  (e: 'update-status', host: HostEntry, enabled: boolean): void
+  (e: 'edit-host', host: HostEntry): void
+  (e: 'delete-host', host: HostEntry): void
+  (e: 'add-host', name: string): void
+  (e: 'open-domain', domain: string, message: string): void
+}>()
 
-const tableWrapperRef = ref<HTMLElement | null>(null);
-const itemsPerPage = 15;
-const currentDisplayCount = ref(itemsPerPage);
+const tableWrapperRef = ref<HTMLElement | null>(null)
+const itemsPerPage = 15
+const currentDisplayCount = ref(itemsPerPage)
 
 const searchModel = computed({
-    get: () => props.search || "",
-    set: (value) => emit("update:search", value),
-});
+  get: () => props.search || '',
+  set: value => emit('update:search', value),
+})
 
 const filteredItems = computed(() => {
-    if (props.loading && (!props.currentGroup || !props.currentGroup.hosts)) {
-        return [];
-    }
-    return getHostsAsItems(props.currentGroup.hosts);
-});
+  if (props.loading && (!props.currentGroup || !props.currentGroup.hosts)) {
+    return []
+  }
+  return getHostsAsItems(props.currentGroup.hosts)
+})
 
 const activeCount = computed(() => {
-    return filteredItems.value.filter((item) => item.enabled).length;
-});
+  return filteredItems.value.filter(item => item.enabled).length
+})
 
 const displayItems = computed(() => {
-    return filteredItems.value.slice(0, currentDisplayCount.value);
-});
+  return filteredItems.value.slice(0, currentDisplayCount.value)
+})
 
 const hasMore = computed(() => {
-    return currentDisplayCount.value < filteredItems.value.length;
-});
+  return currentDisplayCount.value < filteredItems.value.length
+})
 
 // Use t() to avoid TS6133
-const searchPlaceholder = computed(() => t("common.search"));
-const addHostText = computed(() => t("hosts.table.addHost"));
+const searchPlaceholder = computed(() => t('common.search'))
+const addHostText = computed(() => t('hosts.table.addHost'))
 
 watch(filteredItems, () => {
-    currentDisplayCount.value = itemsPerPage;
-});
+  currentDisplayCount.value = itemsPerPage
+})
 
 function loadMore() {
-    if (hasMore.value) {
-        currentDisplayCount.value += itemsPerPage;
-    }
+  if (hasMore.value) {
+    currentDisplayCount.value += itemsPerPage
+  }
 }
 
 function handleSearch() {
-    currentDisplayCount.value = itemsPerPage;
+  currentDisplayCount.value = itemsPerPage
 }
 
-function toggleItemEnabled(item: { domain: string; ip: string; enabled: boolean; originalMap: HostEntry }) {
-    item.enabled = !item.enabled;
-    emit("update-status", item.originalMap, item.enabled);
+function toggleItemEnabled(item: {
+  domain: string
+  ip: string
+  enabled: boolean
+  originalMap: HostEntry
+}) {
+  item.enabled = !item.enabled
+  emit('update-status', item.originalMap, item.enabled)
 }
 
 function handleOpenDomain(domain: string) {
-    openDomainLink(domain)
-        .then((message) => {
-            emit("open-domain", domain, message);
-        })
-        .catch((error) => {
-            console.error("打开域名失败:", error);
-            emit("open-domain", domain, `打开域名失败: ${domain}`);
-        });
+  openDomainLink(domain)
+    .then(message => {
+      emit('open-domain', domain, message)
+    })
+    .catch(error => {
+      console.error('打开域名失败:', error)
+      emit('open-domain', domain, `打开域名失败: ${domain}`)
+    })
 }
 
-let scrollHandler: (() => void) | null = null;
+let scrollHandler: (() => void) | null = null
 
 function setupScrollListener() {
-    if (!tableWrapperRef.value) return;
+  if (!tableWrapperRef.value) return
 
-    const wrapper = tableWrapperRef.value;
-    scrollHandler = () => {
-        const { scrollTop, scrollHeight, clientHeight } = wrapper;
-        if (scrollTop + clientHeight >= scrollHeight - 50) {
-            loadMore();
-        }
-    };
-    wrapper.addEventListener("scroll", scrollHandler);
+  const wrapper = tableWrapperRef.value
+  scrollHandler = () => {
+    const { scrollTop, scrollHeight, clientHeight } = wrapper
+    if (scrollTop + clientHeight >= scrollHeight - 50) {
+      loadMore()
+    }
+  }
+  wrapper.addEventListener('scroll', scrollHandler)
 }
 
 function removeScrollListener() {
-    if (!tableWrapperRef.value || !scrollHandler) return;
-    tableWrapperRef.value.removeEventListener("scroll", scrollHandler);
-    scrollHandler = null;
+  if (!tableWrapperRef.value || !scrollHandler) return
+  tableWrapperRef.value.removeEventListener('scroll', scrollHandler)
+  scrollHandler = null
 }
 
 onMounted(() => {
-    setTimeout(setupScrollListener, 100);
-});
+  setTimeout(setupScrollListener, 100)
+})
 
 onUnmounted(() => {
-    removeScrollListener();
-});
+  removeScrollListener()
+})
 </script>
 
 <style scoped>

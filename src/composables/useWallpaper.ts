@@ -1,6 +1,6 @@
-import { ref, onUnmounted } from 'vue'
-import { useStorage } from '@/composables/useStorage'
+import { onUnmounted, ref } from 'vue'
 import { getWallpapers, setDesktopWallpaper, WallpaperMode } from '@/api/wallpaper'
+import { useStorage } from '@/composables/useStorage'
 
 const { getItem, setItem } = useStorage()
 
@@ -17,7 +17,7 @@ const defaultSettings: WallpaperSettings = {
   frequencyDays: 1,
   selectedCategories: [],
   lastUpdate: 0,
-  mode: WallpaperMode.Crop
+  mode: WallpaperMode.Crop,
 }
 
 // Global state
@@ -53,7 +53,7 @@ export function useWallpaper() {
 
     const now = Date.now()
     const msPerDay = 24 * 60 * 60 * 1000
-    const nextUpdate = settings.value.lastUpdate + (settings.value.frequencyDays * msPerDay)
+    const nextUpdate = settings.value.lastUpdate + settings.value.frequencyDays * msPerDay
 
     if (now >= nextUpdate) {
       console.log('Auto-updating wallpaper...')
@@ -63,7 +63,9 @@ export function useWallpaper() {
 
         // Filter by category if selected
         if (settings.value.selectedCategories.length > 0) {
-          candidates = wallpapers.filter(w => settings.value.selectedCategories.includes(w.category))
+          candidates = wallpapers.filter(w =>
+            settings.value.selectedCategories.includes(w.category)
+          )
         }
 
         if (candidates.length === 0 && wallpapers.length > 0) {
@@ -104,6 +106,6 @@ export function useWallpaper() {
     saveSettings,
     checkAndRunAutoUpdate,
     startAutoUpdateCheck,
-    stopAutoUpdateCheck
+    stopAutoUpdateCheck,
   }
 }

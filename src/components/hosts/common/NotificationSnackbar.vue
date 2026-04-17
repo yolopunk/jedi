@@ -40,21 +40,19 @@ import { computed } from 'vue'
 
 // 定义组件属性
 const props = defineProps<{
-  modelValue: boolean;
-  text: string;
-  color: 'success' | 'error' | 'info' | 'warning';
-  timeout?: number;
+  modelValue: boolean
+  text: string
+  color: 'success' | 'error' | 'info' | 'warning'
+  timeout?: number
 }>()
 
 // 定义组件事件
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-}>()
+const emit = defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 
 // 本地状态
 const show = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: value => emit('update:modelValue', value),
 })
 
 const type = computed(() => props.color)

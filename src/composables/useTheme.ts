@@ -1,11 +1,7 @@
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { mdiThemeLightDark, mdiWeatherNight, mdiWeatherSunny } from '@mdi/js'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useStorage } from '@/composables/useStorage'
 import { vuetify } from '@/plugins/vuetify'
-import {
-  mdiWeatherNight,
-  mdiWeatherSunny,
-  mdiThemeLightDark,
-} from '@mdi/js'
 
 // 主题类型
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -99,7 +95,7 @@ export function useTheme() {
   return {
     themeMode,
     isDark,
-    setTheme
+    setTheme,
   }
 }
 

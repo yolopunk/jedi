@@ -135,13 +135,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useStorage } from '@/composables/useStorage'
-import { enableAutostart, disableAutostart, isAutostartEnabled } from '@/api/app'
-import { useUpdate } from '@/composables/useUpdate'
-import { useTheme } from '@/composables/useTheme'
+import { disableAutostart, enableAutostart, isAutostartEnabled } from '@/api/app'
 import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
+import { useStorage } from '@/composables/useStorage'
+import { useTheme } from '@/composables/useTheme'
+import { useUpdate } from '@/composables/useUpdate'
 
 const { locale, t } = useI18n()
 const { setItem } = useStorage()
@@ -149,13 +149,13 @@ const { themeMode, setTheme } = useTheme()
 
 const languages = computed(() => [
   { label: '简体中文', value: 'zh' },
-  { label: 'English', value: 'en' }
+  { label: 'English', value: 'en' },
 ])
 
 const themeModes = computed(() => [
   { label: t('settings.themeDark'), value: 'dark', icon: '🌙' },
   { label: t('settings.themeLight'), value: 'light', icon: '☀️' },
-  { label: t('settings.themeSystem'), value: 'system', icon: '💻' }
+  { label: t('settings.themeSystem'), value: 'system', icon: '💻' },
 ])
 
 const currentThemeLabel = computed(() => {
@@ -163,7 +163,9 @@ const currentThemeLabel = computed(() => {
 })
 
 const currentLangLabel = computed(() => {
-  return languages.value.find((l: { value: string }) => l.value === locale.value)?.label || '简体中文'
+  return (
+    languages.value.find((l: { value: string }) => l.value === locale.value)?.label || '简体中文'
+  )
 })
 
 const changeLanguage = async (lang: string) => {
@@ -182,7 +184,7 @@ const {
   autoUpdateEnabled,
   checkForUpdate,
   installUpdate,
-  formatLastCheckTime
+  formatLastCheckTime,
 } = useUpdate()
 
 const showUpdateDialog = ref(false)

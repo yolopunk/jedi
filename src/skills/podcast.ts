@@ -1,13 +1,13 @@
 // src/skills/podcast.ts
 
-import type { Skill, ParameterSchema } from './types'
+import type { ParameterSchema, Skill } from './types'
 
 const parameters: ParameterSchema = {
   type: 'object',
   properties: {
-    operation: { type: 'string', description: 'list, play, search', required: true }
+    operation: { type: 'string', description: 'list, play, search', required: true },
   },
-  required: ['operation']
+  required: ['operation'],
 }
 
 async function executePodcast(args: any): Promise<any> {
@@ -22,5 +22,5 @@ export const podcastSkill: Skill = {
   enabled: false,
   autoCallable: false,
   parameters,
-  execute: executePodcast
+  execute: executePodcast,
 }

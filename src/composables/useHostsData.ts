@@ -1,17 +1,17 @@
-import { ref, shallowRef, computed } from 'vue'
-import { Group, HostEntry } from '@/types/hosts'
+import { computed, ref, shallowRef } from 'vue'
 import {
+  initializeDefaultConfig as initDefaultConfig,
   readSystemHosts,
-  updateHostsWithGroups,
   revertHosts,
-  initializeDefaultConfig as initDefaultConfig
+  updateHostsWithGroups,
 } from '@/api/hosts'
+import type { Group, HostEntry } from '@/types/hosts'
 import {
-  enableAllHosts,
   disableAllHosts,
+  enableAllHosts,
   findHostEntry,
   findHostIndex,
-  updateHostEntryStatus
+  updateHostEntryStatus,
 } from '@/utils/hostsUtils'
 
 export type NotifyFunction = (text: string, color: 'success' | 'error' | 'info' | 'warning') => void
@@ -22,7 +22,7 @@ export function useHostsData(notify: NotifyFunction) {
   const selectedGroup = ref<string>('')
   const hostsResolveSwitch = ref(false)
   const loading = shallowRef(false)
-  
+
   // 批量更新状态
   const pendingUpdates = ref(false)
   const updateDebounceTimeout = ref<NodeJS.Timeout | null>(null)
@@ -103,11 +103,11 @@ export function useHostsData(notify: NotifyFunction) {
 
   async function debouncedUpdateHosts() {
     pendingUpdates.value = true
-    
+
     if (updateDebounceTimeout.value) {
       clearTimeout(updateDebounceTimeout.value)
     }
-    
+
     return new Promise<void>((resolve, reject) => {
       updateDebounceTimeout.value = setTimeout(async () => {
         if (pendingUpdates.value) {
@@ -166,10 +166,15 @@ export function useHostsData(notify: NotifyFunction) {
 
   // ===== CRUD 操作 =====
 
-  async function addGroup(data: { name: string; isRemote: boolean; url?: string; hosts?: HostEntry[] }) {
+  async function addGroup(data: {
+    name: string
+    isRemote: boolean
+    url?: string
+    hosts?: HostEntry[]
+  }) {
     groups.value.push({
       name: data.name,
-      hosts: data.hosts || []
+      hosts: data.hosts || [],
     })
 
     try {
@@ -196,10 +201,10 @@ export function useHostsData(notify: NotifyFunction) {
       return
     }
 
-    group.hosts.push({ 
+    group.hosts.push({
       domain: data.domain,
       ip: data.ip,
-      disabled: false
+      disabled: false,
     })
 
     try {
@@ -224,7 +229,9 @@ export function useHostsData(notify: NotifyFunction) {
     }
 
     if (data.domain !== data.originalHost.domain) {
-      const domainExists = group.hosts.some(host => host.domain === data.domain && host !== hostEntry)
+      const domainExists = group.hosts.some(
+        host => host.domain === data.domain && host !== hostEntry
+      )
       if (domainExists) {
         notify('该域名已存在于当前分组中', 'error')
         return
@@ -240,7 +247,7 @@ export function useHostsData(notify: NotifyFunction) {
     group.hosts.push({
       domain: data.domain,
       ip: data.ip,
-      disabled: isDisabled
+      disabled: isDisabled,
     })
 
     try {
@@ -264,10 +271,7 @@ export function useHostsData(notify: NotifyFunction) {
 
     try {
       await debouncedUpdateHosts()
-      notify(
-        isEnabled ? '条目已启用' : '条目已禁用',
-        isEnabled ? 'success' : 'info'
-      )
+      notify(isEnabled ? '条目已启用' : '条目已禁用', isEnabled ? 'success' : 'info')
     } catch (error) {
       console.error('更新状态失败', error)
       notify('更新状态失败: ' + (error as Error).message, 'error')
@@ -367,7 +371,7 @@ export function useHostsData(notify: NotifyFunction) {
     hostsResolveSwitch,
     loading,
     currentGroup,
-    
+
     // Actions
     loadSystemHosts,
     handleHostsSwitch,
@@ -377,6 +381,6 @@ export function useHostsData(notify: NotifyFunction) {
     editHost,
     updateHostStatus,
     confirmDeleteHost,
-    renameGroup
+    renameGroup,
   }
 }

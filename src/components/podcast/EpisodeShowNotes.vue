@@ -23,81 +23,81 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { mdiChevronDown, mdiChevronUp } from '@mdi/js';
-import { open } from '@tauri-apps/plugin-shell';
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
+import { open } from '@tauri-apps/plugin-shell'
+import { computed, ref } from 'vue'
 
 const props = defineProps({
   content: {
     type: String,
-    required: true
+    required: true,
   },
   collapsible: {
     type: Boolean,
-    default: false
+    default: false,
   },
   defaultExpanded: {
     type: Boolean,
-    default: true
-  }
-});
+    default: true,
+  },
+})
 
-const emit = defineEmits(['seek']);
+const emit = defineEmits(['seek'])
 
-const expanded = ref(props.defaultExpanded);
+const expanded = ref(props.defaultExpanded)
 
 const formattedContent = computed(() => {
-  if (!props.content) return '';
-  
-  let content = props.content;
-  
+  if (!props.content) return ''
+
+  let content = props.content
+
   // If content seems to be plain text (no html tags like <p>, <div, <br), convert newlines to <br>
   if (!content.match(/<[a-z][\s\S]*>/i)) {
-      content = content.replace(/\n/g, '<br>');
+    content = content.replace(/\n/g, '<br>')
   }
 
   // Highlight timestamps (e.g. 05:00, 12:30, 1:05:00)
   // Wrap them in a span that we can style and click
   content = content.replace(
-    /\b((?:\d{1,2}:)?\d{1,2}:\d{2})\b/g, 
+    /\b((?:\d{1,2}:)?\d{1,2}:\d{2})\b/g,
     '<span class="timestamp-link text-primary font-weight-bold cursor-pointer" data-timestamp="$1">$1</span>'
-  );
-  
-  return content;
-});
+  )
+
+  return content
+})
 
 function handleClick(event: MouseEvent) {
-  const target = event.target as HTMLElement;
-  
+  const target = event.target as HTMLElement
+
   // Handle Timestamp Clicks
   if (target.classList.contains('timestamp-link')) {
-    const timeStr = target.dataset.timestamp;
+    const timeStr = target.dataset.timestamp
     if (timeStr) {
-        event.preventDefault();
-        event.stopPropagation();
-        
-        // Convert to seconds
-        const parts = timeStr.split(':').reverse();
-        let seconds = 0;
-        if (parts[0]) seconds += parseInt(parts[0]);
-        if (parts[1]) seconds += parseInt(parts[1]) * 60;
-        if (parts[2]) seconds += parseInt(parts[2]) * 3600;
-        
-        emit('seek', seconds);
-        return;
+      event.preventDefault()
+      event.stopPropagation()
+
+      // Convert to seconds
+      const parts = timeStr.split(':').reverse()
+      let seconds = 0
+      if (parts[0]) seconds += parseInt(parts[0])
+      if (parts[1]) seconds += parseInt(parts[1]) * 60
+      if (parts[2]) seconds += parseInt(parts[2]) * 3600
+
+      emit('seek', seconds)
+      return
     }
   }
 
   // Handle Links
-  const link = target.closest('a');
+  const link = target.closest('a')
   if (link) {
-    event.preventDefault();
-    const href = link.getAttribute('href');
+    event.preventDefault()
+    const href = link.getAttribute('href')
     if (href) {
       open(href).catch(err => {
-        console.error('Failed to open link:', err);
-        window.open(href, '_blank');
-      });
+        console.error('Failed to open link:', err)
+        window.open(href, '_blank')
+      })
     }
   }
 }

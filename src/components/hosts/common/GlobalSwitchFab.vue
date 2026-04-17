@@ -19,17 +19,15 @@
 </template>
 
 <script setup lang="ts">
-import { mdiPowerPlugOutline, mdiPowerPlugOffOutline } from '@mdi/js'
+import { mdiPowerPlugOffOutline, mdiPowerPlugOutline } from '@mdi/js'
 
 // 定义组件属性
 defineProps<{
-  modelValue: boolean;
+  modelValue: boolean
 }>()
 
 // 定义组件事件
-defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-}>()
+defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 </script>
 
 <style scoped>

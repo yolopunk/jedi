@@ -286,16 +286,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { getWallpapers, syncWallpapers, setDesktopWallpaper, getCurrentWallpaper, showInFolder, type WallpaperItem, WallpaperMode } from '@/api/wallpaper'
-import { useI18n } from 'vue-i18n'
-import MarkdownIt from 'markdown-it'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import MarkdownIt from 'markdown-it'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import {
+  getCurrentWallpaper,
+  getWallpapers,
+  setDesktopWallpaper,
+  showInFolder,
+  syncWallpapers,
+  type WallpaperItem,
+  WallpaperMode,
+} from '@/api/wallpaper'
 
 const md = new MarkdownIt({
   html: true,
   linkify: true,
-  typographer: true
+  typographer: true,
 })
 
 function renderMarkdown(content: string) {
@@ -321,7 +329,7 @@ const selectedMode = ref<WallpaperMode>(WallpaperMode.Crop)
 const snackbar = ref({
   show: false,
   text: '',
-  color: 'success'
+  color: 'success',
 })
 
 const getSnackbarIcon = computed(() => {
@@ -338,12 +346,36 @@ const getSnackbarIcon = computed(() => {
 })
 
 const modeOptions = computed(() => [
-  { value: WallpaperMode.Center, label: t('wallpapers.modes.center.label'), description: t('wallpapers.modes.center.description') },
-  { value: WallpaperMode.Crop, label: t('wallpapers.modes.crop.label'), description: t('wallpapers.modes.crop.description') },
-  { value: WallpaperMode.Fit, label: t('wallpapers.modes.fit.label'), description: t('wallpapers.modes.fit.description') },
-  { value: WallpaperMode.Span, label: t('wallpapers.modes.span.label'), description: t('wallpapers.modes.span.description') },
-  { value: WallpaperMode.Stretch, label: t('wallpapers.modes.stretch.label'), description: t('wallpapers.modes.stretch.description') },
-  { value: WallpaperMode.Tile, label: t('wallpapers.modes.tile.label'), description: t('wallpapers.modes.tile.description') },
+  {
+    value: WallpaperMode.Center,
+    label: t('wallpapers.modes.center.label'),
+    description: t('wallpapers.modes.center.description'),
+  },
+  {
+    value: WallpaperMode.Crop,
+    label: t('wallpapers.modes.crop.label'),
+    description: t('wallpapers.modes.crop.description'),
+  },
+  {
+    value: WallpaperMode.Fit,
+    label: t('wallpapers.modes.fit.label'),
+    description: t('wallpapers.modes.fit.description'),
+  },
+  {
+    value: WallpaperMode.Span,
+    label: t('wallpapers.modes.span.label'),
+    description: t('wallpapers.modes.span.description'),
+  },
+  {
+    value: WallpaperMode.Stretch,
+    label: t('wallpapers.modes.stretch.label'),
+    description: t('wallpapers.modes.stretch.description'),
+  },
+  {
+    value: WallpaperMode.Tile,
+    label: t('wallpapers.modes.tile.label'),
+    description: t('wallpapers.modes.tile.description'),
+  },
 ])
 
 const currentModeLabel = computed(() => {
@@ -368,10 +400,11 @@ const filteredWallpapers = computed(() => {
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    result = result.filter(w =>
-      w.title.toLowerCase().includes(query) ||
-      w.description.toLowerCase().includes(query) ||
-      w.tags.some(tag => tag.toLowerCase().includes(query))
+    result = result.filter(
+      w =>
+        w.title.toLowerCase().includes(query) ||
+        w.description.toLowerCase().includes(query) ||
+        w.tags.some(tag => tag.toLowerCase().includes(query))
     )
   }
 
@@ -472,7 +505,7 @@ function showSnackbar(text: string, color: string) {
 }
 
 onMounted(async () => {
-  unlistenBatch = await listen<WallpaperItem[]>('wallpaper-batch', (event) => {
+  unlistenBatch = await listen<WallpaperItem[]>('wallpaper-batch', event => {
     const newItems = event.payload
     const currentIds = new Set(wallpapers.value.map(w => w.id))
     let hasNew = false

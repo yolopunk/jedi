@@ -1,12 +1,12 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { createAnthropic } from '@ai-sdk/anthropic'
+import { createOpenAI } from '@ai-sdk/openai'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { invoke } from '@tauri-apps/api/core'
 import { streamText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
-import { createAnthropic } from '@ai-sdk/anthropic'
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
-import { useProviderConfigStore } from './providerConfig'
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
 import { useModelsDevStore } from './modelsDev'
+import { useProviderConfigStore } from './providerConfig'
 
 // MCP Server 接口
 export interface McpServer {
@@ -27,7 +27,7 @@ export interface ChatMessage {
 }
 
 // 兼容旧组件的类型导出
-export interface Message extends ChatMessage { }
+export interface Message extends ChatMessage {}
 
 // 会话格式
 export interface Session {
@@ -42,9 +42,27 @@ export interface Session {
 
 // 预定义的MCP服务器
 export const DEFAULT_MCP_SERVERS: McpServer[] = [
-  { id: 'hosts', name: 'Hosts Manager', description: '管理系统Hosts文件', enabled: false, icon: 'mdi-dns' },
-  { id: 'filesystem', name: 'Filesystem', description: '文件系统操作', enabled: false, icon: 'mdi-folder' },
-  { id: 'browser', name: 'Browser', description: '网页浏览和搜索', enabled: false, icon: 'mdi-web' },
+  {
+    id: 'hosts',
+    name: 'Hosts Manager',
+    description: '管理系统Hosts文件',
+    enabled: false,
+    icon: 'mdi-dns',
+  },
+  {
+    id: 'filesystem',
+    name: 'Filesystem',
+    description: '文件系统操作',
+    enabled: false,
+    icon: 'mdi-folder',
+  },
+  {
+    id: 'browser',
+    name: 'Browser',
+    description: '网页浏览和搜索',
+    enabled: false,
+    icon: 'mdi-web',
+  },
 ]
 
 // ========== AI SDK Provider 工厂 ==========
@@ -102,8 +120,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const modelsDevStore = useModelsDevStore()
 
   // Computed
-  const currentSession = computed(() =>
-    sessions.value.find(s => s.id === currentSessionId.value) || null
+  const currentSession = computed(
+    () => sessions.value.find(s => s.id === currentSessionId.value) || null
   )
 
   // Actions
@@ -117,10 +135,14 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
-  async function createSession(title: string = '新对话', provider: string = 'openai', model: string = 'gpt-4o-mini') {
+  async function createSession(
+    title: string = '新对话',
+    provider: string = 'openai',
+    model: string = 'gpt-4o-mini'
+  ) {
     try {
       const session = await invoke('create_session', {
-        request: { title, provider, model }
+        request: { title, provider, model },
       })
       sessions.value.unshift(session as Session)
       currentSessionId.value = (session as Session).id
@@ -206,7 +228,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: fullContent,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       }
       session.messages.push(assistantMessage)
 
@@ -216,9 +238,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
           session_id: session.id,
           role: 'assistant',
           content: fullContent,
-        }
+        },
       })
-
     } catch (e: any) {
       error.value = `发送消息失败: ${e}`
       console.error('Failed to send message:', e)

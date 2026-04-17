@@ -1,7 +1,7 @@
 // src/stores/skills.ts
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { skillRegistry } from '@/skills/registry'
 
 export const useSkillsStore = defineStore('skills', () => {
@@ -48,7 +48,9 @@ export const useSkillsStore = defineStore('skills', () => {
       if (saved) {
         const ids = JSON.parse(saved) as string[]
         enabledSkills.value = ids
-        ids.forEach(id => skillRegistry.setEnabled(id, true))
+        ids.forEach(id => {
+          skillRegistry.setEnabled(id, true)
+        })
       }
     } catch (e) {
       console.error('Failed to load skills:', e)
@@ -56,9 +58,15 @@ export const useSkillsStore = defineStore('skills', () => {
   }
 
   return {
-    enabledSkills, skillPanelOpen,
-    allSkills, enabledSkillsList, autoCallableSkills,
-    toggleSkill, isSkillEnabled, toggleSkillPanel, setSkillPanelOpen,
-    loadFromStorage
+    enabledSkills,
+    skillPanelOpen,
+    allSkills,
+    enabledSkillsList,
+    autoCallableSkills,
+    toggleSkill,
+    isSkillEnabled,
+    toggleSkillPanel,
+    setSkillPanelOpen,
+    loadFromStorage,
   }
 })

@@ -1,14 +1,14 @@
 // src/skills/wallpaper.ts
 
-import type { Skill, ParameterSchema } from './types'
+import type { ParameterSchema, Skill } from './types'
 
 const parameters: ParameterSchema = {
   type: 'object',
   properties: {
     operation: { type: 'string', description: 'list, set, random', required: true },
-    category: { type: 'string', description: 'Wallpaper category', required: false }
+    category: { type: 'string', description: 'Wallpaper category', required: false },
   },
-  required: ['operation']
+  required: ['operation'],
 }
 
 async function executeWallpaper(args: any): Promise<any> {
@@ -23,5 +23,5 @@ export const wallpaperSkill: Skill = {
   enabled: false,
   autoCallable: false,
   parameters,
-  execute: executeWallpaper
+  execute: executeWallpaper,
 }

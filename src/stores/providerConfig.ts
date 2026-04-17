@@ -1,7 +1,7 @@
+import { invoke } from '@tauri-apps/api/core'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import type { ConfiguredProvider, ApiKeyResponse } from '@/types/modelsDev'
+import type { ApiKeyResponse, ConfiguredProvider } from '@/types/modelsDev'
 
 export const useProviderConfigStore = defineStore('providerConfig', () => {
   const configuredProviders = ref<ConfiguredProvider[]>([])
@@ -22,7 +22,7 @@ export const useProviderConfigStore = defineStore('providerConfig', () => {
 
   async function saveApiKey(provider: string, key: string, endpoint?: string): Promise<void> {
     await invoke('store_api_key', {
-      request: { provider, key, endpoint: endpoint || null }
+      request: { provider, key, endpoint: endpoint || null },
     })
     await loadConfiguredProviders()
   }

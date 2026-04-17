@@ -6,7 +6,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useTheme } from '@/composables/useTheme'
 
 const { isDark } = useTheme()
@@ -328,7 +328,7 @@ function initWebGL(canvas: HTMLCanvasElement): boolean {
   gl = canvas.getContext('webgl', {
     alpha: true,
     antialias: false,
-    premultipliedAlpha: false
+    premultipliedAlpha: false,
   })
   if (!gl) return false
 
@@ -454,7 +454,7 @@ function animateReset() {
     const elapsed = Date.now() - startTime
     const t = Math.min(elapsed / duration, 1)
     // Ease out cubic
-    const ease = 1 - Math.pow(1 - t, 3)
+    const ease = 1 - (1 - t) ** 3
     tiltVal = startTilt * (1 - ease)
     rotateVal = startRotate * (1 - ease)
     if (t < 1) requestAnimationFrame(step)
@@ -488,7 +488,9 @@ onMounted(() => {
   lastFpsTime = performance.now()
   animId = requestAnimationFrame(render)
 
-  resizeHandler = () => { needsResize = true }
+  resizeHandler = () => {
+    needsResize = true
+  }
   window.addEventListener('resize', resizeHandler)
   document.addEventListener('visibilitychange', onVisibilityChange)
   canvas.addEventListener('mousedown', onMouseDown)
@@ -511,17 +513,20 @@ onUnmounted(() => {
   prog = null
 })
 
-watch(() => props.isCollapsed, (collapsed) => {
-  if (collapsed) {
-    running = false
-    cancelAnimationFrame(animId)
-  } else {
-    running = true
-    needsResize = true
-    lastFpsTime = performance.now()
-    animId = requestAnimationFrame(render)
+watch(
+  () => props.isCollapsed,
+  collapsed => {
+    if (collapsed) {
+      running = false
+      cancelAnimationFrame(animId)
+    } else {
+      running = true
+      needsResize = true
+      lastFpsTime = performance.now()
+      animId = requestAnimationFrame(render)
+    }
   }
-})
+)
 </script>
 
 <style scoped>

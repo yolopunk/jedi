@@ -26,9 +26,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, computed } from 'vue'
-import { useAgentStore } from '@/stores/agent'
+import { computed, nextTick, ref, watch } from 'vue'
 import type { AgentEvent } from '@/agent/types'
+import { useAgentStore } from '@/stores/agent'
 
 const agentStore = useAgentStore()
 const traceList = ref<HTMLElement | null>(null)
@@ -37,7 +37,7 @@ const statusClass = computed(() => ({
   idle: agentStore.currentStatus === 'idle',
   running: agentStore.currentStatus === 'executing' || agentStore.currentStatus === 'planning',
   done: agentStore.currentStatus === 'done',
-  error: agentStore.currentStatus === 'error'
+  error: agentStore.currentStatus === 'error',
 }))
 
 function formatTime(ts: number): string {
@@ -46,12 +46,18 @@ function formatTime(ts: number): string {
 
 function getIcon(event: AgentEvent): string {
   switch (event.type) {
-    case 'step_start': return '>'
-    case 'step_done': return '+'
-    case 'step_error': return '!'
-    case 'status_change': return '~'
-    case 'confirmation_needed': return '?'
-    default: return '-'
+    case 'step_start':
+      return '>'
+    case 'step_done':
+      return '+'
+    case 'step_error':
+      return '!'
+    case 'status_change':
+      return '~'
+    case 'confirmation_needed':
+      return '?'
+    default:
+      return '-'
   }
 }
 
@@ -61,13 +67,16 @@ function getContent(event: AgentEvent): string {
   return event.type
 }
 
-watch(() => agentStore.traceLog.length, () => {
-  nextTick(() => {
-    if (traceList.value) {
-      traceList.value.scrollTop = traceList.value.scrollHeight
-    }
-  })
-})
+watch(
+  () => agentStore.traceLog.length,
+  () => {
+    nextTick(() => {
+      if (traceList.value) {
+        traceList.value.scrollTop = traceList.value.scrollHeight
+      }
+    })
+  }
+)
 </script>
 
 <style scoped>

@@ -1,7 +1,7 @@
 // src/mcp/registry.ts
 
-import type { McpServer, McpTool } from './types'
 import { hostsMcpServer } from './hosts'
+import type { McpServer, McpTool } from './types'
 
 export class McpRegistry {
   private servers: Map<string, McpServer> = new Map()

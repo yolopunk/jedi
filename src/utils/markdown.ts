@@ -1,6 +1,6 @@
-import MarkdownIt from 'markdown-it'
-import hljs from 'highlight.js'
 import DOMPurify from 'dompurify'
+import hljs from 'highlight.js'
+import MarkdownIt from 'markdown-it'
 
 export function createMarkdownRenderer(): MarkdownIt {
   return new MarkdownIt({

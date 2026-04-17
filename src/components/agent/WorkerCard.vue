@@ -61,9 +61,7 @@ const props = defineProps<{
   worker: WorkerStatus
 }>()
 
-defineEmits<{
-  (e: 'stop', workerId: string): void
-}>()
+defineEmits<(e: 'stop', workerId: string) => void>()
 
 const statusLabels: Record<WorkerStatusKind, string> = {
   idle: 'Idle',

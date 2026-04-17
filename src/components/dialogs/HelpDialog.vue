@@ -56,7 +56,7 @@
 
 <script setup lang="ts">
 defineProps<{ modelValue: boolean }>()
-defineEmits<{ (e: 'update:modelValue', value: boolean): void }>()
+defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 
 const helpItems = [
   { icon: 'add-group', text: 'Add group to organize hosts entries' },

@@ -226,21 +226,48 @@
 import CrtOverlay from '@/components/common/CrtOverlay.vue'
 import EpisodeShowNotes from '@/components/podcast/EpisodeShowNotes.vue'
 import OpmlExportGuide from '@/components/podcast/OpmlExportGuide.vue'
-import PodcastLibrary from './PodcastLibrary.vue'
-import PodcastDetail from './PodcastDetail.vue'
 import { usePodcastManager } from '@/composables/usePodcastManager'
+import PodcastDetail from './PodcastDetail.vue'
+import PodcastLibrary from './PodcastLibrary.vue'
 
 const {
-  subscriptions, currentSub, episodes, episodesLoading, loading,
-  searchQuery, visibleEpisodes, episodesLoadMoreTrigger, currentView,
-  showAddDialog, addLoading, refreshLoading, libraryRefreshLoading,
-  showShowNotesDialog, currentShowNotesEpisode, opmlFile, opmlError,
-  snackbar, snackbarText, snackbarColor,
-  currentPlaying, currentPlayingSubUrl,
-  selectSubscription, goBack, playLatestEpisode, playEpisode,
-  getEpisodeId, scrollToPlaying, openShowNotes, refreshSub,
-  refreshLibrary, openAddDialog, closeAddDialog, importOpmlFile,
-  unsubscribe, formatMonth, formatDay,
+  subscriptions,
+  currentSub,
+  episodes,
+  episodesLoading,
+  loading,
+  searchQuery,
+  visibleEpisodes,
+  episodesLoadMoreTrigger,
+  currentView,
+  showAddDialog,
+  addLoading,
+  refreshLoading,
+  libraryRefreshLoading,
+  showShowNotesDialog,
+  currentShowNotesEpisode,
+  opmlFile,
+  opmlError,
+  snackbar,
+  snackbarText,
+  snackbarColor,
+  currentPlaying,
+  currentPlayingSubUrl,
+  selectSubscription,
+  goBack,
+  playLatestEpisode,
+  playEpisode,
+  getEpisodeId,
+  scrollToPlaying,
+  openShowNotes,
+  refreshSub,
+  refreshLibrary,
+  openAddDialog,
+  closeAddDialog,
+  importOpmlFile,
+  unsubscribe,
+  formatMonth,
+  formatDay,
 } = usePodcastManager()
 </script>
 

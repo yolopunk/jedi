@@ -1,5 +1,5 @@
-import { check, Update } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
+import { check, type Update } from '@tauri-apps/plugin-updater'
 
 export interface UpdateInfo {
   version: string
@@ -18,7 +18,7 @@ export async function checkUpdate(): Promise<UpdateInfo | null> {
       return {
         version: update.version,
         date: update.date || new Date().toISOString(),
-        body: update.body || ''
+        body: update.body || '',
       }
     }
     return null
@@ -29,16 +29,18 @@ export async function checkUpdate(): Promise<UpdateInfo | null> {
 }
 
 // Download the update
-export async function downloadUpdate(onProgress: (total: number, current: number) => void): Promise<void> {
+export async function downloadUpdate(
+  onProgress: (total: number, current: number) => void
+): Promise<void> {
   if (!currentUpdate) {
     throw new Error('No update available. Call checkUpdate first.')
   }
-  
+
   try {
     let downloaded = 0
     let contentLength = 0
-    
-    await currentUpdate.download((event) => {
+
+    await currentUpdate.download(event => {
       switch (event.event) {
         case 'Started':
           contentLength = event.data.contentLength || 0
@@ -73,20 +75,22 @@ export async function installUpdate(): Promise<void> {
 }
 
 // Download and install in one step
-export async function downloadAndInstallUpdate(onProgress: (total: number, current: number) => void): Promise<void> {
+export async function downloadAndInstallUpdate(
+  onProgress: (total: number, current: number) => void
+): Promise<void> {
   if (!currentUpdate) {
-     // Try to check again if currentUpdate is missing
-     const info = await checkUpdate()
-     if (!info || !currentUpdate) {
-        throw new Error('No update available')
-     }
+    // Try to check again if currentUpdate is missing
+    const info = await checkUpdate()
+    if (!info || !currentUpdate) {
+      throw new Error('No update available')
+    }
   }
 
   try {
     let downloaded = 0
     let contentLength = 0
 
-    await currentUpdate.downloadAndInstall((event) => {
+    await currentUpdate.downloadAndInstall(event => {
       switch (event.event) {
         case 'Started':
           contentLength = event.data.contentLength || 0
@@ -101,7 +105,7 @@ export async function downloadAndInstallUpdate(onProgress: (total: number, curre
           break
       }
     })
-    
+
     await relaunch()
   } catch (error) {
     console.error('Failed to download and install update:', error)

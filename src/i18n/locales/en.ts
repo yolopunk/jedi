@@ -46,7 +46,8 @@ export default {
     addGroup: 'Add Group: Click "+" button to create a new hosts configuration group',
     addEntry: 'Add Entry: Click "Add Entry" button in a group to add a new hosts entry',
     toggleEntry: 'Toggle Entry: Use the switch next to each entry to control its status',
-    globalSwitch: 'Global Switch: Use the main switch at the top to control all hosts configurations',
+    globalSwitch:
+      'Global Switch: Use the main switch at the top to control all hosts configurations',
   },
   settings: {
     title: 'Settings',
@@ -162,17 +163,17 @@ export default {
       save: 'Save',
     },
     confirm: {
-        delete: 'Are you sure you want to delete this chat?',
-        clear: 'Clear current conversation history?',
+      delete: 'Are you sure you want to delete this chat?',
+      clear: 'Clear current conversation history?',
     },
     time: {
-        justNow: 'Just now',
-        minutesAgo: '{n}m ago',
-        hoursAgo: '{n}h ago',
-        daysAgo: '{n}d ago',
+      justNow: 'Just now',
+      minutesAgo: '{n}m ago',
+      hoursAgo: '{n}h ago',
+      daysAgo: '{n}d ago',
     },
     error: {
-      providerConfig: 'Please configure AI provider in settings...'
+      providerConfig: 'Please configure AI provider in settings...',
     },
     inputHint: 'Press Enter to send, Shift+Enter for new line',
     searchPlaceholder: 'Search conversations...',
@@ -200,7 +201,8 @@ export default {
     },
     empty: {
       title: 'No Configurations',
-      description: 'You can manually add a group or use the default configuration to start managing your hosts file',
+      description:
+        'You can manually add a group or use the default configuration to start managing your hosts file',
       addGroup: 'Add Group',
       useDefault: 'Use Default',
     },
@@ -235,7 +237,8 @@ export default {
       remoteUrlLabel: 'Remote Config URL',
       remoteUrlPlaceholder: 'e.g. https://example.com/hosts.json',
       hostsListLabel: 'Hosts List',
-      hostsListPlaceholder: 'Format: IP Domain, one per line\ne.g.\n127.0.0.1 localhost\n192.168.1.1 router.local',
+      hostsListPlaceholder:
+        'Format: IP Domain, one per line\ne.g.\n127.0.0.1 localhost\n192.168.1.1 router.local',
       hostsListHint: 'One entry per line, format: <code>IP Domain</code>',
     },
     // Table UI
@@ -308,28 +311,28 @@ export default {
     modes: {
       center: {
         label: 'Center',
-        description: 'Center the image without scaling, leave space around'
+        description: 'Center the image without scaling, leave space around',
       },
       crop: {
         label: 'Crop/Fill',
-        description: 'Scale image to fill screen, crop excess'
+        description: 'Scale image to fill screen, crop excess',
       },
       fit: {
         label: 'Fit',
-        description: 'Scale image to fit entirely, may have black bars'
+        description: 'Scale image to fit entirely, may have black bars',
       },
       span: {
         label: 'Span',
-        description: 'Span image across all displays'
+        description: 'Span image across all displays',
       },
       stretch: {
         label: 'Stretch',
-        description: 'Force image to fill screen, may distort'
+        description: 'Force image to fill screen, may distort',
       },
       tile: {
         label: 'Tile',
-        description: 'Repeat image at original size'
-      }
-    }
-  }
+        description: 'Repeat image at original size',
+      },
+    },
+  },
 }

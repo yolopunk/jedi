@@ -8,9 +8,9 @@
  * 主机条目类型
  */
 export interface HostEntry {
-  ip: string;
-  domain: string;
-  disabled: boolean;
+  ip: string
+  domain: string
+  disabled: boolean
 }
 
 /**
@@ -18,8 +18,6 @@ export interface HostEntry {
  * 使用 name 作为分组名称
  */
 export interface Group {
-  name: string;
-  hosts: HostEntry[];
+  name: string
+  hosts: HostEntry[]
 }
-
-

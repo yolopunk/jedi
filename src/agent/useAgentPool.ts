@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { getPoolStatus, type WorkerStatus } from './pool'
 
 const POOL_POLL_INTERVAL = 1000
@@ -23,8 +23,11 @@ export function useAgentPool() {
       if (onWorkerCompleteCallback) {
         for (const worker of newWorkers) {
           const prev = previousWorkers.find(p => p.id === worker.id)
-          if (prev && prev.status === 'running' &&
-              (worker.status === 'completed' || worker.status === 'failed')) {
+          if (
+            prev &&
+            prev.status === 'running' &&
+            (worker.status === 'completed' || worker.status === 'failed')
+          ) {
             onWorkerCompleteCallback(worker)
           }
         }

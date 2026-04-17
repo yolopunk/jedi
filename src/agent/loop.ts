@@ -1,8 +1,8 @@
 // src/agent/loop.ts
 
-import type { AgentState, AgentStep, AgentConfig, AgentEvent } from './types'
-import { useModelsDevStore } from '@/stores/modelsDev'
 import { skillRegistry } from '@/skills/registry'
+import { useModelsDevStore } from '@/stores/modelsDev'
+import type { AgentConfig, AgentEvent, AgentState, AgentStep } from './types'
 
 type EventHandler = (event: AgentEvent) => void
 
@@ -12,7 +12,9 @@ function nextStepId(): string {
 }
 
 function emitEvent(handlers: EventHandler[], event: AgentEvent) {
-  handlers.forEach(h => h(event))
+  handlers.forEach(h => {
+    h(event)
+  })
 }
 
 export class AgentLoop {
@@ -20,7 +22,7 @@ export class AgentLoop {
     status: 'idle',
     currentStep: null,
     history: [],
-    confirmationRequired: false
+    confirmationRequired: false,
   }
   private config: AgentConfig
   private eventHandlers: EventHandler[] = []
@@ -64,7 +66,7 @@ export class AgentLoop {
       status: 'idle',
       currentStep: null,
       history: [],
-      confirmationRequired: false
+      confirmationRequired: false,
     }
   }
 
@@ -73,7 +75,7 @@ export class AgentLoop {
     emitEvent(this.eventHandlers, {
       type: 'status_change',
       status,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
   }
 
@@ -83,14 +85,14 @@ export class AgentLoop {
       type,
       status: 'running',
       content,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
     this.state.currentStep = step
     this.state.history.push(step)
     emitEvent(this.eventHandlers, {
       type: 'step_start',
       step,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
     return step
   }
@@ -102,7 +104,7 @@ export class AgentLoop {
     emitEvent(this.eventHandlers, {
       type: 'step_done',
       step,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
   }
 
@@ -113,7 +115,7 @@ export class AgentLoop {
     emitEvent(this.eventHandlers, {
       type: 'step_error',
       step,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
   }
 
@@ -129,7 +131,7 @@ export class AgentLoop {
       emitEvent(this.eventHandlers, {
         type: 'confirmation_needed',
         step,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       })
       return
     }

@@ -93,16 +93,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { sharedMd, renderSafe } from '@/utils/markdown'
 import type { Message } from '@/stores/aiChat'
+import { renderSafe, sharedMd } from '@/utils/markdown'
 
 const props = defineProps<{
   message: Message
 }>()
 
-defineEmits<{
-  (e: 'regenerate'): void
-}>()
+defineEmits<(e: 'regenerate') => void>()
 
 const copied = ref(false)
 

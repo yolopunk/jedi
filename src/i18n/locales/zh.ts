@@ -153,17 +153,17 @@ export default {
       save: '保存',
     },
     confirm: {
-        delete: '确定要删除此对话吗？',
-        clear: '确定要清除当前对话历史吗？',
+      delete: '确定要删除此对话吗？',
+      clear: '确定要清除当前对话历史吗？',
     },
     time: {
-        justNow: '刚刚',
-        minutesAgo: '{n}分钟前',
-        hoursAgo: '{n}小时前',
-        daysAgo: '{n}天前',
+      justNow: '刚刚',
+      minutesAgo: '{n}分钟前',
+      hoursAgo: '{n}小时前',
+      daysAgo: '{n}天前',
     },
     error: {
-      providerConfig: '请在设置中配置 AI 提供商...'
+      providerConfig: '请在设置中配置 AI 提供商...',
     },
     inputHint: '按 Enter 发送，Shift+Enter 换行',
     searchPlaceholder: '搜索对话...',
@@ -227,7 +227,8 @@ export default {
       remoteUrlLabel: '远程配置URL',
       remoteUrlPlaceholder: '例如: https://example.com/hosts.json',
       hostsListLabel: 'Hosts 列表',
-      hostsListPlaceholder: '格式: IP 域名，每行一条\n例如:\n127.0.0.1 localhost\n192.168.1.1 router.local',
+      hostsListPlaceholder:
+        '格式: IP 域名，每行一条\n例如:\n127.0.0.1 localhost\n192.168.1.1 router.local',
       hostsListHint: '每行一条记录，格式为: <code>IP地址 域名</code>',
     },
     // Table UI
@@ -302,29 +303,29 @@ export default {
     modes: {
       center: {
         label: '居中 (Center)',
-        description: '图片居中，不缩放，周围留空'
+        description: '图片居中，不缩放，周围留空',
       },
       crop: {
         label: '裁剪/填充 (Crop)',
-        description: '图片按比例放大填满屏幕，多余部分裁剪'
+        description: '图片按比例放大填满屏幕，多余部分裁剪',
       },
       fit: {
         label: '适应 (Fit)',
-        description: '图片按比例缩放完整显示，可能有黑边'
+        description: '图片按比例缩放完整显示，可能有黑边',
       },
       span: {
         label: '跨屏 (Span)',
-        description: '图片跨越所有显示器'
+        description: '图片跨越所有显示器',
       },
       stretch: {
         label: '拉伸 (Stretch)',
-        description: '图片强制拉伸填满屏幕，会变形'
+        description: '图片强制拉伸填满屏幕，会变形',
       },
       tile: {
         label: '平铺 (Tile)',
-        description: '图片按原大小重复平铺'
-      }
-    }
+        description: '图片按原大小重复平铺',
+      },
+    },
   },
   update: {
     title: '发现新版本',
@@ -334,5 +335,5 @@ export default {
     downloadAndInstall: '下载并安装',
     downloading: '下载中...',
     installing: '安装中...',
-  }
+  },
 }

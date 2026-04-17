@@ -79,10 +79,11 @@ defineEmits<{
 const filteredSubscriptions = computed(() => {
   if (!props.searchQuery) return props.subscriptions
   const q = props.searchQuery.toLowerCase()
-  return props.subscriptions.filter(sub =>
-    sub.title.toLowerCase().includes(q) ||
-    sub.author?.toLowerCase().includes(q) ||
-    sub.description?.toLowerCase().includes(q)
+  return props.subscriptions.filter(
+    sub =>
+      sub.title.toLowerCase().includes(q) ||
+      sub.author?.toLowerCase().includes(q) ||
+      sub.description?.toLowerCase().includes(q)
   )
 })
 </script>

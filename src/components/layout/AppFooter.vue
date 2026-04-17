@@ -109,48 +109,43 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { useI18n } from "vue-i18n";
-import {
-    mdiGithub,
-    mdiHelpCircle,
-    mdiCog,
-    mdiInformation,
-} from "@mdi/js";
-import { useTheme, useThemeToggle } from "@/composables/useTheme";
-import { useStorage } from "@/composables/useStorage";
+import { mdiCog, mdiGithub, mdiHelpCircle, mdiInformation } from '@mdi/js'
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useStorage } from '@/composables/useStorage'
+import { useTheme, useThemeToggle } from '@/composables/useTheme'
 
 // 获取主题状态
-const { locale } = useI18n();
-const { isDark } = useTheme();
-const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle();
-const { setItem } = useStorage();
+const { locale } = useI18n()
+const { isDark } = useTheme()
+const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
+const { setItem } = useStorage()
 
 // 语言切换
 const langTooltip = computed(() => {
-    return locale.value === "zh" ? "Switch to English" : "切换到中文";
-});
+  return locale.value === 'zh' ? 'Switch to English' : '切换到中文'
+})
 
 async function toggleLanguage() {
-    const newLang = locale.value === "zh" ? "en" : "zh";
-    locale.value = newLang;
-    await setItem("language", newLang);
+  const newLang = locale.value === 'zh' ? 'en' : 'zh'
+  locale.value = newLang
+  await setItem('language', newLang)
 }
 
 // Language flag
 const langFlag = computed(() => {
-    return locale.value === "zh" ? "" : "";
-});
+  return locale.value === 'zh' ? '' : ''
+})
 
 // 定义组件事件
 defineEmits<{
-    (e: "open-github"): void;
-    (e: "open-website"): void;
-    (e: "open-email"): void;
-    (e: "show-help"): void;
-    (e: "show-settings"): void;
-    (e: "show-about"): void;
-}>();
+  (e: 'open-github'): void
+  (e: 'open-website'): void
+  (e: 'open-email'): void
+  (e: 'show-help'): void
+  (e: 'show-settings'): void
+  (e: 'show-about'): void
+}>()
 </script>
 
 <style scoped>

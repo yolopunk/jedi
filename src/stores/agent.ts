@@ -1,17 +1,17 @@
 // src/stores/agent.ts
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { AgentLoop } from '@/agent/loop'
 import { scheduleTask } from '@/agent/pool'
-import type { AgentState, AgentConfig, AgentEvent } from '@/agent/types'
+import type { AgentConfig, AgentEvent, AgentState } from '@/agent/types'
 
 const defaultConfig: AgentConfig = {
   model: '',
   provider: '',
   confirmationMode: 'dangerous',
   maxIterations: 10,
-  temperature: 0.7
+  temperature: 0.7,
 }
 
 export const useAgentStore = defineStore('agent', () => {
@@ -20,14 +20,16 @@ export const useAgentStore = defineStore('agent', () => {
     status: 'idle',
     currentStep: null,
     history: [],
-    confirmationRequired: false
+    confirmationRequired: false,
   })
   const traceLog = ref<AgentEvent[]>([])
   const tracePanelOpen = ref(false)
 
   let loop: AgentLoop | null = null
 
-  const isRunning = computed(() => state.value.status === 'executing' || state.value.status === 'planning')
+  const isRunning = computed(
+    () => state.value.status === 'executing' || state.value.status === 'planning'
+  )
   const history = computed(() => state.value.history)
   const currentStatus = computed(() => state.value.status)
 
@@ -51,7 +53,7 @@ export const useAgentStore = defineStore('agent', () => {
       description,
       prompt,
       tools: ['read', 'edit', 'bash', 'search'],
-      abort_on_error: true
+      abort_on_error: true,
     })
     return workerId
   }
@@ -72,7 +74,7 @@ export const useAgentStore = defineStore('agent', () => {
       status: 'idle',
       currentStep: null,
       history: [],
-      confirmationRequired: false
+      confirmationRequired: false,
     }
   }
 
@@ -81,8 +83,19 @@ export const useAgentStore = defineStore('agent', () => {
   }
 
   return {
-    config, state, traceLog, tracePanelOpen,
-    isRunning, history, currentStatus,
-    initLoop, run, runWithPool, executeSkill, abort, reset, toggleTracePanel
+    config,
+    state,
+    traceLog,
+    tracePanelOpen,
+    isRunning,
+    history,
+    currentStatus,
+    initLoop,
+    run,
+    runWithPool,
+    executeSkill,
+    abort,
+    reset,
+    toggleTracePanel,
   }
 })

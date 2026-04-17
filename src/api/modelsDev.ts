@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core'
-import type { ModelsDevProvider, ModelsDevModel, ProviderSummary } from '@/types/modelsDev'
+import type { ModelsDevModel, ModelsDevProvider, ProviderSummary } from '@/types/modelsDev'
 
 export type ModelsDevResponse = Record<string, ModelsDevProvider>
 

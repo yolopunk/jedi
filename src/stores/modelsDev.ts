@@ -1,10 +1,10 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import {
   fetchModelsDev as fetchModelsDevApi,
   getModelsForProvider as getModelsForProviderApi,
 } from '@/api/modelsDev'
-import type { ModelsDevProvider, ModelsDevModel } from '@/types/modelsDev'
+import type { ModelsDevModel, ModelsDevProvider } from '@/types/modelsDev'
 import { useProviderConfigStore } from './providerConfig'
 
 // Popular provider IDs (hardcoded for now — could be from config/API)
@@ -135,10 +135,13 @@ export const useModelsDevStore = defineStore('modelsDev', () => {
   }
 
   function persistSelection() {
-    localStorage.setItem('jedi-last-model', JSON.stringify({
-      providerId: lastSelectedProviderId.value,
-      modelId: lastSelectedModelId.value
-    }))
+    localStorage.setItem(
+      'jedi-last-model',
+      JSON.stringify({
+        providerId: lastSelectedProviderId.value,
+        modelId: lastSelectedModelId.value,
+      })
+    )
   }
 
   function loadPersistedSelection() {

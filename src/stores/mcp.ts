@@ -1,7 +1,7 @@
 // src/stores/mcp.ts
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { mcpRegistry } from '@/mcp/registry'
 
 export const useMcpStore = defineStore('mcp', () => {
@@ -42,8 +42,15 @@ export const useMcpStore = defineStore('mcp', () => {
   }
 
   return {
-    enabledServers, mcpPanelOpen, callingTool,
-    servers, enabledServersList, allTools,
-    toggleServer, isServerEnabled, toggleMcpPanel, callTool
+    enabledServers,
+    mcpPanelOpen,
+    callingTool,
+    servers,
+    enabledServersList,
+    allTools,
+    toggleServer,
+    isServerEnabled,
+    toggleMcpPanel,
+    callTool,
   }
 })

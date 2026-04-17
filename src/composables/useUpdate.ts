@@ -1,7 +1,7 @@
-import { ref, Ref, watch } from 'vue'
-import { checkUpdate, downloadAndInstallUpdate, UpdateInfo } from '@/api/update'
-import { useI18n } from 'vue-i18n'
 import dayjs from 'dayjs'
+import { type Ref, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { checkUpdate, downloadAndInstallUpdate, type UpdateInfo } from '@/api/update'
 import { useStorage } from '@/composables/useStorage'
 
 // Global state
@@ -18,22 +18,22 @@ export function useUpdate() {
   const { t } = useI18n()
   const { getItem, setItem } = useStorage()
 
-  const AUTO_CHECK_INTERVAL = 24 * 60 * 60 * 1000 // 24 hours
+  const AutoCheckInterval = 24 * 60 * 60 * 1000 // 24 hours
 
   // Initialize settings from storage
   const initSettings = async () => {
     if (isInitialized) return
-    
+
     const savedAutoUpdate = await getItem<boolean>('settings.autoUpdate')
     if (savedAutoUpdate !== null) {
       autoUpdateEnabled.value = savedAutoUpdate
     }
-    
+
     isInitialized = true
   }
 
   // Watch for changes and save to storage
-  watch(autoUpdateEnabled, async (newValue) => {
+  watch(autoUpdateEnabled, async newValue => {
     await setItem('settings.autoUpdate', newValue)
     if (newValue) {
       startAutoCheck()
@@ -82,7 +82,7 @@ export function useUpdate() {
 
   const startAutoCheck = async () => {
     await initSettings()
-    
+
     if (!autoUpdateEnabled.value) return
     if (checkInterval) return // Already running
 
@@ -94,7 +94,7 @@ export function useUpdate() {
       if (autoUpdateEnabled.value) {
         checkForUpdate()
       }
-    }, AUTO_CHECK_INTERVAL)
+    }, AutoCheckInterval)
   }
 
   const stopAutoCheck = () => {
@@ -109,7 +109,7 @@ export function useUpdate() {
       return t('settings.lastCheckTime', { time: t('settings.never') })
     }
     return t('settings.lastCheckTime', {
-      time: dayjs(lastCheckTime.value).format('YYYY-MM-DD HH:mm:ss')
+      time: dayjs(lastCheckTime.value).format('YYYY-MM-DD HH:mm:ss'),
     })
   }
 
@@ -124,6 +124,6 @@ export function useUpdate() {
     installUpdate,
     startAutoCheck,
     stopAutoCheck,
-    formatLastCheckTime
+    formatLastCheckTime,
   }
 }

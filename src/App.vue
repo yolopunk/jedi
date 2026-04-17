@@ -72,20 +72,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { mdiMenu, mdiMenuOpen } from '@mdi/js'
+import { open } from '@tauri-apps/plugin-shell'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useStorage } from '@/composables/useStorage'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
-import HelpDialog from '@/components/dialogs/HelpDialog.vue'
-import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
-import AboutDialog from '@/components/dialogs/AboutDialog.vue'
-import { open } from '@tauri-apps/plugin-shell'
-import { initTheme } from '@/composables/useTheme'
-import { useWallpaper } from '@/composables/useWallpaper'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
+import { useStorage } from '@/composables/useStorage'
+import { initTheme } from '@/composables/useTheme'
 import { useUpdate } from '@/composables/useUpdate'
-import { mdiMenu, mdiMenuOpen } from '@mdi/js'
+import { useWallpaper } from '@/composables/useWallpaper'
 
 const { locale } = useI18n()
 const { getItem, setItem } = useStorage()
@@ -120,7 +117,7 @@ const toggleLanguage = async () => {
 }
 
 // Initialize Audio Player
-watch(audioEl, (el) => {
+watch(audioEl, el => {
   if (el) {
     setAudioRef(el)
   }
@@ -175,7 +172,7 @@ const loadSidebarState = async () => {
 }
 
 // Save sidebar state to storage
-watch(sidebarCollapsed, async (newVal) => {
+watch(sidebarCollapsed, async newVal => {
   await setItem('sidebar-collapsed', newVal)
 })
 

@@ -1,4 +1,4 @@
 // src/mcp/index.ts
 
-export * from './types'
 export * from './registry'
+export * from './types'

@@ -1,6 +1,6 @@
 import { createI18n } from 'vue-i18n'
-import zh from './locales/zh'
 import en from './locales/en'
+import zh from './locales/zh'
 
 // Create i18n instance with options
 const i18n = createI18n({
@@ -9,8 +9,8 @@ const i18n = createI18n({
   fallbackLocale: 'en', // set fallback locale
   messages: {
     zh,
-    en
-  }
+    en,
+  },
 })
 
 export default i18n

@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
-import type { TaskSpec, WorkerStatus, WorkerResult } from './poolTypes'
+import type { TaskSpec, WorkerResult, WorkerStatus } from './poolTypes'
 
-export type { WorkerStatus, TaskSpec, WorkerResult }
+export type { TaskSpec, WorkerResult, WorkerStatus }
 
 export async function initPool(maxWorkers: number = 4): Promise<void> {
   await invoke('init_pool', { maxWorkers })

@@ -91,8 +91,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { getAppInfo, type AppInfo } from '@/api/app'
+import { onMounted, ref } from 'vue'
+import { type AppInfo, getAppInfo } from '@/api/app'
 
 defineProps<{ modelValue: boolean }>()
 defineEmits<{

@@ -62,8 +62,8 @@
 </template>
 
 <script setup lang="ts">
-import { useAgentPool } from '@/agent/useAgentPool'
 import { stopWorker } from '@/agent/pool'
+import { useAgentPool } from '@/agent/useAgentPool'
 import WorkerCard from './WorkerCard.vue'
 
 const { workers, panelOpen, togglePanel, refresh } = useAgentPool()

@@ -51,22 +51,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AdvancedSettingsTab from './settings/AdvancedSettingsTab.vue'
 import GeneralSettingsTab from './settings/GeneralSettingsTab.vue'
 import WallpaperSettingsTab from './settings/WallpaperSettingsTab.vue'
-import AdvancedSettingsTab from './settings/AdvancedSettingsTab.vue'
 
 const { t } = useI18n()
 
 const tabs = computed(() => [
   { value: 'general', label: t('settings.general') },
   { value: 'wallpaper', label: t('settings.wallpaper') },
-  { value: 'advanced', label: t('settings.advanced') }
+  { value: 'advanced', label: t('settings.advanced') },
 ])
 
 defineProps<{ modelValue: boolean }>()
-defineEmits<{ (e: 'update:modelValue', value: boolean): void }>()
+defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 
 const settingsTab = ref('general')
 </script>

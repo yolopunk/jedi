@@ -49,8 +49,8 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useSkillsStore } from '@/stores/skills'
 import type { Skill } from '@/skills/types'
+import { useSkillsStore } from '@/stores/skills'
 
 const emit = defineEmits<{
   (e: 'close'): void

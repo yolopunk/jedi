@@ -9,7 +9,11 @@
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "release": "node scripts/release.js"
+    "release": "node scripts/release.js",
+    "lint": "biome check .",
+    "lint:fix": "biome check --apply .",
+    "format": "biome format --write .",
+    "format:check": "biome format ."
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.69",
@@ -37,6 +41,7 @@
     "vuetify": "^3.8.2"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.12",
     "@mdi/js": "^7.4.47",
     "@tauri-apps/cli": "^2.10.1",
     "@types/dompurify": "^3.0.5",

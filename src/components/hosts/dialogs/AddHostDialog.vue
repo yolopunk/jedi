@@ -105,12 +105,15 @@ const emit = defineEmits<{
 const hostIp = ref('')
 const hostDomain = ref('')
 
-watch(() => props.modelValue, (open) => {
-  if (open) {
-    hostIp.value = ''
-    hostDomain.value = ''
+watch(
+  () => props.modelValue,
+  open => {
+    if (open) {
+      hostIp.value = ''
+      hostDomain.value = ''
+    }
   }
-})
+)
 
 function closeDialog() {
   emit('update:modelValue', false)
@@ -124,7 +127,7 @@ function confirmAdd() {
   emit('add', {
     groupName: props.groupName,
     ip: hostIp.value.trim(),
-    domain: hostDomain.value.trim()
+    domain: hostDomain.value.trim(),
   })
   closeDialog()
 }

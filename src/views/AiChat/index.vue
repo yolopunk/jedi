@@ -299,20 +299,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
-import { useAiChatStore } from '@/stores/aiChat'
-import { useSkillsStore } from '@/stores/skills'
-import { useAgentStore } from '@/stores/agent'
-import { useModelsDevStore } from '@/stores/modelsDev'
-import { useProviderConfigStore } from '@/stores/providerConfig'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { formatCommandPrompt, type SLASH_COMMANDS } from '@/agent/slashCommands'
 import { setOnWorkerCompleteCallback } from '@/agent/useAgentPool'
-import { SLASH_COMMANDS, formatCommandPrompt } from '@/agent/slashCommands'
-import { sharedMd, renderSafe } from '@/utils/markdown'
-import AgentTrace from './AgentTrace.vue'
-import ModelSettings from './ModelSettings.vue'
+import AttachmentMenu from '@/components/AttachmentMenu.vue'
 import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
 import CommandPalette from '@/components/CommandPalette.vue'
-import AttachmentMenu from '@/components/AttachmentMenu.vue'
+import { useAgentStore } from '@/stores/agent'
+import { useAiChatStore } from '@/stores/aiChat'
+import { useModelsDevStore } from '@/stores/modelsDev'
+import { useProviderConfigStore } from '@/stores/providerConfig'
+import { useSkillsStore } from '@/stores/skills'
+import { renderSafe, sharedMd } from '@/utils/markdown'
+import AgentTrace from './AgentTrace.vue'
+import ModelSettings from './ModelSettings.vue'
 
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()
@@ -350,7 +350,7 @@ const bootSequence = [
   'May the Force be with you.',
   'What can I help you build today?',
   'Need assistance with code debugging?',
-  'I can help optimize your workflow.'
+  'I can help optimize your workflow.',
 ]
 
 // Computed
@@ -378,7 +378,6 @@ function formatContextShort(len?: number): string {
   if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
   return len.toString()
 }
-
 
 // Computed
 const currentProviderName = computed(() => {
@@ -432,7 +431,7 @@ function showSessionMenu(session: any) {
 }
 
 // Actions
-function handleCommandSelect(cmd: typeof SLASH_COMMANDS[0]) {
+function handleCommandSelect(cmd: (typeof SLASH_COMMANDS)[0]) {
   if (!store.currentSession) {
     store.createSession(
       '新对话',
@@ -507,9 +506,7 @@ function handleCopyMessage(content: string) {
 function handleRegenerate() {
   if (!store.currentSession || store.currentSession.messages.length < 2) return
 
-  const lastUserMessage = [...store.currentSession.messages]
-    .reverse()
-    .find(m => m.role === 'user')
+  const lastUserMessage = [...store.currentSession.messages].reverse().find(m => m.role === 'user')
 
   if (lastUserMessage) {
     store.currentSession.messages.pop()
@@ -542,13 +539,19 @@ function autoResize() {
 }
 
 // Watchers
-watch(() => store.currentSession?.messages.length, () => {
-  scrollToBottom()
-})
+watch(
+  () => store.currentSession?.messages.length,
+  () => {
+    scrollToBottom()
+  }
+)
 
-watch(() => store.streamingContent, () => {
-  scrollToBottom()
-})
+watch(
+  () => store.streamingContent,
+  () => {
+    scrollToBottom()
+  }
+)
 
 // Boot typing animation
 let typingInterval: number | null = null
@@ -577,7 +580,10 @@ function startTypingAnimation() {
 
     // Add next character
     if (currentCharIndex.value < currentMessage.length) {
-      targetArray.value[targetArray.value.length - 1] = currentMessage.slice(0, currentCharIndex.value + 1)
+      targetArray.value[targetArray.value.length - 1] = currentMessage.slice(
+        0,
+        currentCharIndex.value + 1
+      )
       currentCharIndex.value++
       typingInterval = window.setTimeout(typeNextCharacter, typingSpeed)
     } else {
@@ -605,7 +611,7 @@ onMounted(async () => {
   skillsStore.loadFromStorage()
   await Promise.all([
     modelsDevStore.fetchProviders(),
-    providerConfigStore.loadConfiguredProviders()
+    providerConfigStore.loadConfiguredProviders(),
   ])
   scrollToBottom()
 
@@ -613,12 +619,12 @@ onMounted(async () => {
   startTypingAnimation()
 
   // Set up worker completion callback
-  setOnWorkerCompleteCallback((worker) => {
+  setOnWorkerCompleteCallback(worker => {
     const status = worker.status === 'completed' ? 'completed' : 'failed'
     const result = worker.result || worker.error || 'Finished'
     store.addMessage({
       role: 'system',
-      content: `Worker "${worker.description}" ${status}: ${result}`
+      content: `Worker "${worker.description}" ${status}: ${result}`,
     })
   })
 })

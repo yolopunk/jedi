@@ -2,16 +2,16 @@
  * Hosts管理 API
  * 封装与Tauri后端的交互
  */
-import { invoke } from '@tauri-apps/api/core';
-import { Group } from '@/types/hosts';
-import { OsInfo } from '@/types/os';
+import { invoke } from '@tauri-apps/api/core'
+import type { Group } from '@/types/hosts'
+import type { OsInfo } from '@/types/os'
 
 /**
  * 获取系统信息
  * @returns 系统信息
  */
 export async function getOsInfo(): Promise<OsInfo> {
-  return await invoke('get_os_info');
+  return await invoke('get_os_info')
 }
 
 /**
@@ -19,7 +19,7 @@ export async function getOsInfo(): Promise<OsInfo> {
  * @returns hosts配置数据
  */
 export async function readSystemHosts(): Promise<Group[]> {
-  return await invoke<Group[]>('read_system_hosts');
+  return await invoke<Group[]>('read_system_hosts')
 }
 
 /**
@@ -31,8 +31,8 @@ export async function updateHostsWithGroups(groups: Group[]): Promise<string> {
   return await invoke<string>('update_hosts_with_groups', {
     source: 'current',
     url: null,
-    groups
-  });
+    groups,
+  })
 }
 
 /**
@@ -40,7 +40,7 @@ export async function updateHostsWithGroups(groups: Group[]): Promise<string> {
  * @returns 恢复结果
  */
 export async function revertHosts(): Promise<string> {
-  return await invoke<string>('revert_hosts');
+  return await invoke<string>('revert_hosts')
 }
 
 /**
@@ -51,8 +51,8 @@ export async function initializeDefaultConfig(): Promise<string> {
   return await invoke<string>('update_hosts_with_groups', {
     source: 'default',
     url: null,
-    groups: null
-  });
+    groups: null,
+  })
 }
 
 /**
@@ -61,5 +61,5 @@ export async function initializeDefaultConfig(): Promise<string> {
  * @returns 远程配置数据
  */
 export async function fetchRemoteConfig(url: string): Promise<string> {
-  return await invoke<string>('fetch_remote_config', { url });
+  return await invoke<string>('fetch_remote_config', { url })
 }

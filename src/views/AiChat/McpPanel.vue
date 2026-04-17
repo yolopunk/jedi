@@ -39,8 +39,8 @@
 </template>
 
 <script setup lang="ts">
-import { useMcpStore } from '@/stores/mcp'
 import type { McpTool } from '@/mcp/types'
+import { useMcpStore } from '@/stores/mcp'
 
 const mcpStore = useMcpStore()
 

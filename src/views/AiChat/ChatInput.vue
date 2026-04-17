@@ -114,7 +114,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import type { ModelsDevModel } from '@/types/modelsDev'
 
 const props = defineProps<{
@@ -143,10 +143,12 @@ const placeholder = computed(() => props.placeholder || 'Type your message...')
 const charCount = computed(() => inputText.value.length)
 
 const canSend = computed(() => {
-  return inputText.value.trim() && 
-         !props.disabled && 
-         !props.isLoading &&
-         charCount.value <= maxChars.value
+  return (
+    inputText.value.trim() &&
+    !props.disabled &&
+    !props.isLoading &&
+    charCount.value <= maxChars.value
+  )
 })
 
 function handleKeydown(event: KeyboardEvent) {
@@ -174,11 +176,11 @@ function handlePaste(event: ClipboardEvent) {
 
 function handleSend() {
   if (!canSend.value) return
-  
+
   const content = inputText.value.trim()
   inputText.value = ''
   emit('send', content)
-  
+
   // Refocus input
   nextTick(() => {
     inputRef.value?.focus()

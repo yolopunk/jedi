@@ -158,27 +158,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
 import {
-  mdiRobot,
   mdiBrain,
-  mdiGoogle,
-  mdiWave,
-  mdiCloud,
-  mdiCpu64Bit,
-  mdiLan,
-  mdiStar,
-  mdiLightningBolt,
-  mdiCodeTags,
   mdiChartBar,
+  mdiCloud,
+  mdiCodeTags,
+  mdiCpu64Bit,
+  mdiGoogle,
+  mdiHelpCircle,
   mdiImage,
-  mdiHelpCircle
+  mdiLan,
+  mdiLightningBolt,
+  mdiRobot,
+  mdiStar,
+  mdiWave,
 } from '@mdi/js'
+import { computed, ref, watch } from 'vue'
 import {
-  getModelsProviders,
   getModelsForProvider,
+  getModelsProviders,
   type ModelsDevModel,
-  type ProviderSummary
+  type ProviderSummary,
 } from '@/api/ai-chat'
 
 const props = defineProps<{
@@ -192,7 +192,7 @@ const emit = defineEmits<{
 
 const dialogModel = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: value => emit('update:modelValue', value),
 })
 
 // State
@@ -207,9 +207,7 @@ const selectedProvider = computed(() =>
   providers.value.find(p => p.id === selectedProviderId.value)
 )
 
-const totalModelCount = computed(() =>
-  providers.value.reduce((sum, p) => sum + p.model_count, 0)
-)
+const totalModelCount = computed(() => providers.value.reduce((sum, p) => sum + p.model_count, 0))
 
 const filteredModels = computed(() => {
   if (!searchQuery.value) {
@@ -217,29 +215,30 @@ const filteredModels = computed(() => {
   }
   const query = searchQuery.value.toLowerCase()
   return selectedProviderModels.value.filter(
-    m => m.name.toLowerCase().includes(query) ||
-         m.id.toLowerCase().includes(query) ||
-         m.family?.toLowerCase().includes(query)
+    m =>
+      m.name.toLowerCase().includes(query) ||
+      m.id.toLowerCase().includes(query) ||
+      m.family?.toLowerCase().includes(query)
   )
 })
 
 // Methods
 function getProviderIcon(providerId: string): any {
   const iconMap: Record<string, any> = {
-    'openai': mdiRobot,
-    'anthropic': mdiBrain,
-    'google': mdiGoogle,
+    openai: mdiRobot,
+    anthropic: mdiBrain,
+    google: mdiGoogle,
     'ollama-cloud': mdiWave,
-    'cohere': mdiWave,
+    cohere: mdiWave,
     'cloudflare-ai-gateway': mdiCloud,
-    'inference': mdiCpu64Bit,
+    inference: mdiCpu64Bit,
     'io-net': mdiLan,
-    'drun': mdiStar,
-    'moark': mdiStar,
-    'bailing': mdiLightningBolt,
+    drun: mdiStar,
+    moark: mdiStar,
+    bailing: mdiLightningBolt,
     'minimax-coding-plan': mdiCodeTags,
-    'wandb': mdiChartBar,
-    'qiniu-ai': mdiImage
+    wandb: mdiChartBar,
+    'qiniu-ai': mdiImage,
   }
   return iconMap[providerId] || mdiHelpCircle
 }
@@ -284,7 +283,7 @@ function selectModel(model: ModelsDevModel) {
   dialogModel.value = false
 }
 
-watch(dialogModel, (newVal) => {
+watch(dialogModel, newVal => {
   if (newVal) {
     refreshData()
   } else {

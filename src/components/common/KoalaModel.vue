@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { shallowRef, watch } from 'vue'
+import { GLTFModel, OrbitControls } from '@tresjs/cientos'
 import { TresCanvas } from '@tresjs/core'
-import { OrbitControls, GLTFModel } from '@tresjs/cientos'
-import { SRGBColorSpace, WebGLRenderer, ACESFilmicToneMapping, Color } from 'three'
+import { ACESFilmicToneMapping, Color, SRGBColorSpace, type WebGLRenderer } from 'three'
+import { shallowRef, watch } from 'vue'
 
 const onCreated = ({ renderer, scene }: { renderer: WebGLRenderer; scene: any }) => {
   // 确保背景完全透明
@@ -10,7 +10,7 @@ const onCreated = ({ renderer, scene }: { renderer: WebGLRenderer; scene: any })
   renderer.setClearAlpha(0)
   scene.background = null
   scene.environment = null
-  
+
   // 材质表现优化
   renderer.outputColorSpace = SRGBColorSpace
   renderer.toneMapping = ACESFilmicToneMapping
@@ -19,16 +19,18 @@ const onCreated = ({ renderer, scene }: { renderer: WebGLRenderer; scene: any })
 
 const modelRef = shallowRef<any>(null)
 
-watch(modelRef, (model) => {
+watch(modelRef, model => {
   if (!model) return
   model.traverse((child: any) => {
     if (!child?.isMesh) return
     const materials = Array.isArray(child.material) ? child.material : [child.material]
     const hasTexture = materials.some((m: any) => !!m?.map)
-    const isPureBlack = materials.length > 0 && materials.every((m: any) => {
-      if (!m?.color) return false
-      return m.color.getHex() === 0x000000
-    })
+    const isPureBlack =
+      materials.length > 0 &&
+      materials.every((m: any) => {
+        if (!m?.color) return false
+        return m.color.getHex() === 0x000000
+      })
     if (!hasTexture && isPureBlack) {
       child.visible = false
       return

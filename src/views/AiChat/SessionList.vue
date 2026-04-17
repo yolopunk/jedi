@@ -133,10 +133,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { Session } from '@/stores/aiChat'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import { computed, ref } from 'vue'
+import type { Session } from '@/stores/aiChat'
 
 dayjs.extend(relativeTime)
 
@@ -160,11 +160,12 @@ const filteredSessions = computed(() => {
   if (!searchQuery.value) {
     return props.sessions
   }
-  
+
   const query = searchQuery.value.toLowerCase()
-  return props.sessions.filter(session => 
-    session.title.toLowerCase().includes(query) ||
-    session.messages.some(m => m.content.toLowerCase().includes(query))
+  return props.sessions.filter(
+    session =>
+      session.title.toLowerCase().includes(query) ||
+      session.messages.some(m => m.content.toLowerCase().includes(query))
   )
 })
 

@@ -89,10 +89,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { UpdateInfo } from '@/api/update'
-import pkg from '../../../package.json'
 import MarkdownIt from 'markdown-it'
+import { computed } from 'vue'
+import type { UpdateInfo } from '@/api/update'
+import pkg from '../../../package.json'
 
 const props = defineProps<{
   modelValue: boolean

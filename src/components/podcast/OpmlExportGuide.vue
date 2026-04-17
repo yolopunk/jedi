@@ -96,20 +96,19 @@
 </template>
 
 <script setup lang="ts">
-import { mdiHelpCircleOutline } from '@mdi/js'
 import { computed, ref } from 'vue'
 
 const dialog = ref(false)
-const currentSlide = ref(0)
+const _currentSlide = ref(0)
 
-const dialogModel = computed({
+const _dialogModel = computed({
   get: () => dialog.value,
   set: val => {
     dialog.value = val
   },
 })
 
-const images = [
+const _images = [
   { src: '/images/opml-export-guide/1.png' },
   { src: '/images/opml-export-guide/2.png' },
   { src: '/images/opml-export-guide/3.png' },

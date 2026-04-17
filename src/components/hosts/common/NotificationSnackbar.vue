@@ -50,15 +50,15 @@ const props = defineProps<{
 const emit = defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 
 // 本地状态
-const show = computed({
+const _show = computed({
   get: () => props.modelValue,
   set: value => emit('update:modelValue', value),
 })
 
-const type = computed(() => props.color)
+const _type = computed(() => props.color)
 
 // 计算图标 - 使用 sci-fi 风格字符
-const getIcon = computed(() => {
+const _getIcon = computed(() => {
   switch (props.color) {
     case 'success':
       return '◆'
@@ -71,7 +71,7 @@ const getIcon = computed(() => {
   }
 })
 
-const getLabel = computed(() => {
+const _getLabel = computed(() => {
   switch (props.color) {
     case 'success':
       return 'SUCCESS'

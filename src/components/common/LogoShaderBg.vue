@@ -333,11 +333,11 @@ function initWebGL(canvas: HTMLCanvasElement): boolean {
   if (!gl) return false
 
   function compile(type: number, src: string): WebGLShader | null {
-    const s = gl!.createShader(type)!
-    gl!.shaderSource(s, src)
-    gl!.compileShader(s)
-    if (!gl!.getShaderParameter(s, gl!.COMPILE_STATUS)) {
-      console.error('[LogoShader] compile error:', gl!.getShaderInfoLog(s))
+    const s = gl.createShader(type)
+    gl.shaderSource(s, src)
+    gl.compileShader(s)
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      console.error('[LogoShader] compile error:', gl.getShaderInfoLog(s))
       return null
     }
     return s
@@ -404,7 +404,7 @@ function render(now: number) {
 
   if (gl && prog) {
     gl.uniform1f(uTime, now * 0.001)
-    gl.uniform2f(uRes, canvasRef.value!.width, canvasRef.value!.height)
+    gl.uniform2f(uRes, canvasRef.value?.width, canvasRef.value?.height)
     gl.uniform1f(uRotationSpeed, rotationSpeed)
     gl.uniform1f(uDiskIntensity, diskIntensity)
     gl.uniform1f(uTilt, tiltVal)

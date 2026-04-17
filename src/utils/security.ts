@@ -203,7 +203,7 @@ export function validateEndpoint(endpoint: string): ValidationResult {
 
     // 允许 localhost 和 127.0.0.1（用于 Ollama 等本地服务）
     const isLocal = localPatterns.some(
-      pattern => hostname === pattern || hostname.endsWith('.' + pattern)
+      pattern => hostname === pattern || hostname.endsWith(`.${pattern}`)
     )
     const isPrivateNetwork = hostname.match(/^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)/)
 

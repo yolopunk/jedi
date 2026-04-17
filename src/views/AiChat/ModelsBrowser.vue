@@ -203,13 +203,13 @@ const selectedProviderModels = ref<ModelsDevModel[]>([])
 const searchQuery = ref('')
 
 // Computed
-const selectedProvider = computed(() =>
+const _selectedProvider = computed(() =>
   providers.value.find(p => p.id === selectedProviderId.value)
 )
 
-const totalModelCount = computed(() => providers.value.reduce((sum, p) => sum + p.model_count, 0))
+const _totalModelCount = computed(() => providers.value.reduce((sum, p) => sum + p.model_count, 0))
 
-const filteredModels = computed(() => {
+const _filteredModels = computed(() => {
   if (!searchQuery.value) {
     return selectedProviderModels.value
   }
@@ -223,7 +223,7 @@ const filteredModels = computed(() => {
 })
 
 // Methods
-function getProviderIcon(providerId: string): any {
+function _getProviderIcon(providerId: string): any {
   const iconMap: Record<string, any> = {
     openai: mdiRobot,
     anthropic: mdiBrain,
@@ -243,11 +243,11 @@ function getProviderIcon(providerId: string): any {
   return iconMap[providerId] || mdiHelpCircle
 }
 
-function formatContextLength(bytes: number): string {
+function _formatContextLength(bytes: number): string {
   if (bytes >= 1000000) {
-    return (bytes / 1000000).toFixed(1) + 'M'
+    return `${(bytes / 1000000).toFixed(1)}M`
   } else if (bytes >= 1000) {
-    return (bytes / 1000).toFixed(1) + 'K'
+    return `${(bytes / 1000).toFixed(1)}K`
   }
   return bytes.toString()
 }
@@ -263,7 +263,7 @@ async function refreshData() {
   }
 }
 
-async function selectProvider(provider: ProviderSummary) {
+async function _selectProvider(provider: ProviderSummary) {
   selectedProviderId.value = provider.id
   loading.value = true
   try {
@@ -276,7 +276,7 @@ async function selectProvider(provider: ProviderSummary) {
   }
 }
 
-function selectModel(model: ModelsDevModel) {
+function _selectModel(model: ModelsDevModel) {
   if (selectedProviderId.value) {
     emit('select', model, selectedProviderId.value)
   }

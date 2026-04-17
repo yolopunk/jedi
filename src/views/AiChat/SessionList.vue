@@ -156,7 +156,7 @@ defineEmits<{
 
 const searchQuery = ref('')
 
-const filteredSessions = computed(() => {
+const _filteredSessions = computed(() => {
   if (!searchQuery.value) {
     return props.sessions
   }
@@ -169,14 +169,14 @@ const filteredSessions = computed(() => {
   )
 })
 
-function getSessionIcon(session: Session): string {
+function _getSessionIcon(session: Session): string {
   if (session.messages.length === 0) return 'mdi-chat-plus'
   if (session.messages.length < 5) return 'mdi-chat'
   if (session.messages.length < 20) return 'mdi-chat-processing'
   return 'mdi-forum'
 }
 
-function formatDate(dateStr: string): string {
+function _formatDate(dateStr: string): string {
   const date = dayjs(dateStr)
   const now = dayjs()
 

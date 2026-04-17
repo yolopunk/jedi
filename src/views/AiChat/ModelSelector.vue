@@ -89,10 +89,10 @@ const props = defineProps<{
 
 const emit = defineEmits<(e: 'update:modelValue', value: string) => void>()
 
-const showMenu = ref(false)
+const _showMenu = ref(false)
 const searchQuery = ref('')
 
-const selectedModel = computed(() => {
+const _selectedModel = computed(() => {
   return props.models.find(m => m.id === props.modelValue)
 })
 
@@ -105,7 +105,7 @@ const filteredModels = computed(() => {
   )
 })
 
-const groupedModels = computed(() => {
+const _groupedModels = computed(() => {
   const groups: Record<string, (ModelsDevModel & { providerName?: string })[]> = {}
 
   for (const model of filteredModels.value) {
@@ -122,11 +122,11 @@ const groupedModels = computed(() => {
   }))
 })
 
-function selectModel(modelId: string) {
+function _selectModel(modelId: string) {
   emit('update:modelValue', modelId)
 }
 
-function formatContext(length: number): string {
+function _formatContext(length: number): string {
   if (length >= 1000000) {
     return `${(length / 1000000).toFixed(1)}M`
   } else if (length >= 1000) {

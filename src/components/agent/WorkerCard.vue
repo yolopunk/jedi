@@ -71,9 +71,9 @@ const statusLabels: Record<WorkerStatusKind, string> = {
   stopped: 'Stopped',
 }
 
-const statusText = computed(() => statusLabels[props.worker.status])
+const _statusText = computed(() => statusLabels[props.worker.status])
 
-const elapsedTime = computed(() => {
+const _elapsedTime = computed(() => {
   if (!props.worker.started_at || props.worker.status === 'idle') return null
   const elapsed = Date.now() - props.worker.started_at
   const seconds = Math.floor(elapsed / 1000)

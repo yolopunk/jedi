@@ -375,15 +375,15 @@ const testing = ref(false)
 const modelSearch = ref('')
 const testResult = ref<{ type: 'success' | 'error'; message: string } | null>(null)
 
-const categories = [
+const _categories = [
   { id: 'popular' as const, label: 'Popular' },
   { id: 'configured' as const, label: 'Configured' },
   { id: 'other' as const, label: 'Other' },
   { id: 'custom' as const, label: 'Custom' },
 ]
 
-const loading = computed(() => modelsDevStore.loading || providerConfigStore.loading)
-const error = computed(() => modelsDevStore.error || providerConfigStore.error)
+const _loading = computed(() => modelsDevStore.loading || providerConfigStore.loading)
+const _error = computed(() => modelsDevStore.error || providerConfigStore.error)
 
 // Special built-in custom provider entry
 const CUSTOM_PROVIDER_ENTRY: ModelsDevProvider = {
@@ -393,7 +393,7 @@ const CUSTOM_PROVIDER_ENTRY: ModelsDevProvider = {
   isCustom: true,
 }
 
-const filteredProviders = computed(() => {
+const _filteredProviders = computed(() => {
   let providers: ModelsDevProvider[]
   switch (activeCategory.value) {
     case 'popular':
@@ -423,7 +423,7 @@ const selectedProviderModels = computed(() => {
   return Object.values(selectedProvider.value.models)
 })
 
-const filteredModels = computed(() => {
+const _filteredModels = computed(() => {
   if (!modelSearch.value) return selectedProviderModels.value
   const q = modelSearch.value.toLowerCase()
   return selectedProviderModels.value.filter(
@@ -431,13 +431,13 @@ const filteredModels = computed(() => {
   )
 })
 
-const isCurrentProviderConfigured = computed(() =>
+const _isCurrentProviderConfigured = computed(() =>
   selectedProvider.value
     ? providerConfigStore.isProviderConfigured(selectedProvider.value.id)
     : false
 )
 
-function getCategoryCount(category: string) {
+function _getCategoryCount(category: string) {
   switch (category) {
     case 'popular':
       return modelsDevStore.popularProviders.length
@@ -470,13 +470,13 @@ function selectProvider(provider: ModelsDevProvider) {
   modelSearch.value = ''
 }
 
-function selectModel(model: ModelsDevModel) {
+function _selectModel(model: ModelsDevModel) {
   modelsDevStore.selectModel(model.id)
-  modelsDevStore.selectProvider(selectedProvider.value!.id)
+  modelsDevStore.selectProvider(selectedProvider.value?.id)
 }
 
 // Handle provider main area click - opens config for all providers
-function handleProviderClick(provider: ModelsDevProvider) {
+function _handleProviderClick(provider: ModelsDevProvider) {
   // Always open config view, but populate endpoint from stored config if configured
   selectProvider(provider)
   // If provider is configured, load its stored endpoint
@@ -498,7 +498,7 @@ async function loadStoredEndpoint(providerId: string) {
 }
 
 // Directly switch to a configured provider and close dialog
-function selectProviderDirectly(provider: ModelsDevProvider) {
+function _selectProviderDirectly(provider: ModelsDevProvider) {
   modelsDevStore.selectProvider(provider.id)
   // Close the dialog
   emit('update:modelValue', false)
@@ -517,14 +517,14 @@ watch(
   }
 )
 
-async function retryLoad() {
+async function _retryLoad() {
   await Promise.all([
     providerConfigStore.loadConfiguredProviders(),
     modelsDevStore.fetchProviders(true),
   ])
 }
 
-async function saveKey() {
+async function _saveKey() {
   if (!selectedProvider.value || !configApiKey.value) return
   await providerConfigStore.saveApiKey(
     selectedProvider.value.id,
@@ -539,41 +539,41 @@ async function saveKey() {
   selectedProvider.value = null
 }
 
-async function deleteKey() {
+async function _deleteKey() {
   if (!selectedProvider.value) return
   await providerConfigStore.deleteApiKey(selectedProvider.value.id)
   selectedProvider.value = null
 }
 
-async function testConnection() {
+async function _testConnection() {
   testing.value = true
   testResult.value = null
   try {
     // Simulate test - in real impl, this would call backend
     await new Promise(r => setTimeout(r, 1500))
     testResult.value = { type: 'success', message: 'Connection successful!' }
-  } catch (e) {
+  } catch (_e) {
     testResult.value = { type: 'error', message: 'Connection failed. Check your credentials.' }
   } finally {
     testing.value = false
   }
 }
 
-function formatContext(len?: number): string {
+function _formatContext(len?: number): string {
   if (!len) return 'N/A'
   if (len >= 1000000) return `${(len / 1000000).toFixed(1)}M`
   if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
   return len.toString()
 }
 
-function formatContextShort(len?: number): string {
+function _formatContextShort(len?: number): string {
   if (!len) return 'N/A'
   if (len >= 1000000) return `${(len / 1000000).toFixed(0)}M`
   if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
   return len.toString()
 }
 
-function formatCost(model: ModelsDevModel): string {
+function _formatCost(model: ModelsDevModel): string {
   const input = model.cost?.input
   const output = model.cost?.output
   if (!input && !output) return ''
@@ -583,7 +583,7 @@ function formatCost(model: ModelsDevModel): string {
   return output !== undefined ? `out: ${fmt(output)}` : ''
 }
 
-function buildCostTooltip(model: ModelsDevModel): string {
+function _buildCostTooltip(model: ModelsDevModel): string {
   const parts: string[] = []
   if (model.cost?.input) parts.push(`Input: $${(model.cost.input / 1000000).toFixed(2)}/1M tokens`)
   if (model.cost?.output)
@@ -595,7 +595,7 @@ function buildCostTooltip(model: ModelsDevModel): string {
   return parts.length ? parts.join('\n') : 'No cost data'
 }
 
-function isUrl(str: string): boolean {
+function _isUrl(str: string): boolean {
   try {
     new URL(str)
     return true

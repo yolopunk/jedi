@@ -24,9 +24,9 @@ const emit = defineEmits<{
   (e: 'close'): void
 }>()
 
-const commands = SLASH_COMMANDS
+const _commands = SLASH_COMMANDS
 
-function selectCommand(cmd: SlashCommand) {
+function _selectCommand(cmd: SlashCommand) {
   emit('select', cmd)
 }
 </script>

@@ -306,7 +306,7 @@ const md = new MarkdownIt({
   typographer: true,
 })
 
-function renderMarkdown(content: string) {
+function _renderMarkdown(content: string) {
   if (!content) return ''
   let processedContent = content.trim()
   const mdImageRegex = /^!\[.*?\]\(.*?\)/
@@ -332,7 +332,7 @@ const snackbar = ref({
   color: 'success',
 })
 
-const getSnackbarIcon = computed(() => {
+const _getSnackbarIcon = computed(() => {
   switch (snackbar.value.color) {
     case 'success':
       return '✓'
@@ -378,20 +378,20 @@ const modeOptions = computed(() => [
   },
 ])
 
-const currentModeLabel = computed(() => {
+const _currentModeLabel = computed(() => {
   return modeOptions.value.find(m => m.value === selectedMode.value)?.label || t('wallpapers.mode')
 })
 
-const showImageViewer = ref(false)
+const _showImageViewer = ref(false)
 let unlistenBatch: UnlistenFn | null = null
 let unlistenComplete: UnlistenFn | null = null
 
-const categories = computed(() => {
+const _categories = computed(() => {
   const cats = new Set(wallpapers.value.map(w => w.category))
   return Array.from(cats)
 })
 
-const filteredWallpapers = computed(() => {
+const _filteredWallpapers = computed(() => {
   let result = wallpapers.value
 
   if (!selectedCategories.value.includes('All')) {
@@ -411,7 +411,7 @@ const filteredWallpapers = computed(() => {
   return result
 })
 
-function toggleCategory(cat: string) {
+function _toggleCategory(cat: string) {
   if (cat === 'All') {
     selectedCategories.value = ['All']
   } else {
@@ -447,7 +447,7 @@ async function loadWallpapers() {
   }
 }
 
-async function setWallpaper(wp: WallpaperItem) {
+async function _setWallpaper(wp: WallpaperItem) {
   settingId.value = wp.id
   try {
     await setDesktopWallpaper(wp.url, selectedMode.value)
@@ -460,13 +460,13 @@ async function setWallpaper(wp: WallpaperItem) {
   }
 }
 
-const isCurrentWallpaper = computed(() => {
+const _isCurrentWallpaper = computed(() => {
   if (!currentPreview.value || !currentSystemWallpaperPath.value) return false
   const filename = currentSystemWallpaperPath.value.split(/[\\/]/).pop()
   return currentPreview.value.url.endsWith(filename || '')
 })
 
-async function checkCurrentWallpaper() {
+async function _checkCurrentWallpaper() {
   const path = await getCurrentWallpaper()
   if (path) {
     currentSystemWallpaperPath.value = path
@@ -484,7 +484,7 @@ async function checkCurrentWallpaper() {
   }
 }
 
-async function openWallpaperFolder() {
+async function _openWallpaperFolder() {
   if (currentSystemWallpaperPath.value) {
     try {
       await showInFolder(currentSystemWallpaperPath.value)

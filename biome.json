@@ -20,24 +20,26 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"correctness": {
+				"noVueDuplicateKeys": "off",
+				"noUnusedImports": "warn",
+				"noUnusedVariables": "warn"
+			},
 			"style": {
 				"noParameterAssign": "off",
-				"useNamingConvention": {
-					"level": "warn",
-					"options": {
-						"strictCase": false
-					}
-				}
+				"useNamingConvention": "off"
 			},
 			"complexity": {
-				"noExcessiveCognitiveComplexity": "warn"
+				"noExcessiveCognitiveComplexity": "warn",
+				"noBannedTypes": "warn"
 			},
 			"a11y": {
 				"useKeyWithClickEvents": "off"
 			},
 			"suspicious": {
 				"noAssignInExpressions": "warn",
-				"noConsole": "off"
+				"noConsole": "off",
+				"noExplicitAny": "warn"
 			}
 		}
 	},

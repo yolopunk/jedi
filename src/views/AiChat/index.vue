@@ -24,6 +24,14 @@
               <span class="provider-label">PROVIDER:</span>
               <span class="provider-name">{{ currentProviderName }}</span>
             </div>
+            <button class="workers-btn" @click="showWorkersPanel = true" title="Show workers">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="2" y="7" width="20" height="10" rx="2"/>
+                <path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/>
+                <line x1="12" y1="12" x2="12" y2="12.01" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span v-if="workers.length > 0" class="workers-count">{{ workers.length }}</span>
+            </button>
           </div>
         </div>
 
@@ -294,25 +302,20 @@
     <ModelSettings v-model="showModelSettings" />
 
     <!-- Agent Pool Panel -->
-    <AgentPoolPanel />
+    <AgentPoolPanel v-model:showPanel="showWorkersPanel" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { formatCommandPrompt, type SLASH_COMMANDS } from '@/agent/slashCommands'
-import { setOnWorkerCompleteCallback } from '@/agent/useAgentPool'
-import AttachmentMenu from '@/components/AttachmentMenu.vue'
-import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
-import CommandPalette from '@/components/CommandPalette.vue'
+import { setOnWorkerCompleteCallback, useAgentPool } from '@/agent/useAgentPool'
 import { useAgentStore } from '@/stores/agent'
 import { useAiChatStore } from '@/stores/aiChat'
 import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
 import { useSkillsStore } from '@/stores/skills'
 import { renderSafe, sharedMd } from '@/utils/markdown'
-import AgentTrace from './AgentTrace.vue'
-import ModelSettings from './ModelSettings.vue'
 
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()
@@ -324,12 +327,16 @@ const providerConfigStore = useProviderConfigStore()
 const inputText = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
-const showCommands = ref(false)
+const _showCommands = ref(false)
 const showScrollButton = ref(false)
-const showModelSettings = ref(false)
+const _showModelSettings = ref(false)
 const showAttachmentMenu = ref(false)
 const showModelDropdown = ref(false)
-const isHistoryCollapsed = ref(false)
+const _isHistoryCollapsed = ref(true)
+const _showWorkersPanel = ref(false)
+
+// Agent Pool
+const { workers } = useAgentPool()
 
 // Boot state animation
 const displayedLeftMessages = ref<string[]>([])
@@ -354,25 +361,25 @@ const bootSequence = [
 ]
 
 // Computed
-const selectedProviderModels = computed(() => {
+const _selectedProviderModels = computed(() => {
   return modelsDevStore.selectedProviderModels
 })
 
-const currentModelName = computed(() => {
+const _currentModelName = computed(() => {
   return modelsDevStore.selectedModel?.name || 'SELECT MODEL'
 })
 
-function selectModelFromDropdown(model: any) {
+function _selectModelFromDropdown(model: any) {
   modelsDevStore.selectModel(model.id)
   showModelDropdown.value = false
 }
 
-function handleAttachmentSelect(_action: string) {
+function _handleAttachmentSelect(_action: string) {
   showAttachmentMenu.value = false
   // Handle: attachment, skills, web-search - can be implemented later
 }
 
-function formatContextShort(len?: number): string {
+function _formatContextShort(len?: number): string {
   if (!len) return 'N/A'
   if (len >= 1000000) return `${(len / 1000000).toFixed(0)}M`
   if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
@@ -380,10 +387,10 @@ function formatContextShort(len?: number): string {
 }
 
 // Computed
-const currentProviderName = computed(() => {
+const _currentProviderName = computed(() => {
   return modelsDevStore.selectedProvider?.name?.toUpperCase() || 'SELECT PROVIDER'
 })
-const connectionStatus = computed(() => {
+const _connectionStatus = computed(() => {
   if (modelsDevStore.selectedModel) return 'CONNECTED'
   if (modelsDevStore.allProviders.length === 0) return 'OFFLINE'
   return 'NO MODEL'
@@ -393,22 +400,22 @@ const displayMessages = computed(() => {
   return store.currentSession?.messages || []
 })
 
-const inputConsoleState = computed(() => {
+const _inputConsoleState = computed(() => {
   return displayMessages.value.length > 0 ? 'state-chatting' : 'state-new-session'
 })
 
-function renderMessage(content: string) {
+function _renderMessage(content: string) {
   return renderSafe(sharedMd, content)
 }
 
 // Formatting
-function formatTimestamp(timestamp?: number) {
+function _formatTimestamp(timestamp?: number) {
   if (!timestamp) return '00:00:00'
   const date = new Date(timestamp)
   return date.toLocaleTimeString('en-US', { hour12: false })
 }
 
-function formatSessionTime(dateStr: string) {
+function _formatSessionTime(dateStr: string) {
   const date = new Date(dateStr)
   const now = new Date()
   const diff = now.getTime() - date.getTime()
@@ -419,19 +426,19 @@ function formatSessionTime(dateStr: string) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
 }
 
-function handleSelectSession(sessionId: string) {
+function _handleSelectSession(sessionId: string) {
   store.currentSessionId = sessionId
   nextTick(() => {
     scrollToBottom()
   })
 }
 
-function showSessionMenu(session: any) {
+function _showSessionMenu(session: any) {
   console.log('Session menu:', session)
 }
 
 // Actions
-function handleCommandSelect(cmd: (typeof SLASH_COMMANDS)[0]) {
+function _handleCommandSelect(cmd: (typeof SLASH_COMMANDS)[0]) {
   if (!store.currentSession) {
     store.createSession(
       '新对话',
@@ -439,13 +446,13 @@ function handleCommandSelect(cmd: (typeof SLASH_COMMANDS)[0]) {
       modelsDevStore.selectedModelId || 'gpt-4o-mini'
     )
   }
-  inputText.value = cmd.name + ' '
+  inputText.value = `${cmd.name} `
   nextTick(() => {
     inputRef.value?.focus()
   })
 }
 
-function handleNewSession() {
+function _handleNewSession() {
   store.createSession(
     '新对话',
     modelsDevStore.selectedProviderId || 'openai',
@@ -456,7 +463,7 @@ function handleNewSession() {
   })
 }
 
-function handleKeydown(event: KeyboardEvent) {
+function _handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault()
     handleSend()
@@ -499,11 +506,11 @@ async function handleSend() {
   }
 }
 
-function handleCopyMessage(content: string) {
+function _handleCopyMessage(content: string) {
   navigator.clipboard.writeText(content)
 }
 
-function handleRegenerate() {
+function _handleRegenerate() {
   if (!store.currentSession || store.currentSession.messages.length < 2) return
 
   const lastUserMessage = [...store.currentSession.messages].reverse().find(m => m.role === 'user')
@@ -515,7 +522,7 @@ function handleRegenerate() {
 }
 
 // Scroll handling
-function handleScroll() {
+function _handleScroll() {
   if (!messagesContainer.value) return
   const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value
   showScrollButton.value = scrollHeight - scrollTop - clientHeight > 200
@@ -533,7 +540,7 @@ function autoResize() {
   nextTick(() => {
     if (inputRef.value) {
       inputRef.value.style.height = 'auto'
-      inputRef.value.style.height = Math.min(inputRef.value.scrollHeight, 200) + 'px'
+      inputRef.value.style.height = `${Math.min(inputRef.value.scrollHeight, 200)}px`
     }
   })
 }

@@ -284,6 +284,60 @@
   50% { opacity: 0; }
 }
 
+/* Workers Button */
+.workers-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 255, 255, 0.05);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #00ffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.workers-btn:hover {
+  background: rgba(0, 255, 255, 0.1);
+  border-color: rgba(0, 255, 255, 0.35);
+}
+
+.workers-count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: #00ffff;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #0a0e14;
+}
+
+.light-theme .workers-btn {
+  background: rgba(205, 127, 50, 0.05);
+  border-color: rgba(205, 127, 50, 0.2);
+  color: #cd7f32;
+}
+
+.light-theme .workers-btn:hover {
+  background: rgba(205, 127, 50, 0.1);
+  border-color: rgba(205, 127, 50, 0.35);
+}
+
+.light-theme .workers-count {
+  background: #cd7f32;
+  color: #ffffff;
+}
+
 .status-badge {
   display: flex;
   align-items: center;

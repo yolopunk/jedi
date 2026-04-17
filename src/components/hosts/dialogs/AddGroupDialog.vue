@@ -146,7 +146,7 @@ function resetForm() {
   hostsContent.value = ''
 }
 
-async function confirmAdd() {
+async function _confirmAdd() {
   if (!groupName.value) {
     emit('error', 'Group name cannot be empty')
     return
@@ -202,8 +202,8 @@ async function confirmAdd() {
         return false
       })
       .map(item => ({
-        domain: item!.domain,
-        ip: item!.ip,
+        domain: item?.domain,
+        ip: item?.ip,
         disabled: false,
       }))
 

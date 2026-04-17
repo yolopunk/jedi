@@ -23,7 +23,6 @@
 </template>
 
 <script setup lang="ts">
-import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { open } from '@tauri-apps/plugin-shell'
 import { computed, ref } from 'vue'
 
@@ -44,9 +43,9 @@ const props = defineProps({
 
 const emit = defineEmits(['seek'])
 
-const expanded = ref(props.defaultExpanded)
+const _expanded = ref(props.defaultExpanded)
 
-const formattedContent = computed(() => {
+const _formattedContent = computed(() => {
   if (!props.content) return ''
 
   let content = props.content
@@ -66,7 +65,7 @@ const formattedContent = computed(() => {
   return content
 })
 
-function handleClick(event: MouseEvent) {
+function _handleClick(event: MouseEvent) {
   const target = event.target as HTMLElement
 
   // Handle Timestamp Clicks
@@ -79,9 +78,9 @@ function handleClick(event: MouseEvent) {
       // Convert to seconds
       const parts = timeStr.split(':').reverse()
       let seconds = 0
-      if (parts[0]) seconds += parseInt(parts[0])
-      if (parts[1]) seconds += parseInt(parts[1]) * 60
-      if (parts[2]) seconds += parseInt(parts[2]) * 3600
+      if (parts[0]) seconds += parseInt(parts[0], 10)
+      if (parts[1]) seconds += parseInt(parts[1], 10) * 60
+      if (parts[2]) seconds += parseInt(parts[2], 10) * 3600
 
       emit('seek', seconds)
       return

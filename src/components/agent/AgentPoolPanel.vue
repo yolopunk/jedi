@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="panel">
-      <div v-if="panelOpen" class="agent-pool-panel">
+      <div v-if="showPanel" class="agent-pool-panel">
         <!-- Header -->
         <div class="panel-header">
           <div class="header-left">
@@ -13,7 +13,7 @@
             <span class="header-title">Workers</span>
             <span v-if="workers.length > 0" class="worker-count">{{ workers.length }}</span>
           </div>
-          <button class="close-btn" @click="togglePanel">
+          <button class="close-btn" @click="$emit('update:showPanel', false)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
               <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -42,33 +42,23 @@
       </div>
     </Transition>
   </Teleport>
-
-  <!-- Floating Toggle Button (shown when panel is closed) -->
-  <Transition name="fab">
-    <button
-      v-if="!panelOpen"
-      class="panel-fab"
-      title="Show agent workers"
-      @click="togglePanel"
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <rect x="2" y="7" width="20" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.5"/>
-        <line x1="12" y1="12" x2="12" y2="12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <span v-if="workers.length > 0" class="fab-badge">{{ workers.length }}</span>
-    </button>
-  </Transition>
 </template>
 
 <script setup lang="ts">
 import { stopWorker } from '@/agent/pool'
 import { useAgentPool } from '@/agent/useAgentPool'
-import WorkerCard from './WorkerCard.vue'
 
-const { workers, panelOpen, togglePanel, refresh } = useAgentPool()
+const _props = defineProps<{
+  showPanel: boolean
+}>()
 
-async function handleStop(workerId: string) {
+const _emit = defineEmits<{
+  'update:showPanel': [value: boolean]
+}>()
+
+const { workers, refresh } = useAgentPool()
+
+async function _handleStop(workerId: string) {
   try {
     await stopWorker(workerId)
     await refresh()
@@ -182,52 +172,6 @@ async function handleStop(workerId: string) {
   gap: 8px;
 }
 
-/* Floating Action Button */
-.panel-fab {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #0a0e14;
-  border: 1px solid rgba(0, 255, 255, 0.25);
-  border-radius: 50%;
-  color: #00ffff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.3),
-    0 4px 16px rgba(0, 0, 0, 0.4),
-    0 0 24px rgba(0, 255, 255, 0.1);
-  z-index: 9998;
-}
-
-.panel-fab:hover {
-  background: rgba(0, 255, 255, 0.08);
-  border-color: rgba(0, 255, 255, 0.4);
-  transform: scale(1.05);
-}
-
-.fab-badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  background: #00ffff;
-  border-radius: 9px;
-  font-size: 10px;
-  font-weight: 700;
-  color: #0a0e14;
-}
-
 /* Transitions */
 .panel-enter-active,
 .panel-leave-active {
@@ -238,17 +182,6 @@ async function handleStop(workerId: string) {
 .panel-leave-to {
   opacity: 0;
   transform: translateY(10px) scale(0.98);
-}
-
-.fab-enter-active,
-.fab-leave-active {
-  transition: all 0.2s ease;
-}
-
-.fab-enter-from,
-.fab-leave-to {
-  opacity: 0;
-  transform: scale(0.8);
 }
 
 /* Scrollbar */

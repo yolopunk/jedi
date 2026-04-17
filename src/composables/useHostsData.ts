@@ -82,7 +82,7 @@ export function useHostsData(notify: NotifyFunction) {
       }
     } catch (error) {
       console.error('加载系统 Hosts 失败:', error)
-      notify('加载系统 Hosts 失败: ' + (error as Error).message, 'error')
+      notify(`加载系统 Hosts 失败: ${(error as Error).message}`, 'error')
       initializeEmptyGroups()
     } finally {
       loading.value = false
@@ -143,7 +143,7 @@ export function useHostsData(notify: NotifyFunction) {
       }
     } catch (error) {
       console.error('切换Hosts解析状态失败', error)
-      notify('操作失败: ' + (error as Error).message, 'error')
+      notify(`操作失败: ${(error as Error).message}`, 'error')
       hostsResolveSwitch.value = !switchState
     } finally {
       loading.value = false
@@ -158,7 +158,7 @@ export function useHostsData(notify: NotifyFunction) {
       await loadSystemHosts()
     } catch (error) {
       console.error('初始化默认配置失败', error)
-      notify('初始化失败: ' + (error as Error).message, 'error')
+      notify(`初始化失败: ${(error as Error).message}`, 'error')
     } finally {
       loading.value = false
     }
@@ -183,7 +183,7 @@ export function useHostsData(notify: NotifyFunction) {
       notify('分组添加成功', 'success')
     } catch (error) {
       console.error('添加分组失败', error)
-      notify('添加失败: ' + (error as Error).message, 'error')
+      notify(`添加失败: ${(error as Error).message}`, 'error')
       groups.value.pop()
     }
   }
@@ -213,7 +213,7 @@ export function useHostsData(notify: NotifyFunction) {
       notify('条目添加成功', 'success')
     } catch (error) {
       console.error('添加条目失败', error)
-      notify('添加失败: ' + (error as Error).message, 'error')
+      notify(`添加失败: ${(error as Error).message}`, 'error')
       group.hosts.pop()
     }
   }
@@ -255,7 +255,7 @@ export function useHostsData(notify: NotifyFunction) {
       notify('条目编辑成功', 'success')
     } catch (error) {
       console.error('更新状态失败', error)
-      notify('更新状态失败: ' + (error as Error).message, 'error')
+      notify(`更新状态失败: ${(error as Error).message}`, 'error')
     }
   }
 
@@ -274,7 +274,7 @@ export function useHostsData(notify: NotifyFunction) {
       notify(isEnabled ? '条目已启用' : '条目已禁用', isEnabled ? 'success' : 'info')
     } catch (error) {
       console.error('更新状态失败', error)
-      notify('更新状态失败: ' + (error as Error).message, 'error')
+      notify(`更新状态失败: ${(error as Error).message}`, 'error')
       hostEntry.disabled = !isEnabled
     }
   }
@@ -305,7 +305,7 @@ export function useHostsData(notify: NotifyFunction) {
         notify('条目已删除', 'info')
       } catch (error) {
         console.error('删除条目失败', error)
-        notify('删除失败: ' + (error as Error).message, 'error')
+        notify(`删除失败: ${(error as Error).message}`, 'error')
       }
     }
   }
@@ -356,7 +356,7 @@ export function useHostsData(notify: NotifyFunction) {
       notify('分组重命名成功', 'success')
     } catch (error) {
       console.error('重命名分组失败', error)
-      notify('重命名失败: ' + (error as Error).message, 'error')
+      notify(`重命名失败: ${(error as Error).message}`, 'error')
       group.name = previousName
       if (selectedGroup.value === trimmed) {
         selectedGroup.value = previousName

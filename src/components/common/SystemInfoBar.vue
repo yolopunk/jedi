@@ -237,25 +237,14 @@
 </template>
 
 <script setup lang="ts">
-import {
-  mdiCpu64Bit,
-  mdiDownload,
-  mdiEthernet,
-  mdiMemory,
-  mdiPause,
-  mdiPlay,
-  mdiServer,
-  mdiUpload,
-} from '@mdi/js'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { getOsInfo } from '@/api/hosts'
-import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useUpdate } from '@/composables/useUpdate'
 import type { OsInfo } from '@/types/os'
 import pkg from '../../../package.json'
 
-const appVersion = pkg.version
+const _appVersion = pkg.version
 
 // Audio player
 const { currentPlaying, isPaused, togglePlay } = useAudioPlayer()
@@ -265,7 +254,7 @@ const { hasUpdate, updateInfo, isChecking, isInstalling, installUpdate } = useUp
 
 const showUpdateDialog = ref(false)
 
-const handleInstallUpdate = async () => {
+const _handleInstallUpdate = async () => {
   try {
     await installUpdate()
     showUpdateDialog.value = false
@@ -283,13 +272,13 @@ const REFRESH_INTERVAL = 3000
 let refreshTimer: number | null = null
 
 // 格式化百分比
-function formatPercentage(value?: number): string {
+function _formatPercentage(value?: number): string {
   if (value === undefined) return '0%'
   return `${Math.round(value)}%`
 }
 
 // 格式化网络速率
-function formatNetworkSpeed(bytes?: number): string {
+function _formatNetworkSpeed(bytes?: number): string {
   if (bytes === undefined) return '0 B/s'
 
   if (bytes < 1024) {
@@ -302,7 +291,7 @@ function formatNetworkSpeed(bytes?: number): string {
 }
 
 // 格式化数据大小
-function formatDataSize(bytes?: number): string {
+function _formatDataSize(bytes?: number): string {
   if (bytes === undefined) return '0 B'
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -310,7 +299,7 @@ function formatDataSize(bytes?: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
 }
 
-function getMemoryUsagePercentage(): number {
+function _getMemoryUsagePercentage(): number {
   if (!osInfo.value?.metrics) return 0
   const { memory_used, memory_total } = osInfo.value.metrics
   if (!memory_total) return 0

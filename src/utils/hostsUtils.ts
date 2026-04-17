@@ -96,7 +96,7 @@ export async function openDomainLink(domain: string): Promise<string> {
     // 根据域名构建 URL
     let url = domain
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'http://' + url
+      url = `http://${url}`
     }
 
     // 在默认浏览器中打开链接

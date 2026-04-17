@@ -76,7 +76,7 @@ defineEmits<{
   (e: 'add'): void
 }>()
 
-const filteredSubscriptions = computed(() => {
+const _filteredSubscriptions = computed(() => {
   if (!props.searchQuery) return props.subscriptions
   const q = props.searchQuery.toLowerCase()
   return props.subscriptions.filter(

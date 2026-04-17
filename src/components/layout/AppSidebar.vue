@@ -193,9 +193,8 @@
 </template>
 
 <script setup lang="ts">
-import { mdiCog, mdiDns, mdiGithub, mdiPodcast, mdiRobot, mdiWallpaper } from '@mdi/js'
+import { mdiDns, mdiPodcast, mdiRobot, mdiWallpaper } from '@mdi/js'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import LogoShaderBg from '@/components/common/LogoShaderBg.vue'
 import { useThemeToggle } from '@/composables/useTheme'
 
 const props = defineProps<{
@@ -211,7 +210,7 @@ const emit = defineEmits<{
 
 const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
 
-const navItems = [
+const _navItems = [
   { to: '/chat', icon: mdiRobot, label: 'CHAT', tooltipKey: 'sidebar.chat' },
   { to: '/hosts', icon: mdiDns, label: 'HOSTS', tooltipKey: 'sidebar.hostsManager' },
   { to: '/wallpapers', icon: mdiWallpaper, label: 'WALLPAPER', tooltipKey: 'sidebar.wallpapers' },
@@ -242,7 +241,7 @@ watch(
 )
 
 // Resize functions
-function startResize(e: MouseEvent) {
+function _startResize(e: MouseEvent) {
   isResizing.value = true
   startX = e.clientX
   startWidth = isCollapsed.value ? minWidth : width.value
@@ -289,7 +288,7 @@ onMounted(() => {
   const savedWidth = localStorage.getItem('jedi-sidebar-width')
   if (savedWidth) {
     const parsed = parseInt(savedWidth, 10)
-    if (!isNaN(parsed) && parsed >= expandThreshold && parsed <= maxWidth) {
+    if (!Number.isNaN(parsed) && parsed >= expandThreshold && parsed <= maxWidth) {
       width.value = parsed
       isCollapsed.value = false
     } else {

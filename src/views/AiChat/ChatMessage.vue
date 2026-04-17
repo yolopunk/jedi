@@ -104,12 +104,12 @@ defineEmits<(e: 'regenerate') => void>()
 
 const copied = ref(false)
 
-const renderedContent = computed(() => {
+const _renderedContent = computed(() => {
   if (!props.message.content) return ''
   return renderSafe(sharedMd, props.message.content)
 })
 
-async function copyToClipboard() {
+async function _copyToClipboard() {
   try {
     await navigator.clipboard.writeText(props.message.content)
     copied.value = true

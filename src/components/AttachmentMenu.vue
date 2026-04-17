@@ -52,15 +52,15 @@ import { ref } from 'vue'
 import type { Skill } from '@/skills/types'
 import { useSkillsStore } from '@/stores/skills'
 
-const emit = defineEmits<{
+const _emit = defineEmits<{
   (e: 'close'): void
   (e: 'select', action: string): void
 }>()
 
 const skillsStore = useSkillsStore()
-const showSkillsSubmenu = ref(false)
+const _showSkillsSubmenu = ref(false)
 
-function handleSkillClick(skill: Skill) {
+function _handleSkillClick(skill: Skill) {
   // Toggle skill enabled state
   const isEnabled = skillsStore.isSkillEnabled(skill.id)
   skillsStore.toggleSkill(skill.id, !isEnabled)

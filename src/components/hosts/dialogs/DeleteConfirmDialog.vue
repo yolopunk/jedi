@@ -84,7 +84,7 @@ const emit = defineEmits<{
   (e: 'delete', host: HostEntry): void
 }>()
 
-function confirmDelete() {
+function _confirmDelete() {
   if (props.host) {
     emit('delete', props.host)
   }

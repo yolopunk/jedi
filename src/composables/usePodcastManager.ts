@@ -61,7 +61,7 @@ export function usePodcastManager() {
       await nextTick()
       setupEpisodesObserver()
     } catch (e: unknown) {
-      notify('Failed to load episodes: ' + (e instanceof Error ? e.message : e), 'error')
+      notify(`Failed to load episodes: ${e instanceof Error ? e.message : e}`, 'error')
     } finally {
       episodesLoading.value = false
     }
@@ -123,7 +123,7 @@ export function usePodcastManager() {
       }
       notify('Subscription refreshed', 'success')
     } catch (e: unknown) {
-      notify('Failed to refresh: ' + (e instanceof Error ? e.message : e), 'error')
+      notify(`Failed to refresh: ${e instanceof Error ? e.message : e}`, 'error')
     } finally {
       refreshLoading.value = false
     }
@@ -143,7 +143,7 @@ export function usePodcastManager() {
       }
       notify('Library refreshed', 'success')
     } catch (e: unknown) {
-      notify('Failed to refresh library: ' + (e instanceof Error ? e.message : e), 'error')
+      notify(`Failed to refresh library: ${e instanceof Error ? e.message : e}`, 'error')
     } finally {
       libraryRefreshLoading.value = false
     }
@@ -198,7 +198,7 @@ export function usePodcastManager() {
       closeAddDialog()
     } catch (e: unknown) {
       console.error('Import failed:', e)
-      notify('Import failed: ' + (e instanceof Error ? e.message : e), 'error')
+      notify(`Import failed: ${e instanceof Error ? e.message : e}`, 'error')
     } finally {
       addLoading.value = false
     }
@@ -212,7 +212,7 @@ export function usePodcastManager() {
         goBack()
       }
     } catch (e: unknown) {
-      notify('Operation failed: ' + (e instanceof Error ? e.message : e), 'error')
+      notify(`Operation failed: ${e instanceof Error ? e.message : e}`, 'error')
     }
   }
 

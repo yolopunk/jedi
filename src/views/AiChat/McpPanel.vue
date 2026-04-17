@@ -44,12 +44,12 @@ import { useMcpStore } from '@/stores/mcp'
 
 const mcpStore = useMcpStore()
 
-function toggleServer(id: string): void {
+function _toggleServer(id: string): void {
   const enabled = mcpStore.isServerEnabled(id)
   mcpStore.toggleServer(id, !enabled)
 }
 
-function selectTool(serverId: string, tool: McpTool): void {
+function _selectTool(serverId: string, tool: McpTool): void {
   console.log('Selected tool:', serverId, tool.name)
 }
 </script>

@@ -19,8 +19,6 @@
 </template>
 
 <script setup lang="ts">
-import { mdiPowerPlugOffOutline, mdiPowerPlugOutline } from '@mdi/js'
-
 // 定义组件属性
 defineProps<{
   modelValue: boolean

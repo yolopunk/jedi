@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { GLTFModel, OrbitControls } from '@tresjs/cientos'
-import { TresCanvas } from '@tresjs/core'
 import { ACESFilmicToneMapping, Color, SRGBColorSpace, type WebGLRenderer } from 'three'
 import { shallowRef, watch } from 'vue'
 
-const onCreated = ({ renderer, scene }: { renderer: WebGLRenderer; scene: any }) => {
+const _onCreated = ({ renderer, scene }: { renderer: WebGLRenderer; scene: any }) => {
   // 确保背景完全透明
   renderer.setClearColor(new Color(0x000000), 0)
   renderer.setClearAlpha(0)

@@ -87,7 +87,7 @@ const {
 } = useWallpaper()
 const allCategories = ref<string[]>([])
 
-async function toggleCategory(cat: string) {
+async function _toggleCategory(cat: string) {
   if (!wallpaperSettings.value.selectedCategories) {
     wallpaperSettings.value.selectedCategories = []
   }

@@ -174,5 +174,5 @@ defineEmits<{
   (e: 'scroll-to-playing'): void
 }>()
 
-const loadMoreTrigger = defineModel<HTMLElement | null>('loadMoreTrigger')
+const _loadMoreTrigger = defineModel<HTMLElement | null>('loadMoreTrigger')
 </script>

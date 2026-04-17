@@ -33,18 +33,18 @@ import { useAgentStore } from '@/stores/agent'
 const agentStore = useAgentStore()
 const traceList = ref<HTMLElement | null>(null)
 
-const statusClass = computed(() => ({
+const _statusClass = computed(() => ({
   idle: agentStore.currentStatus === 'idle',
   running: agentStore.currentStatus === 'executing' || agentStore.currentStatus === 'planning',
   done: agentStore.currentStatus === 'done',
   error: agentStore.currentStatus === 'error',
 }))
 
-function formatTime(ts: number): string {
+function _formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString('en-US', { hour12: false })
 }
 
-function getIcon(event: AgentEvent): string {
+function _getIcon(event: AgentEvent): string {
   switch (event.type) {
     case 'step_start':
       return '>'
@@ -61,7 +61,7 @@ function getIcon(event: AgentEvent): string {
   }
 }
 
-function getContent(event: AgentEvent): string {
+function _getContent(event: AgentEvent): string {
   if (event.step) return event.step.content
   if (event.status) return `Status: ${event.status}`
   return event.type

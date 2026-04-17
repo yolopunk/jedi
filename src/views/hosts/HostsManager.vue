@@ -123,15 +123,6 @@
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getOsInfo } from '@/api/hosts'
-import EmptyState from '@/components/hosts/common/EmptyState.vue'
-import GlobalSwitchFab from '@/components/hosts/common/GlobalSwitchFab.vue'
-import GroupManager from '@/components/hosts/common/GroupManager.vue'
-import NotificationSnackbar from '@/components/hosts/common/NotificationSnackbar.vue'
-import AddGroupDialog from '@/components/hosts/dialogs/AddGroupDialog.vue'
-import AddHostDialog from '@/components/hosts/dialogs/AddHostDialog.vue'
-import DeleteConfirmDialog from '@/components/hosts/dialogs/DeleteConfirmDialog.vue'
-import EditHostDialog from '@/components/hosts/dialogs/EditHostDialog.vue'
-import HostsTable from '@/components/hosts/tables/HostsTable.vue'
 import { useHostsData } from '@/composables/useHostsData'
 import type { HostEntry } from '@/types/hosts'
 
@@ -155,7 +146,7 @@ const showSnackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref<'success' | 'error' | 'info' | 'warning'>('success')
 
-const search = ref('')
+const _search = ref('')
 
 function showNotification(text: string, color: 'success' | 'error' | 'info' | 'warning') {
   snackbarText.value = text
@@ -180,32 +171,32 @@ const {
   renameGroup,
 } = useHostsData(showNotification)
 
-function openAddHostDialog(groupName: string) {
+function _openAddHostDialog(groupName: string) {
   currentAddGroupName.value = groupName
   dialogs.value.addHost = true
 }
 
-function openEditHostDialog(host: HostEntry) {
+function _openEditHostDialog(host: HostEntry) {
   currentEditHost.value = host
   dialogs.value.editHost = true
 }
 
-function removeHost(host: HostEntry) {
+function _removeHost(host: HostEntry) {
   hostToDelete.value = host
   dialogs.value.deleteConfirm = true
 }
 
-function handleOpenDomain(_domain: string, message: string) {
+function _handleOpenDomain(_domain: string, message: string) {
   showNotification(message, 'info')
 }
 
-function openRenameGroupDialog(name: string) {
+function _openRenameGroupDialog(name: string) {
   renameGroupOriginalName.value = name
   renameGroupName.value = name
   dialogs.value.renameGroup = true
 }
 
-async function handleConfirmRenameGroup() {
+async function _handleConfirmRenameGroup() {
   const trimmed = renameGroupName.value.trim()
   if (!trimmed) {
     showNotification(t('hosts.validation.groupNameRequired'), 'error')

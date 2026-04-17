@@ -39,8 +39,6 @@
 </template>
 
 <script setup lang="ts">
-import { mdiDomain, mdiPlus } from '@mdi/js'
-
 // 定义组件事件
 defineEmits<{
   (e: 'add-group'): void

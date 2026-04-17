@@ -45,7 +45,7 @@ const { t } = useI18n()
 
 const hostsPath = '/etc/hosts'
 
-async function openHostsFile() {
+async function _openHostsFile() {
   try {
     await showInFolder(hostsPath)
   } catch (error) {

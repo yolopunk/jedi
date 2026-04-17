@@ -105,10 +105,10 @@ defineEmits<{
   (e: 'install'): void
 }>()
 
-const currentVersion = pkg.version
+const _currentVersion = pkg.version
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
-const formattedReleaseNotes = computed(() => {
+const _formattedReleaseNotes = computed(() => {
   if (!props.updateInfo.body) return ''
   return md.render(props.updateInfo.body)
 })

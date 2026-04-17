@@ -72,12 +72,9 @@
 </template>
 
 <script setup lang="ts">
-import { mdiMenu, mdiMenuOpen } from '@mdi/js'
 import { open } from '@tauri-apps/plugin-shell'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useStorage } from '@/composables/useStorage'
 import { initTheme } from '@/composables/useTheme'
@@ -86,7 +83,7 @@ import { useWallpaper } from '@/composables/useWallpaper'
 
 const { locale } = useI18n()
 const { getItem, setItem } = useStorage()
-const { currentPlaying, setAudioRef } = useAudioPlayer()
+const { setAudioRef } = useAudioPlayer()
 
 const audioEl = ref<HTMLAudioElement | null>(null)
 
@@ -105,12 +102,12 @@ const currentLocale = computed(() => {
   return flag + text
 })
 
-const localeTooltip = computed(() => {
+const _localeTooltip = computed(() => {
   return locale.value === 'zh' ? 'Switch to English' : '切换到中文'
 })
 
 // Toggle language
-const toggleLanguage = async () => {
+const _toggleLanguage = async () => {
   const newLang = locale.value === 'zh' ? 'en' : 'zh'
   locale.value = newLang
   await setItem('language', newLang)
@@ -132,12 +129,12 @@ const initLanguage = async () => {
 }
 
 // Toggle sidebar
-const toggleSidebar = () => {
+const _toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
 }
 
 // Open GitHub repo
-const openGithubRepo = async () => {
+const _openGithubRepo = async () => {
   try {
     await open('https://github.com/yolopunk/jedi')
   } catch (error) {
@@ -146,7 +143,7 @@ const openGithubRepo = async () => {
 }
 
 // Open project website
-const openProjectWebsite = async () => {
+const _openProjectWebsite = async () => {
   try {
     await open('https://yolopunk.github.io/jedi')
   } catch (error) {
@@ -155,7 +152,7 @@ const openProjectWebsite = async () => {
 }
 
 // Send email
-const sendEmail = async () => {
+const _sendEmail = async () => {
   try {
     await open('mailto:cynosurech@gmail.com')
   } catch (error) {

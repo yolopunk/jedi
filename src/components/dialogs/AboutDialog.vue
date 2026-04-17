@@ -102,7 +102,7 @@ defineEmits<{
   (e: 'open-email'): void
 }>()
 
-const currentYear = new Date().getFullYear()
+const _currentYear = new Date().getFullYear()
 const appInfo = ref<AppInfo>({ version: '0.0.0', name: 'Jedi' })
 
 onMounted(async () => {

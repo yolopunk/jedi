@@ -109,7 +109,6 @@
 </template>
 
 <script setup lang="ts">
-import { mdiCog, mdiGithub, mdiHelpCircle, mdiInformation } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStorage } from '@/composables/useStorage'
@@ -122,18 +121,18 @@ const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
 const { setItem } = useStorage()
 
 // 语言切换
-const langTooltip = computed(() => {
+const _langTooltip = computed(() => {
   return locale.value === 'zh' ? 'Switch to English' : '切换到中文'
 })
 
-async function toggleLanguage() {
+async function _toggleLanguage() {
   const newLang = locale.value === 'zh' ? 'en' : 'zh'
   locale.value = newLang
   await setItem('language', newLang)
 }
 
 // Language flag
-const langFlag = computed(() => {
+const _langFlag = computed(() => {
   return locale.value === 'zh' ? '' : ''
 })
 

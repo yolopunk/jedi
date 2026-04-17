@@ -37,14 +37,14 @@ export const useAgentStore = defineStore('agent', () => {
     loop = new AgentLoop(config.value)
     loop.onEvent((event: AgentEvent) => {
       traceLog.value.push(event)
-      state.value = loop!.getState()
+      state.value = loop?.getState()
     })
     return loop
   }
 
   async function run(message: string): Promise<void> {
     if (!loop) initLoop()
-    await loop!.run(message)
+    await loop?.run(message)
   }
 
   async function runWithPool(prompt: string, description: string): Promise<string> {
@@ -60,7 +60,7 @@ export const useAgentStore = defineStore('agent', () => {
 
   async function executeSkill(skillId: string, args: any): Promise<any> {
     if (!loop) initLoop()
-    return await loop!.executeSkill(skillId, args)
+    return await loop?.executeSkill(skillId, args)
   }
 
   function abort(): void {

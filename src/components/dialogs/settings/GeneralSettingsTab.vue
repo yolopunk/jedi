@@ -138,7 +138,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { disableAutostart, enableAutostart, isAutostartEnabled } from '@/api/app'
-import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
 import { useStorage } from '@/composables/useStorage'
 import { useTheme } from '@/composables/useTheme'
 import { useUpdate } from '@/composables/useUpdate'
@@ -158,17 +157,17 @@ const themeModes = computed(() => [
   { label: t('settings.themeSystem'), value: 'system', icon: '💻' },
 ])
 
-const currentThemeLabel = computed(() => {
+const _currentThemeLabel = computed(() => {
   return themeModes.value.find(m => m.value === themeMode.value)?.label || t('settings.themeSystem')
 })
 
-const currentLangLabel = computed(() => {
+const _currentLangLabel = computed(() => {
   return (
     languages.value.find((l: { value: string }) => l.value === locale.value)?.label || '简体中文'
   )
 })
 
-const changeLanguage = async (lang: string) => {
+const _changeLanguage = async (lang: string) => {
   locale.value = lang
   await setItem('language', lang)
 }
@@ -189,20 +188,20 @@ const {
 
 const showUpdateDialog = ref(false)
 
-const handleAutoUpdateChange = (value: boolean | null) => {
+const _handleAutoUpdateChange = (value: boolean | null) => {
   if (value !== null) {
     autoUpdateEnabled.value = value
   }
 }
 
-const handleManualCheck = async () => {
+const _handleManualCheck = async () => {
   await checkForUpdate()
   if (hasUpdate.value) {
     showUpdateDialog.value = true
   }
 }
 
-const handleInstallUpdate = async () => {
+const _handleInstallUpdate = async () => {
   try {
     await installUpdate()
     showUpdateDialog.value = false
@@ -211,7 +210,7 @@ const handleInstallUpdate = async () => {
   }
 }
 
-async function toggleAutostart(value: boolean | null) {
+async function _toggleAutostart(value: boolean | null) {
   if (value === null) return
   try {
     autostartLoading.value = true

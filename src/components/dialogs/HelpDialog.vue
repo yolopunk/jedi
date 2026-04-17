@@ -58,7 +58,7 @@
 defineProps<{ modelValue: boolean }>()
 defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 
-const helpItems = [
+const _helpItems = [
   { icon: 'add-group', text: 'Add group to organize hosts entries' },
   { icon: 'add-entry', text: 'Add host entries with IP and domain' },
   { icon: 'toggle', text: 'Toggle entries on/off individually' },

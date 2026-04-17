@@ -119,7 +119,7 @@ function closeDialog() {
   emit('update:modelValue', false)
 }
 
-function confirmAdd() {
+function _confirmAdd() {
   if (!validateHostInput(hostIp.value, hostDomain.value)) {
     emit('error', 'IP and domain cannot be empty')
     return

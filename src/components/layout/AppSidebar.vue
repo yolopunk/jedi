@@ -210,7 +210,7 @@ const emit = defineEmits<{
 
 const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
 
-const _navItems = [
+const navItems = [
   { to: '/chat', icon: mdiRobot, label: 'CHAT', tooltipKey: 'sidebar.chat' },
   { to: '/hosts', icon: mdiDns, label: 'HOSTS', tooltipKey: 'sidebar.hostsManager' },
   { to: '/wallpapers', icon: mdiWallpaper, label: 'WALLPAPER', tooltipKey: 'sidebar.wallpapers' },
@@ -241,7 +241,7 @@ watch(
 )
 
 // Resize functions
-function _startResize(e: MouseEvent) {
+function startResize(e: MouseEvent) {
   isResizing.value = true
   startX = e.clientX
   startWidth = isCollapsed.value ? minWidth : width.value

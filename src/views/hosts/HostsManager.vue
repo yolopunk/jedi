@@ -146,7 +146,7 @@ const showSnackbar = ref(false)
 const snackbarText = ref('')
 const snackbarColor = ref<'success' | 'error' | 'info' | 'warning'>('success')
 
-const _search = ref('')
+const search = ref('')
 
 function showNotification(text: string, color: 'success' | 'error' | 'info' | 'warning') {
   snackbarText.value = text
@@ -171,32 +171,32 @@ const {
   renameGroup,
 } = useHostsData(showNotification)
 
-function _openAddHostDialog(groupName: string) {
+function openAddHostDialog(groupName: string) {
   currentAddGroupName.value = groupName
   dialogs.value.addHost = true
 }
 
-function _openEditHostDialog(host: HostEntry) {
+function openEditHostDialog(host: HostEntry) {
   currentEditHost.value = host
   dialogs.value.editHost = true
 }
 
-function _removeHost(host: HostEntry) {
+function removeHost(host: HostEntry) {
   hostToDelete.value = host
   dialogs.value.deleteConfirm = true
 }
 
-function _handleOpenDomain(_domain: string, message: string) {
+function handleOpenDomain(_domain: string, message: string) {
   showNotification(message, 'info')
 }
 
-function _openRenameGroupDialog(name: string) {
+function openRenameGroupDialog(name: string) {
   renameGroupOriginalName.value = name
   renameGroupName.value = name
   dialogs.value.renameGroup = true
 }
 
-async function _handleConfirmRenameGroup() {
+async function handleConfirmRenameGroup() {
   const trimmed = renameGroupName.value.trim()
   if (!trimmed) {
     showNotification(t('hosts.validation.groupNameRequired'), 'error')

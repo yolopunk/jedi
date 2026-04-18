@@ -97,7 +97,7 @@ export class AgentLoop {
     return step
   }
 
-  private completeStep(step: AgentStep, result?: any): void {
+  private completeStep(step: AgentStep, result?: unknown): void {
     step.status = 'done'
     step.result = result
     this.state.currentStep = null
@@ -119,7 +119,7 @@ export class AgentLoop {
     })
   }
 
-  async executeSkill(skillId: string, args: any): Promise<any> {
+  async executeSkill(skillId: string, args: unknown): Promise<unknown> {
     const skill = skillRegistry.get(skillId)
     if (!skill) throw new Error(`Skill not found: ${skillId}`)
     if (!skill.enabled) throw new Error(`Skill disabled: ${skillId}`)
@@ -141,8 +141,9 @@ export class AgentLoop {
       const result = await skill.execute(args, { sessionId: '' })
       this.completeStep(step, result)
       return result
-    } catch (e: any) {
-      this.failStep(step, e.message)
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e)
+      this.failStep(step, errorMessage)
       throw e
     }
   }

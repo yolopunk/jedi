@@ -43,9 +43,9 @@ const props = defineProps({
 
 const emit = defineEmits(['seek'])
 
-const _expanded = ref(props.defaultExpanded)
+const expanded = ref(props.defaultExpanded)
 
-const _formattedContent = computed(() => {
+const formattedContent = computed(() => {
   if (!props.content) return ''
 
   let content = props.content
@@ -65,7 +65,7 @@ const _formattedContent = computed(() => {
   return content
 })
 
-function _handleClick(event: MouseEvent) {
+function handleClick(event: MouseEvent) {
   const target = event.target as HTMLElement
 
   // Handle Timestamp Clicks

@@ -10,10 +10,10 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "release": "node scripts/release.js",
-    "lint": "biome check .",
-    "lint:fix": "biome check --apply .",
-    "format": "biome format --write .",
-    "format:check": "biome format ."
+    "lint": "biome check src/ --diagnostic-level=error",
+    "lint:fix": "biome check --write src/",
+    "format": "biome format --write src/",
+    "format:check": "biome format src/"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.69",

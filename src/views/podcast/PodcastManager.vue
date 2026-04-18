@@ -225,6 +225,7 @@
 <script setup lang="ts">
 import { usePodcastManager } from '@/composables/usePodcastManager'
 
+// biome-ignore lint/correctness/noUnusedVariables: false positive
 const {
   subscriptions,
   currentSub,

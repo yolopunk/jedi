@@ -358,7 +358,9 @@ import { useProviderConfigStore } from '@/stores/providerConfig'
 import type { ModelsDevModel, ModelsDevProvider } from '@/types/modelsDev'
 
 const props = defineProps<{ modelValue: boolean }>()
-defineEmits<(e: 'update:modelValue', value: boolean) => void>()
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: boolean | string): void
+}>()
 
 const modelsDevStore = useModelsDevStore()
 const providerConfigStore = useProviderConfigStore()
@@ -375,15 +377,15 @@ const testing = ref(false)
 const modelSearch = ref('')
 const testResult = ref<{ type: 'success' | 'error'; message: string } | null>(null)
 
-const _categories = [
+const categories = [
   { id: 'popular' as const, label: 'Popular' },
   { id: 'configured' as const, label: 'Configured' },
   { id: 'other' as const, label: 'Other' },
   { id: 'custom' as const, label: 'Custom' },
 ]
 
-const _loading = computed(() => modelsDevStore.loading || providerConfigStore.loading)
-const _error = computed(() => modelsDevStore.error || providerConfigStore.error)
+const loading = computed(() => modelsDevStore.loading || providerConfigStore.loading)
+const error = computed(() => modelsDevStore.error || providerConfigStore.error)
 
 // Special built-in custom provider entry
 const CUSTOM_PROVIDER_ENTRY: ModelsDevProvider = {
@@ -393,7 +395,7 @@ const CUSTOM_PROVIDER_ENTRY: ModelsDevProvider = {
   isCustom: true,
 }
 
-const _filteredProviders = computed(() => {
+const filteredProviders = computed(() => {
   let providers: ModelsDevProvider[]
   switch (activeCategory.value) {
     case 'popular':
@@ -423,7 +425,7 @@ const selectedProviderModels = computed(() => {
   return Object.values(selectedProvider.value.models)
 })
 
-const _filteredModels = computed(() => {
+const filteredModels = computed(() => {
   if (!modelSearch.value) return selectedProviderModels.value
   const q = modelSearch.value.toLowerCase()
   return selectedProviderModels.value.filter(
@@ -431,13 +433,13 @@ const _filteredModels = computed(() => {
   )
 })
 
-const _isCurrentProviderConfigured = computed(() =>
+const isCurrentProviderConfigured = computed(() =>
   selectedProvider.value
     ? providerConfigStore.isProviderConfigured(selectedProvider.value.id)
     : false
 )
 
-function _getCategoryCount(category: string) {
+function getCategoryCount(category: string) {
   switch (category) {
     case 'popular':
       return modelsDevStore.popularProviders.length
@@ -470,13 +472,15 @@ function selectProvider(provider: ModelsDevProvider) {
   modelSearch.value = ''
 }
 
-function _selectModel(model: ModelsDevModel) {
+function selectModel(model: ModelsDevModel) {
   modelsDevStore.selectModel(model.id)
-  modelsDevStore.selectProvider(selectedProvider.value?.id)
+  if (selectedProvider.value?.id) {
+    modelsDevStore.selectProvider(selectedProvider.value.id)
+  }
 }
 
 // Handle provider main area click - opens config for all providers
-function _handleProviderClick(provider: ModelsDevProvider) {
+function handleProviderClick(provider: ModelsDevProvider) {
   // Always open config view, but populate endpoint from stored config if configured
   selectProvider(provider)
   // If provider is configured, load its stored endpoint
@@ -498,7 +502,7 @@ async function loadStoredEndpoint(providerId: string) {
 }
 
 // Directly switch to a configured provider and close dialog
-function _selectProviderDirectly(provider: ModelsDevProvider) {
+function selectProviderDirectly(provider: ModelsDevProvider) {
   modelsDevStore.selectProvider(provider.id)
   // Close the dialog
   emit('update:modelValue', false)
@@ -517,14 +521,14 @@ watch(
   }
 )
 
-async function _retryLoad() {
+async function retryLoad() {
   await Promise.all([
     providerConfigStore.loadConfiguredProviders(),
     modelsDevStore.fetchProviders(true),
   ])
 }
 
-async function _saveKey() {
+async function saveKey() {
   if (!selectedProvider.value || !configApiKey.value) return
   await providerConfigStore.saveApiKey(
     selectedProvider.value.id,
@@ -539,13 +543,13 @@ async function _saveKey() {
   selectedProvider.value = null
 }
 
-async function _deleteKey() {
+async function deleteKey() {
   if (!selectedProvider.value) return
   await providerConfigStore.deleteApiKey(selectedProvider.value.id)
   selectedProvider.value = null
 }
 
-async function _testConnection() {
+async function testConnection() {
   testing.value = true
   testResult.value = null
   try {
@@ -559,21 +563,21 @@ async function _testConnection() {
   }
 }
 
-function _formatContext(len?: number): string {
+function formatContext(len?: number): string {
   if (!len) return 'N/A'
   if (len >= 1000000) return `${(len / 1000000).toFixed(1)}M`
   if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
   return len.toString()
 }
 
-function _formatContextShort(len?: number): string {
+function formatContextShort(len?: number): string {
   if (!len) return 'N/A'
   if (len >= 1000000) return `${(len / 1000000).toFixed(0)}M`
   if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
   return len.toString()
 }
 
-function _formatCost(model: ModelsDevModel): string {
+function formatCost(model: ModelsDevModel): string {
   const input = model.cost?.input
   const output = model.cost?.output
   if (!input && !output) return ''
@@ -583,7 +587,7 @@ function _formatCost(model: ModelsDevModel): string {
   return output !== undefined ? `out: ${fmt(output)}` : ''
 }
 
-function _buildCostTooltip(model: ModelsDevModel): string {
+function buildCostTooltip(model: ModelsDevModel): string {
   const parts: string[] = []
   if (model.cost?.input) parts.push(`Input: $${(model.cost.input / 1000000).toFixed(2)}/1M tokens`)
   if (model.cost?.output)
@@ -595,7 +599,7 @@ function _buildCostTooltip(model: ModelsDevModel): string {
   return parts.length ? parts.join('\n') : 'No cost data'
 }
 
-function _isUrl(str: string): boolean {
+function isUrl(str: string): boolean {
   try {
     new URL(str)
     return true

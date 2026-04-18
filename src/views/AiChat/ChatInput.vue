@@ -135,10 +135,10 @@ const emit = defineEmits<{
 
 const inputRef = ref<{ focus: () => void } | null>(null)
 const inputText = ref('')
-const _showAttachMenu = ref(false)
+const showAttachMenu = ref(false)
 
 const maxChars = computed(() => props.maxChars || 4000)
-const _placeholder = computed(() => props.placeholder || 'Type your message...')
+const placeholder = computed(() => props.placeholder || 'Type your message...')
 
 const charCount = computed(() => inputText.value.length)
 
@@ -151,7 +151,7 @@ const canSend = computed(() => {
   )
 })
 
-function _handleKeydown(event: KeyboardEvent) {
+function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault()
     if (canSend.value) {
@@ -160,7 +160,7 @@ function _handleKeydown(event: KeyboardEvent) {
   }
 }
 
-function _handlePaste(event: ClipboardEvent) {
+function handlePaste(event: ClipboardEvent) {
   // Handle image paste
   const items = event.clipboardData?.items
   if (items) {

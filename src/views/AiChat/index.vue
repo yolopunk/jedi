@@ -327,13 +327,13 @@ const providerConfigStore = useProviderConfigStore()
 const inputText = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
-const _showCommands = ref(false)
+const showCommands = ref(false)
 const showScrollButton = ref(false)
-const _showModelSettings = ref(false)
+const showModelSettings = ref(false)
 const showAttachmentMenu = ref(false)
 const showModelDropdown = ref(false)
-const _isHistoryCollapsed = ref(true)
-const _showWorkersPanel = ref(false)
+const isHistoryCollapsed = ref(true)
+const showWorkersPanel = ref(false)
 
 // Agent Pool
 const { workers } = useAgentPool()
@@ -361,25 +361,25 @@ const bootSequence = [
 ]
 
 // Computed
-const _selectedProviderModels = computed(() => {
+const selectedProviderModels = computed(() => {
   return modelsDevStore.selectedProviderModels
 })
 
-const _currentModelName = computed(() => {
+const currentModelName = computed(() => {
   return modelsDevStore.selectedModel?.name || 'SELECT MODEL'
 })
 
-function _selectModelFromDropdown(model: any) {
+function selectModelFromDropdown(model: any) {
   modelsDevStore.selectModel(model.id)
   showModelDropdown.value = false
 }
 
-function _handleAttachmentSelect(_action: string) {
+function handleAttachmentSelect(_action: string) {
   showAttachmentMenu.value = false
   // Handle: attachment, skills, web-search - can be implemented later
 }
 
-function _formatContextShort(len?: number): string {
+function formatContextShort(len?: number): string {
   if (!len) return 'N/A'
   if (len >= 1000000) return `${(len / 1000000).toFixed(0)}M`
   if (len >= 1000) return `${(len / 1000).toFixed(0)}K`
@@ -387,10 +387,10 @@ function _formatContextShort(len?: number): string {
 }
 
 // Computed
-const _currentProviderName = computed(() => {
+const currentProviderName = computed(() => {
   return modelsDevStore.selectedProvider?.name?.toUpperCase() || 'SELECT PROVIDER'
 })
-const _connectionStatus = computed(() => {
+const connectionStatus = computed(() => {
   if (modelsDevStore.selectedModel) return 'CONNECTED'
   if (modelsDevStore.allProviders.length === 0) return 'OFFLINE'
   return 'NO MODEL'
@@ -400,22 +400,22 @@ const displayMessages = computed(() => {
   return store.currentSession?.messages || []
 })
 
-const _inputConsoleState = computed(() => {
+const inputConsoleState = computed(() => {
   return displayMessages.value.length > 0 ? 'state-chatting' : 'state-new-session'
 })
 
-function _renderMessage(content: string) {
+function renderMessage(content: string) {
   return renderSafe(sharedMd, content)
 }
 
 // Formatting
-function _formatTimestamp(timestamp?: number) {
+function formatTimestamp(timestamp?: number) {
   if (!timestamp) return '00:00:00'
   const date = new Date(timestamp)
   return date.toLocaleTimeString('en-US', { hour12: false })
 }
 
-function _formatSessionTime(dateStr: string) {
+function formatSessionTime(dateStr: string) {
   const date = new Date(dateStr)
   const now = new Date()
   const diff = now.getTime() - date.getTime()
@@ -426,19 +426,19 @@ function _formatSessionTime(dateStr: string) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
 }
 
-function _handleSelectSession(sessionId: string) {
+function handleSelectSession(sessionId: string) {
   store.currentSessionId = sessionId
   nextTick(() => {
     scrollToBottom()
   })
 }
 
-function _showSessionMenu(session: any) {
+function showSessionMenu(session: any) {
   console.log('Session menu:', session)
 }
 
 // Actions
-function _handleCommandSelect(cmd: (typeof SLASH_COMMANDS)[0]) {
+function handleCommandSelect(cmd: (typeof SLASH_COMMANDS)[0]) {
   if (!store.currentSession) {
     store.createSession(
       '新对话',
@@ -452,7 +452,7 @@ function _handleCommandSelect(cmd: (typeof SLASH_COMMANDS)[0]) {
   })
 }
 
-function _handleNewSession() {
+function handleNewSession() {
   store.createSession(
     '新对话',
     modelsDevStore.selectedProviderId || 'openai',
@@ -463,7 +463,7 @@ function _handleNewSession() {
   })
 }
 
-function _handleKeydown(event: KeyboardEvent) {
+function handleKeydown(event: KeyboardEvent) {
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault()
     handleSend()
@@ -506,11 +506,11 @@ async function handleSend() {
   }
 }
 
-function _handleCopyMessage(content: string) {
+function handleCopyMessage(content: string) {
   navigator.clipboard.writeText(content)
 }
 
-function _handleRegenerate() {
+function handleRegenerate() {
   if (!store.currentSession || store.currentSession.messages.length < 2) return
 
   const lastUserMessage = [...store.currentSession.messages].reverse().find(m => m.role === 'user')
@@ -522,7 +522,7 @@ function _handleRegenerate() {
 }
 
 // Scroll handling
-function _handleScroll() {
+function handleScroll() {
   if (!messagesContainer.value) return
   const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value
   showScrollButton.value = scrollHeight - scrollTop - clientHeight > 200

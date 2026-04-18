@@ -93,7 +93,22 @@
       "Bash(/usr/local/bin/fnm completions:*)",
       "Bash(~/.local/share/fnm/node-versions/v25.9.0/installation/bin/node:*)",
       "Bash(mdfind -name \"openclaw\")",
-      "Bash(launchctl list:*)"
+      "Bash(launchctl list:*)",
+      "Bash(bash:*)",
+      "Bash(node:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(claude mcp:*)",
+      "Bash(pnpm type-check *)",
+      "Bash(vue-tsc *)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm dlx *)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm biome *)",
+      "Bash(pnpm vite *)",
+      "Bash(pnpm info *)",
+      "Bash(sed -i '' 's/const _showAttachMenu/const showAttachMenu/g; s/const _placeholder/const placeholder/g; s/function _handleKeydown/function handleKeydown/g; s/function _handlePaste/function handlePaste/g' src/views/AiChat/ChatInput.vue)",
+      "Bash(sed -i '' 's/const _renderedContent/const renderedContent/g; s/function _copyToClipboard/function copyToClipboard/g' src/views/AiChat/ChatMessage.vue)",
+      "Skill(commit-commands:commit)"
     ]
   }
 }

@@ -29,7 +29,7 @@ import { useSkillsStore } from '@/stores/skills'
 
 const store = useSkillsStore()
 
-function _toggleSkill(id: string): void {
+function toggleSkill(id: string): void {
   const isEnabled = store.isSkillEnabled(id)
   store.toggleSkill(id, !isEnabled)
 }

@@ -88,15 +88,15 @@ const { setAudioRef } = useAudioPlayer()
 const audioEl = ref<HTMLAudioElement | null>(null)
 
 // Dialog states
-const showHelpDialog = ref(false)
-const showSettingsDialog = ref(false)
-const showAboutDialog = ref(false)
+const _showHelpDialog = ref(false)
+const _showSettingsDialog = ref(false)
+const _showAboutDialog = ref(false)
 
 // Sidebar state
 const sidebarCollapsed = ref(false)
 
 // Current locale display
-const currentLocale = computed(() => {
+const _currentLocale = computed(() => {
   const flag = locale.value === 'zh' ? '🇨🇳 ' : '🇺🇸 '
   const text = locale.value === 'zh' ? 'zh-CN' : 'en-US'
   return flag + text

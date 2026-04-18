@@ -37,7 +37,7 @@ export const useAgentStore = defineStore('agent', () => {
     loop = new AgentLoop(config.value)
     loop.onEvent((event: AgentEvent) => {
       traceLog.value.push(event)
-      state.value = loop?.getState()
+      state.value = loop?.getState() ?? state.value
     })
     return loop
   }

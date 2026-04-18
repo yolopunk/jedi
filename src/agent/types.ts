@@ -10,6 +10,7 @@ export interface AgentStep {
   type: AgentStepType
   status: AgentStepStatus
   content: string
+  // biome-ignore lint/suspicious/noExplicitAny: result type depends on step execution
   result?: any
   error?: string
   timestamp: number

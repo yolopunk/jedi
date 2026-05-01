@@ -911,6 +911,118 @@
   letter-spacing: 0.5px;
 }
 
+.agent-activity {
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid rgba(0, 212, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(0, 212, 255, 0.04);
+}
+
+.activity-header,
+.activity-row {
+  display: flex;
+  align-items: center;
+}
+
+.activity-header {
+  justify-content: space-between;
+  margin-bottom: 6px;
+  color: var(--hologram-primary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.activity-toggle {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: 6px;
+  background: rgba(0, 212, 255, 0.08);
+  color: var(--hologram-primary);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.activity-toggle:hover {
+  background: rgba(0, 212, 255, 0.14);
+}
+
+.activity-item {
+  padding: 7px 8px;
+  border-left: 2px solid rgba(0, 212, 255, 0.35);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.activity-item + .activity-item {
+  margin-top: 6px;
+}
+
+.activity-item.tool {
+  border-left-color: rgba(74, 222, 128, 0.65);
+}
+
+.activity-item.error,
+.activity-item.error .activity-status {
+  border-left-color: rgba(248, 113, 113, 0.75);
+  color: #f87171;
+}
+
+.activity-row {
+  gap: 8px;
+}
+
+.activity-icon {
+  width: 14px;
+  color: var(--hologram-primary);
+  text-align: center;
+}
+
+.activity-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--hologram-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.activity-status {
+  color: var(--hologram-text-muted);
+  font-size: 9px;
+}
+
+.activity-content {
+  margin-top: 4px;
+  color: var(--hologram-text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.activity-details {
+  margin-top: 6px;
+  color: var(--hologram-text-muted);
+  font-size: 10px;
+}
+
+.activity-details summary {
+  cursor: pointer;
+  color: var(--hologram-primary);
+}
+
+.activity-details pre {
+  max-height: 220px;
+  overflow: auto;
+  margin: 6px 0 0;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.22);
+  color: #a5f3fc;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* Hover 元数据 - removed */
 
 .action-icon {
@@ -2149,4 +2261,3 @@
 .light-theme .send-btn:hover:not(.disabled) {
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
-

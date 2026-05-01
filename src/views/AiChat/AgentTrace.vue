@@ -6,8 +6,8 @@
     </div>
     <div ref="traceList" class="trace-list">
       <div
-        v-for="event in agentStore.traceLog"
-        :key="event.timestamp"
+        v-for="(event, index) in agentStore.traceLog"
+        :key="`${event.timestamp}-${event.type}-${index}`"
         class="trace-entry"
         :class="event.type"
       >
@@ -62,7 +62,8 @@ function getIcon(event: AgentEvent): string {
 }
 
 function getContent(event: AgentEvent): string {
-  if (event.step) return event.step.content
+  if (event.step)
+    return event.step.detail ? `${event.step.content}: ${event.step.detail}` : event.step.content
   if (event.status) return `Status: ${event.status}`
   return event.type
 }

@@ -150,6 +150,30 @@
                     <div class="message-body">
                       <div class="markdown-body" v-html="renderMessage(message.content)"></div>
                     </div>
+                    <div v-if="message.metadata?.trace?.length" class="agent-activity">
+                      <div class="activity-header">
+                        <span>AGENT RUN</span>
+                        <button class="activity-toggle" @click="agentStore.tracePanelOpen = true">TRACE</button>
+                      </div>
+                      <div
+                        v-for="trace in message.metadata.trace"
+                        :key="trace.id"
+                        class="activity-item"
+                        :class="[trace.type, trace.status]"
+                      >
+                        <div class="activity-row">
+                          <span class="activity-icon">{{ getTraceIcon(trace.type, trace.status) }}</span>
+                          <span class="activity-title">{{ trace.title }}</span>
+                          <span class="activity-status">{{ trace.status.toUpperCase() }}</span>
+                        </div>
+                        <div v-if="trace.content" class="activity-content">{{ trace.content }}</div>
+                        <details v-if="trace.input || trace.output" class="activity-details">
+                          <summary>DETAILS</summary>
+                          <pre v-if="trace.input">INPUT {{ formatTraceValue(trace.input) }}</pre>
+                          <pre v-if="trace.output">OUTPUT {{ formatTraceValue(trace.output) }}</pre>
+                        </details>
+                      </div>
+                    </div>
                     <div class="message-actions">
                       <button class="action-btn" @click="handleCopyMessage(message.content)" title="Copy">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -310,17 +334,17 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { formatCommandPrompt, type SLASH_COMMANDS } from '@/agent/slashCommands'
 import { setOnWorkerCompleteCallback, useAgentPool } from '@/agent/useAgentPool'
+import AttachmentMenu from '@/components/AttachmentMenu.vue'
+import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
+import CommandPalette from '@/components/CommandPalette.vue'
 import { useAgentStore } from '@/stores/agent'
 import { useAiChatStore } from '@/stores/aiChat'
 import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
 import { useSkillsStore } from '@/stores/skills'
 import { renderSafe, sharedMd } from '@/utils/markdown'
-import CommandPalette from '@/components/CommandPalette.vue'
-import AttachmentMenu from '@/components/AttachmentMenu.vue'
-import ModelSettings from './ModelSettings.vue'
-import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
 import AgentTrace from './AgentTrace.vue'
+import ModelSettings from './ModelSettings.vue'
 
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()
@@ -411,6 +435,18 @@ const inputConsoleState = computed(() => {
 
 function renderMessage(content: string) {
   return renderSafe(sharedMd, content)
+}
+
+function getTraceIcon(type: string, status: string): string {
+  if (status === 'error') return '!'
+  if (type === 'tool') return '$'
+  if (type === 'finish') return '+'
+  return '~'
+}
+
+function formatTraceValue(value: unknown): string {
+  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2)
+  return text.length > 1200 ? `${text.slice(0, 1200)}\n...` : text
 }
 
 // Formatting

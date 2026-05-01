@@ -81,9 +81,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let chat_session_manager_state = ChatSessionManagerState::new(chat_session_manager);
 
   // Phase 2: 初始化模型提供商管理器状态
-  let keyring_manager_for_models = crate::utils::security::KeyringManager::new()
-    .expect("Failed to initialize keyring manager for models");
-  let model_provider_manager_state = ModelProviderManagerState::new(keyring_manager_for_models);
+  let model_provider_manager_state =
+    ModelProviderManagerState::new(keyring_manager_state.get_manager().clone());
 
   // Phase 3: 初始化 models.dev 管理器状态
   let models_dev_manager_state = ModelsDevManagerState::new();

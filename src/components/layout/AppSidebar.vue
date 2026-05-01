@@ -193,9 +193,10 @@
 </template>
 
 <script setup lang="ts">
-import { mdiDns, mdiPodcast, mdiRobot, mdiWallpaper } from '@mdi/js'
+import { mdiCog, mdiDns, mdiGithub, mdiPodcast, mdiRobot, mdiWallpaper } from '@mdi/js'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { useThemeToggle } from '@/composables/useTheme'
+import LogoShaderBg from '@/components/common/LogoShaderBg.vue'
 
 const props = defineProps<{
   collapsed?: boolean

@@ -289,26 +289,35 @@ cargo test           # 运行Rust测试
 - **/plan-eng-review** - 评审计划（架构层面）
 - **/plan-design-review** - 评审计划（设计层面）
 - **/design-consultation** - 创建设计系统
+- **/design-shotgun** - 快速设计评审
+- **/design-html** - HTML设计稿评审
 - **/review** - 合并前代码审查
 - **/ship** - 准备部署/创建PR
 - **/land-and-deploy** - 落地部署
 - **/canary** - 金丝雀发布
 - **/benchmark** - 性能基准测试
 - **/browse** - 网页浏览
+- **/connect-chrome** - 连接Chrome调试
 - **/qa** - 应用测试
 - **/qa-only** - 仅QA测试
 - **/design-review** - 视觉设计审计
 - **/setup-browser-cookies** - 设置浏览器cookies
 - **/setup-deploy** - 设置部署
+- **/setup-gbrain** - 设置大脑知识库
 - **/retro** - 每周回顾
 - **/investigate** - 调试错误
 - **/document-release** - 发布后文档更新
 - **/codex** - 获得第二意见或对抗性代码审查
+- **/cso** - 首席安全官模式
+- **/autoplan** - 自动规划
+- **/plan-devex-review** - 开发者体验评审
+- **/devex-review** - 开发者体验评审
 - **/careful** - 处理生产或实时系统
 - **/freeze** - 将编辑范围限定在一个模块/目录
 - **/guard** - 最大安全模式（破坏性警告+编辑限制）
 - **/unfreeze** - 移除编辑限制
 - **/gstack-upgrade** - 升级gstack到最新版本
+- **/learn** - 学习技能
 
 ### 故障排除
 如果 gstack 技能无法正常工作，运行以下命令来构建二进制文件并注册技能：

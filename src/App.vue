@@ -65,7 +65,7 @@
     <audio
       ref="audioEl"
       class="d-none"
-      :src="currentPlaying?.audio_url"
+      :src="currentPlaying?.audio_url || ''"
       autoplay
     ></audio>
   </v-app>
@@ -75,39 +75,46 @@
 import { open } from '@tauri-apps/plugin-shell'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { mdiMenu, mdiMenuOpen } from '@mdi/js'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useStorage } from '@/composables/useStorage'
 import { initTheme } from '@/composables/useTheme'
 import { useUpdate } from '@/composables/useUpdate'
 import { useWallpaper } from '@/composables/useWallpaper'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
+import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
+import HelpDialog from '@/components/dialogs/HelpDialog.vue'
+import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
+import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 
 const { locale } = useI18n()
 const { getItem, setItem } = useStorage()
 const { setAudioRef } = useAudioPlayer()
 
 const audioEl = ref<HTMLAudioElement | null>(null)
+const currentPlaying = computed(() => useAudioPlayer().currentPlaying)
 
 // Dialog states
-const _showHelpDialog = ref(false)
-const _showSettingsDialog = ref(false)
-const _showAboutDialog = ref(false)
+const showHelpDialog = ref(false)
+const showSettingsDialog = ref(false)
+const showAboutDialog = ref(false)
 
 // Sidebar state
 const sidebarCollapsed = ref(false)
 
 // Current locale display
-const _currentLocale = computed(() => {
+const currentLocale = computed(() => {
   const flag = locale.value === 'zh' ? '🇨🇳 ' : '🇺🇸 '
   const text = locale.value === 'zh' ? 'zh-CN' : 'en-US'
   return flag + text
 })
 
-const _localeTooltip = computed(() => {
+const localeTooltip = computed(() => {
   return locale.value === 'zh' ? 'Switch to English' : '切换到中文'
 })
 
 // Toggle language
-const _toggleLanguage = async () => {
+const toggleLanguage = async () => {
   const newLang = locale.value === 'zh' ? 'en' : 'zh'
   locale.value = newLang
   await setItem('language', newLang)
@@ -129,12 +136,12 @@ const initLanguage = async () => {
 }
 
 // Toggle sidebar
-const _toggleSidebar = () => {
+const toggleSidebar = () => {
   sidebarCollapsed.value = !sidebarCollapsed.value
 }
 
 // Open GitHub repo
-const _openGithubRepo = async () => {
+const openGithubRepo = async () => {
   try {
     await open('https://github.com/yolopunk/jedi')
   } catch (error) {
@@ -143,7 +150,7 @@ const _openGithubRepo = async () => {
 }
 
 // Open project website
-const _openProjectWebsite = async () => {
+const openProjectWebsite = async () => {
   try {
     await open('https://yolopunk.github.io/jedi')
   } catch (error) {
@@ -152,7 +159,7 @@ const _openProjectWebsite = async () => {
 }
 
 // Send email
-const _sendEmail = async () => {
+const sendEmail = async () => {
   try {
     await open('mailto:cynosurech@gmail.com')
   } catch (error) {

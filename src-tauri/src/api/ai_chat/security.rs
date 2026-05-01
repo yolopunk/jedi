@@ -12,6 +12,7 @@ use crate::utils::security::{
 use secrecy::ExposeSecret;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::State;
 
@@ -32,6 +33,8 @@ impl AuditLoggerState {
 /// 密钥链管理器状态
 pub struct KeyringManagerState {
   manager: Mutex<KeyringManager>,
+  /// has_api_key 结果缓存，避免频繁访问 Keychain
+  has_key_cache: Mutex<HashMap<ModelProvider, bool>>,
 }
 
 impl KeyringManagerState {
@@ -39,7 +42,87 @@ impl KeyringManagerState {
     let manager = KeyringManager::new()?;
     Ok(Self {
       manager: Mutex::new(manager),
+      has_key_cache: Mutex::new(HashMap::new()),
     })
+  }
+
+  pub fn get_manager(&self) -> KeyringManager {
+    self.manager.lock().unwrap().clone()
+  }
+
+  /// 检查 API Key 是否存在（带缓存）
+  pub fn has_api_key_cached(&self, provider: ModelProvider) -> Result<bool, String> {
+    // 先查缓存
+    {
+      let cache = self.has_key_cache.lock().map_err(|e| format!("Lock error: {}", e))?;
+      if let Some(&cached) = cache.get(&provider) {
+        return Ok(cached);
+      }
+    }
+
+    // 缓存未命中，查询 Keychain
+    let manager = self.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+    let result = manager.has_api_key(provider.clone());
+
+    // 写入缓存
+    if let Ok(val) = result {
+      if let Ok(mut cache) = self.has_key_cache.lock().map_err(|e| format!("Lock error: {}", e)) {
+        cache.insert(provider, val);
+      }
+    }
+
+    result
+  }
+
+  /// 批量检查多个提供商的 API Key 是否存在（带缓存）
+  /// 优化：单次 Keychain 访问，避免多次授权弹窗
+  pub fn has_api_keys_bulk(&self, providers: Vec<ModelProvider>) -> Result<HashMap<ModelProvider, bool>, String> {
+    let mut results = HashMap::new();
+
+    // 先查缓存，收集未命中的
+    let mut cache_misses = Vec::new();
+    {
+      let cache = self.has_key_cache.lock().map_err(|e| format!("Lock error: {}", e))?;
+      for provider in &providers {
+        if let Some(&cached) = cache.get(provider) {
+          results.insert(provider.clone(), cached);
+        } else {
+          cache_misses.push(provider.clone());
+        }
+      }
+    }
+
+    // 如果全部命中缓存，直接返回
+    if cache_misses.is_empty() {
+      return Ok(results);
+    }
+
+    // 缓存未命中，单次 Keychain 访问查询所有未命中的提供商
+    let manager = self.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+    let mut cache_updates = Vec::new();
+
+    for provider in cache_misses {
+      let has_key = manager.has_api_key(provider.clone()).unwrap_or(false);
+      cache_updates.push((provider.clone(), has_key));
+      results.insert(provider, has_key);
+    }
+    drop(manager); // 尽早释放锁
+
+    // 批量更新缓存
+    if let Ok(mut cache) = self.has_key_cache.lock().map_err(|e| format!("Lock error: {}", e)) {
+      for (provider, has_key) in cache_updates {
+        cache.insert(provider, has_key);
+      }
+    }
+
+    Ok(results)
+  }
+
+  /// 使缓存失效（当 API Key 被存储或删除时调用）
+  fn invalidate_cache(&self) {
+    if let Ok(mut cache) = self.has_key_cache.lock() {
+      cache.clear();
+    }
   }
 }
 
@@ -317,7 +400,15 @@ pub async fn store_api_key(
     .manager
     .lock()
     .map_err(|e| format!("Lock error: {}", e))?;
-  manager.store_api_key(api_key)
+  let result = manager.store_api_key(api_key);
+
+  // 存储成功后使缓存失效
+  if result.is_ok() {
+    drop(manager);
+    state.invalidate_cache();
+  }
+
+  result
 }
 
 /// Tauri command: 获取 API Key 信息（不返回实际 Key）
@@ -374,22 +465,25 @@ pub async fn delete_api_key(
     .manager
     .lock()
     .map_err(|e| format!("Lock error: {}", e))?;
-  manager.delete_api_key(provider_enum)
+  let result = manager.delete_api_key(provider_enum);
+
+  // 删除成功后使缓存失效
+  if result.is_ok() {
+    drop(manager);
+    state.invalidate_cache();
+  }
+
+  result
 }
 
-/// Tauri command: 检查 API Key 是否存在
+/// Tauri command: 检查 API Key 是否存在（使用缓存减少 Keychain 调用）
 #[tauri::command]
 pub async fn has_api_key(
   state: State<'_, KeyringManagerState>,
   provider: String,
 ) -> Result<bool, String> {
   let provider_enum = parse_provider(&provider)?;
-
-  let manager = state
-    .manager
-    .lock()
-    .map_err(|e| format!("Lock error: {}", e))?;
-  manager.has_api_key(provider_enum)
+  state.has_api_key_cached(provider_enum)
 }
 
 /// Tauri command: 列出所有已配置的提供商
@@ -397,22 +491,29 @@ pub async fn has_api_key(
 pub async fn list_api_key_providers(
   state: State<'_, KeyringManagerState>,
 ) -> Result<Vec<ProviderInfoResponse>, String> {
-  let manager = state
-    .manager
-    .lock()
-    .map_err(|e| format!("Lock error: {}", e))?;
-  let providers = manager.list_providers()?;
+  // 使用已知的提供商列表进行批量检查（利用缓存减少 Keychain 调用）
+  let known_providers = vec![
+    ModelProvider::OpenAi,
+    ModelProvider::Anthropic,
+    ModelProvider::Google,
+    ModelProvider::Ollama,
+    ModelProvider::Cohere,
+    ModelProvider::DeepSeek,
+    ModelProvider::Moonshot,
+    ModelProvider::ZhipuAI,
+    ModelProvider::MiniMax,
+  ];
 
-  // 对于每个提供商，检查是否有 Key（实际上 list_providers 只返回有 Key 的）
-  Ok(
-    providers
-      .into_iter()
-      .map(|provider| ProviderInfoResponse {
-        provider: provider.to_string(),
-        has_key: true,
-      })
-      .collect(),
-  )
+  let results = state.has_api_keys_bulk(known_providers)?;
+
+  Ok(results
+    .into_iter()
+    .filter(|(_, has_key)| *has_key)
+    .map(|(provider, _)| ProviderInfoResponse {
+      provider: provider.to_string(),
+      has_key: true,
+    })
+    .collect())
 }
 
 // ========== 输入验证和输出编码相关 ==========

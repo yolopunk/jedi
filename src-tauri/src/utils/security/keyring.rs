@@ -116,6 +116,16 @@ pub struct KeyringManager {
   cache: Mutex<HashMap<String, Option<ApiKey>>>,
 }
 
+impl Clone for KeyringManager {
+  fn clone(&self) -> Self {
+    Self {
+      service_name: self.service_name.clone(),
+      audit_logger: self.audit_logger.clone(),
+      cache: Mutex::new(HashMap::new()),
+    }
+  }
+}
+
 impl KeyringManager {
   /// 创建新的密钥链管理器
   pub fn new() -> Result<Self, String> {

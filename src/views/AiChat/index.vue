@@ -316,6 +316,11 @@ import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
 import { useSkillsStore } from '@/stores/skills'
 import { renderSafe, sharedMd } from '@/utils/markdown'
+import CommandPalette from '@/components/CommandPalette.vue'
+import AttachmentMenu from '@/components/AttachmentMenu.vue'
+import ModelSettings from './ModelSettings.vue'
+import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
+import AgentTrace from './AgentTrace.vue'
 
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()

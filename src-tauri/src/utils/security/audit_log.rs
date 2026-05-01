@@ -153,6 +153,7 @@ pub struct AuditLogFilter {
 }
 
 /// 审计日志记录器
+#[derive(Clone)]
 pub struct AuditLogger {
   log_file_path: PathBuf,
 }

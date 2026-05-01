@@ -231,20 +231,22 @@
             v-model="showUpdateDialog"
             :update-info="updateInfo"
             :is-installing="isInstalling"
-            @install="handleInstallUpdate"
+            @install="_handleInstallUpdate"
         ></UpdateDialog>
     </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import { mdiCpu64Bit, mdiDownload, mdiEthernet, mdiMemory, mdiPause, mdiPlay, mdiServer, mdiUpload } from '@mdi/js'
 import { getOsInfo } from '@/api/hosts'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useUpdate } from '@/composables/useUpdate'
+import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
 import type { OsInfo } from '@/types/os'
 import pkg from '../../../package.json'
 
-const _appVersion = pkg.version
+const appVersion = pkg.version
 
 // Audio player
 const { currentPlaying, isPaused, togglePlay } = useAudioPlayer()
@@ -324,6 +326,13 @@ onMounted(async () => {
 onUnmounted(() => {
   if (refreshTimer) clearInterval(refreshTimer)
 })
+
+// 暴露给模板使用的函数
+const formatPercentage = _formatPercentage
+const formatNetworkSpeed = _formatNetworkSpeed
+const formatDataSize = _formatDataSize
+const getMemoryUsagePercentage = _getMemoryUsagePercentage
+const handleInstallUpdate = _handleInstallUpdate
 </script>
 
 <style scoped>

@@ -9,12 +9,12 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 // 创建主题存储
 const storage = useStorage()
 
-// 检测系统主题
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+// 检测系统主题（延迟到运行时访问window）
+let prefersDark: MediaQueryList
 
 // 主题状态
 const themeMode = ref<ThemeMode>('system')
-const isDark = ref(prefersDark.matches)
+const isDark = ref(false)
 
 // 监听系统主题变化
 const updateSystemTheme = () => {
@@ -63,6 +63,12 @@ export const setTheme = (mode: ThemeMode) => {
 
 // 初始化主题
 export const initTheme = async () => {
+  // 初始化媒体查询对象（确保在客户端运行时才访问window）
+  if (typeof window !== 'undefined' && !prefersDark) {
+    prefersDark = window.matchMedia('(prefers-color-scheme: dark)')
+    isDark.value = prefersDark.matches
+  }
+
   // 从存储中读取主题设置
   const savedMode = await storage.getItem<ThemeMode>('theme-mode')
   if (savedMode) {

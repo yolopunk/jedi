@@ -108,7 +108,20 @@
       "Bash(pnpm info *)",
       "Bash(sed -i '' 's/const _showAttachMenu/const showAttachMenu/g; s/const _placeholder/const placeholder/g; s/function _handleKeydown/function handleKeydown/g; s/function _handlePaste/function handlePaste/g' src/views/AiChat/ChatInput.vue)",
       "Bash(sed -i '' 's/const _renderedContent/const renderedContent/g; s/function _copyToClipboard/function copyToClipboard/g' src/views/AiChat/ChatMessage.vue)",
-      "Skill(commit-commands:commit)"
+      "Skill(commit-commands:commit)",
+      "Bash(pnpm dev *)",
+      "Bash(xargs kill *)",
+      "Bash(npx playwright *)",
+      "mcp__filesystem__write_file",
+      "Bash(command -v bun)",
+      "Bash(command -v node)",
+      "Bash(npm view *)",
+      "Bash(brew *)",
+      "Bash(docker --version)",
+      "Bash(podman --version)",
+      "Bash(docker pull *)",
+      "mcp__MiniMax__web_search",
+      "Bash(docker manifest *)"
     ]
   }
 }

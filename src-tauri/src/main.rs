@@ -1,21 +1,31 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use crate::agent::commands::{
+  get_pool_status, init_pool, remove_worker, schedule_task, stop_worker, PoolState,
+};
+use crate::agent::pool::AgentPool;
 use crate::api::ai_chat::{
   append_message,
   create_session,
   delete_api_key,
   delete_session,
   encode_html_entities,
+  // Phase 3: Models.dev 集成
+  fetch_models_dev,
+  get_api_key,
   get_api_key_info,
+  get_models_dev_provider,
+  get_models_for_provider,
+  get_models_providers,
   get_session,
   has_api_key,
   list_api_key_providers,
   list_sessions,
   log_security_event,
-  get_api_key,
   query_security_logs,
   sanitize,
+  search_models_dev,
   // Phase 2: 模型和会话管理
   send_chat_message,
   send_chat_message_stream,
@@ -24,12 +34,6 @@ use crate::api::ai_chat::{
   validate_key,
   validate_message,
   validate_url,
-  // Phase 3: Models.dev 集成
-  fetch_models_dev,
-  get_models_dev_provider,
-  get_models_for_provider,
-  get_models_providers,
-  search_models_dev,
   AuditLoggerState,
   ChatSessionManagerState,
   KeyringManagerState,
@@ -48,13 +52,11 @@ use crate::api::podcast::{
 use crate::api::wallpapers::{
   get_current_wallpaper, get_wallpapers, set_desktop_wallpaper, show_in_folder, sync_wallpapers,
 };
-use crate::agent::commands::{init_pool, get_pool_status, schedule_task, stop_worker, remove_worker, PoolState};
-use crate::agent::pool::AgentPool;
 use crate::utils::logger;
 use std::sync::Mutex;
 use sysinfo::{Networks, System};
 use tauri::RunEvent::WindowEvent;
-use tauri::{Manager, RunEvent, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 
 mod agent;
 mod api;
@@ -116,10 +118,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
           .min_inner_size(980.0, 600.0)
           .resizable(true);
 
-      win_builder = win_builder.title_bar_style(TitleBarStyle::Overlay);
+      // Tauri v2: title_bar_style is configured in tauri.conf.json
       #[cfg(target_os = "macos")]
       {
-        win_builder = win_builder.decorations(true);
+        win_builder = win_builder
+          .decorations(true)
+          .title_bar_style(tauri::TitleBarStyle::Overlay);
       }
       #[cfg(target_os = "linux")]
       {

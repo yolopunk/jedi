@@ -266,8 +266,14 @@ fn model_matches_provider(model_id: &str, target_provider: &str) -> bool {
 fn clean_model_id(model_id: &str, target_provider: &str) -> String {
   let target_lower = target_provider.to_lowercase();
   match target_lower.as_str() {
-    "anthropic" => model_id.strip_prefix("anthropic/").unwrap_or(model_id).to_string(),
-    "google" => model_id.strip_prefix("google/").unwrap_or(model_id).to_string(),
+    "anthropic" => model_id
+      .strip_prefix("anthropic/")
+      .unwrap_or(model_id)
+      .to_string(),
+    "google" => model_id
+      .strip_prefix("google/")
+      .unwrap_or(model_id)
+      .to_string(),
     _ => model_id.to_string(),
   }
 }

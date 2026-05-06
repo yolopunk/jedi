@@ -196,7 +196,10 @@ impl KeyringManager {
 
     // 先查缓存
     {
-      let cache = self.cache.lock().map_err(|e| format!("Lock error: {}", e))?;
+      let cache = self
+        .cache
+        .lock()
+        .map_err(|e| format!("Lock error: {}", e))?;
       if let Some(cached) = cache.get(&cache_key) {
         return Ok(cached.clone());
       }

@@ -9,8 +9,8 @@ use crate::utils::security::{
   ChatMessageValidation, KeyringManager, ModelProvider, OperationResult, SecurityEvent,
   SecurityEventType, ValidationResult,
 };
-use secrecy::ExposeSecret;
 use chrono::{DateTime, Utc};
+use secrecy::ExposeSecret;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -54,19 +54,29 @@ impl KeyringManagerState {
   pub fn has_api_key_cached(&self, provider: ModelProvider) -> Result<bool, String> {
     // 先查缓存
     {
-      let cache = self.has_key_cache.lock().map_err(|e| format!("Lock error: {}", e))?;
+      let cache = self
+        .has_key_cache
+        .lock()
+        .map_err(|e| format!("Lock error: {}", e))?;
       if let Some(&cached) = cache.get(&provider) {
         return Ok(cached);
       }
     }
 
     // 缓存未命中，查询 Keychain
-    let manager = self.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+    let manager = self
+      .manager
+      .lock()
+      .map_err(|e| format!("Lock error: {}", e))?;
     let result = manager.has_api_key(provider.clone());
 
     // 写入缓存
     if let Ok(val) = result {
-      if let Ok(mut cache) = self.has_key_cache.lock().map_err(|e| format!("Lock error: {}", e)) {
+      if let Ok(mut cache) = self
+        .has_key_cache
+        .lock()
+        .map_err(|e| format!("Lock error: {}", e))
+      {
         cache.insert(provider, val);
       }
     }
@@ -76,13 +86,19 @@ impl KeyringManagerState {
 
   /// 批量检查多个提供商的 API Key 是否存在（带缓存）
   /// 优化：单次 Keychain 访问，避免多次授权弹窗
-  pub fn has_api_keys_bulk(&self, providers: Vec<ModelProvider>) -> Result<HashMap<ModelProvider, bool>, String> {
+  pub fn has_api_keys_bulk(
+    &self,
+    providers: Vec<ModelProvider>,
+  ) -> Result<HashMap<ModelProvider, bool>, String> {
     let mut results = HashMap::new();
 
     // 先查缓存，收集未命中的
     let mut cache_misses = Vec::new();
     {
-      let cache = self.has_key_cache.lock().map_err(|e| format!("Lock error: {}", e))?;
+      let cache = self
+        .has_key_cache
+        .lock()
+        .map_err(|e| format!("Lock error: {}", e))?;
       for provider in &providers {
         if let Some(&cached) = cache.get(provider) {
           results.insert(provider.clone(), cached);
@@ -98,7 +114,10 @@ impl KeyringManagerState {
     }
 
     // 缓存未命中，单次 Keychain 访问查询所有未命中的提供商
-    let manager = self.manager.lock().map_err(|e| format!("Lock error: {}", e))?;
+    let manager = self
+      .manager
+      .lock()
+      .map_err(|e| format!("Lock error: {}", e))?;
     let mut cache_updates = Vec::new();
 
     for provider in cache_misses {
@@ -109,7 +128,11 @@ impl KeyringManagerState {
     drop(manager); // 尽早释放锁
 
     // 批量更新缓存
-    if let Ok(mut cache) = self.has_key_cache.lock().map_err(|e| format!("Lock error: {}", e)) {
+    if let Ok(mut cache) = self
+      .has_key_cache
+      .lock()
+      .map_err(|e| format!("Lock error: {}", e))
+    {
       for (provider, has_key) in cache_updates {
         cache.insert(provider, has_key);
       }
@@ -506,14 +529,16 @@ pub async fn list_api_key_providers(
 
   let results = state.has_api_keys_bulk(known_providers)?;
 
-  Ok(results
-    .into_iter()
-    .filter(|(_, has_key)| *has_key)
-    .map(|(provider, _)| ProviderInfoResponse {
-      provider: provider.to_string(),
-      has_key: true,
-    })
-    .collect())
+  Ok(
+    results
+      .into_iter()
+      .filter(|(_, has_key)| *has_key)
+      .map(|(provider, _)| ProviderInfoResponse {
+        provider: provider.to_string(),
+        has_key: true,
+      })
+      .collect(),
+  )
 }
 
 // ========== 输入验证和输出编码相关 ==========

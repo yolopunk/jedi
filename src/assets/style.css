@@ -92,3 +92,13 @@ body,
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(var(--v-theme-on-surface), 0.4);
 }
+
+/* Tauri drag region (matches CC Switch pattern) */
+[data-tauri-drag-region] {
+  -webkit-app-region: drag;
+}
+
+[data-tauri-no-drag],
+[data-tauri-drag-region] .no-drag {
+  -webkit-app-region: no-drag;
+}

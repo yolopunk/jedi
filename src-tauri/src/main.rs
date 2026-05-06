@@ -111,17 +111,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       // 创建主窗口
       let mut win_builder =
         WebviewWindowBuilder::new(app, "main", WebviewUrl::App(Default::default()))
-          .title("Jedi")
+          .title("")
           .inner_size(1200.0, 768.0)
           .min_inner_size(980.0, 600.0)
           .resizable(true);
 
+      win_builder = win_builder.title_bar_style(TitleBarStyle::Overlay);
       #[cfg(target_os = "macos")]
       {
-        win_builder = win_builder.title_bar_style(TitleBarStyle::Transparent);
+        win_builder = win_builder.decorations(true);
+      }
+      #[cfg(target_os = "linux")]
+      {
+        win_builder = win_builder.decorations(true);
+      }
+      #[cfg(target_os = "windows")]
+      {
+        win_builder = win_builder.decorations(false);
       }
 
-      let _window = win_builder.build()?;
+      let _window = win_builder.center().build()?;
 
       config::app::load_tray_config(app);
 

@@ -1,6 +1,7 @@
 <template>
   <v-app>
-    <div class="app-layout">
+    <div class="app-layout" :style="{ '--title-bar-height': `${TITLE_BAR_TOTAL_HEIGHT}px` }">
+      <AppHeader />
       <div class="content-wrapper">
         <!-- Sidebar -->
         <app-sidebar
@@ -73,8 +74,10 @@
 
 <script setup lang="ts">
 import { open } from '@tauri-apps/plugin-shell'
-import { computed, onMounted, ref, watch } from 'vue'
+import { listen } from '@tauri-apps/api/event'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { mdiMenu, mdiMenuOpen } from '@mdi/js'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useStorage } from '@/composables/useStorage'
@@ -82,6 +85,8 @@ import { initTheme } from '@/composables/useTheme'
 import { useUpdate } from '@/composables/useUpdate'
 import { useWallpaper } from '@/composables/useWallpaper'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
+import AppHeader from '@/components/layout/AppHeader.vue'
+import { TITLE_BAR_TOTAL_HEIGHT } from '@/utils/platform'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 import HelpDialog from '@/components/dialogs/HelpDialog.vue'
 import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
@@ -90,6 +95,10 @@ import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 const { locale } = useI18n()
 const { getItem, setItem } = useStorage()
 const { setAudioRef } = useAudioPlayer()
+const router = useRouter()
+
+// Tray navigation listener
+let unlistenTray: (() => void) | null = null
 
 const audioEl = ref<HTMLAudioElement | null>(null)
 const currentPlaying = computed(() => useAudioPlayer().currentPlaying)
@@ -192,6 +201,21 @@ onMounted(async () => {
   // Initialize auto-update check
   const { startAutoCheck } = useUpdate()
   startAutoCheck()
+
+  // Listen for tray navigation events
+  try {
+    unlistenTray = await listen<string>('tray-navigate', (event) => {
+      if (event.payload) {
+        router.push(event.payload)
+      }
+    })
+  } catch {
+    // ignore if listen fails (e.g. non-Tauri env)
+  }
+})
+
+onUnmounted(() => {
+  unlistenTray?.()
 })
 </script>
 
@@ -203,6 +227,7 @@ onMounted(async () => {
   height: 100vh;
   overflow: hidden;
   background-color: rgb(var(--v-theme-background));
+  padding-top: var(--title-bar-height);
 }
 
 .content-wrapper {

@@ -2,10 +2,10 @@
   <div class="command-popup" v-if="visible">
     <div class="popup-list">
       <div
-        v-for="cmd in commands"
+        v-for="cmd in _commands"
         :key="cmd.name"
         class="popup-item"
-        @click="selectCommand(cmd)"
+        @click="_selectCommand(cmd)"
       >
         <span class="item-icon">{{ cmd.icon }}</span>
         <span class="item-name">{{ cmd.name }}</span>
@@ -28,6 +28,7 @@ const _commands = SLASH_COMMANDS
 
 function _selectCommand(cmd: SlashCommand) {
   emit('select', cmd)
+  emit('close')
 }
 </script>
 

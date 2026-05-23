@@ -43,7 +43,7 @@ tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
 gray_matter = "0.3.2"
 # AI Chat 安全依赖
-keyring = "2.1"
+rusqlite = { version = "0.31", features = ["bundled"] }
 secrecy = { version = "0.8", features = ["serde"] }
 zeroize = { version = "1.8", features = ["derive"] }
 aes-gcm = "0.10"

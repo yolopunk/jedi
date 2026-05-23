@@ -2,7 +2,7 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { invoke } from '@tauri-apps/api/core'
-import { jsonSchema, stepCountIs, streamText, tool } from 'ai'
+import { isLoopFinished, jsonSchema, stepCountIs, streamText, tool } from 'ai'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { skillRegistry } from '@/skills/registry'
@@ -45,7 +45,7 @@ export interface Session {
 
 export interface AgentTraceDetail {
   id: string
-  type: 'think' | 'tool' | 'finish' | 'error'
+  type: 'session' | 'step' | 'think' | 'reasoning' | 'tool' | 'answer' | 'finish' | 'error'
   status: 'running' | 'done' | 'error'
   title: string
   content?: string
@@ -53,6 +53,22 @@ export interface AgentTraceDetail {
   output?: unknown
   timestamp: number
   durationMs?: number
+  stepIndex?: number
+  toolName?: string
+  toolCallId?: string
+}
+
+export interface AgentRunMetadata {
+  provider: string
+  model: string
+  startedAt: number
+  completedAt?: number
+  totalDurationMs?: number
+  stepLimit: number
+  enabledTools: string[]
+  toolCount: number
+  finishReason?: string
+  usage?: unknown
 }
 
 export interface MessageMetadata {
@@ -61,6 +77,7 @@ export interface MessageMetadata {
   toolCalls?: AgentTraceDetail[]
   finishReason?: string
   usage?: unknown
+  run?: AgentRunMetadata
 }
 
 // 预定义的MCP服务器
@@ -145,6 +162,74 @@ function summarizeValue(value: unknown, maxLength = 1600): string {
   return text.length > maxLength ? `${text.slice(0, maxLength)}\n...` : text
 }
 
+let traceCounter = 0
+
+function nextTraceId(prefix: string): string {
+  traceCounter += 1
+  return `${prefix}-${Date.now()}-${traceCounter}`
+}
+
+function summarizeUsage(usage: unknown): string {
+  if (!usage || typeof usage !== 'object') return 'No usage data'
+  const usageRecord = usage as Record<string, unknown>
+  const inputTokens =
+    typeof usageRecord.inputTokens === 'number'
+      ? usageRecord.inputTokens
+      : typeof usageRecord.promptTokens === 'number'
+        ? usageRecord.promptTokens
+        : typeof usageRecord.input_tokens === 'number'
+          ? usageRecord.input_tokens
+          : null
+  const outputTokens =
+    typeof usageRecord.outputTokens === 'number'
+      ? usageRecord.outputTokens
+      : typeof usageRecord.completionTokens === 'number'
+        ? usageRecord.completionTokens
+        : typeof usageRecord.output_tokens === 'number'
+          ? usageRecord.output_tokens
+          : null
+  const reasoningTokens =
+    typeof usageRecord.reasoningTokens === 'number' ? usageRecord.reasoningTokens : null
+  const totalTokens =
+    typeof usageRecord.totalTokens === 'number'
+      ? usageRecord.totalTokens
+      : typeof usageRecord.total_tokens === 'number'
+        ? usageRecord.total_tokens
+        : null
+
+  return [
+    inputTokens !== null ? `in ${inputTokens}` : null,
+    outputTokens !== null ? `out ${outputTokens}` : null,
+    reasoningTokens !== null ? `reason ${reasoningTokens}` : null,
+    totalTokens !== null ? `total ${totalTokens}` : null,
+  ]
+    .filter(Boolean)
+    .join(' / ')
+}
+
+function extractTextFromContentParts(content: unknown): string {
+  if (!Array.isArray(content)) return ''
+  return content
+    .map(part => {
+      if (!part || typeof part !== 'object') return ''
+      const record = part as Record<string, unknown>
+      if (typeof record.text === 'string') return record.text
+      if (typeof record.content === 'string') return record.content
+      if (typeof record.value === 'string') return record.value
+      return ''
+    })
+    .filter(Boolean)
+    .join('')
+    .trim()
+}
+
+function extractStepText(step: unknown): string {
+  if (!step || typeof step !== 'object') return ''
+  const record = step as Record<string, unknown>
+  if (typeof record.text === 'string' && record.text.trim()) return record.text.trim()
+  return extractTextFromContentParts(record.content)
+}
+
 // ========== Store ==========
 
 export const useAiChatStore = defineStore('aiChat', () => {
@@ -218,6 +303,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
   async function sendMessage(content: string): Promise<void> {
     const provider = modelsDevStore.selectedProviderId || 'openai'
     const model = modelsDevStore.selectedModelId || 'gpt-4o-mini'
+    const runStartedAt = Date.now()
+    const stepLimit = 8
 
     // Create session if needed
     if (!currentSession.value) {
@@ -235,6 +322,14 @@ export const useAiChatStore = defineStore('aiChat', () => {
         reasoning: '',
         trace: [],
         toolCalls: [],
+        run: {
+          provider,
+          model,
+          startedAt: runStartedAt,
+          stepLimit,
+          enabledTools: [],
+          toolCount: 0,
+        },
       },
     }
 
@@ -245,14 +340,46 @@ export const useAiChatStore = defineStore('aiChat', () => {
     streamingContent.value = ''
     error.value = null
     agentStore.reset()
-    agentStore.tracePanelOpen = true
     agentStore.setStatus('planning')
+    let planTrace: AgentTraceDetail | null = null
+    let reasoningTrace: AgentTraceDetail | null = null
+    let answerTrace: AgentTraceDetail | null = null
+    let stepCounter = 0
+    let currentStreamStepIndex = 1
+    let lastReasoningTraceUpdateAt = 0
+    const toolDecisionTraces = new Map<string, AgentTraceDetail>()
+    const toolExecutionTraces = new Map<string, AgentTraceDetail[]>()
 
     const pushTrace = (entry: AgentTraceDetail) => {
+      if (
+        entry.stepIndex === undefined &&
+        entry.type !== 'session' &&
+        entry.type !== 'finish' &&
+        entry.type !== 'error'
+      ) {
+        entry.stepIndex = currentStreamStepIndex
+      }
       assistantMessage.metadata?.trace?.push(entry)
       if (entry.type === 'tool') {
         assistantMessage.metadata?.toolCalls?.push(entry)
       }
+      return entry
+    }
+
+    const updateTrace = (entry: AgentTraceDetail, patch: Partial<AgentTraceDetail>) => {
+      Object.assign(entry, patch)
+    }
+
+    const completeTrace = (entry: AgentTraceDetail, output?: unknown) => {
+      entry.status = 'done'
+      entry.output = output
+      entry.durationMs = Date.now() - entry.timestamp
+    }
+
+    const failTrace = (entry: AgentTraceDetail, errorMessage: string) => {
+      entry.status = 'error'
+      entry.output = errorMessage
+      entry.durationMs = Date.now() - entry.timestamp
     }
 
     try {
@@ -277,6 +404,27 @@ export const useAiChatStore = defineStore('aiChat', () => {
       })
 
       const enabledSkills = skillRegistry.listAutoCallable()
+      const enabledToolNames = enabledSkills.map(skill => skill.name)
+      if (assistantMessage.metadata?.run) {
+        assistantMessage.metadata.run.enabledTools = enabledToolNames
+      }
+
+      pushTrace({
+        id: nextTraceId('session'),
+        type: 'session',
+        status: 'done',
+        title: 'Run initialized',
+        content: `Provider ${provider} / Model ${model} / Step budget ${stepLimit}`,
+        output: {
+          provider,
+          model,
+          enabledTools: enabledToolNames,
+          stepLimit,
+        },
+        timestamp: Date.now(),
+        durationMs: 0,
+      })
+
       const tools = Object.fromEntries(
         enabledSkills.map(skill => [
           skill.id,
@@ -285,16 +433,25 @@ export const useAiChatStore = defineStore('aiChat', () => {
             inputSchema: jsonSchema(skill.parameters as any),
             execute: async args => {
               const startedAt = Date.now()
-              const traceEntry: AgentTraceDetail = {
+              const relatedDecisionTrace = [...toolDecisionTraces.values()]
+                .reverse()
+                .find(trace => trace.toolName === skill.name && trace.status === 'running')
+              const traceEntry = pushTrace({
                 id: `${skill.id}-${startedAt}`,
                 type: 'tool',
                 status: 'running',
-                title: skill.name,
-                content: skill.description,
+                title: `Executing ${skill.name}`,
+                content: `Executing ${skill.name}. ${skill.description}`,
                 input: args,
                 timestamp: startedAt,
+                toolName: skill.name,
+                toolCallId: relatedDecisionTrace?.toolCallId,
+              })
+              if (relatedDecisionTrace?.toolCallId) {
+                const traces = toolExecutionTraces.get(relatedDecisionTrace.toolCallId) || []
+                traces.push(traceEntry)
+                toolExecutionTraces.set(relatedDecisionTrace.toolCallId, traces)
               }
-              pushTrace(traceEntry)
               const step = agentStore.startStep(
                 'tool',
                 `Calling ${skill.name}`,
@@ -303,17 +460,16 @@ export const useAiChatStore = defineStore('aiChat', () => {
 
               try {
                 agentStore.setStatus('executing')
+                if (assistantMessage.metadata?.run) {
+                  assistantMessage.metadata.run.toolCount += 1
+                }
                 const output = await skill.execute(args, { sessionId: session.id })
-                traceEntry.status = 'done'
-                traceEntry.output = output
-                traceEntry.durationMs = Date.now() - startedAt
+                completeTrace(traceEntry, output)
                 agentStore.completeStep(step, summarizeValue(output, 1000))
                 return output
               } catch (e) {
                 const message = e instanceof Error ? e.message : String(e)
-                traceEntry.status = 'error'
-                traceEntry.output = message
-                traceEntry.durationMs = Date.now() - startedAt
+                failTrace(traceEntry, message)
                 agentStore.failStep(step, message)
                 throw e
               }
@@ -322,15 +478,30 @@ export const useAiChatStore = defineStore('aiChat', () => {
         ])
       )
 
-      const planTrace: AgentTraceDetail = {
-        id: `think-${Date.now()}`,
+      planTrace = pushTrace({
+        id: nextTraceId('think'),
         type: 'think',
         status: 'running',
         title: 'Planning',
         content: '理解问题、选择是否需要工具，并准备验证路径。',
         timestamp: Date.now(),
-      }
-      pushTrace(planTrace)
+      })
+      reasoningTrace = pushTrace({
+        id: nextTraceId('reasoning'),
+        type: 'reasoning',
+        status: 'running',
+        title: 'Reasoning summary stream',
+        content: 'Waiting for model reasoning...',
+        timestamp: Date.now(),
+      })
+      answerTrace = pushTrace({
+        id: nextTraceId('answer'),
+        type: 'answer',
+        status: 'running',
+        title: 'Drafting response',
+        content: 'Streaming assistant response...',
+        timestamp: Date.now(),
+      })
       const planStep = agentStore.startStep('think', 'Planning response', content)
 
       // Convert messages to AI SDK format
@@ -342,62 +513,218 @@ export const useAiChatStore = defineStore('aiChat', () => {
           content: m.content,
         }))
 
+      // Collect model output across providers. Some providers emit the final answer
+      // only on step finish instead of text-delta chunks.
+      let fullContent = ''
+      let reasoningSummary = ''
+      let planCompleted = false
+      let lastStepText = ''
+      let finishText = ''
+
       // Use streamText for streaming
       const result = streamText({
         model: providerClient.languageModel(model),
-        system: createAgentSystemPrompt(enabledSkills.map(skill => skill.name)),
+        system: createAgentSystemPrompt(enabledToolNames),
         messages: aiMessages,
         tools,
-        stopWhen: stepCountIs(8),
+        stopWhen: [stepCountIs(stepLimit), isLoopFinished()],
         onStepFinish: step => {
+          stepCounter += 1
+          const stepKind =
+            step.toolResults.length > 0
+              ? 'tool-result'
+              : step.stepNumber === 0
+                ? 'initial'
+                : 'continue'
+          const stepText = extractStepText(step)
           assistantMessage.metadata!.finishReason = step.finishReason
           assistantMessage.metadata!.usage = step.usage
+          if (assistantMessage.metadata?.run) {
+            assistantMessage.metadata.run.finishReason = step.finishReason
+            assistantMessage.metadata.run.usage = step.usage
+          }
+          if (stepText) {
+            lastStepText = stepText
+            assistantMessage.content = stepText
+            if (!fullContent.trim()) {
+              streamingContent.value = stepText
+            }
+          }
+          pushTrace({
+            id: nextTraceId('step'),
+            type: 'step',
+            status: 'done',
+            title: `LLM step ${stepCounter}`,
+            content: `Step ${stepCounter} finished as ${stepKind} with ${step.finishReason}.`,
+            output: {
+              type: stepKind,
+              finishReason: step.finishReason,
+              usage: step.usage,
+              usageSummary: summarizeUsage(step.usage),
+              toolCalls: step.toolCalls,
+              toolResults: step.toolResults,
+              text: step.text,
+            },
+            timestamp: Date.now(),
+            stepIndex: currentStreamStepIndex,
+          })
+          currentStreamStepIndex = step.stepNumber + 2
+        },
+        onFinish: event => {
+          finishText = extractStepText(event)
+          assistantMessage.metadata!.finishReason = event.finishReason
+          assistantMessage.metadata!.usage = event.totalUsage
+          if (assistantMessage.metadata?.run) {
+            assistantMessage.metadata.run.finishReason = event.finishReason
+            assistantMessage.metadata.run.usage = event.totalUsage
+          }
         },
       })
 
       // Collect streaming response
-      let fullContent = ''
-      let reasoningSummary = ''
-      let planCompleted = false
       for await (const chunk of result.fullStream) {
         if (chunk.type === 'text-delta') {
           fullContent += (chunk as any).delta ?? (chunk as any).text ?? ''
           streamingContent.value = fullContent
           assistantMessage.content = fullContent
+          updateTrace(answerTrace, {
+            content: fullContent
+              ? `Streaming ${fullContent.length} chars of assistant output.`
+              : 'Streaming assistant response...',
+          })
         } else if (chunk.type === 'reasoning-delta') {
           reasoningSummary += (chunk as any).delta ?? (chunk as any).text ?? ''
           assistantMessage.metadata!.reasoning = reasoningSummary
+          const now = Date.now()
+          if (
+            now - lastReasoningTraceUpdateAt > 250 ||
+            reasoningSummary.length < 240 ||
+            reasoningSummary.length % 320 < 40
+          ) {
+            updateTrace(reasoningTrace, {
+              content: summarizeValue(reasoningSummary, 1400),
+            })
+            lastReasoningTraceUpdateAt = now
+          }
           if (!planCompleted && reasoningSummary.trim()) {
             agentStore.completeStep(planStep, summarizeValue(reasoningSummary, 800))
-            planTrace.status = 'done'
-            planTrace.output = summarizeValue(reasoningSummary, 800)
+            completeTrace(planTrace, summarizeValue(reasoningSummary, 800))
             planCompleted = true
           }
         } else if (chunk.type === 'tool-call') {
+          const toolName = (chunk as any).toolName || (chunk as any).toolCall?.toolName || 'unknown'
+          const toolCallId = (chunk as any).toolCallId || (chunk as any).toolCall?.toolCallId
+          const input =
+            (chunk as any).input ??
+            (chunk as any).args ??
+            (chunk as any).toolCall?.args ??
+            (chunk as any).toolCall?.input
+          const decisionTrace = pushTrace({
+            id: nextTraceId('tool-call'),
+            type: 'tool',
+            status: 'running',
+            title: `Tool requested: ${toolName}`,
+            content: `Model selected ${toolName} for verification.`,
+            input,
+            timestamp: Date.now(),
+            toolName,
+            toolCallId,
+          })
+          if (toolCallId) {
+            toolDecisionTraces.set(toolCallId, decisionTrace)
+          }
           if (!planCompleted) {
             agentStore.completeStep(planStep, 'Selected a tool for verification.')
-            planTrace.status = 'done'
+            completeTrace(planTrace, 'Selected a tool for verification.')
             planCompleted = true
           }
+        } else if (chunk.type === 'tool-result') {
+          const toolName =
+            (chunk as any).toolName || (chunk as any).toolResult?.toolName || 'unknown'
+          const toolCallId = (chunk as any).toolCallId || (chunk as any).toolResult?.toolCallId
+          const output =
+            (chunk as any).output ??
+            (chunk as any).result ??
+            (chunk as any).toolResult?.output ??
+            (chunk as any).toolResult?.result
+          const decisionTrace = toolCallId ? toolDecisionTraces.get(toolCallId) : undefined
+          if (decisionTrace?.status === 'running') {
+            completeTrace(decisionTrace, output)
+          }
+          const executionTrace = toolCallId
+            ? (toolExecutionTraces.get(toolCallId) || []).find(trace => trace.status === 'running')
+            : undefined
+          if (executionTrace?.status === 'running') {
+            completeTrace(executionTrace, output)
+          }
+          pushTrace({
+            id: nextTraceId('tool-result'),
+            type: 'tool',
+            status: 'done',
+            title: `Tool result received: ${toolName}`,
+            content: `Model received ${toolName} output and can continue reasoning.`,
+            output,
+            timestamp: Date.now(),
+            toolName,
+            toolCallId,
+          })
         } else if (chunk.type === 'finish') {
           assistantMessage.metadata!.finishReason = chunk.finishReason
+          if (assistantMessage.metadata?.run) {
+            assistantMessage.metadata.run.finishReason = chunk.finishReason
+          }
         }
       }
 
+      lastStepText = assistantMessage.content.trim()
+
       if (!planCompleted) {
         agentStore.completeStep(planStep, 'Answered directly.')
-        planTrace.status = 'done'
+        completeTrace(planTrace, 'Answered directly.')
       }
+      completeTrace(
+        reasoningTrace,
+        summarizeValue(reasoningSummary || 'No reasoning summary emitted.', 1400)
+      )
+      if (!fullContent.trim() && lastStepText) {
+        fullContent = lastStepText
+      } else if (!fullContent.trim() && finishText.trim()) {
+        fullContent = finishText.trim()
+      } else if (!fullContent.trim()) {
+        const resultText = await Promise.resolve(result.text).catch(() => '')
+        const resultContent = await Promise.resolve(result.content).catch(() => [])
+        fullContent = resultText.trim() || extractTextFromContentParts(resultContent)
+      }
+      if (!fullContent.trim()) {
+        fullContent =
+          '模型本轮没有返回可展示的文本内容。请在 Trace 中查看 finish reason、usage 和原始事件。'
+      }
+      completeTrace(
+        answerTrace,
+        summarizeValue(fullContent || 'No final answer text emitted.', 1800)
+      )
 
       assistantMessage.content = fullContent
       assistantMessage.isStreaming = false
+      const runCompletedAt = Date.now()
+      if (assistantMessage.metadata?.run) {
+        assistantMessage.metadata.run.completedAt = runCompletedAt
+        assistantMessage.metadata.run.totalDurationMs = runCompletedAt - runStartedAt
+      }
       pushTrace({
-        id: `finish-${Date.now()}`,
+        id: nextTraceId('finish'),
         type: 'finish',
         status: 'done',
         title: 'Completed',
         content: '已生成回答并完成本轮对话。',
+        output: {
+          finishReason: assistantMessage.metadata?.finishReason || 'unknown',
+          usage: assistantMessage.metadata?.usage,
+          totalDurationMs: assistantMessage.metadata?.run?.totalDurationMs,
+          toolCount: assistantMessage.metadata?.run?.toolCount || 0,
+        },
         timestamp: Date.now(),
+        durationMs: runCompletedAt - runStartedAt,
       })
       agentStore.setStatus('done')
 
@@ -415,13 +742,28 @@ export const useAiChatStore = defineStore('aiChat', () => {
       assistantMessage.isStreaming = false
       assistantMessage.error = e instanceof Error ? e.message : String(e)
       assistantMessage.content = `发送消息失败：${assistantMessage.error}`
+      if (planTrace?.status === 'running') {
+        failTrace(planTrace, assistantMessage.error)
+      }
+      if (reasoningTrace?.status === 'running') {
+        failTrace(reasoningTrace, assistantMessage.error)
+      }
+      if (answerTrace?.status === 'running') {
+        failTrace(answerTrace, assistantMessage.error)
+      }
+      if (assistantMessage.metadata?.run) {
+        assistantMessage.metadata.run.completedAt = Date.now()
+        assistantMessage.metadata.run.totalDurationMs =
+          assistantMessage.metadata.run.completedAt - runStartedAt
+      }
       pushTrace({
-        id: `error-${Date.now()}`,
+        id: nextTraceId('error'),
         type: 'error',
         status: 'error',
         title: 'Error',
         content: assistantMessage.error,
         timestamp: Date.now(),
+        durationMs: Date.now() - runStartedAt,
       })
       agentStore.setStatus('error')
       throw e

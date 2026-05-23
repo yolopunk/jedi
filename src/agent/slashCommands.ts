@@ -49,6 +49,13 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     template: 'Refactor the following code: {args}',
     args: true,
   },
+  {
+    name: '/goal',
+    description: 'Set task goal',
+    icon: '🎯',
+    template: 'Set the goal for this task and keep the work aligned to it: {args}',
+    args: true,
+  },
   { name: '/agent', description: 'Spawn worker agent', icon: '🤖', template: '{args}', args: true },
   {
     name: '/stop',

@@ -155,23 +155,37 @@
                         <span>AGENT RUN</span>
                         <button class="activity-toggle" @click="agentStore.tracePanelOpen = true">TRACE</button>
                       </div>
-                      <div
-                        v-for="trace in message.metadata.trace"
-                        :key="trace.id"
-                        class="activity-item"
-                        :class="[trace.type, trace.status]"
-                      >
-                        <div class="activity-row">
-                          <span class="activity-icon">{{ getTraceIcon(trace.type, trace.status) }}</span>
-                          <span class="activity-title">{{ trace.title }}</span>
-                          <span class="activity-status">{{ trace.status.toUpperCase() }}</span>
+                      <div v-if="message.metadata?.run" class="activity-summary">
+                        <div class="activity-chip">
+                          <span class="chip-label">PROVIDER</span>
+                          <span class="chip-value">{{ message.metadata.run.provider }}</span>
                         </div>
-                        <div v-if="trace.content" class="activity-content">{{ trace.content }}</div>
-                        <details v-if="trace.input || trace.output" class="activity-details">
-                          <summary>DETAILS</summary>
-                          <pre v-if="trace.input">INPUT {{ formatTraceValue(trace.input) }}</pre>
-                          <pre v-if="trace.output">OUTPUT {{ formatTraceValue(trace.output) }}</pre>
-                        </details>
+                        <div class="activity-chip">
+                          <span class="chip-label">MODEL</span>
+                          <span class="chip-value">{{ message.metadata.run.model }}</span>
+                        </div>
+                        <div class="activity-chip">
+                          <span class="chip-label">TOOLS</span>
+                          <span class="chip-value">{{ message.metadata.run.toolCount }}</span>
+                        </div>
+                        <div class="activity-chip">
+                          <span class="chip-label">DURATION</span>
+                          <span class="chip-value">{{ formatDuration(message.metadata.run.totalDurationMs) }}</span>
+                        </div>
+                        <div class="activity-chip">
+                          <span class="chip-label">FINISH</span>
+                          <span class="chip-value">{{ message.metadata.run.finishReason || 'pending' }}</span>
+                        </div>
+                      </div>
+                      <div
+                        v-for="highlight in getRunHighlights(message.metadata.trace)"
+                        :key="highlight.id"
+                        class="activity-highlight"
+                        :class="highlight.status"
+                      >
+                        <span class="highlight-icon">{{ getHighlightIcon(highlight.kind, highlight.status) }}</span>
+                        <span class="highlight-label">{{ highlight.label }}</span>
+                        <span class="highlight-value">{{ highlight.value }}</span>
                       </div>
                     </div>
                     <div class="message-actions">
@@ -338,7 +352,7 @@ import AttachmentMenu from '@/components/AttachmentMenu.vue'
 import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
 import CommandPalette from '@/components/CommandPalette.vue'
 import { useAgentStore } from '@/stores/agent'
-import { useAiChatStore } from '@/stores/aiChat'
+import { type AgentTraceDetail, useAiChatStore } from '@/stores/aiChat'
 import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
 import { useSkillsStore } from '@/stores/skills'
@@ -437,16 +451,76 @@ function renderMessage(content: string) {
   return renderSafe(sharedMd, content)
 }
 
-function getTraceIcon(type: string, status: string): string {
+function formatDuration(ms?: number): string {
+  if (ms === undefined) return '--'
+  if (ms < 1000) return `${ms}ms`
+  if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`
+  return `${(ms / 60000).toFixed(2)}m`
+}
+
+type RunHighlight = {
+  id: string
+  kind: 'plan' | 'tool' | 'finish' | 'error'
+  label: string
+  value: string
+  status: AgentTraceDetail['status']
+}
+
+function getRunHighlights(trace: AgentTraceDetail[] = []): RunHighlight[] {
+  const highlights: RunHighlight[] = []
+
+  const planTrace = trace.find(item => item.type === 'think')
+  if (planTrace?.output || planTrace?.content) {
+    highlights.push({
+      id: `${planTrace.id}-plan`,
+      kind: 'plan',
+      label: 'PLAN',
+      value: summarizeText(String(planTrace.output || planTrace.content || ''), 120),
+      status: planTrace.status,
+    })
+  }
+
+  const toolNames = [
+    ...new Set(
+      trace.filter(item => item.type === 'tool' && item.toolName).map(item => item.toolName!)
+    ),
+  ]
+  if (toolNames.length > 0) {
+    highlights.push({
+      id: 'tools-highlight',
+      kind: 'tool',
+      label: toolNames.length > 1 ? 'TOOLS' : 'TOOL',
+      value: toolNames.join(', '),
+      status: 'done',
+    })
+  }
+
+  const finishTrace = [...trace]
+    .reverse()
+    .find(item => item.type === 'finish' || item.type === 'error')
+  if (finishTrace) {
+    highlights.push({
+      id: `${finishTrace.id}-finish`,
+      kind: finishTrace.type === 'error' ? 'error' : 'finish',
+      label: finishTrace.type === 'error' ? 'ERROR' : 'RESULT',
+      value: summarizeText(String(finishTrace.content || finishTrace.output || ''), 120),
+      status: finishTrace.status,
+    })
+  }
+
+  return highlights
+}
+
+function getHighlightIcon(kind: RunHighlight['kind'], status: AgentTraceDetail['status']): string {
   if (status === 'error') return '!'
-  if (type === 'tool') return '$'
-  if (type === 'finish') return '+'
+  if (kind === 'tool') return '$'
+  if (kind === 'finish') return '+'
   return '~'
 }
 
-function formatTraceValue(value: unknown): string {
-  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2)
-  return text.length > 1200 ? `${text.slice(0, 1200)}\n...` : text
+function summarizeText(text: string, maxLength = 120): string {
+  const normalized = text.replace(/\s+/g, ' ').trim()
+  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized
 }
 
 // Formatting

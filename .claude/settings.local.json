@@ -121,7 +121,33 @@
       "Bash(podman --version)",
       "Bash(docker pull *)",
       "mcp__MiniMax__web_search",
-      "Bash(docker manifest *)"
+      "Bash(docker manifest *)",
+      "mcp__filesystem__search_files",
+      "Bash(docker info *)",
+      "Bash(docker run *)",
+      "Bash(gh extension *)",
+      "Bash(gh auth *)",
+      "Bash(gh mcp *)",
+      "Bash(npm list *)",
+      "Read(//Users/cynosure/.claude/**)",
+      "mcp__filesystem__read_file",
+      "Bash(python3 *)",
+      "mcp__context7__resolve-library-id",
+      "Bash(git *)",
+      "Bash(cargo fmt *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pnpm biome format --write --no-errors-on-unmatched \"${CLAUDE_TOOL_USE_FILE_PATH}\" 2>/dev/null || true"
+          }
+        ]
+      }
     ]
   }
 }

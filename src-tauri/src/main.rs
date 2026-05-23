@@ -70,9 +70,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   // 初始化审计日志记录器状态
   let audit_logger_state = AuditLoggerState::new().expect("Failed to initialize audit logger");
 
-  // 初始化密钥链管理器状态
+  // 初始化 API Key SQLite 存储管理器状态
   let keyring_manager_state =
-    KeyringManagerState::new().expect("Failed to initialize keyring manager");
+    KeyringManagerState::new().expect("Failed to initialize API key storage manager");
 
   // Phase 2: 初始化会话管理器状态
   use crate::api::ai_chat::sessions::ChatSessionManager;

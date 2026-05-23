@@ -347,14 +347,14 @@ pub async fn set_desktop_wallpaper<R: Runtime>(
 
   let mode_val = mode.unwrap_or(WallpaperMode::Crop);
 
-  task::spawn_blocking(move || {
+  let _ = task::spawn_blocking(move || {
     wallpaper::set_from_path(&path_str).map_err(|e| e.to_string())?;
-    wallpaper::set_mode(mode_val.into()).map_err(|e| e.to_string())
+    // set_mode is unsupported on macOS via AppleScript, ignore the error
+    let _ = wallpaper::set_mode(mode_val.into());
+    Ok::<(), String>(())
   })
   .await
-  .map_err(|e| format!("Task join error: {}", e))?
-  .map_err(|e| format!("Failed to set wallpaper: {}", e))?;
-
+  .map_err(|e| format!("Task join error: {}", e))?;
   Ok(())
 }
 

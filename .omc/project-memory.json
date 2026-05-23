@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1777646984475,
+  "lastScanned": 1779543258663,
   "projectRoot": "/Users/cynosure/workspace/github/jedi",
   "techStack": {
     "languages": [
@@ -80,7 +80,7 @@
       "path": "dist",
       "purpose": "Distribution/build output",
       "fileCount": 6,
-      "lastAccessed": 1777646984209,
+      "lastAccessed": 1779543258452,
       "keyFiles": [
         "1Capture_2026-03-24_18.01.27.png",
         "back.png",
@@ -93,7 +93,7 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 1,
-      "lastAccessed": 1777646984210,
+      "lastAccessed": 1779543258453,
       "keyFiles": [
         "AGENTS.md"
       ]
@@ -101,17 +101,18 @@
     "logs": {
       "path": "logs",
       "purpose": null,
-      "fileCount": 1,
-      "lastAccessed": 1777646984456,
+      "fileCount": 2,
+      "lastAccessed": 1779543258626,
       "keyFiles": [
-        "app.log.2026-03-07"
+        "app.log.2026-03-07",
+        "app.log.2026-05-16"
       ]
     },
     "public": {
       "path": "public",
       "purpose": "Public files",
       "fileCount": 5,
-      "lastAccessed": 1777646984462,
+      "lastAccessed": 1779543258631,
       "keyFiles": [
         "1Capture_2026-03-24_18.01.27.png",
         "back.png",
@@ -123,7 +124,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 2,
-      "lastAccessed": 1777646984463,
+      "lastAccessed": 1779543258631,
       "keyFiles": [
         "free-port.js",
         "release.js"
@@ -132,8 +133,8 @@
     "src": {
       "path": "src",
       "purpose": "Source code",
-      "fileCount": 5,
-      "lastAccessed": 1777646984463,
+      "fileCount": 6,
+      "lastAccessed": 1779543258632,
       "keyFiles": [
         "AGENTS.md",
         "App.vue",
@@ -146,7 +147,7 @@
       "path": "src-tauri",
       "purpose": null,
       "fileCount": 7,
-      "lastAccessed": 1777646984463,
+      "lastAccessed": 1779543258654,
       "keyFiles": [
         "AGENTS.md",
         "Cargo.lock",
@@ -158,19 +159,18 @@
     "dist/assets": {
       "path": "dist/assets",
       "purpose": "Static assets",
-      "fileCount": 3,
-      "lastAccessed": 1777646984465,
+      "fileCount": 2,
+      "lastAccessed": 1779543258656,
       "keyFiles": [
-        "app-C20_28Y0.js",
-        "index-BXLRRNtN.css",
-        "index-BtSBpn7m.js"
+        "index-BOvJoxz4.css",
+        "index-D7Vs3Ui5.js"
       ]
     },
     "src/api": {
       "path": "src/api",
       "purpose": "API routes",
       "fileCount": 8,
-      "lastAccessed": 1777646984471,
+      "lastAccessed": 1779543258658,
       "keyFiles": [
         "ai-chat.ts",
         "app.ts",
@@ -181,7 +181,7 @@
       "path": "src/assets",
       "purpose": "Static assets",
       "fileCount": 3,
-      "lastAccessed": 1777646984472,
+      "lastAccessed": 1779543258659,
       "keyFiles": [
         "fonts.css",
         "style.css",
@@ -191,8 +191,8 @@
     "src/components": {
       "path": "src/components",
       "purpose": "UI components",
-      "fileCount": 3,
-      "lastAccessed": 1777646984473,
+      "fileCount": 4,
+      "lastAccessed": 1779543258662,
       "keyFiles": [
         "AGENTS.md",
         "AttachmentMenu.vue",
@@ -200,6 +200,193 @@
       ]
     }
   },
-  "hotPaths": [],
+  "hotPaths": [
+    {
+      "path": "src-tauri/src/api/wallpapers.rs",
+      "accessCount": 11,
+      "lastAccessed": 1779545269304,
+      "type": "file"
+    },
+    {
+      "path": "src/components/hosts/tables/HostsTable.vue",
+      "accessCount": 11,
+      "lastAccessed": 1779545643819,
+      "type": "file"
+    },
+    {
+      "path": "src/views/wallpapers/WallpaperManager.vue",
+      "accessCount": 8,
+      "lastAccessed": 1779546377766,
+      "type": "file"
+    },
+    {
+      "path": "src/components/podcast/PlayerBar.vue",
+      "accessCount": 8,
+      "lastAccessed": 1779548312420,
+      "type": "file"
+    },
+    {
+      "path": "src/components/common/SystemInfoBar.vue",
+      "accessCount": 5,
+      "lastAccessed": 1779547770422,
+      "type": "file"
+    },
+    {
+      "path": ".claude/settings.local.json",
+      "accessCount": 4,
+      "lastAccessed": 1779204409326,
+      "type": "file"
+    },
+    {
+      "path": "src/App.vue",
+      "accessCount": 4,
+      "lastAccessed": 1779546291820,
+      "type": "file"
+    },
+    {
+      "path": "src/views/podcast/podcast.css",
+      "accessCount": 4,
+      "lastAccessed": 1779547037174,
+      "type": "file"
+    },
+    {
+      "path": "src-tauri/src/api/ai_chat/security.rs",
+      "accessCount": 4,
+      "lastAccessed": 1779548630595,
+      "type": "file"
+    },
+    {
+      "path": "src/views/podcast/PodcastDetail.vue",
+      "accessCount": 3,
+      "lastAccessed": 1779546997792,
+      "type": "file"
+    },
+    {
+      "path": "src/components/podcast/TimeWheel.vue",
+      "accessCount": 3,
+      "lastAccessed": 1779548284600,
+      "type": "file"
+    },
+    {
+      "path": "src-tauri/src/main.rs",
+      "accessCount": 2,
+      "lastAccessed": 1779543330496,
+      "type": "file"
+    },
+    {
+      "path": "src/router/index.ts",
+      "accessCount": 2,
+      "lastAccessed": 1779545422903,
+      "type": "file"
+    },
+    {
+      "path": "src/views/hosts/HostsManager.vue",
+      "accessCount": 2,
+      "lastAccessed": 1779545618292,
+      "type": "file"
+    },
+    {
+      "path": "src/views/podcast/PodcastManager.vue",
+      "accessCount": 2,
+      "lastAccessed": 1779545622590,
+      "type": "file"
+    },
+    {
+      "path": "src/components/hosts/common/GlobalSwitchFab.vue",
+      "accessCount": 2,
+      "lastAccessed": 1779546330449,
+      "type": "file"
+    },
+    {
+      "path": "src/composables/usePodcastManager.ts",
+      "accessCount": 2,
+      "lastAccessed": 1779547517251,
+      "type": "file"
+    },
+    {
+      "path": "src/api/wallpaper.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779543329436,
+      "type": "file"
+    },
+    {
+      "path": "src/composables/useWallpaper.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779543329678,
+      "type": "file"
+    },
+    {
+      "path": "src/skills/wallpaper.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779543331200,
+      "type": "file"
+    },
+    {
+      "path": "src/components/dialogs/settings/WallpaperSettingsTab.vue",
+      "accessCount": 1,
+      "lastAccessed": 1779543331226,
+      "type": "file"
+    },
+    {
+      "path": "src/api/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779543334843,
+      "type": "file"
+    },
+    {
+      "path": "src-tauri/src/api/mod.rs",
+      "accessCount": 1,
+      "lastAccessed": 1779543335941,
+      "type": "file"
+    },
+    {
+      "path": "src-tauri/src/config/app.rs",
+      "accessCount": 1,
+      "lastAccessed": 1779543352180,
+      "type": "file"
+    },
+    {
+      "path": "src/main.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779545451355,
+      "type": "file"
+    },
+    {
+      "path": "vite.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779545451933,
+      "type": "file"
+    },
+    {
+      "path": "src/components/hosts/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779545481394,
+      "type": "file"
+    },
+    {
+      "path": "src/views/podcast/PodcastLibrary.vue",
+      "accessCount": 1,
+      "lastAccessed": 1779545547140,
+      "type": "file"
+    },
+    {
+      "path": "src/composables/useAudioPlayer.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779546122822,
+      "type": "file"
+    },
+    {
+      "path": "src/api/podcast.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779547495747,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/timestampParser.ts",
+      "accessCount": 1,
+      "lastAccessed": 1779547584255,
+      "type": "file"
+    }
+  ],
   "userDirectives": []
 }

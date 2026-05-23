@@ -1,11 +1,13 @@
-// API Key 密钥链存储
-// Phase 1: API Key 安全存储实现
+// API Key SQLite 存储
+// 保留 KeyringManager 类型名以兼容现有调用链，底层已改为本地 SQLite。
 
-use keyring::Entry;
+use rusqlite::{params, Connection, OptionalExtension};
 use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt;
+use std::fs;
+use std::path::PathBuf;
 use std::sync::Mutex;
 
 use super::audit_log::{AuditLogger, OperationResult, SecurityEvent, SecurityEventType};
@@ -108,18 +110,18 @@ impl Drop for ApiKey {
   }
 }
 
-/// 密钥链管理器
+/// API Key SQLite 管理器
 pub struct KeyringManager {
-  service_name: String,
+  db_path: PathBuf,
   audit_logger: AuditLogger,
-  /// 内存缓存：避免频繁访问 keychain
+  /// 内存缓存：避免频繁访问 SQLite
   cache: Mutex<HashMap<String, Option<ApiKey>>>,
 }
 
 impl Clone for KeyringManager {
   fn clone(&self) -> Self {
     Self {
-      service_name: self.service_name.clone(),
+      db_path: self.db_path.clone(),
       audit_logger: self.audit_logger.clone(),
       cache: Mutex::new(HashMap::new()),
     }
@@ -127,24 +129,95 @@ impl Clone for KeyringManager {
 }
 
 impl KeyringManager {
-  /// 创建新的密钥链管理器
+  /// 创建新的 API Key SQLite 管理器
   pub fn new() -> Result<Self, String> {
-    let audit_logger = AuditLogger::new()?;
-    Ok(Self {
-      service_name: "jedi-chat".to_string(),
-      audit_logger,
-      cache: Mutex::new(HashMap::new()),
-    })
+    let db_path = Self::default_db_path()?;
+    Self::new_with_path(db_path)
   }
 
-  /// 获取密钥环条目名称
-  fn get_entry_name(&self, provider: &ModelProvider) -> String {
-    format!("api-key-{}", provider)
+  /// 使用指定路径创建管理器，主要用于测试
+  pub fn new_with_path(db_path: impl Into<PathBuf>) -> Result<Self, String> {
+    let db_path = db_path.into();
+    if let Some(parent) = db_path.parent() {
+      fs::create_dir_all(parent).map_err(|e| format!("Failed to create API key db dir: {}", e))?;
+    }
+
+    let audit_logger = AuditLogger::new()?;
+    let manager = Self {
+      db_path,
+      audit_logger,
+      cache: Mutex::new(HashMap::new()),
+    };
+    manager.init_db()?;
+    Ok(manager)
+  }
+
+  fn default_db_path() -> Result<PathBuf, String> {
+    let base_dir =
+      dirs::data_dir().ok_or_else(|| "Failed to resolve user data directory".to_string())?;
+    Ok(base_dir.join("Jedi").join("ai_chat.sqlite3"))
+  }
+
+  fn connection(&self) -> Result<Connection, String> {
+    Connection::open(&self.db_path).map_err(|e| format!("Failed to open API key database: {}", e))
+  }
+
+  fn init_db(&self) -> Result<(), String> {
+    let conn = self.connection()?;
+    conn
+      .execute_batch(
+        r#"
+        PRAGMA journal_mode = WAL;
+        PRAGMA foreign_keys = ON;
+        CREATE TABLE IF NOT EXISTS api_keys (
+          provider TEXT PRIMARY KEY NOT NULL,
+          api_key TEXT NOT NULL,
+          endpoint TEXT,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        "#,
+      )
+      .map_err(|e| format!("Failed to initialize API key database: {}", e))?;
+    self.harden_db_permissions();
+    Ok(())
+  }
+
+  #[cfg(unix)]
+  fn harden_db_permissions(&self) {
+    use std::os::unix::fs::PermissionsExt;
+    if let Ok(metadata) = fs::metadata(&self.db_path) {
+      let mut permissions = metadata.permissions();
+      permissions.set_mode(0o600);
+      let _ = fs::set_permissions(&self.db_path, permissions);
+    }
+  }
+
+  #[cfg(not(unix))]
+  fn harden_db_permissions(&self) {}
+
+  fn provider_key(provider: &ModelProvider) -> String {
+    provider.to_string()
+  }
+
+  fn provider_from_key(value: &str) -> ModelProvider {
+    match value {
+      "openai" => ModelProvider::OpenAi,
+      "anthropic" => ModelProvider::Anthropic,
+      "google" => ModelProvider::Google,
+      "ollama" => ModelProvider::Ollama,
+      "cohere" => ModelProvider::Cohere,
+      "deepseek" => ModelProvider::DeepSeek,
+      "moonshot" => ModelProvider::Moonshot,
+      "zhipuai" => ModelProvider::ZhipuAI,
+      "minimax" => ModelProvider::MiniMax,
+      custom => ModelProvider::Custom(custom.strip_prefix("custom:").unwrap_or(custom).to_string()),
+    }
   }
 
   /// 存储 API Key
   pub fn store_api_key(&self, api_key: ApiKey) -> Result<(), String> {
-    let entry_name = self.get_entry_name(&api_key.provider);
+    let provider_key = Self::provider_key(&api_key.provider);
 
     // 记录审计事件
     let mut event = SecurityEvent::new(SecurityEventType::ConfigChange, OperationResult::Success)
@@ -152,23 +225,21 @@ impl KeyringManager {
       .with_action("store");
 
     let result = (|| {
-      let entry = Entry::new(&self.service_name, &entry_name)
-        .map_err(|e| format!("Failed to create keyring entry: {}", e))?;
-
-      // 存储 API Key
-      entry
-        .set_password(api_key.key.expose_secret())
-        .map_err(|e| format!("Failed to store API key: {}", e))?;
-
-      // 如果有端点，也存储它
-      if let Some(ref endpoint) = api_key.endpoint {
-        let endpoint_entry_name = format!("{}-endpoint", entry_name);
-        let endpoint_entry = Entry::new(&self.service_name, &endpoint_entry_name)
-          .map_err(|e| format!("Failed to create endpoint entry: {}", e))?;
-        endpoint_entry
-          .set_password(endpoint)
-          .map_err(|e| format!("Failed to store endpoint: {}", e))?;
-      }
+      let conn = self.connection()?;
+      let endpoint = api_key.endpoint.as_deref();
+      conn
+        .execute(
+          r#"
+          INSERT INTO api_keys (provider, api_key, endpoint, created_at, updated_at)
+          VALUES (?1, ?2, ?3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          ON CONFLICT(provider) DO UPDATE SET
+            api_key = excluded.api_key,
+            endpoint = excluded.endpoint,
+            updated_at = CURRENT_TIMESTAMP
+          "#,
+          params![provider_key.as_str(), api_key.key.expose_secret(), endpoint],
+        )
+        .map_err(|e| format!("Failed to store API key in SQLite: {}", e))?;
 
       Ok(())
     })();
@@ -192,7 +263,7 @@ impl KeyringManager {
 
   /// 读取 API Key（带缓存）
   pub fn get_api_key(&self, provider: ModelProvider) -> Result<Option<ApiKey>, String> {
-    let cache_key = provider.to_string();
+    let cache_key = Self::provider_key(&provider);
 
     // 先查缓存
     {
@@ -205,40 +276,27 @@ impl KeyringManager {
       }
     }
 
-    let entry_name = self.get_entry_name(&provider);
-
     // 记录审计事件
     let mut event = SecurityEvent::new(SecurityEventType::DataAccess, OperationResult::Success)
       .with_resource(format!("api-key/{}", provider))
       .with_action("read");
 
     let result = (|| {
-      let entry = match Entry::new(&self.service_name, &entry_name) {
-        Ok(e) => e,
-        Err(keyring::Error::NoEntry) => return Ok(None),
-        Err(e) => return Err(format!("Failed to access keyring: {}", e)),
-      };
-
-      let key = match entry.get_password() {
-        Ok(k) => k,
-        Err(keyring::Error::NoEntry) => return Ok(None),
-        Err(e) => return Err(format!("Failed to read API key: {}", e)),
-      };
-
-      // 尝试读取端点
-      let endpoint = {
-        let endpoint_entry_name = format!("{}-endpoint", entry_name);
-        match Entry::new(&self.service_name, &endpoint_entry_name) {
-          Ok(endpoint_entry) => match endpoint_entry.get_password() {
-            Ok(e) => Some(e),
-            Err(keyring::Error::NoEntry) => None,
-            Err(_) => None,
+      let conn = self.connection()?;
+      let row = conn
+        .query_row(
+          "SELECT api_key, endpoint FROM api_keys WHERE provider = ?1",
+          params![cache_key.as_str()],
+          |row| {
+            let key: String = row.get(0)?;
+            let endpoint: Option<String> = row.get(1)?;
+            Ok((key, endpoint))
           },
-          Err(_) => None,
-        }
-      };
+        )
+        .optional()
+        .map_err(|e| format!("Failed to read API key from SQLite: {}", e))?;
 
-      Ok(Some(ApiKey::new(provider, key, endpoint)))
+      Ok(row.map(|(key, endpoint)| ApiKey::new(provider, key, endpoint)))
     })();
 
     // 写入缓存
@@ -260,7 +318,7 @@ impl KeyringManager {
 
   /// 删除 API Key
   pub fn delete_api_key(&self, provider: ModelProvider) -> Result<(), String> {
-    let entry_name = self.get_entry_name(&provider);
+    let provider_key = Self::provider_key(&provider);
 
     // 记录审计事件
     let mut event = SecurityEvent::new(SecurityEventType::ConfigChange, OperationResult::Success)
@@ -268,22 +326,13 @@ impl KeyringManager {
       .with_action("delete");
 
     let result = (|| {
-      // 删除主密钥
-      let entry = match Entry::new(&self.service_name, &entry_name) {
-        Ok(e) => e,
-        Err(keyring::Error::NoEntry) => return Ok(()), // 已经不存在
-        Err(e) => return Err(format!("Failed to access keyring: {}", e)),
-      };
-
-      entry
-        .delete_password()
-        .map_err(|e| format!("Failed to delete API key: {}", e))?;
-
-      // 删除端点（如果存在）
-      let endpoint_entry_name = format!("{}-endpoint", entry_name);
-      if let Ok(endpoint_entry) = Entry::new(&self.service_name, &endpoint_entry_name) {
-        let _ = endpoint_entry.delete_password(); // 忽略删除端点的错误
-      }
+      let conn = self.connection()?;
+      conn
+        .execute(
+          "DELETE FROM api_keys WHERE provider = ?1",
+          params![provider_key.as_str()],
+        )
+        .map_err(|e| format!("Failed to delete API key from SQLite: {}", e))?;
 
       Ok(())
     })();
@@ -316,28 +365,24 @@ impl KeyringManager {
 
   /// 列出所有已存储的 API Key 提供商（不返回 Key 本身）
   pub fn list_providers(&self) -> Result<Vec<ModelProvider>, String> {
-    // 检查已知的提供商
-    let known_providers = vec![
-      ModelProvider::OpenAi,
-      ModelProvider::Anthropic,
-      ModelProvider::Google,
-      ModelProvider::Ollama,
-      ModelProvider::Cohere,
-      ModelProvider::DeepSeek,
-      ModelProvider::Moonshot,
-      ModelProvider::ZhipuAI,
-      ModelProvider::MiniMax,
-    ];
+    let conn = self.connection()?;
+    let mut statement = conn
+      .prepare("SELECT provider FROM api_keys ORDER BY provider ASC")
+      .map_err(|e| format!("Failed to list API key providers from SQLite: {}", e))?;
+    let rows = statement
+      .query_map([], |row| {
+        let provider: String = row.get(0)?;
+        Ok(provider)
+      })
+      .map_err(|e| format!("Failed to query API key providers from SQLite: {}", e))?;
 
-    let mut result = Vec::new();
-
-    for provider in known_providers {
-      if self.has_api_key(provider.clone())? {
-        result.push(provider);
-      }
+    let mut providers = Vec::new();
+    for row in rows {
+      let provider = row.map_err(|e| format!("Failed to read API key provider row: {}", e))?;
+      providers.push(Self::provider_from_key(&provider));
     }
 
-    Ok(result)
+    Ok(providers)
   }
 }
 
@@ -405,13 +450,15 @@ mod tests {
 
   #[test]
   fn test_keyring_manager_creation() {
-    let manager = KeyringManager::new();
+    let temp_dir = tempfile::tempdir().unwrap();
+    let manager = KeyringManager::new_with_path(temp_dir.path().join("api_keys.sqlite3"));
     assert!(manager.is_ok());
   }
 
   #[test]
   fn test_has_api_key_nonexistent() {
-    let manager = KeyringManager::new().unwrap();
+    let temp_dir = tempfile::tempdir().unwrap();
+    let manager = KeyringManager::new_with_path(temp_dir.path().join("api_keys.sqlite3")).unwrap();
     // 检查一个不存在的提供商
     let result = manager.has_api_key(ModelProvider::Custom("nonexistent-test".to_string()));
     assert!(result.is_ok());
@@ -419,14 +466,16 @@ mod tests {
 
   #[test]
   fn test_list_providers() {
-    let manager = KeyringManager::new().unwrap();
+    let temp_dir = tempfile::tempdir().unwrap();
+    let manager = KeyringManager::new_with_path(temp_dir.path().join("api_keys.sqlite3")).unwrap();
     let result = manager.list_providers();
     assert!(result.is_ok());
   }
 
   #[test]
   fn test_get_nonexistent_api_key() {
-    let manager = KeyringManager::new().unwrap();
+    let temp_dir = tempfile::tempdir().unwrap();
+    let manager = KeyringManager::new_with_path(temp_dir.path().join("api_keys.sqlite3")).unwrap();
     let result = manager.get_api_key(ModelProvider::Custom("nonexistent-get".to_string()));
     assert!(result.is_ok());
     assert!(result.unwrap().is_none());
@@ -434,10 +483,35 @@ mod tests {
 
   #[test]
   fn test_delete_nonexistent_api_key() {
-    let manager = KeyringManager::new().unwrap();
-    // 删除不存在的 Key - keyring crate 在某些平台可能会返回错误
-    // 这是可以接受的，因为不同平台的密钥链实现不同
-    let _result = manager.delete_api_key(ModelProvider::Custom("nonexistent-delete".to_string()));
-    // 不断言结果，因为平台行为可能不同
+    let temp_dir = tempfile::tempdir().unwrap();
+    let manager = KeyringManager::new_with_path(temp_dir.path().join("api_keys.sqlite3")).unwrap();
+    let result = manager.delete_api_key(ModelProvider::Custom("nonexistent-delete".to_string()));
+    assert!(result.is_ok());
+  }
+
+  #[test]
+  fn test_store_get_delete_api_key_sqlite() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let manager = KeyringManager::new_with_path(temp_dir.path().join("api_keys.sqlite3")).unwrap();
+    let provider = ModelProvider::DeepSeek;
+
+    manager
+      .store_api_key(ApiKey::new(
+        provider.clone(),
+        "sk-test",
+        Some("https://api.deepseek.com".to_string()),
+      ))
+      .unwrap();
+
+    let stored = manager.get_api_key(provider.clone()).unwrap().unwrap();
+    assert_eq!(stored.key().expose_secret(), "sk-test");
+    assert_eq!(stored.endpoint(), Some("https://api.deepseek.com"));
+    assert!(manager.has_api_key(provider.clone()).unwrap());
+
+    let providers = manager.list_providers().unwrap();
+    assert_eq!(providers, vec![provider.clone()]);
+
+    manager.delete_api_key(provider.clone()).unwrap();
+    assert!(!manager.has_api_key(provider).unwrap());
   }
 }

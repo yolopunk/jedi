@@ -692,6 +692,24 @@
   gap: 16px;
 }
 
+.console-message.assistant .message-row {
+  justify-content: flex-start;
+}
+
+.console-message.user .message-row {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.console-message.user .message-timestamp {
+  padding-right: 48px;
+  text-align: right;
+}
+
+.console-message.assistant .message-timestamp {
+  padding-left: 52px;
+}
+
 .user-avatar, .ai-avatar {
   flex-shrink: 0;
   margin-top: 4px;
@@ -839,6 +857,14 @@
   min-width: 0;
 }
 
+.console-message.assistant .message-content {
+  flex: 0 1 min(78%, 680px);
+}
+
+.console-message.user .message-content {
+  flex: 0 1 min(72%, 620px);
+}
+
 .message-header {
   display: flex;
   align-items: center;
@@ -854,12 +880,15 @@
 }
 
 .ai-message .message-body {
+  border-radius: 4px 12px 12px 12px;
   border-left-color: #00d4ff;
   box-shadow: 0 0 20px rgba(96, 165, 250, 0.05);
 }
 
 .user-message .message-body {
-  border-left-color: #a855f7;
+  border-right: 2px solid #a855f7;
+  border-left: 0;
+  border-radius: 12px 4px 12px 12px;
   background: rgba(168, 85, 247, 0.05);
 }
 
@@ -934,6 +963,41 @@
   letter-spacing: 1px;
 }
 
+.activity-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.activity-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 7px;
+  border: 1px solid rgba(0, 212, 255, 0.14);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.chip-label,
+.tools-label,
+.usage-label {
+  color: var(--hologram-text-muted);
+  font-size: 9px;
+  letter-spacing: 0.7px;
+}
+
+.chip-value,
+.tools-value,
+.usage-value {
+  color: var(--hologram-text);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
 .activity-toggle {
   height: 22px;
   padding: 0 8px;
@@ -964,6 +1028,10 @@
   border-left-color: rgba(74, 222, 128, 0.65);
 }
 
+.activity-item.step {
+  border-left-color: rgba(125, 211, 252, 0.6);
+}
+
 .activity-item.error,
 .activity-item.error .activity-status {
   border-left-color: rgba(248, 113, 113, 0.75);
@@ -972,6 +1040,12 @@
 
 .activity-row {
   gap: 8px;
+}
+
+.activity-time {
+  color: var(--hologram-text-muted);
+  font-size: 9px;
+  flex-shrink: 0;
 }
 
 .activity-icon {
@@ -993,11 +1067,19 @@
   font-size: 9px;
 }
 
+.activity-type,
+.activity-duration {
+  color: #7dd3fc;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
 .activity-content {
   margin-top: 4px;
   color: var(--hologram-text-muted);
   font-size: 11px;
   line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .activity-details {
@@ -1021,6 +1103,95 @@
   color: #a5f3fc;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.reasoning-details {
+  margin-bottom: 8px;
+}
+
+.activity-tools,
+.activity-usage {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.activity-highlight {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 9px;
+  border-left: 2px solid rgba(0, 212, 255, 0.35);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.activity-highlight.error {
+  border-left-color: rgba(248, 113, 113, 0.75);
+}
+
+.highlight-icon {
+  width: 14px;
+  color: var(--hologram-primary);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.highlight-label {
+  color: #7dd3fc;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  flex-shrink: 0;
+}
+
+.highlight-value {
+  color: var(--hologram-text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.activity-step-group {
+  margin-top: 8px;
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  border-radius: 8px;
+  background: rgba(125, 211, 252, 0.04);
+}
+
+.activity-step-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: #c6f7ff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+}
+
+.activity-step-title {
+  color: #7dd3fc;
+}
+
+.activity-step-kind,
+.activity-step-status,
+.activity-step-duration {
+  color: var(--hologram-text-muted);
+  font-size: 9px;
+}
+
+.activity-step-text {
+  padding: 0 10px 8px;
+  color: var(--hologram-text-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.activity-item.step-child {
+  margin: 0 8px 8px;
 }
 
 /* Hover 元数据 - removed */
@@ -1546,7 +1717,7 @@
 }
 
 .light-theme .user-message .message-body {
-  border-left-color: #b8860b;
+  border-right-color: #b8860b;
   background: rgba(184, 134, 11, 0.05);
 }
 

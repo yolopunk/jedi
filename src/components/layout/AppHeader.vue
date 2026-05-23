@@ -65,7 +65,12 @@ const checkMaximized = async () => {
 let unlisten: (() => void) | null = null
 
 onMounted(async () => {
-  console.log('[Jedi TitleBar] onMounted, isMac:', isMac(), 'SHOW_WINDOW_CONTROLS:', SHOW_WINDOW_CONTROLS)
+  console.log(
+    '[Jedi TitleBar] onMounted, isMac:',
+    isMac(),
+    'SHOW_WINDOW_CONTROLS:',
+    SHOW_WINDOW_CONTROLS
+  )
   try {
     appWindow = getCurrentWindow()
     console.log('[Jedi TitleBar] appWindow obtained:', appWindow.label)
@@ -88,7 +93,11 @@ onUnmounted(() => {
 })
 
 const onDragMouseDown = async (e: MouseEvent) => {
-  console.log('[Jedi TitleBar] onDragMouseDown fired', { button: e.button, target: e.target, className: (e.target as HTMLElement)?.className })
+  console.log('[Jedi TitleBar] onDragMouseDown fired', {
+    button: e.button,
+    target: e.target,
+    className: (e.target as HTMLElement)?.className,
+  })
   if (!appWindow) {
     console.warn('[Jedi TitleBar] No appWindow')
     return
@@ -109,7 +118,7 @@ const onDragMouseDown = async (e: MouseEvent) => {
 
 const onDragDoubleClick = async (e: MouseEvent) => {
   if (isMac()) return
-  
+
   console.log('[Jedi TitleBar] onDragDoubleClick fired', { target: e.target, detail: e.detail })
   e.preventDefault()
   if (!appWindow) {

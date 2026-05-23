@@ -10,7 +10,7 @@ pub use audit_log::{
   AuditLogFilter, AuditLogger, OperationResult, SecurityEvent, SecurityEventType,
 };
 
-// 重新导出密钥链相关类型
+// 重新导出 API Key 存储相关类型
 pub use keyring::{ApiKey, KeyringManager, ModelProvider};
 
 // 重新导出验证相关类型

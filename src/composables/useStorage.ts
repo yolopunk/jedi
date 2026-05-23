@@ -22,7 +22,7 @@ const initStore = async () => {
           autoSave: true,
           // 禁用加密，避免Linux下反复请求密钥环授权
           // 存储的都是非敏感配置数据，不需要加密
-          encryptionKey: null
+          encryptionKey: null,
         })
       } else {
         // 非Tauri环境，直接使用localStorage

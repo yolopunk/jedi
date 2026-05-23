@@ -308,6 +308,7 @@ cargo test           # 运行Rust测试
 - **/investigate** - 调试错误
 - **/document-release** - 发布后文档更新
 - **/codex** - 获得第二意见或对抗性代码审查
+- **/goal** - 设定当前任务目标并持续对齐
 - **/cso** - 首席安全官模式
 - **/autoplan** - 自动规划
 - **/plan-devex-review** - 开发者体验评审
@@ -333,4 +334,3 @@ cd .claude/skills/gstack && ./setup
 - **src-tauri/tauri.conf.json**: Tauri配置说明
 - **.github/workflows/release.yml**: CI/CD配置
 - **scripts/release.js**: 版本发布脚本说明
-

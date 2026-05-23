@@ -78,8 +78,15 @@
       <div class="episodes-header">[ {{ $t('podcast.episodes') }} ]</div>
 
       <div v-if="episodesLoading" class="loading-episodes">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">LOADING_FEED...</div>
+        <div v-for="i in 5" :key="i" class="skeleton-episode">
+          <div class="skeleton-cover"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-line skeleton-line--title"></div>
+            <div class="skeleton-line skeleton-line--desc"></div>
+            <div class="skeleton-line skeleton-line--meta"></div>
+          </div>
+          <div class="skeleton-action"></div>
+        </div>
       </div>
 
       <div v-else class="episodes-list">

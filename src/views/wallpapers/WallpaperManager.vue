@@ -111,7 +111,10 @@
           <div v-if="loading && !wallpapers.length" class="loading-grid">
             <div v-for="i in 8" :key="i" class="loading-card">
               <div class="loading-image"></div>
-              <div class="loading-text"></div>
+              <div class="loading-footer">
+                <div class="loading-line loading-line--title"></div>
+                <div class="loading-line loading-line--meta"></div>
+              </div>
             </div>
           </div>
 
@@ -741,20 +744,39 @@ onUnmounted(() => {
 }
 
 .loading-image {
-  height: 160px;
+  aspect-ratio: 16 / 10;
   background: linear-gradient(90deg, #1a1a2e 25%, #252540 50%, #1a1a2e 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
+.loading-footer {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.loading-line {
+  height: 12px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #1a1a2e 25%, #252540 50%, #1a1a2e 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.loading-line--title {
+  width: 70%;
+}
+
+.loading-line--meta {
+  width: 40%;
+  animation-delay: 0.15s;
+}
+
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
-}
-
-.loading-text {
-  height: 40px;
-  background: rgba(20, 20, 30, 0.8);
 }
 
 /* Wallpaper Grid */
@@ -1347,5 +1369,16 @@ onUnmounted(() => {
 
 .light-theme .console-btn.primary:hover {
   background: #b8860b;
+}
+
+.light-theme .loading-card {
+  background: rgba(245, 230, 211, 0.9);
+  border-color: #d4a574;
+}
+
+.light-theme .loading-image,
+.light-theme .loading-line {
+  background: linear-gradient(90deg, #e8d4bc 25%, #f0e0cc 50%, #e8d4bc 75%);
+  background-size: 200% 100%;
 }
 </style>

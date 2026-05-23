@@ -50,27 +50,12 @@
                 </v-btn>
             </div>
 
-            <!-- Center Section: Mini Player -->
+            <!-- Center Section: Podcast Player -->
             <div
                 v-if="currentPlaying"
-                class="mini-player-section d-flex align-center px-2 h-100 border-left border-right"
+                class="player-section d-flex align-center px-2 h-100 border-left border-right"
             >
-                <v-btn
-                    icon
-                    size="x-small"
-                    variant="text"
-                    color="primary"
-                    class="player-btn"
-                    @click.stop="togglePlay"
-                >
-                    <v-icon :icon="isPaused ? mdiPlay : mdiPause" size="14" />
-                </v-btn>
-                <span
-                    class="text-caption text-truncate"
-                    style="max-width: 140px; font-size: 10px"
-                >
-                    {{ currentPlaying.title }}
-                </span>
+                <PlayerBar />
             </div>
 
             <v-spacer></v-spacer>
@@ -238,11 +223,21 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import { mdiCpu64Bit, mdiDownload, mdiEthernet, mdiMemory, mdiPause, mdiPlay, mdiServer, mdiUpload } from '@mdi/js'
+import {
+  mdiCpu64Bit,
+  mdiDownload,
+  mdiEthernet,
+  mdiMemory,
+  mdiPause,
+  mdiPlay,
+  mdiServer,
+  mdiUpload,
+} from '@mdi/js'
 import { getOsInfo } from '@/api/hosts'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useUpdate } from '@/composables/useUpdate'
 import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
+import PlayerBar from '@/components/podcast/PlayerBar.vue'
 import type { OsInfo } from '@/types/os'
 import pkg from '../../../package.json'
 
@@ -393,16 +388,11 @@ const handleInstallUpdate = _handleInstallUpdate
     text-align: right;
 }
 
-/* Mini Player Section */
-.mini-player-section {
-    gap: 4px;
-    white-space: nowrap;
-}
-
-.player-btn {
-    width: 20px !important;
-    height: 20px !important;
-    min-width: 20px !important;
+/* Podcast Player Section */
+.player-section {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
 }
 
 /* Hide non-critical info on mobile/small screens */

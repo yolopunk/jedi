@@ -223,7 +223,12 @@
 </template>
 
 <script setup lang="ts">
+import CrtOverlay from '@/components/common/CrtOverlay.vue'
+import EpisodeShowNotes from '@/components/podcast/EpisodeShowNotes.vue'
+import OpmlExportGuide from '@/components/podcast/OpmlExportGuide.vue'
 import { usePodcastManager } from '@/composables/usePodcastManager'
+import PodcastDetail from './PodcastDetail.vue'
+import PodcastLibrary from './PodcastLibrary.vue'
 
 // biome-ignore lint/correctness/noUnusedVariables: false positive
 const {

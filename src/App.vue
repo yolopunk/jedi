@@ -94,14 +94,13 @@ import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 
 const { locale } = useI18n()
 const { getItem, setItem } = useStorage()
-const { setAudioRef } = useAudioPlayer()
+const { currentPlaying, setAudioRef } = useAudioPlayer()
 const router = useRouter()
 
 // Tray navigation listener
 let unlistenTray: (() => void) | null = null
 
 const audioEl = ref<HTMLAudioElement | null>(null)
-const currentPlaying = computed(() => useAudioPlayer().currentPlaying)
 
 // Dialog states
 const showHelpDialog = ref(false)
@@ -204,7 +203,7 @@ onMounted(async () => {
 
   // Listen for tray navigation events
   try {
-    unlistenTray = await listen<string>('tray-navigate', (event) => {
+    unlistenTray = await listen<string>('tray-navigate', event => {
       if (event.payload) {
         router.push(event.payload)
       }

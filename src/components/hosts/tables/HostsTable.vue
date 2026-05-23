@@ -250,7 +250,7 @@ const tableWrapperRef = ref<HTMLElement | null>(null)
 const itemsPerPage = 15
 const currentDisplayCount = ref(itemsPerPage)
 
-const _searchModel = computed({
+const searchModel = computed({
   get: () => props.search || '',
   set: value => emit('update:search', value),
 })
@@ -262,11 +262,11 @@ const filteredItems = computed(() => {
   return getHostsAsItems(props.currentGroup.hosts)
 })
 
-const _activeCount = computed(() => {
+const activeCount = computed(() => {
   return filteredItems.value.filter(item => item.enabled).length
 })
 
-const _displayItems = computed(() => {
+const displayItems = computed(() => {
   return filteredItems.value.slice(0, currentDisplayCount.value)
 })
 
@@ -275,8 +275,8 @@ const hasMore = computed(() => {
 })
 
 // Use t() to avoid TS6133
-const _searchPlaceholder = computed(() => t('common.search'))
-const _addHostText = computed(() => t('hosts.table.addHost'))
+const searchPlaceholder = computed(() => t('common.search'))
+const addHostText = computed(() => t('hosts.table.addHost'))
 
 watch(filteredItems, () => {
   currentDisplayCount.value = itemsPerPage
@@ -288,11 +288,11 @@ function loadMore() {
   }
 }
 
-function _handleSearch() {
+function handleSearch() {
   currentDisplayCount.value = itemsPerPage
 }
 
-function _toggleItemEnabled(item: {
+function toggleItemEnabled(item: {
   domain: string
   ip: string
   enabled: boolean
@@ -302,7 +302,7 @@ function _toggleItemEnabled(item: {
   emit('update-status', item.originalMap, item.enabled)
 }
 
-function _handleOpenDomain(domain: string) {
+function handleOpenDomain(domain: string) {
   openDomainLink(domain)
     .then(message => {
       emit('open-domain', domain, message)

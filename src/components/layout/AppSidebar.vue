@@ -75,82 +75,8 @@
                 </v-list-item>
             </v-list>
 
-            <!-- Collapsed Action Icons -->
-            <div v-if="isCollapsed" class="collapsed-actions">
-                <v-btn
-                    icon
-                    size="x-small"
-                    variant="text"
-                    class="collapsed-action-btn"
-                    @click="toggleTheme"
-                >
-                    <v-icon :icon="themeIcon" size="16" />
-                    <v-tooltip activator="parent" location="right">{{
-                        $t(themeTooltip)
-                    }}</v-tooltip>
-                </v-btn>
-                <v-btn
-                    icon
-                    size="x-small"
-                    variant="text"
-                    class="collapsed-action-btn"
-                    @click="$emit('open-github')"
-                >
-                    <v-icon :icon="mdiGithub" size="16" />
-                    <v-tooltip activator="parent" location="right">GitHub</v-tooltip>
-                </v-btn>
-                <v-btn
-                    icon
-                    size="x-small"
-                    variant="text"
-                    class="collapsed-action-btn"
-                    @click="$emit('show-settings')"
-                >
-                    <v-icon :icon="mdiCog" size="16" />
-                    <v-tooltip activator="parent" location="right">{{
-                        $t("header.settings")
-                    }}</v-tooltip>
-                </v-btn>
-            </div>
-
             <!-- Footer Status -->
             <div v-if="!isCollapsed" class="sidebar-footer">
-                <div class="footer-actions">
-                    <v-btn
-                        icon
-                        size="x-small"
-                        variant="text"
-                        class="footer-action-btn"
-                        @click="toggleTheme"
-                    >
-                        <v-icon :icon="themeIcon" size="16" />
-                        <v-tooltip activator="parent" location="top">{{
-                            $t(themeTooltip)
-                        }}</v-tooltip>
-                    </v-btn>
-                    <v-btn
-                        icon
-                        size="x-small"
-                        variant="text"
-                        class="footer-action-btn"
-                        @click="$emit('open-github')"
-                    >
-                        <v-icon :icon="mdiGithub" size="16" />
-                        <v-tooltip activator="parent" location="top">GitHub</v-tooltip>
-                    </v-btn>
-                    <v-btn
-                        icon
-                        size="x-small"
-                        variant="text"
-                        class="footer-action-btn"
-                        @click="$emit('show-settings')"
-                    >
-                        <v-icon :icon="mdiCog" size="16" />
-                        <v-tooltip activator="parent" location="top">{{
-                            $t("header.settings")
-                        }}</v-tooltip>
-                    </v-btn>
-                </div>
                 <div class="hud-panel">
                     <div class="hud-scanline"></div>
                     <div class="hud-item">
@@ -193,9 +119,8 @@
 </template>
 
 <script setup lang="ts">
-import { mdiCog, mdiDns, mdiGithub, mdiPodcast, mdiRobot, mdiWallpaper } from '@mdi/js'
+import { mdiDns, mdiPodcast, mdiRobot, mdiWallpaper } from '@mdi/js'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { useThemeToggle } from '@/composables/useTheme'
 import LogoShaderBg from '@/components/common/LogoShaderBg.vue'
 
 const props = defineProps<{
@@ -203,13 +128,9 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'show-settings'): void
-  (e: 'open-github'): void
   (e: 'update:width', width: number): void
   (e: 'toggle-sidebar'): void
 }>()
-
-const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
 
 const navItems = [
   { to: '/chat', icon: mdiRobot, label: 'CHAT', tooltipKey: 'sidebar.chat' },

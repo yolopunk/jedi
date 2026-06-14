@@ -134,7 +134,15 @@
       "Bash(python3 *)",
       "mcp__context7__resolve-library-id",
       "Bash(git *)",
-      "Bash(cargo fmt *)"
+      "Bash(cargo fmt *)",
+      "Skill(browse)",
+      "Bash(/Users/cynosure/workspace/github/jedi/.claude/skills/gstack/browse/dist/browse goto *)",
+      "Bash(/Users/cynosure/workspace/github/jedi/.claude/skills/gstack/browse/dist/browse wait *)",
+      "Bash(/Users/cynosure/workspace/github/jedi/.claude/skills/gstack/browse/dist/browse js *)",
+      "Bash(/Users/cynosure/workspace/github/jedi/.claude/skills/gstack/browse/dist/browse screenshot *)",
+      "Bash(/Users/cynosure/workspace/github/jedi/.claude/skills/gstack/browse/dist/browse stop *)",
+      "Bash(pnpm vue-tsc *)",
+      "Read(//Users/cynosure/**)"
     ]
   },
   "hooks": {

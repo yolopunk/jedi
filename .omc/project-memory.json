@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1779543258663,
+  "lastScanned": 1781419345532,
   "projectRoot": "/Users/cynosure/workspace/github/jedi",
   "techStack": {
     "languages": [
@@ -80,7 +80,7 @@
       "path": "dist",
       "purpose": "Distribution/build output",
       "fileCount": 6,
-      "lastAccessed": 1779543258452,
+      "lastAccessed": 1781419345212,
       "keyFiles": [
         "1Capture_2026-03-24_18.01.27.png",
         "back.png",
@@ -93,7 +93,7 @@
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 1,
-      "lastAccessed": 1779543258453,
+      "lastAccessed": 1781419345216,
       "keyFiles": [
         "AGENTS.md"
       ]
@@ -102,7 +102,7 @@
       "path": "logs",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1779543258626,
+      "lastAccessed": 1781419345253,
       "keyFiles": [
         "app.log.2026-03-07",
         "app.log.2026-05-16"
@@ -112,7 +112,7 @@
       "path": "public",
       "purpose": "Public files",
       "fileCount": 5,
-      "lastAccessed": 1779543258631,
+      "lastAccessed": 1781419345256,
       "keyFiles": [
         "1Capture_2026-03-24_18.01.27.png",
         "back.png",
@@ -124,7 +124,7 @@
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 2,
-      "lastAccessed": 1779543258631,
+      "lastAccessed": 1781419345267,
       "keyFiles": [
         "free-port.js",
         "release.js"
@@ -134,7 +134,7 @@
       "path": "src",
       "purpose": "Source code",
       "fileCount": 6,
-      "lastAccessed": 1779543258632,
+      "lastAccessed": 1781419345268,
       "keyFiles": [
         "AGENTS.md",
         "App.vue",
@@ -147,7 +147,7 @@
       "path": "src-tauri",
       "purpose": null,
       "fileCount": 7,
-      "lastAccessed": 1779543258654,
+      "lastAccessed": 1781419345269,
       "keyFiles": [
         "AGENTS.md",
         "Cargo.lock",
@@ -160,17 +160,17 @@
       "path": "dist/assets",
       "purpose": "Static assets",
       "fileCount": 2,
-      "lastAccessed": 1779543258656,
+      "lastAccessed": 1781419345270,
       "keyFiles": [
-        "index-BOvJoxz4.css",
-        "index-D7Vs3Ui5.js"
+        "index-B4_tW2Zw.js",
+        "index-vqEAHgcp.css"
       ]
     },
     "src/api": {
       "path": "src/api",
       "purpose": "API routes",
       "fileCount": 8,
-      "lastAccessed": 1779543258658,
+      "lastAccessed": 1781419345272,
       "keyFiles": [
         "ai-chat.ts",
         "app.ts",
@@ -181,7 +181,7 @@
       "path": "src/assets",
       "purpose": "Static assets",
       "fileCount": 3,
-      "lastAccessed": 1779543258659,
+      "lastAccessed": 1781419345272,
       "keyFiles": [
         "fonts.css",
         "style.css",
@@ -192,7 +192,7 @@
       "path": "src/components",
       "purpose": "UI components",
       "fileCount": 4,
-      "lastAccessed": 1779543258662,
+      "lastAccessed": 1781419345273,
       "keyFiles": [
         "AGENTS.md",
         "AttachmentMenu.vue",

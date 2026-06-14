@@ -1,17 +1,16 @@
 <template>
   <v-app>
     <div class="app-layout" :style="{ '--title-bar-height': `${TITLE_BAR_TOTAL_HEIGHT}px` }">
-      <AppHeader />
+      <AppHeader
+        @open-github="openGithubRepo"
+        @show-help="showHelpDialog = true"
+        @show-settings="showSettingsDialog = true"
+        @show-about="showAboutDialog = true"
+      />
       <div class="content-wrapper">
         <!-- Sidebar -->
         <app-sidebar
           :collapsed="sidebarCollapsed"
-          @open-github="openGithubRepo"
-          @open-website="openProjectWebsite"
-          @open-email="sendEmail"
-          @show-help="showHelpDialog = true"
-          @show-settings="showSettingsDialog = true"
-          @show-about="showAboutDialog = true"
         />
 
         <!-- Main Content Area -->
@@ -95,6 +94,7 @@ import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 const { locale } = useI18n()
 const { getItem, setItem } = useStorage()
 const { currentPlaying, setAudioRef } = useAudioPlayer()
+const { startAutoCheck } = useUpdate()
 const router = useRouter()
 
 // Tray navigation listener
@@ -198,7 +198,6 @@ onMounted(async () => {
   startAutoUpdateCheck()
 
   // Initialize auto-update check
-  const { startAutoCheck } = useUpdate()
   startAutoCheck()
 
   // Listen for tray navigation events

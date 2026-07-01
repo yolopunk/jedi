@@ -140,6 +140,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
       let _window = win_builder.build()?;
 
+      // P2: 为内置工具（壁纸/播客/系统）注入 AppHandle
+      crate::tools::native::set_app_handle(app.handle().clone());
+
       config::app::load_tray_config(app);
 
       #[cfg(desktop)]

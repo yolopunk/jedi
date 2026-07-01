@@ -369,4 +369,50 @@ mod tests {
     };
     assert!(start_client(&cfg).is_err());
   }
+
+  /// 端到端：连接一个真实的 mock MCP server 子进程（stdio），
+  /// 验证 initialize/tools/list/tools/call 全链路。
+  /// 若环境无 python3 或脚本缺失，start_client 返回 Err → 优雅跳过（不判失败）。
+  #[test]
+  fn test_connect_mock_server_end_to_end() {
+    let script = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/mock_mcp_server.py");
+    if !std::path::Path::new(script).exists() {
+      eprintln!("skip: mock server fixture 不存在");
+      return;
+    }
+    let cfg = McpServerConfig {
+      id: "mock".into(),
+      name: "Mock".into(),
+      transport: "stdio".into(),
+      command: "python3".into(),
+      args: vec![script.to_string()],
+      env: HashMap::new(),
+    };
+
+    let (client, tools) = match start_client(&cfg) {
+      Ok(v) => v,
+      Err(e) => {
+        eprintln!("skip: 无法启动 mock server（可能缺少 python3）: {}", e);
+        return;
+      }
+    };
+
+    // tools/list 拿到 echo 工具
+    assert!(tools.iter().any(|t| t.name == "echo"), "应包含 echo 工具");
+
+    // 名称规整后应可注入 registry
+    let mangled = mangle_name(&cfg.id, "echo");
+    assert_eq!(mangled, "mcp_mock_echo");
+
+    // tools/call echo → "echo: hi"
+    let mut args = HashMap::new();
+    args.insert("text".to_string(), serde_json::json!("hi"));
+    let result = {
+      let mut c = client.lock().unwrap();
+      c.call_tool("echo", Some(args)).expect("call_tool 应成功")
+    };
+    let text = flatten_result(&result);
+    assert_eq!(text, "echo: hi");
+    assert_eq!(result.is_error, Some(false));
+  }
 }

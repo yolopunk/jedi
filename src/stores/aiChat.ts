@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
+import { agentChat, type AgentEvent } from '../api/ai-chat'
 
 // 提供商信息（后端返回格式）
 export interface ProviderInfo {
@@ -115,6 +116,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const streamingContent = ref<string>('')
+
+  // Agent 执行追踪（工具调用过程），用于 Agent Trace 面板
+  const agentTrace = ref<AgentEvent[]>([])
 
   // UI State
   const selectedModelId = ref<string | null>(null)
@@ -279,9 +283,50 @@ export const useAiChatStore = defineStore('aiChat', () => {
 
     isLoading.value = true
     streamingContent.value = ''
+    agentTrace.value = []
     error.value = null
 
     try {
+      // 当启用了 MCP 服务时，走 Agent 工具调用回路
+      if (enabledMcpServers.value.length > 0) {
+        const requestId = `agent-${Date.now()}`
+
+        const unlisten = await listen<AgentEvent>(`agent-event-${requestId}`, (event) => {
+          const payload = event.payload
+          agentTrace.value.push(payload)
+          if (payload.type === 'content') {
+            streamingContent.value = payload.text
+          }
+        })
+
+        try {
+          const finalContent = await agentChat({
+            provider: session.provider,
+            model: session.model,
+            messages: session.messages.map(m => ({ role: m.role, content: m.content })),
+            servers: [...enabledMcpServers.value],
+            temperature: options?.temperature ?? temperature.value,
+            maxTokens: options?.maxTokens ?? maxTokens.value,
+            requestId,
+          })
+
+          const assistantMessage: ChatMessage = {
+            role: 'assistant',
+            content: finalContent,
+            timestamp: Date.now()
+          }
+          session.messages.push(assistantMessage)
+        } finally {
+          unlisten()
+        }
+
+        await invoke('append_message', {
+          sessionId: session.id,
+          message: session.messages[session.messages.length - 1],
+        })
+        return
+      }
+
       const useStream = options?.stream ?? streamEnabled.value
       if (useStream) {
         // 流式响应
@@ -419,6 +464,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
     isLoading,
     error,
     streamingContent,
+    agentTrace,
     selectedModelId,
     selectedProvider,
     enabledMcpServers,

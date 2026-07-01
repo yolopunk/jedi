@@ -879,6 +879,38 @@ impl ModelProviderManagerState {
       keyring_manager: Mutex::new(keyring_manager),
     }
   }
+
+  /// 解析指定提供商的凭证（API Key + 自定义端点）
+  ///
+  /// 返回 `(Option<api_key>, Option<endpoint>)`。
+  /// 本地提供商（如 Ollama）没有 API Key，返回 `None`。
+  /// 未知提供商按 `Custom` 处理，从 keyring 查找。
+  pub fn get_credentials(
+    &self,
+    provider: &str,
+  ) -> Result<(Option<String>, Option<String>), String> {
+    let keyring_provider = match provider.to_lowercase().as_str() {
+      "openai" => KeyringModelProvider::OpenAi,
+      "anthropic" => KeyringModelProvider::Anthropic,
+      "ollama" => KeyringModelProvider::Ollama,
+      other => KeyringModelProvider::Custom(other.to_string()),
+    };
+
+    let keyring = self.keyring_manager.lock().map_err(|e| e.to_string())?;
+    let api_key = keyring
+      .get_api_key(keyring_provider)
+      .map_err(|e| e.to_string())?;
+    drop(keyring);
+
+    match api_key {
+      Some(key) => {
+        let key_str = key.key().expose_secret().to_string();
+        let endpoint = key.endpoint().map(|s| s.to_string());
+        Ok((Some(key_str), endpoint))
+      }
+      None => Ok((None, None)),
+    }
+  }
 }
 
 /// 发送聊天请求

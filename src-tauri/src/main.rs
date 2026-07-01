@@ -2,6 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use crate::api::ai_chat::{
+  // Phase 4: Agent 工具调用 / MCP
+  agent_chat,
   append_message,
   create_session,
   delete_api_key,
@@ -13,6 +15,8 @@ use crate::api::ai_chat::{
   list_api_key_providers,
   list_sessions,
   log_security_event,
+  mcp_call_tool,
+  mcp_list_tools,
   query_security_logs,
   sanitize,
   // Phase 2: 模型和会话管理
@@ -196,7 +200,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       get_models_dev_provider,
       get_models_for_provider,
       get_models_providers,
-      search_models_dev
+      search_models_dev,
+      // Phase 4: Agent 工具调用 / MCP commands
+      agent_chat,
+      mcp_list_tools,
+      mcp_call_tool
     ])
     .build(tauri::generate_context!())?;
 

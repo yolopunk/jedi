@@ -289,3 +289,78 @@ export async function getModelsForProvider(providerId: string) {
 export async function getModelsProviders() {
   return await invoke<ProviderSummary[]>('get_models_providers')
 }
+
+// ========== Agent / MCP 工具调用 API ==========
+
+/** MCP 工具信息（供前端展示） */
+export interface ToolInfo {
+  server: string
+  name: string
+  description?: string
+  input_schema: Record<string, unknown>
+}
+
+/** MCP 工具调用结果 */
+export interface CallToolResult {
+  content: Array<{ type: string; text?: string; [k: string]: unknown }>
+  is_error?: boolean
+}
+
+/** 消息格式（后端 Message 结构） */
+export interface AgentMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
+/**
+ * Agent 执行过程事件（通过 `agent-event-{requestId}` 事件推送）
+ */
+export type AgentEvent =
+  | { type: 'thinking'; text: string }
+  | { type: 'tool_call'; id: string; server: string; name: string; arguments: unknown }
+  | { type: 'tool_result'; id: string; name: string; content: string; is_error: boolean }
+  | { type: 'content'; text: string }
+  | { type: 'done' }
+  | { type: 'error'; message: string }
+
+/**
+ * 列出已启用 MCP 服务的所有工具
+ */
+export async function mcpListTools(servers: string[]) {
+  return await invoke<ToolInfo[]>('mcp_list_tools', { servers })
+}
+
+/**
+ * 直接调用某个 MCP 工具（手动/调试）
+ */
+export async function mcpCallTool(
+  server: string,
+  name: string,
+  args?: Record<string, unknown>
+) {
+  return await invoke<CallToolResult>('mcp_call_tool', { server, name, arguments: args ?? null })
+}
+
+/**
+ * Agent 聊天：携带 MCP 工具运行工具调用回路，返回最终回答。
+ * 过程事件需通过监听 `agent-event-{requestId}` 获取。
+ */
+export async function agentChat(params: {
+  provider: string
+  model: string
+  messages: AgentMessage[]
+  servers: string[]
+  temperature?: number
+  maxTokens?: number
+  requestId: string
+}) {
+  return await invoke<string>('agent_chat', {
+    provider: params.provider,
+    model: params.model,
+    messages: params.messages,
+    servers: params.servers,
+    temperature: params.temperature ?? null,
+    maxTokens: params.maxTokens ?? null,
+    requestId: params.requestId,
+  })
+}

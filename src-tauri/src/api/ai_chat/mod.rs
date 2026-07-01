@@ -3,6 +3,7 @@
 // Phase 2: 模型提供商抽象层和会话管理
 // Phase 3: Models.dev 集成
 
+pub(crate) mod agent;
 pub(crate) mod models;
 pub(crate) mod security;
 pub(crate) mod sessions;
@@ -17,6 +18,9 @@ pub use security::{
 
 // 重新导出模型相关类型和 commands
 pub use models::{send_chat_message, send_chat_message_stream, ModelProviderManagerState};
+
+// 重新导出 Agent 工具调用相关 commands
+pub use agent::{agent_chat, mcp_call_tool, mcp_list_tools};
 
 // 重新导出会话相关类型和 commands
 pub use sessions::{

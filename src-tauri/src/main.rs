@@ -2,9 +2,19 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use crate::api::ai_chat::{
+  // Phase 4: Agent 工具调用 / 统一工具 / 确认回滚
+  agent_cancel,
+  agent_chat,
   append_message,
   create_session,
   delete_api_key,
+  tool_call,
+  tool_confirm,
+  tool_list_all,
+  tool_undo,
+  turn_undo,
+  PendingConfirmations,
+  UndoStacks,
   delete_session,
   encode_html_entities,
   get_api_key_info,
@@ -39,6 +49,7 @@ use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
 };
 use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
+use crate::mcp::manager::{mcp_connect, mcp_disconnect, mcp_list_connected, mcp_server_test};
 use crate::api::os::{get_os_info, SystemState};
 use crate::api::podcast::{
   fetch_episodes, fetch_rss_channel, get_subscriptions, import_opml, refresh_subscription,
@@ -56,9 +67,16 @@ use tauri::{Manager, RunEvent, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 mod api;
 mod config;
 mod mcp;
+mod tools;
 mod utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+  // P4: 以 MCP server 模式运行（对外暴露只读工具，不启动 GUI）
+  if std::env::args().any(|a| a == "--mcp-server") {
+    crate::mcp::server::run_stdio_server();
+    return Ok(());
+  }
+
   let _logger_guard = logger::init();
 
   // 初始化审计日志记录器状态
@@ -84,6 +102,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   // Phase 3: 初始化 models.dev 管理器状态
   let models_dev_manager_state = ModelsDevManagerState::new();
 
+  // P1: 初始化统一工具注册表（注册全部内置工具）
+  let tool_registry = crate::tools::ToolRegistry::with_builtins();
+  // P2: 确认挂起表 + per-turn 回滚栈
+  let pending_confirmations = PendingConfirmations::new();
+  let undo_stacks = UndoStacks::new();
+  // P3: 第三方 MCP server 连接管理
+  let mcp_manager = crate::mcp::manager::McpManager::new();
+
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_shell::init())
@@ -102,6 +128,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .manage(model_provider_manager_state)
     // Phase 3: 管理 models.dev 状态
     .manage(models_dev_manager_state)
+    // P1: 管理统一工具注册表
+    .manage(tool_registry)
+    // P2: 管理确认挂起表与回滚栈
+    .manage(pending_confirmations)
+    .manage(undo_stacks)
+    // P3: 管理第三方 MCP 连接
+    .manage(mcp_manager)
     .setup(|app| {
       // 创建主窗口
       let mut win_builder =
@@ -117,6 +150,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       }
 
       let _window = win_builder.build()?;
+
+      // P2: 为内置工具（壁纸/播客/系统）注入 AppHandle
+      crate::tools::native::set_app_handle(app.handle().clone());
 
       config::app::load_tray_config(app);
 
@@ -196,7 +232,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       get_models_dev_provider,
       get_models_for_provider,
       get_models_providers,
-      search_models_dev
+      search_models_dev,
+      // Phase 4: Agent 工具调用 / 统一工具 / 确认回滚 commands
+      agent_chat,
+      tool_list_all,
+      tool_call,
+      tool_confirm,
+      agent_cancel,
+      turn_undo,
+      tool_undo,
+      // P3: 第三方 MCP server commands
+      mcp_connect,
+      mcp_disconnect,
+      mcp_list_connected,
+      mcp_server_test
     ])
     .build(tauri::generate_context!())?;
 

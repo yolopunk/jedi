@@ -39,10 +39,18 @@
 //! client.stop()?;
 //! ```
 
+pub mod manager;
 pub mod protocol;
+pub mod server;
 pub mod servers;
+pub mod sse_transport;
 pub mod transport;
 pub mod types;
+
+#[allow(unused_imports)]
+pub use manager::{
+  mcp_connect, mcp_disconnect, mcp_list_connected, mcp_server_test, McpManager,
+};
 
 // 重新导出常用类型
 #[allow(unused_imports)]

@@ -178,8 +178,23 @@
               </div>
             </div>
 
-            <!-- 流式输出指示器 -->
-            <div v-if="store.isLoading" class="streaming-indicator">
+            <!-- 流式回答实时渲染 -->
+            <div v-if="store.isLoading && store.streamingContent" class="console-message assistant">
+              <div class="message-row">
+                <div class="message-content ai-message">
+                  <div class="message-header">
+                    <span class="message-role">&lt;R2D2_STREAM&gt;</span>
+                    <span class="message-model">[{{ currentModelName }}]</span>
+                  </div>
+                  <div class="message-body">
+                    <div class="markdown-body" v-html="renderMessage(store.streamingContent)"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 流式输出指示器（首 token 前） -->
+            <div v-if="store.isLoading && !store.streamingContent" class="streaming-indicator">
               <div class="streaming-cursor"></div>
               <span class="streaming-text">PROCESSING</span>
               <span class="streaming-dots">
@@ -241,16 +256,35 @@
         </div>
       </div>
 
-      <!-- 右侧：会话历史 -->
+      <!-- 右侧：会话历史 / Agent 追踪 -->
       <div class="history-panel">
-        <div class="panel-header">
-          <span class="panel-title">// SESSION LOG</span>
-          <button class="new-session-btn" @click="handleNewSession">
+        <div class="panel-header rt-header">
+          <div class="rt-tabs">
+            <button
+              class="rt-tab"
+              :class="{ active: rightTab === 'sessions' }"
+              @click="rightTab = 'sessions'"
+            >SESSIONS</button>
+            <button
+              class="rt-tab"
+              :class="{ active: rightTab === 'trace' }"
+              @click="rightTab = 'trace'"
+            >
+              TRACE
+              <span v-if="store.agentTrace.length" class="rt-badge">{{ store.agentTrace.length }}</span>
+            </button>
+          </div>
+          <button
+            v-if="rightTab === 'sessions'"
+            class="new-session-btn icon-only"
+            title="New session"
+            @click="handleNewSession"
+          >
             <span class="btn-icon">+</span>
-            <span class="btn-text">NEW</span>
           </button>
         </div>
-        <div class="session-list">
+
+        <div v-show="rightTab === 'sessions'" class="session-list">
           <div
             v-for="session in store.sessions"
             :key="session.id"
@@ -268,6 +302,12 @@
             </div>
           </div>
         </div>
+
+        <AgentTrace
+          v-show="rightTab === 'trace'"
+          :trace="store.agentTrace"
+          :running="store.isLoading && store.enabledMcpServers.length > 0"
+        />
       </div>
     </div>
   </div>
@@ -277,6 +317,7 @@
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
 import { useAiChatStore } from '@/stores/aiChat'
 import { sharedMd, renderSafe } from '@/utils/markdown'
+import AgentTrace from './AgentTrace.vue'
 
 const store = useAiChatStore()
 
@@ -286,16 +327,21 @@ const messagesContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
 const showScrollButton = ref(false)
 const activeSkill = ref<string | null>(null)
+const rightTab = ref<'sessions' | 'trace'>('sessions')
+
+// 有后端 MCP 服务支撑的技能 id（可真正驱动 Agent 工具调用）
+const mcpBackedIds = computed(() => new Set(store.mcpServers.map(s => s.id)))
 
 // Skills - Teach procedures that can be invoked in chat
 // These are like "recipes" that Claude can follow when activated
 const mcpSkills = ref([
-  { id: 'terminal', name: 'TERMINAL', enabled: true, hotkey: 'F1', desc: 'Execute system commands' },
-  { id: 'filesystem', name: 'FILE_SYS', enabled: true, hotkey: 'F2', desc: 'Read/write files' },
-  { id: 'hosts', name: 'HOSTS_MGR', enabled: true, hotkey: 'F3', desc: 'Manage hosts file' },
-  { id: 'podcast', name: 'PODCAST', enabled: true, hotkey: 'F4', desc: 'Manage podcasts' },
-  { id: 'wallpaper', name: 'WALLPAPER', enabled: false, hotkey: 'F5', desc: 'Change wallpapers' },
-  { id: 'browser', name: 'BROWSER', enabled: false, hotkey: 'F6', desc: 'Web browsing' },
+  { id: 'hosts', name: 'HOSTS_MGR', enabled: false, hotkey: 'F1', desc: 'Manage hosts file' },
+  { id: 'wallpaper', name: 'WALLPAPER', enabled: false, hotkey: 'F2', desc: 'Knowledge wallpapers' },
+  { id: 'podcast', name: 'PODCAST', enabled: false, hotkey: 'F3', desc: 'Manage podcasts' },
+  { id: 'system', name: 'SYSTEM', enabled: false, hotkey: 'F4', desc: 'System info' },
+  { id: 'memory', name: 'MEMORY', enabled: false, hotkey: 'F5', desc: 'Remember preferences' },
+  { id: 'terminal', name: 'TERMINAL', enabled: false, hotkey: 'F6', desc: 'Coming soon' },
+  { id: 'browser', name: 'BROWSER', enabled: false, hotkey: 'F7', desc: 'Coming soon' },
 ])
 
 // Boot sequence
@@ -362,10 +408,17 @@ function showSessionMenu(session: any) {
 // Actions
 function toggleSkill(skillId: string) {
   const skill = mcpSkills.value.find(s => s.id === skillId)
-  if (skill) {
+  if (!skill) return
+
+  // 若该技能背后有真实的 MCP 服务，则同步到 store（驱动 Agent 工具调用）
+  if (mcpBackedIds.value.has(skillId)) {
+    store.toggleMcpServer(skillId)
+    skill.enabled = store.enabledMcpServers.includes(skillId)
+    store.saveSettings()
+  } else {
     skill.enabled = !skill.enabled
-    activeSkill.value = skill.enabled ? skillId : null
   }
+  activeSkill.value = skill.enabled ? skillId : null
 }
 
 function executeCommand(cmd: typeof quickCommands.value[0]) {
@@ -407,8 +460,12 @@ async function handleSend() {
   }
 }
 
-function handleStop() {
-  console.log('Stop generation')
+async function handleStop() {
+  try {
+    await store.cancelAgent()
+  } catch (e) {
+    console.error('Failed to cancel agent:', e)
+  }
 }
 
 function handleCopyMessage(content: string) {
@@ -461,9 +518,88 @@ watch(() => store.streamingContent, () => {
   scrollToBottom()
 })
 
+// Agent 有新动作时自动切到 TRACE 标签
+watch(() => store.agentTrace.length, (len) => {
+  if (len > 0) rightTab.value = 'trace'
+})
+
 onMounted(() => {
+  // 用 store 中真实的 MCP 启用状态同步左侧技能面板
+  mcpSkills.value.forEach(skill => {
+    if (mcpBackedIds.value.has(skill.id)) {
+      skill.enabled = store.enabledMcpServers.includes(skill.id)
+    }
+  })
   scrollToBottom()
 })
 </script>
 
 <style src="./chat.css" scoped></style>
+
+<style scoped>
+/* 右侧面板标签栏（SESSIONS / TRACE） */
+.rt-header {
+  gap: 8px;
+}
+
+.rt-tabs {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.rt-tab {
+  flex: 1;
+  padding: 5px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #52525b;
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.rt-tab:hover {
+  color: #a1a1aa;
+  background: rgba(96, 165, 250, 0.05);
+}
+
+.rt-tab.active {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.1);
+  border-color: rgba(96, 165, 250, 0.25);
+  text-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+}
+
+.rt-badge {
+  font-size: 8.5px;
+  min-width: 15px;
+  padding: 1px 4px;
+  border-radius: 8px;
+  background: rgba(34, 211, 238, 0.15);
+  color: #22d3ee;
+  font-weight: 700;
+}
+
+.new-session-btn.icon-only {
+  flex-shrink: 0;
+  padding: 4px 8px;
+}
+
+/* 浅色主题 */
+:global(.light-theme) .rt-tab { color: #9c7a4d; }
+:global(.light-theme) .rt-tab.active {
+  color: #b8860b;
+  background: rgba(184, 134, 11, 0.12);
+  border-color: rgba(184, 134, 11, 0.3);
+}
+</style>

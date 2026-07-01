@@ -289,3 +289,182 @@ export async function getModelsForProvider(providerId: string) {
 export async function getModelsProviders() {
   return await invoke<ProviderSummary[]>('get_models_providers')
 }
+
+// ========== Agent / 统一工具调用 API ==========
+
+/** 工具风险等级 */
+export type RiskLevel = 'read' | 'write' | 'system'
+
+/** 工具来源 */
+export type ToolSource =
+  | { kind: 'native' }
+  | { kind: 'mcp'; server_id: string; remote_name: string }
+
+/** 工具声明（后端 ToolDeclaration） */
+export interface ToolDeclaration {
+  name: string
+  description: string
+  input_schema: Record<string, unknown>
+  risk: RiskLevel
+  source: ToolSource
+  group: string
+}
+
+/** 工具执行结果（后端 ToolOutcome） */
+export interface ToolOutcome {
+  content: string
+  is_error: boolean
+  undo_token?: string | null
+}
+
+/** 消息格式（后端 Message 结构） */
+export interface AgentMessage {
+  role: 'system' | 'user' | 'assistant'
+  content: string
+}
+
+/**
+ * Agent 执行过程事件（通过 `agent-event-{requestId}` 事件推送）
+ */
+export type AgentEvent =
+  | { type: 'thinking'; text: string }
+  | { type: 'notice'; text: string }
+  | { type: 'content_delta'; text: string }
+  | { type: 'tool_call'; id: string; server: string; name: string; arguments: unknown }
+  | {
+      type: 'confirm_request'
+      call_id: string
+      server: string
+      name: string
+      risk: RiskLevel
+      arguments: unknown
+      diff: string
+    }
+  | { type: 'tool_result'; id: string; name: string; content: string; is_error: boolean; undo_token?: string | null }
+  | { type: 'content'; text: string }
+  | { type: 'done' }
+  | { type: 'error'; message: string }
+
+/**
+ * 列出全部已注册工具（供工具浏览器）
+ */
+export async function toolListAll() {
+  return await invoke<ToolDeclaration[]>('tool_list_all')
+}
+
+/**
+ * 直接调用某个工具（手动/调试）
+ */
+export async function toolCall(name: string, args?: Record<string, unknown>) {
+  return await invoke<ToolOutcome>('tool_call', { name, args: args ?? null })
+}
+
+/**
+ * Agent 聊天：携带 MCP 工具运行工具调用回路，返回最终回答。
+ * 过程事件需通过监听 `agent-event-{requestId}` 获取。
+ */
+export async function agentChat(params: {
+  provider: string
+  model: string
+  messages: AgentMessage[]
+  servers: string[]
+  temperature?: number
+  maxTokens?: number
+  requestId: string
+  confirmMode?: 'normal' | 'auto'
+  autoApprove?: string[]
+  /** 所选模型是否支持工具调用；false 时后端降级为纯对话 */
+  supportsTools?: boolean
+}) {
+  return await invoke<string>('agent_chat', {
+    provider: params.provider,
+    model: params.model,
+    messages: params.messages,
+    servers: params.servers,
+    temperature: params.temperature ?? null,
+    maxTokens: params.maxTokens ?? null,
+    requestId: params.requestId,
+    confirmMode: params.confirmMode ?? null,
+    autoApprove: params.autoApprove ?? null,
+    supportsTools: params.supportsTools ?? null,
+  })
+}
+
+/**
+ * 对某个挂起的工具调用做出确认
+ */
+export async function toolConfirm(
+  requestId: string,
+  callId: string,
+  approve: boolean,
+  editedArgs?: Record<string, unknown>
+) {
+  return await invoke<void>('tool_confirm', {
+    requestId,
+    callId,
+    approve,
+    editedArgs: editedArgs ?? null,
+  })
+}
+
+/** 取消整个 Agent 回路 */
+export async function agentCancel(requestId: string) {
+  return await invoke<void>('agent_cancel', { requestId })
+}
+
+/** 整回合逆序回滚 */
+export async function turnUndo(requestId: string) {
+  return await invoke<string[]>('turn_undo', { requestId })
+}
+
+/** 单步回滚指定 undo_token */
+export async function toolUndo(requestId: string, undoToken: string) {
+  return await invoke<string>('tool_undo', { requestId, undoToken })
+}
+
+// ========== 第三方 MCP server（P3）==========
+
+/** 第三方 MCP server 配置 */
+export interface McpServerConfig {
+  id: string
+  name: string
+  transport?: 'stdio' | 'sse'
+  /** stdio */
+  command?: string
+  args?: string[]
+  env?: Record<string, string>
+  /** sse */
+  url?: string
+  headers?: Record<string, string>
+  /** 前端本地状态：是否期望连接（后端忽略此字段） */
+  enabled?: boolean
+}
+
+/** MCP server 连接状态 */
+export interface McpServerStatus {
+  id: string
+  name: string
+  connected: boolean
+  tool_count: number
+  tools: string[]
+}
+
+/** 连接一个第三方 MCP server，注入其工具 */
+export async function mcpConnect(config: McpServerConfig) {
+  return await invoke<McpServerStatus>('mcp_connect', { config })
+}
+
+/** 断开某个 MCP server */
+export async function mcpDisconnect(serverId: string) {
+  return await invoke<void>('mcp_disconnect', { serverId })
+}
+
+/** 列出已连接的 MCP server */
+export async function mcpListConnected() {
+  return await invoke<McpServerStatus[]>('mcp_list_connected')
+}
+
+/** 测试并连接一个 MCP server */
+export async function mcpServerTest(config: McpServerConfig) {
+  return await invoke<McpServerStatus>('mcp_server_test', { config })
+}

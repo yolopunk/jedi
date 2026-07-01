@@ -2,8 +2,17 @@
 
 **日期**: 2026-07-01
 **状态**: 设计中
-**版本**: 1.0
+**版本**: 1.1
 **关联**: `docs/superpowers/specs/2026-04-06-agent-architecture-design.md`、`src-tauri/src/api/ai_chat/agent.rs`、`src-tauri/src/mcp/`
+
+> **v1.1 评审修订**：
+> - R1 工具名改为下划线命名（function calling 强制 `^[a-zA-Z0-9_-]{1,64}$`，点号/冒号非法）
+> - R2 新增 §7.1「可挂起回路」，确认机制采用后端挂起方案
+> - Y1 新增 §7.2「快照一致性」，`dry_run` 产出快照 token，`call` 校验
+> - Y2 `AgentTool` 增 `dynamic_risk` 钩子（按参数升级风险）
+> - Y3 新增 §6.1「工具子集注入」，应对工具膨胀
+> - Y4 回滚改为 per-turn undo 栈
+> - §14 开放问题按评审推荐收敛
 
 ---
 
@@ -36,7 +45,7 @@
 - 把现有 Hosts/壁纸/播客/系统 API 以最小成本包装为内置工具
 - 设计第三方 MCP server 的接入：配置、连接生命周期、工具注入、安全边界
 - 设计 Jedi 作为 MCP server 对外暴露的机制
-- 工具风险分级，驱动统一的人机确认
+- 工具风险分级 + 可挂起的人机确认 + 可回滚
 
 ### 非目标（本文档不覆盖）
 - Agent Loop 的规划/反思升级（见后续 Agent Loop 设计）
@@ -89,25 +98,44 @@ pub enum RiskLevel {
     System,
 }
 
+/// 工具来源
+#[derive(Clone, Serialize, Deserialize)]
+pub enum ToolSource {
+    Native,
+    /// 第三方 MCP server（携带 server_id 与远端原始工具名，供 UI/审计）
+    Mcp { server_id: String, remote_name: String },
+}
+
 /// 工具声明（喂给 LLM，也用于 UI 展示）
 pub struct ToolDeclaration {
-    /// 完全限定名，带命名空间，如 "hosts.add" / "mcp:github.create_issue"
+    /// 【R1】喂给 LLM 的名字，必须匹配 ^[a-zA-Z0-9_-]{1,64}$
+    /// 内置：hosts_add / wallpaper_set / system_info
+    /// 第三方：mcp_<server_id>_<tool>，如 mcp_github_create_issue
     pub name: String,
     pub description: String,
     /// 标准 JSON Schema（object）
     pub input_schema: Value,
+    /// 静态风险等级（可被 dynamic_risk 按参数升级，见 §3.2）
     pub risk: RiskLevel,
-    /// 来源：native / mcp:<server_id>
     pub source: ToolSource,
+    /// UI 分组标签（如 "Hosts"/"Filesystem"），仅展示用，不进 LLM
+    pub group: String,
+}
+
+/// 改动预览（用于确认 UI，并锁定一致性快照）
+pub struct ToolPreview {
+    /// 人类可读 diff（如 hosts 变更前后）
+    pub diff: String,
+    /// 【Y1】一致性快照 token：dry_run 时对目标资源打快照，
+    /// call 执行前校验资源未被外部改动，变了则要求重新确认
+    pub snapshot_token: String,
 }
 
 /// 工具执行结果
 pub struct ToolOutcome {
     pub content: String,       // 回填给 LLM 的文本
     pub is_error: bool,
-    /// 可选：结构化改动预览（用于确认 UI / 回滚）
-    pub preview: Option<ToolPreview>,
-    /// 可选：回滚句柄（快照 id 等）
+    /// 可选：回滚句柄（写前快照 id）。仅可逆工具提供（见 §7.3）
     pub undo_token: Option<String>,
 }
 ```
@@ -119,11 +147,20 @@ pub struct ToolOutcome {
 pub trait AgentTool: Send + Sync {
     fn declaration(&self) -> ToolDeclaration;
 
-    /// 干跑：只计算改动预览，不落地（用于确认 UI）。Read 类工具可不实现。
-    async fn dry_run(&self, args: &Value) -> Result<Option<ToolPreview>, String> { Ok(None) }
+    /// 【Y2】按实际参数动态升级风险。默认返回声明里的静态风险。
+    /// 例：hosts_add 命中系统关键域名(update.microsoft.com 等) → 升级为 System
+    fn dynamic_risk(&self, _args: &Value) -> RiskLevel { self.declaration().risk }
 
-    /// 真正执行
-    async fn call(&self, args: Value) -> ToolOutcome;
+    /// 【Y1】干跑：只计算改动预览 + 打一致性快照，不落地。
+    /// Read 类工具无需实现（返回 None）。
+    async fn dry_run(&self, _args: &Value) -> Result<Option<ToolPreview>, String> { Ok(None) }
+
+    /// 真正执行。expected_snapshot 为确认时锁定的快照 token；
+    /// 实现需校验资源未变（不一致则返回错误，触发重新确认）。
+    async fn call(&self, args: Value, expected_snapshot: Option<String>) -> ToolOutcome;
+
+    /// 回滚（仅可逆工具实现）
+    async fn undo(&self, _undo_token: &str) -> Result<(), String> { Err("不支持回滚".into()) }
 }
 ```
 
@@ -131,14 +168,15 @@ pub trait AgentTool: Send + Sync {
 
 ```rust
 pub struct ToolRegistry {
-    tools: RwLock<HashMap<String, Arc<dyn AgentTool>>>,   // key = 完全限定名
+    tools: RwLock<HashMap<String, Arc<dyn AgentTool>>>,   // key = LLM 工具名
 }
 
 impl ToolRegistry {
-    pub fn register(&self, tool: Arc<dyn AgentTool>);
+    pub fn register(&self, tool: Arc<dyn AgentTool>);     // 重名拒绝并记审计
     pub fn unregister(&self, name: &str);                 // 断开某 MCP server 时批量移除
-    pub fn declarations(&self, enabled: &[String]) -> Vec<ToolDeclaration>;
-    pub async fn call(&self, name: &str, args: Value) -> ToolOutcome;
+    pub fn declarations(&self, filter: &ToolFilter) -> Vec<ToolDeclaration>;  // 见 §6.1
+    pub async fn call(&self, name: &str, args: Value, snapshot: Option<String>) -> ToolOutcome;
+    pub fn get(&self, name: &str) -> Option<Arc<dyn AgentTool>>;
 }
 ```
 
@@ -152,16 +190,16 @@ impl ToolRegistry {
 
 直接**复用现有 API 函数**，包一层 trait 即可，不碰 MCP。
 
-| 工具（命名空间） | 底层复用 | 风险 |
+| 工具名（LLM 名） | 底层复用 | 风险 |
 |------|------|------|
-| `hosts.read` / `hosts.list` | `api::hosts::read_system_hosts` | Read |
-| `hosts.add` / `hosts.remove` / `hosts.toggle` | `update_hosts_with_groups` | Write |
-| `hosts.revert` | `api::hosts::revert_hosts` | Write |
-| `wallpaper.list` / `wallpaper.current` | `get_wallpapers` / `get_current_wallpaper` | Read |
-| `wallpaper.set` | `set_desktop_wallpaper` | Write |
-| `podcast.subscriptions` / `podcast.episodes` | `get_subscriptions` / `fetch_episodes` | Read |
-| `podcast.subscribe` / `podcast.unsubscribe` / `podcast.import_opml` | `save_subscription` 等 | Write |
-| `system.info` | `api::os::get_os_info` | Read |
+| `hosts_read` / `hosts_list` | `api::hosts::read_system_hosts` | Read |
+| `hosts_add` / `hosts_remove` / `hosts_toggle` | `update_hosts_with_groups` | Write（命中关键域名→System）|
+| `hosts_revert` | `api::hosts::revert_hosts` | Write |
+| `wallpaper_list` / `wallpaper_current` | `get_wallpapers` / `get_current_wallpaper` | Read |
+| `wallpaper_set` | `set_desktop_wallpaper` | Write |
+| `podcast_subscriptions` / `podcast_episodes` | `get_subscriptions` / `fetch_episodes` | Read |
+| `podcast_subscribe` / `podcast_unsubscribe` / `podcast_import_opml` | `save_subscription` 等 | Write |
+| `system_info` | `api::os::get_os_info` | Read |
 
 示例（把现有 hosts 逻辑包进 trait）：
 
@@ -172,25 +210,31 @@ pub struct HostsAddTool;
 impl AgentTool for HostsAddTool {
     fn declaration(&self) -> ToolDeclaration {
         ToolDeclaration {
-            name: "hosts.add".into(),
+            name: "hosts_add".into(),
             description: "添加一条 hosts 记录到指定分组".into(),
             input_schema: json!({ "type":"object",
                 "properties": { "ip":{"type":"string"}, "domain":{"type":"string"}, "group":{"type":"string"} },
                 "required": ["ip","domain","group"] }),
             risk: RiskLevel::Write,
             source: ToolSource::Native,
+            group: "Hosts".into(),
         }
     }
+    fn dynamic_risk(&self, args: &Value) -> RiskLevel {
+        // 命中系统关键域名列表 → RiskLevel::System，否则 Write
+    }
     async fn dry_run(&self, args: &Value) -> Result<Option<ToolPreview>, String> {
-        // 读当前 hosts，计算 diff，不写入
+        // 读当前 hosts → 计算 diff → snapshot_token = 内容哈希，不写入
     }
-    async fn call(&self, args: Value) -> ToolOutcome {
-        // 复用 api::hosts 的写入逻辑，返回 undo_token（写前快照）
+    async fn call(&self, args: Value, expected: Option<String>) -> ToolOutcome {
+        // 若 expected 与当前 hosts 哈希不一致 → 报错要求重新确认
+        // 否则复用 api::hosts 写入逻辑，返回 undo_token（写前快照）
     }
+    async fn undo(&self, token: &str) -> Result<(), String> { /* 还原快照 */ }
 }
 ```
 
-> `agent.rs` 现有的 `HostsMcpServer` 派发切换为 `ToolRegistry`。`src-tauri/src/mcp/servers/hosts.rs` 的工具定义逻辑可迁移进 `HostsTool`，MCP 的 `types/transport/protocol` 保留给第 4.2/4.3 节使用。
+> `agent.rs` 现有的 `HostsMcpServer` 派发切换为 `ToolRegistry`。`src-tauri/src/mcp/servers/hosts.rs` 的工具定义逻辑迁移进 `HostsTool`，MCP 的 `types/transport/protocol` 保留给第 4.2/4.3 节使用。
 
 ### 4.2 可选：MCP 客户端（接入第三方 MCP server）★ 重点
 
@@ -225,7 +269,7 @@ impl AgentTool for HostsAddTool {
 
 #### 传输层
 - **stdio**：已有 `StdioTransport`（`command`/`args`/`startup_timeout`），启动子进程，行分隔 JSON-RPC。
-- **SSE / HTTP**（新增）：连接远程 MCP server。需新增 `SseTransport`。
+- **SSE / HTTP**（新增）：连接远程 MCP server，需新增 `SseTransport`。见 §14-G1 的协议版本说明。
 
 #### 连接生命周期
 
@@ -235,7 +279,7 @@ impl AgentTool for HostsAddTool {
   → initialize 握手（协议版本 2024-11-05，交换 capabilities）
   → tools/list 拉取工具清单
   → 每个远程工具包装为 McpClientTool，注册进 ToolRegistry
-     （命名空间前缀 mcp:<server_id>.<tool>，避免重名冲突）
+     （LLM 名 = mcp_<server_id>_<tool>，避免重名；原始名存 ToolSource）
   → 运行期：tools/call 派发；监听 notifications/tools/list_changed 动态刷新
   → 断线：指数退避重连；期间对应工具从 registry 注销并在 UI 标灰
   → 用户禁用/退出：发送关闭，注销工具，回收进程
@@ -244,17 +288,16 @@ impl AgentTool for HostsAddTool {
 ```rust
 /// 把一个远程 MCP 工具适配为 AgentTool
 pub struct McpClientTool {
-    server_id: String,
-    remote_name: String,           // 远端原始工具名
-    decl: ToolDeclaration,         // source = Mcp(server_id), risk 默认 Write（见 §7）
+    decl: ToolDeclaration,         // name=mcp_<id>_<tool>, source=Mcp{..}, risk 默认 Write（见 §7）
     client: Arc<McpClient>,        // 复用 mcp::protocol::McpClient
 }
 
 #[async_trait]
 impl AgentTool for McpClientTool {
     fn declaration(&self) -> ToolDeclaration { self.decl.clone() }
-    async fn call(&self, args: Value) -> ToolOutcome {
+    async fn call(&self, args: Value, _snapshot: Option<String>) -> ToolOutcome {
         // client.call_tool(remote_name, args) → 映射 CallToolResult → ToolOutcome
+        // 第三方工具无 dry_run/快照，一律靠 §7 确认兜底
     }
 }
 ```
@@ -269,7 +312,7 @@ impl AgentTool for McpClientTool {
 - 复用 `mcp::protocol` / `types`，实现 server 侧 `initialize` / `tools/list` / `tools/call`。
 - 传输：stdio（Jedi 以 `--mcp-server` 子命令启动一个纯 server 进程），后续可选本地 SSE 端口。
 - 仅导出内置工具（不转发第三方工具，避免代理放大信任问题）。
-- 对外暴露的写操作仍受 Jedi 的确认/审计约束（无头模式下按配置的默认策略）。
+- 对外暴露的写操作在无头模式下的确认策略见 §14-1（已决：只读导出 + 写操作须在 autoApprove 白名单）。
 
 这层可最后做，但抽象上从一开始就用 `exportable` 标志预留。
 
@@ -277,10 +320,12 @@ impl AgentTool for McpClientTool {
 
 ## 5. 命名空间与冲突
 
-- 内置：`hosts.add`、`wallpaper.set`、`system.info`
-- 第三方：`mcp:<server_id>.<tool>`，如 `mcp:github.create_issue`
-- Trace 面板已按 `server.name` 展示，沿用即可。
-- `ToolRegistry.register` 遇同名拒绝并记审计；UI 提示冲突。
+- 【R1】喂给 LLM 的工具名**必须**匹配 `^[a-zA-Z0-9_-]{1,64}$`（OpenAI/Anthropic 共同约束），因此一律用下划线，不能用点号/冒号：
+  - 内置：`hosts_add`、`wallpaper_set`、`system_info`
+  - 第三方：`mcp_<server_id>_<tool>`，如 `mcp_github_create_issue`
+- 结构化来源（server_id、远端原始名、UI 分组）存在 `ToolSource` / `ToolDeclaration.group`，只用于展示与审计，不进 LLM 请求。
+- Trace 面板按 `group + 原始名` 展示。
+- `ToolRegistry.register` 遇同名拒绝并记审计；UI 提示冲突（第三方重名时可加 `_2` 后缀消歧）。
 
 ---
 
@@ -292,22 +337,77 @@ impl AgentTool for McpClientTool {
 - Anthropic：`{name, description, input_schema}`
 - 模型能力探测：`fetch_models_dev` 返回的 `tool_call` 标志已可用——**若所选模型不支持 function calling，则禁用工具注入并在 UI 提示**（降级为纯聊天），避免对小模型硬塞工具。
 
+### 6.1 工具子集注入【Y3】
+
+接入多个第三方 server 后，工具可能达几十上百个。**全量注入会推高 token 成本、并让模型更容易选错工具**——这是 AI Native 的真实瓶颈，必须处理。分阶段策略：
+
+- **P2 基础版（先做）**：`ToolFilter` 按"已启用的来源"过滤——只注入用户在该会话启用的内置分组 + 启用的 MCP server 的工具。默认关闭全部第三方工具，用户按需开。
+- **P3 进阶（工具多时）**：按功能页上下文预选（在 Hosts 页默认只注入 hosts_* 组）、或对工具描述做轻量语义检索，每轮只注入 top-K 相关工具。
+- 无论哪种，**注入了哪些工具**都通过 `agent-event` 上报，Trace 面板可见，避免"静默裁剪"。
+
+```rust
+pub struct ToolFilter {
+    pub enabled_groups: Vec<String>,     // 内置分组
+    pub enabled_servers: Vec<String>,    // MCP server id
+    pub max_tools: Option<usize>,        // P3 语义检索上限
+    pub query: Option<String>,           // P3 相关性检索
+}
+```
+
 ---
 
 ## 7. 风险分级与人机确认
 
-统一由 `RiskLevel` 驱动（对齐已确认的"分级确认"策略）：
+统一由 `RiskLevel`（经 `dynamic_risk` 按参数升级后）驱动，对齐"分级确认"策略：
 
 | 风险 | 默认行为 |
 |------|---------|
 | `Read` | 自动执行，无需确认 |
-| `Write` | 先 `dry_run` 生成 **diff 预览**，用户确认后 `call` |
+| `Write` | 先 `dry_run` 生成 **diff 预览 + 快照**，用户确认后 `call`（带快照校验）|
 | `System` | 强制二次确认 + 显著警示 |
 
-- 确认在 **Agent 回路中挂起**：回路检测到待执行工具为 Write/System 时，发 `agent-event` 请求确认，前端弹确认卡片（含 diff），用户批准/拒绝/编辑参数后回路继续。
 - 每个 server/工具支持 `autoApprove` 白名单（用户显式免确认）。
 - 全局确认模式 `auto | always | dangerous`（对齐设计文档 `AgentConfig.confirmationMode`）。
-- **第三方 MCP 工具默认风险 = Write（至少需确认）**，因为无法信任其自报的安全性；用户可在配置里手动降级为 Read。
+- **第三方 MCP 工具默认风险 = Write（至少需确认）**，因为无法信任其自报的安全性。用户可手动降级为 Read，但 UI 须二次警告（§14-G2）。
+
+### 7.1 可挂起回路（确认机制的执行模型）【R2，方案 A】
+
+确认要求 Agent 回路能"跑到一半停下、等前端确认、再恢复"。现有 `agent_chat` 是一次性 async command，跑完 `MAX_ITERATIONS` 才返回，不支持中途挂起。**采用后端挂起方案**：
+
+- `agent_chat` 从"跑完即返回"改为**长驻任务**：回路在后端持续运行，通过 `agent-event-{request_id}` 与前端交互，最终以事件通知完成，命令本身可立即返回一个 `request_id`。
+- 托管一张挂起表：
+
+```rust
+pub struct PendingConfirmations {
+    map: Mutex<HashMap<String, oneshot::Sender<ConfirmDecision>>>,  // key = call_id
+}
+pub enum ConfirmDecision { Approve { edited_args: Option<Value> }, Reject }
+```
+
+- 回路遇到 Write/System 工具时：
+  1. 调 `dry_run` 拿 `ToolPreview`
+  2. 发 `agent-event` = `ConfirmRequest { call_id, tool, args, diff }`
+  3. 注册一个 `oneshot`，`.await` 它（带**超时**，默认 120s，超时按 Reject 处理）
+  4. 前端弹确认卡片，用户选择后调 `tool_confirm(request_id, call_id, approve, edited_args?)` 命令 → 后端 `send` 唤醒 oneshot
+  5. Approve → 用 `edited_args`（若有）+ 锁定快照执行 `call`；Reject → 把"用户拒绝"作为工具结果回填给 LLM，回路继续
+- **取消**：新增 `agent_cancel(request_id)`，丢弃挂起表项并中断回路。
+- **清理**：回路结束/出错/取消时清空该 `request_id` 的所有挂起项，避免泄漏。
+
+### 7.2 快照一致性【Y1】
+
+`dry_run` 与 `call` 是两次独立访问资源，之间资源可能被外部改动（如用户手动编辑了 hosts）。因此：
+
+- `dry_run` 对目标资源打**快照 token**（如 hosts 文件内容哈希），随 `ToolPreview` 一并送确认 UI。
+- 用户确认后，`call(args, expected_snapshot)` 执行前**校验当前资源快照 == expected**：
+  - 一致 → 正常写入
+  - 不一致 → 返回特定错误，回路重新 `dry_run` + 重新确认（并提示"目标已被外部修改"）
+
+### 7.3 回滚（per-turn undo 栈）【Y4】
+
+- 每个可逆工具 `call` 成功后返回 `undo_token`（写前快照）。
+- 回路为**本回合**维护一个 undo 栈（按执行顺序压栈）。
+- UI 提供两级撤销：单步（撤某一次工具调用）与整回合（逆序弹栈全撤）。
+- 不可逆工具（已发网络请求、已删除的外部资源等）不提供 `undo_token`，UI 标注"不可撤销"。
 
 ---
 
@@ -327,7 +427,7 @@ impl AgentTool for McpClientTool {
 ## 9. 配置与持久化
 
 - MCP server 配置：`tauri-plugin-store`（`mcp-servers.json`）+ 敏感字段走 keyring。
-- 内置工具启用状态、确认模式、autoApprove：并入现有 chat 设置。
+- 内置工具启用状态、确认模式、autoApprove、工具子集偏好：并入现有 chat 设置。
 - `ToolRegistry` 为运行期状态，应用启动时：注册全部内置工具 → 读取 MCP 配置 → 连接 enabled 的 server。
 
 ---
@@ -342,13 +442,13 @@ impl AgentTool for McpClientTool {
 - 每个 server 可展开查看其工具（名称/描述/风险徽标）
 
 ### 10.2 工具浏览器（新，轻量）
-统一列出 `ToolRegistry` 全部工具（内置 + 各 MCP server），带来源与风险徽标；供用户了解 Agent 能做什么、按需启用/禁用。
+统一列出 `ToolRegistry` 全部工具（内置 + 各 MCP server），带来源、分组与风险徽标；供用户了解 Agent 能做什么、按需启用/禁用（驱动 §6.1 的 `ToolFilter`）。
 
 ### 10.3 确认卡片（新）
-Write/System 工具执行前，在对话流中插入确认卡片：工具名 + 参数 + **diff 预览**（hosts 改动尤其重要）+ [批准]/[拒绝]/[编辑参数]/[本会话免确认]。
+Write/System 工具执行前，在对话流中插入确认卡片：工具名 + 参数（可编辑）+ **diff 预览** + 风险徽标 + [批准]/[拒绝]/[编辑参数]/[本会话免确认]；超时倒计时可见。执行后若可撤销，卡片提供 [撤销] 入口（对接 §7.3 undo 栈）。
 
 ### 10.4 Trace 面板增强（已存在，扩展）
-`AgentTrace.vue` 增加：工具来源徽标（native / server 名）、风险色、确认状态（已确认/被拒）、回滚入口（若有 undo_token）。
+`AgentTrace.vue` 增加：工具来源徽标（native / server 名）、风险色、确认状态（待确认/已批准/被拒/超时）、本回合已注入工具数、回滚入口。
 
 ---
 
@@ -356,18 +456,20 @@ Write/System 工具执行前，在对话流中插入确认卡片：工具名 + �
 
 ```
 # 工具注册表
-tool_list_all() -> Vec<ToolDeclaration>            # 所有已注册工具
-agent_chat(...)                                    # 改为从 ToolRegistry 取工具（替换现 servers 参数语义）
-tool_confirm(request_id, call_id, approved, edited_args?)  # 确认回路挂起的工具调用
-tool_undo(undo_token) -> Result                    # 回滚
+tool_list_all() -> Vec<ToolDeclaration>            # 所有已注册工具（供工具浏览器）
+agent_chat(...) -> request_id                       # 改为长驻任务，从 ToolRegistry 按 ToolFilter 取工具
+tool_confirm(request_id, call_id, approve, edited_args?)  # 唤醒挂起的工具调用（§7.1）
+agent_cancel(request_id)                            # 取消回路，清理挂起项
+tool_undo(undo_token)                               # 单步回滚
+turn_undo(request_id)                               # 整回合逆序回滚（§7.3）
 
 # MCP server 管理
 mcp_server_list() -> Vec<McpServerStatus>
-mcp_server_upsert(config) -> Result
-mcp_server_remove(id) -> Result
-mcp_server_connect(id) -> Result                   # 手动连接/重连
-mcp_server_disconnect(id) -> Result
-mcp_server_test(config) -> Vec<ToolDeclaration>    # 测试连接并预览工具
+mcp_server_upsert(config)
+mcp_server_remove(id)
+mcp_server_connect(id)                              # 手动连接/重连
+mcp_server_disconnect(id)
+mcp_server_test(config) -> Vec<ToolDeclaration>     # 测试连接并预览工具
 
 # MCP server（对外，战略层，后置）
 # 通过 `jedi --mcp-server` 子命令启动，无需前端命令
@@ -377,13 +479,13 @@ mcp_server_test(config) -> Vec<ToolDeclaration>    # 测试连接并预览工具
 
 ## 12. 与现有代码的迁移路径
 
-1. 新增 `src-tauri/src/tools/`：`mod.rs`(trait+registry)、`native/`(hosts/wallpaper/podcast/system)、`mcp_client.rs`(适配器)。
-2. `agent.rs`：`collect_tools` / `call_server_tool` 改为走 `ToolRegistry`；工具声明转换函数改吃 `ToolDeclaration`。保留 `agent-event` 事件协议，新增确认事件类型。
+1. 新增 `src-tauri/src/tools/`：`mod.rs`(trait+registry)、`native/`(hosts/wallpaper/podcast/system)、`mcp_client.rs`(适配器)、`confirm.rs`(PendingConfirmations)。
+2. `agent.rs`：`collect_tools` / `call_server_tool` 改为走 `ToolRegistry`；工具声明转换函数改吃 `ToolDeclaration`；回路改为长驻任务 + 确认挂起；扩展 `agent-event` 增确认/回滚事件。
 3. `mcp/`：`types`/`protocol`/`transport` 保留；新增 `SseTransport`；`servers/hosts.rs` 的定义迁移进 `tools/native/hosts.rs` 后可删或转为"对外导出"用。
-4. `main.rs`：`.manage(ToolRegistry)`；注册新命令；启动时加载 MCP 配置。
-5. 前端：`api/ai-chat.ts` 增补命令封装；`stores/aiChat` 增 MCP server 管理状态；新增配置 UI 与确认卡片。
+4. `main.rs`：`.manage(ToolRegistry)`、`.manage(PendingConfirmations)`；注册新命令；启动时加载 MCP 配置。
+5. 前端：`api/ai-chat.ts` 增补命令封装；`stores/aiChat` 增 MCP server 管理 + 确认状态；新增配置 UI、工具浏览器、确认卡片。
 
-现有单测（`agent::tests`）随派发层调整更新；新增 registry / native tool / mcp client 适配的单测。
+现有单测（`agent::tests`）随派发层调整更新；新增 registry / native tool / mcp client 适配 / 快照校验 / 确认唤醒的单测。
 
 ---
 
@@ -391,16 +493,18 @@ mcp_server_test(config) -> Vec<ToolDeclaration>    # 测试连接并预览工具
 
 | 阶段 | 内容 | 产出 |
 |------|------|------|
-| **P1 抽象落地** | `AgentTool` + `ToolRegistry`；hosts 迁移为内置工具；`agent.rs` 切换派发 | Agent 走统一抽象，行为不变、更干净 |
-| **P2 全产品工具化 + 确认** | 壁纸/播客/系统内置工具；风险分级 + diff 预览 + 确认卡片 + 回滚 | Agent 能**安全操作整个产品**（AI Native 内核）|
-| **P3 第三方 MCP 客户端** | stdio+SSE 传输、server 配置 UI、连接生命周期、工具注入、安全边界 | 接入社区 MCP 生态，能力可扩展 |
-| **P4 对外 MCP 服务端** | `--mcp-server` 导出内置工具 | Jedi 成为 MCP 生态节点 |
+| **P1 抽象落地** | `AgentTool` + `ToolRegistry`；hosts 迁移为内置工具；`agent.rs` 切换派发（命名改下划线）| Agent 走统一抽象，行为不变、更干净 |
+| **P2 全产品工具化 + 确认** | 壁纸/播客/系统内置工具；动态风险 + dry_run/快照 + 可挂起回路 + 确认卡片 + per-turn 回滚；§6.1 基础版工具过滤 | Agent 能**安全操作整个产品**（AI Native 内核）|
+| **P3 第三方 MCP 客户端** | stdio+SSE 传输、server 配置 UI、连接生命周期、工具注入、安全边界、§6.1 进阶工具选择 | 接入社区 MCP 生态，能力可扩展 |
+| **P4 对外 MCP 服务端** | `--mcp-server` 导出内置工具（只读 + 白名单写）| Jedi 成为 MCP 生态节点 |
 
 ---
 
-## 14. 开放问题
+## 14. 开放问题（v1.1 评审已收敛）
 
-1. **对外 server 的无头确认**：Jedi 作 MCP server 被外部调用时，写操作如何确认？（选项：全部要求 autoApprove 白名单 / 弹系统通知 / 只读导出）
-2. **SSE/HTTP MCP 的鉴权**：OAuth 流程是否要在 P3 覆盖，还是先只支持静态 token。
-3. **工具过多时的选择**：当第三方 server 引入几十个工具，是否需要工具检索/分组注入（上下文工程，属 B3，暂记）。
-4. **回滚的通用性**：并非所有工具可逆（如已发出的网络请求）；`undo_token` 仅对可逆工具提供。
+1. **对外 server 的无头确认** → ✅ 已决：**只导出只读工具；写操作必须在 autoApprove 白名单，否则拒绝**。避免无人值守时被外部 Agent 改系统。
+2. **SSE/HTTP MCP 的鉴权** → ✅ 已决：**P3 先只支持静态 token/header，OAuth 后置**。
+3. **工具过多时的选择** → ✅ 已提升为正文 §6.1（P2 基础过滤 + P3 上下文/语义预选）。
+4. **回滚的通用性** → ✅ 已决：**仅可逆工具提供 `undo_token`，并按回合成栈**（§7.3）；不可逆工具 UI 明确标注。
+5. **（保留）G1 SSE 协议版本**：本设计基于 MCP `2024-11-05`（HTTP+SSE）。较新 server 可能用 Streamable HTTP（2025 spec）。stdio 为主流先行，SSE 落地时再评估是否需要双协议兼容。
+6. **（保留）G2 第三方工具降级为 Read 的误操作**：input_schema 由 server 自报、不可全信；降级操作需二次警告并记审计。

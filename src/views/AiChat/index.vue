@@ -320,12 +320,12 @@ const mcpBackedIds = computed(() => new Set(store.mcpServers.map(s => s.id)))
 // Skills - Teach procedures that can be invoked in chat
 // These are like "recipes" that Claude can follow when activated
 const mcpSkills = ref([
-  { id: 'terminal', name: 'TERMINAL', enabled: true, hotkey: 'F1', desc: 'Execute system commands' },
-  { id: 'filesystem', name: 'FILE_SYS', enabled: true, hotkey: 'F2', desc: 'Read/write files' },
-  { id: 'hosts', name: 'HOSTS_MGR', enabled: true, hotkey: 'F3', desc: 'Manage hosts file' },
-  { id: 'podcast', name: 'PODCAST', enabled: true, hotkey: 'F4', desc: 'Manage podcasts' },
-  { id: 'wallpaper', name: 'WALLPAPER', enabled: false, hotkey: 'F5', desc: 'Change wallpapers' },
-  { id: 'browser', name: 'BROWSER', enabled: false, hotkey: 'F6', desc: 'Web browsing' },
+  { id: 'hosts', name: 'HOSTS_MGR', enabled: false, hotkey: 'F1', desc: 'Manage hosts file' },
+  { id: 'wallpaper', name: 'WALLPAPER', enabled: false, hotkey: 'F2', desc: 'Knowledge wallpapers' },
+  { id: 'podcast', name: 'PODCAST', enabled: false, hotkey: 'F3', desc: 'Manage podcasts' },
+  { id: 'system', name: 'SYSTEM', enabled: false, hotkey: 'F4', desc: 'System info' },
+  { id: 'terminal', name: 'TERMINAL', enabled: false, hotkey: 'F5', desc: 'Coming soon' },
+  { id: 'browser', name: 'BROWSER', enabled: false, hotkey: 'F6', desc: 'Coming soon' },
 ])
 
 // Boot sequence
@@ -444,8 +444,12 @@ async function handleSend() {
   }
 }
 
-function handleStop() {
-  console.log('Stop generation')
+async function handleStop() {
+  try {
+    await store.cancelAgent()
+  } catch (e) {
+    console.error('Failed to cancel agent:', e)
+  }
 }
 
 function handleCopyMessage(content: string) {

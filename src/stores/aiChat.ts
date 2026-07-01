@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { agentChat, type AgentEvent } from '../api/ai-chat'
+import { agentChat, agentCancel, toolConfirm, toolUndo, turnUndo, type AgentEvent } from '../api/ai-chat'
 
 // 提供商信息（后端返回格式）
 export interface ProviderInfo {
@@ -101,11 +101,12 @@ export const PROVIDER_CONFIGS: Record<string, { name: string; models: Model[] }>
   },
 }
 
-// 预定义的MCP服务器
+// 内置工具分组（对应后端 native 工具的 group）
 export const DEFAULT_MCP_SERVERS: McpServer[] = [
-  { id: 'hosts', name: 'Hosts Manager', description: '管理系统Hosts文件', enabled: false, icon: 'mdi-dns' },
-  { id: 'filesystem', name: 'Filesystem', description: '文件系统操作', enabled: false, icon: 'mdi-folder' },
-  { id: 'browser', name: 'Browser', description: '网页浏览和搜索', enabled: false, icon: 'mdi-web' },
+  { id: 'hosts', name: 'Hosts Manager', description: '管理系统 Hosts 文件', enabled: false, icon: 'mdi-dns' },
+  { id: 'wallpaper', name: 'Wallpaper', description: '知识壁纸浏览与设置', enabled: false, icon: 'mdi-image' },
+  { id: 'podcast', name: 'Podcast', description: '播客订阅与剧集', enabled: false, icon: 'mdi-podcast' },
+  { id: 'system', name: 'System Info', description: '系统信息查询', enabled: false, icon: 'mdi-monitor' },
 ]
 
 export const useAiChatStore = defineStore('aiChat', () => {
@@ -119,6 +120,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
 
   // Agent 执行追踪（工具调用过程），用于 Agent Trace 面板
   const agentTrace = ref<AgentEvent[]>([])
+  // 当前 Agent 回路的 request_id（用于确认/取消/回滚）
+  const agentRequestId = ref<string | null>(null)
 
   // UI State
   const selectedModelId = ref<string | null>(null)
@@ -130,6 +133,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const temperature = ref<number>(0.7)
   const maxTokens = ref<number>(4096)
   const streamEnabled = ref<boolean>(true)
+  // 确认策略：normal=写操作需确认 / auto=仅系统级确认
+  const confirmMode = ref<'normal' | 'auto'>('normal')
 
   // Computed
   const currentSession = computed(() =>
@@ -287,9 +292,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
     error.value = null
 
     try {
-      // 当启用了 MCP 服务时，走 Agent 工具调用回路
+      // 当启用了工具分组时，走 Agent 工具调用回路
       if (enabledMcpServers.value.length > 0) {
         const requestId = `agent-${Date.now()}`
+        agentRequestId.value = requestId
 
         const unlisten = await listen<AgentEvent>(`agent-event-${requestId}`, (event) => {
           const payload = event.payload
@@ -308,6 +314,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
             temperature: options?.temperature ?? temperature.value,
             maxTokens: options?.maxTokens ?? maxTokens.value,
             requestId,
+            confirmMode: confirmMode.value,
           })
 
           const assistantMessage: ChatMessage = {
@@ -392,6 +399,30 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
+  // 对挂起的工具调用做确认
+  async function confirmTool(callId: string, approve: boolean, editedArgs?: Record<string, unknown>) {
+    if (!agentRequestId.value) return
+    await toolConfirm(agentRequestId.value, callId, approve, editedArgs)
+  }
+
+  // 取消当前 Agent 回路
+  async function cancelAgent() {
+    if (!agentRequestId.value) return
+    await agentCancel(agentRequestId.value)
+  }
+
+  // 单步回滚
+  async function undoTool(undoToken: string) {
+    if (!agentRequestId.value) return
+    return await toolUndo(agentRequestId.value, undoToken)
+  }
+
+  // 整回合回滚
+  async function undoTurn() {
+    if (!agentRequestId.value) return
+    return await turnUndo(agentRequestId.value)
+  }
+
   // Toggle MCP server
   function toggleMcpServer(serverId: string) {
     const server = mcpServers.value.find(s => s.id === serverId)
@@ -465,6 +496,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
     error,
     streamingContent,
     agentTrace,
+    agentRequestId,
+    confirmMode,
     selectedModelId,
     selectedProvider,
     enabledMcpServers,
@@ -487,6 +520,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
     createSession,
     deleteSession,
     sendMessage,
+    confirmTool,
+    cancelAgent,
+    undoTool,
+    undoTurn,
     toggleMcpServer,
     setSelectedModel,
     loadSettings,

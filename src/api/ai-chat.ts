@@ -329,7 +329,16 @@ export interface AgentMessage {
 export type AgentEvent =
   | { type: 'thinking'; text: string }
   | { type: 'tool_call'; id: string; server: string; name: string; arguments: unknown }
-  | { type: 'tool_result'; id: string; name: string; content: string; is_error: boolean }
+  | {
+      type: 'confirm_request'
+      call_id: string
+      server: string
+      name: string
+      risk: RiskLevel
+      arguments: unknown
+      diff: string
+    }
+  | { type: 'tool_result'; id: string; name: string; content: string; is_error: boolean; undo_token?: string | null }
   | { type: 'content'; text: string }
   | { type: 'done' }
   | { type: 'error'; message: string }
@@ -360,6 +369,8 @@ export async function agentChat(params: {
   temperature?: number
   maxTokens?: number
   requestId: string
+  confirmMode?: 'normal' | 'auto'
+  autoApprove?: string[]
 }) {
   return await invoke<string>('agent_chat', {
     provider: params.provider,
@@ -369,5 +380,39 @@ export async function agentChat(params: {
     temperature: params.temperature ?? null,
     maxTokens: params.maxTokens ?? null,
     requestId: params.requestId,
+    confirmMode: params.confirmMode ?? null,
+    autoApprove: params.autoApprove ?? null,
   })
+}
+
+/**
+ * 对某个挂起的工具调用做出确认
+ */
+export async function toolConfirm(
+  requestId: string,
+  callId: string,
+  approve: boolean,
+  editedArgs?: Record<string, unknown>
+) {
+  return await invoke<void>('tool_confirm', {
+    requestId,
+    callId,
+    approve,
+    editedArgs: editedArgs ?? null,
+  })
+}
+
+/** 取消整个 Agent 回路 */
+export async function agentCancel(requestId: string) {
+  return await invoke<void>('agent_cancel', { requestId })
+}
+
+/** 整回合逆序回滚 */
+export async function turnUndo(requestId: string) {
+  return await invoke<string[]>('turn_undo', { requestId })
+}
+
+/** 单步回滚指定 undo_token */
+export async function toolUndo(requestId: string, undoToken: string) {
+  return await invoke<string>('tool_undo', { requestId, undoToken })
 }

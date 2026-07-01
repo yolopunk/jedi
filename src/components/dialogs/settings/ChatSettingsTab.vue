@@ -141,6 +141,7 @@
         <div class="setting-subtitle">{{ srv.command }} {{ (srv.args || []).join(' ') }}</div>
       </div>
       <div class="setting-action">
+        <span class="status-chip">{{ (srv.transport || 'stdio').toUpperCase() }}</span>
         <span class="status-chip" :class="{ success: isConnected(srv.id) }">
           {{ isConnected(srv.id) ? 'CONNECTED' : 'OFFLINE' }}
         </span>
@@ -152,10 +153,27 @@
     </div>
 
     <div class="mcp-add-form">
+      <div class="mcp-transport-tabs">
+        <button
+          class="mcp-tab"
+          :class="{ active: newServer.transport === 'stdio' }"
+          @click="newServer.transport = 'stdio'"
+        >STDIO</button>
+        <button
+          class="mcp-tab"
+          :class="{ active: newServer.transport === 'sse' }"
+          @click="newServer.transport = 'sse'"
+        >SSE</button>
+      </div>
       <input v-model="newServer.id" class="console-input" placeholder="id (唯一)" />
       <input v-model="newServer.name" class="console-input" placeholder="名称" />
-      <input v-model="newServer.command" class="console-input" placeholder="命令，例如 npx" />
-      <input v-model="newServer.argsText" class="console-input" placeholder="参数（空格分隔）" />
+      <template v-if="newServer.transport === 'stdio'">
+        <input v-model="newServer.command" class="console-input" placeholder="命令，例如 npx" />
+        <input v-model="newServer.argsText" class="console-input" placeholder="参数（空格分隔）" />
+      </template>
+      <template v-else>
+        <input v-model="newServer.url" class="console-input" placeholder="URL，例如 http://127.0.0.1:9000/sse" />
+      </template>
       <button class="console-btn small primary" @click="addServer">+ 添加服务器</button>
     </div>
     <div v-if="mcpError" class="mcp-error">{{ mcpError }}</div>
@@ -252,7 +270,14 @@ const chatSettings = ref({
 const mcpServers = ref<McpServer[]>([...store.mcpServers])
 
 // 第三方 MCP server 管理
-const newServer = ref({ id: '', name: '', command: '', argsText: '' })
+const newServer = ref<{
+  transport: 'stdio' | 'sse'
+  id: string
+  name: string
+  command: string
+  argsText: string
+  url: string
+}>({ transport: 'stdio', id: '', name: '', command: '', argsText: '', url: '' })
 const mcpError = ref('')
 
 function isConnected(id: string) {
@@ -273,20 +298,38 @@ async function toggleConnect(srv: { id: string }) {
 }
 
 function addServer() {
-  if (!newServer.value.id || !newServer.value.command) {
-    mcpError.value = 'id 和 命令 为必填'
+  const s = newServer.value
+  if (!s.id) {
+    mcpError.value = 'id 为必填'
+    return
+  }
+  if (s.transport === 'stdio' && !s.command) {
+    mcpError.value = 'stdio 需要命令'
+    return
+  }
+  if (s.transport === 'sse' && !s.url) {
+    mcpError.value = 'sse 需要 URL'
     return
   }
   mcpError.value = ''
-  const argsText = newServer.value.argsText.trim()
-  store.addMcpServer({
-    id: newServer.value.id,
-    name: newServer.value.name || newServer.value.id,
-    transport: 'stdio',
-    command: newServer.value.command,
-    args: argsText ? argsText.split(/\s+/) : [],
-  })
-  newServer.value = { id: '', name: '', command: '', argsText: '' }
+  if (s.transport === 'stdio') {
+    const argsText = s.argsText.trim()
+    store.addMcpServer({
+      id: s.id,
+      name: s.name || s.id,
+      transport: 'stdio',
+      command: s.command,
+      args: argsText ? argsText.split(/\s+/) : [],
+    })
+  } else {
+    store.addMcpServer({
+      id: s.id,
+      name: s.name || s.id,
+      transport: 'sse',
+      url: s.url,
+    })
+  }
+  newServer.value = { transport: s.transport, id: '', name: '', command: '', argsText: '', url: '' }
 }
 
 const showProviderDialog = ref(false)
@@ -615,5 +658,32 @@ defineExpose({ loadSettings })
   color: #f87171;
   font-family: 'JetBrains Mono', monospace;
   padding: 6px 12px;
+}
+
+.mcp-transport-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.mcp-tab {
+  flex: 1;
+  padding: 4px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #52525b;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 255, 255, 0.12);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.mcp-tab.active {
+  color: #00ffff;
+  border-color: rgba(0, 255, 255, 0.4);
+  background: rgba(0, 255, 255, 0.08);
 }
 </style>

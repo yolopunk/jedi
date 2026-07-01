@@ -5,8 +5,9 @@
 //
 // 安全：第三方 server = 运行外部程序，属信任边界。其工具默认风险 = Write（至少需确认）。
 
-use crate::mcp::protocol::{McpClient, McpClientBuilder};
-use crate::mcp::transport::TransportConfig;
+use crate::mcp::protocol::McpClient;
+use crate::mcp::sse_transport::{SseConfig, SseTransport};
+use crate::mcp::transport::{StdioTransport, Transport, TransportConfig};
 use crate::mcp::types::{CallToolResult, Content};
 use crate::tools::{AgentTool, RiskLevel, ToolDeclaration, ToolOutcome, ToolRegistry, ToolSource};
 use async_trait::async_trait;
@@ -35,6 +36,12 @@ pub struct McpServerConfig {
   pub args: Vec<String>,
   #[serde(default)]
   pub env: HashMap<String, String>,
+  /// sse 传输：服务器 URL
+  #[serde(default)]
+  pub url: String,
+  /// sse 传输：附加请求头（可含鉴权 token）
+  #[serde(default)]
+  pub headers: HashMap<String, String>,
 }
 
 fn default_transport() -> String {
@@ -172,24 +179,31 @@ impl McpManager {
   }
 }
 
-/// 启动 stdio 客户端并拉取工具（阻塞，放 blocking 线程）
+/// 启动客户端并拉取工具（阻塞，放 blocking 线程）。支持 stdio / sse。
 fn start_client(config: &McpServerConfig) -> Result<(Arc<Mutex<McpClient>>, Vec<crate::mcp::types::Tool>), String> {
-  if config.transport != "stdio" {
-    return Err(format!("暂不支持的传输方式: {}（当前仅支持 stdio）", config.transport));
-  }
-  if config.command.trim().is_empty() {
-    return Err("stdio 传输需要 command".to_string());
-  }
+  let transport: Box<dyn Transport> = match config.transport.as_str() {
+    "stdio" => {
+      if config.command.trim().is_empty() {
+        return Err("stdio 传输需要 command".to_string());
+      }
+      let env: Vec<(String, String)> = config.env.clone().into_iter().collect();
+      let tconf = TransportConfig::new(&config.command)
+        .with_args(config.args.clone())
+        .with_env(env);
+      Box::new(StdioTransport::new(tconf))
+    }
+    "sse" => {
+      if config.url.trim().is_empty() {
+        return Err("sse 传输需要 url".to_string());
+      }
+      let headers: Vec<(String, String)> = config.headers.clone().into_iter().collect();
+      let sconf = SseConfig::new(&config.url).with_headers(headers);
+      Box::new(SseTransport::new(sconf))
+    }
+    other => return Err(format!("暂不支持的传输方式: {}", other)),
+  };
 
-  let env: Vec<(String, String)> = config.env.clone().into_iter().collect();
-  let tconf = TransportConfig::new(&config.command)
-    .with_args(config.args.clone())
-    .with_env(env);
-
-  let mut client = McpClientBuilder::new()
-    .name("jedi-mcp-client")
-    .transport(tconf)
-    .build();
+  let mut client = McpClient::with_transport("jedi-mcp-client", env!("CARGO_PKG_VERSION"), transport);
   client.start().map_err(|e| e.to_string())?;
   let tools = client.list_tools().map_err(|e| e.to_string())?;
   Ok((Arc::new(Mutex::new(client)), tools))
@@ -345,7 +359,7 @@ mod tests {
   }
 
   #[test]
-  fn test_start_client_rejects_non_stdio() {
+  fn test_start_client_sse_requires_url() {
     let cfg = McpServerConfig {
       id: "x".into(),
       name: "X".into(),
@@ -353,6 +367,24 @@ mod tests {
       command: "".into(),
       args: vec![],
       env: HashMap::new(),
+      url: String::new(),
+      headers: HashMap::new(),
+    };
+    // sse 传输但缺 url → 报错
+    assert!(start_client(&cfg).is_err());
+  }
+
+  #[test]
+  fn test_start_client_rejects_unknown_transport() {
+    let cfg = McpServerConfig {
+      id: "x".into(),
+      name: "X".into(),
+      transport: "carrier-pigeon".into(),
+      command: "echo".into(),
+      args: vec![],
+      env: HashMap::new(),
+      url: String::new(),
+      headers: HashMap::new(),
     };
     assert!(start_client(&cfg).is_err());
   }
@@ -366,6 +398,8 @@ mod tests {
       command: "  ".into(),
       args: vec![],
       env: HashMap::new(),
+      url: String::new(),
+      headers: HashMap::new(),
     };
     assert!(start_client(&cfg).is_err());
   }
@@ -387,6 +421,8 @@ mod tests {
       command: "python3".into(),
       args: vec![script.to_string()],
       env: HashMap::new(),
+      url: String::new(),
+      headers: HashMap::new(),
     };
 
     let (client, tools) = match start_client(&cfg) {
@@ -414,5 +450,79 @@ mod tests {
     let text = flatten_result(&result);
     assert_eq!(text, "echo: hi");
     assert_eq!(result.is_error, Some(false));
+  }
+
+  /// 端到端：连接一个真实的 mock MCP server（HTTP+SSE）。
+  /// 若环境无 python3，优雅跳过。
+  #[test]
+  fn test_connect_mock_sse_server_end_to_end() {
+    use std::io::{BufRead, BufReader};
+
+    let script = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/mock_sse_server.py");
+    if !std::path::Path::new(script).exists() {
+      eprintln!("skip: mock sse fixture 不存在");
+      return;
+    }
+
+    let mut child = match std::process::Command::new("python3")
+      .arg(script)
+      .stdout(std::process::Stdio::piped())
+      .spawn()
+    {
+      Ok(c) => c,
+      Err(e) => {
+        eprintln!("skip: 无法启动 python3: {}", e);
+        return;
+      }
+    };
+
+    // 读取 mock 打印的实际端口
+    let port: Option<u16> = child.stdout.take().and_then(|out| {
+      let mut line = String::new();
+      let mut reader = BufReader::new(out);
+      reader.read_line(&mut line).ok()?;
+      line.trim().strip_prefix("PORT ").and_then(|s| s.parse().ok())
+    });
+    let port = match port {
+      Some(p) => p,
+      None => {
+        let _ = child.kill();
+        eprintln!("skip: 未取得端口");
+        return;
+      }
+    };
+
+    let cfg = McpServerConfig {
+      id: "sse".into(),
+      name: "SSE".into(),
+      transport: "sse".into(),
+      command: String::new(),
+      args: vec![],
+      env: HashMap::new(),
+      url: format!("http://127.0.0.1:{}/sse", port),
+      headers: HashMap::new(),
+    };
+
+    let outcome = (|| -> Result<String, String> {
+      let (client, tools) = start_client(&cfg)?;
+      if !tools.iter().any(|t| t.name == "echo") {
+        return Err("SSE 未返回 echo 工具".to_string());
+      }
+      let mut args = HashMap::new();
+      args.insert("text".to_string(), serde_json::json!("hi"));
+      let result = {
+        let mut c = client.lock().unwrap();
+        c.call_tool("echo", Some(args)).map_err(|e| e.to_string())?
+      };
+      Ok(flatten_result(&result))
+    })();
+
+    let _ = child.kill();
+    let _ = child.wait();
+
+    match outcome {
+      Ok(text) => assert_eq!(text, "echo: hi"),
+      Err(e) => panic!("SSE 端到端失败: {}", e),
+    }
   }
 }

@@ -302,6 +302,38 @@ impl Drop for StdioTransport {
 }
 
 // ============================================================================
+// 同步传输层抽象（stdio / sse 共用）
+// ============================================================================
+
+/// 同步传输层：McpClient 通过它收发 JSON-RPC。
+pub trait Transport: Send {
+  fn start(&mut self) -> Result<(), McpError>;
+  fn stop(&mut self) -> Result<(), McpError>;
+  fn send_request(&mut self, request: JsonRpcRequest) -> Result<JsonRpcResponse, McpError>;
+  fn send_notification(&mut self, notification: JsonRpcNotification) -> Result<(), McpError>;
+  #[allow(dead_code)]
+  fn is_running(&self) -> bool;
+}
+
+impl Transport for StdioTransport {
+  fn start(&mut self) -> Result<(), McpError> {
+    StdioTransport::start(self)
+  }
+  fn stop(&mut self) -> Result<(), McpError> {
+    StdioTransport::stop(self)
+  }
+  fn send_request(&mut self, request: JsonRpcRequest) -> Result<JsonRpcResponse, McpError> {
+    StdioTransport::send_request(self, request)
+  }
+  fn send_notification(&mut self, notification: JsonRpcNotification) -> Result<(), McpError> {
+    StdioTransport::send_notification(self, notification)
+  }
+  fn is_running(&self) -> bool {
+    StdioTransport::is_running(self)
+  }
+}
+
+// ============================================================================
 // 异步传输层（预留接口）
 // ============================================================================
 

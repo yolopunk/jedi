@@ -424,9 +424,13 @@ export interface McpServerConfig {
   id: string
   name: string
   transport?: 'stdio' | 'sse'
+  /** stdio */
   command?: string
   args?: string[]
   env?: Record<string, string>
+  /** sse */
+  url?: string
+  headers?: Record<string, string>
   /** 前端本地状态：是否期望连接（后端忽略此字段） */
   enabled?: boolean
 }

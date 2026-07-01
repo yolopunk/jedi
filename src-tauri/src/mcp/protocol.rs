@@ -1,7 +1,7 @@
 // MCP 协议处理
 // Phase 3: MCP 客户端实现 - 协议层
 
-use crate::mcp::transport::{StdioTransport, TransportConfig};
+use crate::mcp::transport::{StdioTransport, Transport, TransportConfig};
 use crate::mcp::types::*;
 use std::collections::HashMap;
 use tracing::{debug, info, warn};
@@ -76,8 +76,8 @@ impl McpClientConfig {
 pub struct McpClient {
   /// 配置
   config: McpClientConfig,
-  /// 传输层
-  transport: StdioTransport,
+  /// 传输层（stdio / sse）
+  transport: Box<dyn Transport>,
   /// 当前状态
   state: ClientState,
   /// 服务器能力
@@ -90,11 +90,28 @@ pub struct McpClient {
 
 #[allow(dead_code)]
 impl McpClient {
-  /// 创建新的 MCP 客户端
+  /// 创建新的 MCP 客户端（stdio 传输）
   pub fn new(config: McpClientConfig) -> Self {
-    let transport = StdioTransport::new(config.transport_config.clone());
+    let transport: Box<dyn Transport> =
+      Box::new(StdioTransport::new(config.transport_config.clone()));
     Self {
       config,
+      transport,
+      state: ClientState::Uninitialized,
+      server_capabilities: None,
+      server_info: None,
+      request_id_counter: 0,
+    }
+  }
+
+  /// 用指定传输层创建客户端（stdio / sse 通用）
+  pub fn with_transport(
+    name: impl Into<String>,
+    version: impl Into<String>,
+    transport: Box<dyn Transport>,
+  ) -> Self {
+    Self {
+      config: McpClientConfig::new(name, version),
       transport,
       state: ClientState::Uninitialized,
       server_capabilities: None,

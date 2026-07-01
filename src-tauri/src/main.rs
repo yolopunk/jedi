@@ -71,6 +71,12 @@ mod tools;
 mod utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+  // P4: 以 MCP server 模式运行（对外暴露只读工具，不启动 GUI）
+  if std::env::args().any(|a| a == "--mcp-server") {
+    crate::mcp::server::run_stdio_server();
+    return Ok(());
+  }
+
   let _logger_guard = logger::init();
 
   // 初始化审计日志记录器状态

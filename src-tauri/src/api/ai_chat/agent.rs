@@ -75,6 +75,31 @@ fn short_args(args: &Value) -> String {
   }
 }
 
+/// 默认的 Agent 系统提示：塑造角色、规划、确认与安全行为
+fn build_agent_system_prompt() -> String {
+  "你是 Jedi 工具箱的 AI Agent。你可以调用工具来帮助用户管理系统 hosts、设置知识壁纸、\
+管理播客订阅、查询系统信息，并使用已连接的第三方 MCP 工具。\n\n\
+工作方式：\n\
+1. 对于多步任务，先用一两句话简要说明计划，再开始执行。\n\
+2. 读操作可直接调用；写操作与系统级操作会请求用户确认——若用户拒绝，不要重试，改为询问用户下一步。\n\
+3. 调用工具前确保参数完整、准确；缺少必要信息时先向用户询问。\n\
+4. 如果有记忆工具，可用它记住用户的长期偏好与常用配置，并在需要时回忆。\n\
+5. 完成后简洁地用中文总结你做了什么。不要臆造工具不存在的能力。"
+    .to_string()
+}
+
+/// 若消息中没有 system，则在开头注入 Agent 系统提示
+fn ensure_system_prompt(messages: &[Message], prompt: &str) -> Vec<Message> {
+  if messages.iter().any(|m| m.role == MessageRole::System) {
+    messages.to_vec()
+  } else {
+    let mut v = Vec::with_capacity(messages.len() + 1);
+    v.push(Message::system(prompt));
+    v.extend_from_slice(messages);
+    v
+  }
+}
+
 // ============================================================================
 // Agent 事件（推送给前端 Trace / 确认卡片）
 // ============================================================================
@@ -451,7 +476,14 @@ async fn run_openai_loop(
     }
   }
 
-  Err(format!("Agent 达到最大迭代次数 ({})，未能完成任务", MAX_ITERATIONS))
+  // 达到步数上限：优雅收尾而非报错
+  let msg = format!(
+    "已达到最大工具调用步数（{}），任务可能未完全完成。请细化需求或分步进行。",
+    MAX_ITERATIONS
+  );
+  emit_event(ctx.app, ctx.request_id, AgentEvent::Notice { text: msg.clone() });
+  emit_event(ctx.app, ctx.request_id, AgentEvent::Done);
+  Ok(msg)
 }
 
 /// Anthropic 流式块累加器（可单测）
@@ -663,7 +695,14 @@ async fn run_anthropic_loop(
     }
   }
 
-  Err(format!("Agent 达到最大迭代次数 ({})，未能完成任务", MAX_ITERATIONS))
+  // 达到步数上限：优雅收尾而非报错
+  let msg = format!(
+    "已达到最大工具调用步数（{}），任务可能未完全完成。请细化需求或分步进行。",
+    MAX_ITERATIONS
+  );
+  emit_event(ctx.app, ctx.request_id, AgentEvent::Notice { text: msg.clone() });
+  emit_event(ctx.app, ctx.request_id, AgentEvent::Done);
+  Ok(msg)
 }
 
 // ============================================================================
@@ -705,6 +744,7 @@ pub async fn agent_chat(
   confirm_mode: Option<String>,
   auto_approve: Option<Vec<String>>,
   supports_tools: Option<bool>,
+  system_prompt: Option<String>,
 ) -> Result<String, String> {
   let filter = ToolFilter {
     enabled_groups: servers.clone(),
@@ -728,6 +768,14 @@ pub async fn agent_chat(
   };
   let auto_approve = auto_approve.unwrap_or_default();
 
+  // Agent 模式（有工具）注入系统提示，塑造规划/确认/安全行为
+  let effective_messages = if tools.is_empty() {
+    messages
+  } else {
+    let prompt = system_prompt.unwrap_or_else(build_agent_system_prompt);
+    ensure_system_prompt(&messages, &prompt)
+  };
+
   let ctx = ExecCtx {
     app: &app,
     request_id: &request_id,
@@ -746,12 +794,12 @@ pub async fn agent_chat(
     "anthropic" => {
       let key = api_key.ok_or_else(|| "Anthropic API key not found".to_string())?;
       let base_url = endpoint.unwrap_or_else(|| "https://api.anthropic.com/v1".to_string());
-      run_anthropic_loop(&ctx, &client, &base_url, &key, &model, &messages, temperature, max_tokens)
+      run_anthropic_loop(&ctx, &client, &base_url, &key, &model, &effective_messages, temperature, max_tokens)
         .await
     }
     "ollama" => {
       let base_url = endpoint.unwrap_or_else(|| "http://localhost:11434/v1".to_string());
-      run_openai_loop(&ctx, &client, &base_url, None, &model, &messages, temperature, max_tokens)
+      run_openai_loop(&ctx, &client, &base_url, None, &model, &effective_messages, temperature, max_tokens)
         .await
     }
     _ => {
@@ -762,7 +810,7 @@ pub async fn agent_chat(
         &base_url,
         api_key.as_deref(),
         &model,
-        &messages,
+        &effective_messages,
         temperature,
         max_tokens,
       )
@@ -883,6 +931,32 @@ mod tests {
     assert_eq!(acc.text(), "Hi there");
     assert!(!acc.has_tool_use());
     assert!(acc.done);
+  }
+
+  #[test]
+  fn test_agent_system_prompt_content() {
+    let p = build_agent_system_prompt();
+    assert!(p.contains("Jedi"));
+    assert!(p.contains("确认"));
+    assert!(p.contains("计划"));
+  }
+
+  #[test]
+  fn test_ensure_system_prompt_adds_when_missing() {
+    let msgs = vec![Message::user("hi")];
+    let out = ensure_system_prompt(&msgs, "SYS");
+    assert_eq!(out.len(), 2);
+    assert_eq!(out[0].role, MessageRole::System);
+    assert_eq!(out[0].content, "SYS");
+    assert_eq!(out[1].role, MessageRole::User);
+  }
+
+  #[test]
+  fn test_ensure_system_prompt_keeps_existing() {
+    let msgs = vec![Message::system("orig"), Message::user("hi")];
+    let out = ensure_system_prompt(&msgs, "SYS");
+    assert_eq!(out.len(), 2);
+    assert_eq!(out[0].content, "orig");
   }
 
   #[test]

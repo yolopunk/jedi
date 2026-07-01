@@ -2,13 +2,19 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use crate::api::ai_chat::{
-  // Phase 4: Agent 工具调用 / 统一工具
+  // Phase 4: Agent 工具调用 / 统一工具 / 确认回滚
+  agent_cancel,
   agent_chat,
   append_message,
   create_session,
   delete_api_key,
   tool_call,
+  tool_confirm,
   tool_list_all,
+  tool_undo,
+  turn_undo,
+  PendingConfirmations,
+  UndoStacks,
   delete_session,
   encode_html_entities,
   get_api_key_info,
@@ -91,6 +97,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   // P1: 初始化统一工具注册表（注册全部内置工具）
   let tool_registry = crate::tools::ToolRegistry::with_builtins();
+  // P2: 确认挂起表 + per-turn 回滚栈
+  let pending_confirmations = PendingConfirmations::new();
+  let undo_stacks = UndoStacks::new();
 
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
@@ -112,6 +121,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .manage(models_dev_manager_state)
     // P1: 管理统一工具注册表
     .manage(tool_registry)
+    // P2: 管理确认挂起表与回滚栈
+    .manage(pending_confirmations)
+    .manage(undo_stacks)
     .setup(|app| {
       // 创建主窗口
       let mut win_builder =
@@ -207,10 +219,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       get_models_for_provider,
       get_models_providers,
       search_models_dev,
-      // Phase 4: Agent 工具调用 / 统一工具 commands
+      // Phase 4: Agent 工具调用 / 统一工具 / 确认回滚 commands
       agent_chat,
       tool_list_all,
-      tool_call
+      tool_call,
+      tool_confirm,
+      agent_cancel,
+      turn_undo,
+      tool_undo
     ])
     .build(tauri::generate_context!())?;
 

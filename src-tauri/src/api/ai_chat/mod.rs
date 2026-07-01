@@ -4,6 +4,7 @@
 // Phase 3: Models.dev 集成
 
 pub(crate) mod agent;
+pub(crate) mod confirm;
 pub(crate) mod models;
 pub(crate) mod security;
 pub(crate) mod sessions;
@@ -21,6 +22,11 @@ pub use models::{send_chat_message, send_chat_message_stream, ModelProviderManag
 
 // 重新导出 Agent 工具调用相关 commands
 pub use agent::{agent_chat, tool_call, tool_list_all};
+
+// 重新导出确认/回滚相关类型与 commands
+pub use confirm::{
+  agent_cancel, tool_confirm, tool_undo, turn_undo, PendingConfirmations, UndoStacks,
+};
 
 // 重新导出会话相关类型和 commands
 pub use sessions::{

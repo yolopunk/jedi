@@ -1,13 +1,34 @@
-// Hosts 内置工具：复用 api::hosts 的读取逻辑，写入走本地共享 helper
-// 由 mcp/servers/hosts.rs 的伪 MCP 实现迁移而来（P1）
+// Hosts 内置工具：复用 api::hosts 读取逻辑，写入走本地共享 helper
+// P1 迁移自伪 MCP；P2 增加 dynamic_risk / dry_run+快照 / undo
 
 use crate::api::hosts::{read_system_hosts, GroupHosts, HostEntry, HOSTS_PATH};
-use crate::tools::{AgentTool, RiskLevel, ToolDeclaration, ToolOutcome, ToolSource};
+use crate::tools::{AgentTool, RiskLevel, ToolDeclaration, ToolOutcome, ToolPreview, ToolSource};
 use async_trait::async_trait;
 use serde_json::{json, Value};
-use std::sync::Arc;
+use std::collections::hash_map::DefaultHasher;
+use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, LazyLock, Mutex};
 
 const GROUP: &str = "hosts";
+
+/// 命中这些域名（或其子域）的写操作升级为 System 风险（强制二次确认）
+const SENSITIVE_SUFFIXES: &[&str] = &[
+  "microsoft.com",
+  "windowsupdate.com",
+  "apple.com",
+  "icloud.com",
+  "google.com",
+  "googleapis.com",
+  "github.com",
+  "amazonaws.com",
+];
+
+/// 回滚快照：token → 写入前的 hosts 完整内容
+static UNDO_SNAPSHOTS: LazyLock<Mutex<HashMap<String, String>>> =
+  LazyLock::new(|| Mutex::new(HashMap::new()));
+static UNDO_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 /// 全部 hosts 工具
 pub fn tools() -> Vec<Arc<dyn AgentTool>> {
@@ -40,22 +61,39 @@ fn get_str(args: &Value, key: &str) -> Result<String, String> {
     .ok_or_else(|| format!("缺少参数: {}", key))
 }
 
-/// 写入完整 hosts 配置（保留非 Jedi 管理区，重写 Jedi 区）
-/// 迁移自 mcp/servers/hosts.rs 的 write_hosts。
-fn write_groups(groups: &[GroupHosts]) -> Result<(), String> {
-  let hosts_content =
-    std::fs::read_to_string(HOSTS_PATH).map_err(|e| format!("读取 hosts 失败: {}", e))?;
+fn is_sensitive(domain: &str) -> bool {
+  let d = domain.trim().to_ascii_lowercase();
+  SENSITIVE_SUFFIXES
+    .iter()
+    .any(|s| d == *s || d.ends_with(&format!(".{}", s)))
+}
 
+// ============================================================================
+// 快照 / 渲染 / 写入 / 回滚
+// ============================================================================
+
+fn hash_str(s: &str) -> String {
+  let mut h = DefaultHasher::new();
+  s.hash(&mut h);
+  format!("{:016x}", h.finish())
+}
+
+/// 当前 hosts 文件的一致性快照 token（【Y1】）
+fn hosts_snapshot() -> String {
+  hash_str(&std::fs::read_to_string(HOSTS_PATH).unwrap_or_default())
+}
+
+/// 用 groups 渲染完整 hosts 内容（保留 base 中的非 Jedi 区）
+fn render_hosts(base: &str, groups: &[GroupHosts]) -> String {
   let mut new_lines: Vec<String> = Vec::new();
   let mut in_jedi = false;
-
-  for line in hosts_content.lines() {
-    let trimmed = line.trim_start();
-    if trimmed.starts_with("# === JEDI HOSTS MANAGER ===") {
+  for line in base.lines() {
+    let t = line.trim_start();
+    if t.starts_with("# === JEDI HOSTS MANAGER ===") {
       in_jedi = true;
       continue;
     }
-    if trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") {
+    if t.starts_with("# === END JEDI HOSTS MANAGER ===") {
       in_jedi = false;
       continue;
     }
@@ -63,7 +101,6 @@ fn write_groups(groups: &[GroupHosts]) -> Result<(), String> {
       new_lines.push(line.to_string());
     }
   }
-
   new_lines.push("# === JEDI HOSTS MANAGER ===".to_string());
   for g in groups {
     new_lines.push(format!("# +{}+", g.name));
@@ -78,14 +115,48 @@ fn write_groups(groups: &[GroupHosts]) -> Result<(), String> {
     }
   }
   new_lines.push("# === END JEDI HOSTS MANAGER ===".to_string());
+  new_lines.join("\n") + "\n"
+}
 
-  let content = new_lines.join("\n") + "\n";
+/// 写入 groups。expected 为确认时锁定的快照：若与当前不一致则拒绝（【Y1】）。
+/// 成功返回 undo_token（写入前内容已入回滚栈）。
+fn write_groups(groups: &[GroupHosts], expected: Option<String>) -> Result<String, String> {
+  let base = std::fs::read_to_string(HOSTS_PATH).map_err(|e| format!("读取 hosts 失败: {}", e))?;
+  if let Some(exp) = &expected {
+    if *exp != hash_str(&base) {
+      return Err("目标 hosts 已被外部修改，请重新确认后再执行".to_string());
+    }
+  }
+  let content = render_hosts(&base, groups);
+  std::fs::write(HOSTS_PATH, &content).map_err(|e| format!("写入 hosts 失败: {}", e))?;
+
+  let token = format!("hosts-{}", UNDO_COUNTER.fetch_add(1, Ordering::Relaxed));
+  if let Ok(mut map) = UNDO_SNAPSHOTS.lock() {
+    map.insert(token.clone(), base);
+  }
+  Ok(token)
+}
+
+/// 回滚到某个 undo_token 对应的写入前内容（【Y4】）
+fn restore_hosts(token: &str) -> Result<(), String> {
+  let content = {
+    let map = UNDO_SNAPSHOTS.lock().map_err(|e| e.to_string())?;
+    map.get(token).cloned()
+  }
+  .ok_or_else(|| "快照不存在或已过期".to_string())?;
   std::fs::write(HOSTS_PATH, content).map_err(|e| format!("写入 hosts 失败: {}", e))?;
   Ok(())
 }
 
+fn preview(diff: String) -> Result<Option<ToolPreview>, String> {
+  Ok(Some(ToolPreview {
+    diff,
+    snapshot_token: hosts_snapshot(),
+  }))
+}
+
 // ============================================================================
-// hosts_read
+// hosts_read（Read）
 // ============================================================================
 
 pub struct HostsRead;
@@ -113,7 +184,7 @@ impl AgentTool for HostsRead {
 }
 
 // ============================================================================
-// hosts_list
+// hosts_list（Read）
 // ============================================================================
 
 pub struct HostsList;
@@ -139,12 +210,10 @@ impl AgentTool for HostsList {
       Ok(g) => g,
       Err(e) => return ToolOutcome::error(format!("读取 hosts 失败: {}", e)),
     };
-
     let filtered: Vec<GroupHosts> = match args.get("group").and_then(|v| v.as_str()) {
       Some(name) => groups.into_iter().filter(|g| g.name == name).collect(),
       None => groups,
     };
-
     match serde_json::to_string_pretty(&filtered) {
       Ok(s) => ToolOutcome::text(s),
       Err(e) => ToolOutcome::error(format!("序列化失败: {}", e)),
@@ -153,19 +222,18 @@ impl AgentTool for HostsList {
 }
 
 // ============================================================================
-// hosts_add
+// hosts_add（Write / 命中敏感域名→System）
 // ============================================================================
 
 pub struct HostsAdd;
 
-fn add_impl(args: Value) -> Result<String, String> {
-  let ip = get_str(&args, "ip")?;
-  let domain = get_str(&args, "domain")?;
-  let group = get_str(&args, "group")?;
+fn add_apply(args: &Value, expected: Option<String>) -> Result<(String, String), String> {
+  let ip = get_str(args, "ip")?;
+  let domain = get_str(args, "domain")?;
+  let group = get_str(args, "group")?;
   let disabled = args.get("disabled").and_then(|v| v.as_bool()).unwrap_or(false);
 
   let mut groups = read_system_hosts().map_err(|e| format!("读取 hosts 失败: {}", e))?;
-
   let target = match groups.iter().position(|g| g.name == group) {
     Some(idx) => &mut groups[idx],
     None => {
@@ -176,21 +244,19 @@ fn add_impl(args: Value) -> Result<String, String> {
       groups.last_mut().unwrap()
     }
   };
-
   if target.hosts.iter().any(|h| h.domain == domain) {
     return Err(format!("域名 '{}' 已存在于分组 '{}'", domain, group));
   }
-
   target.hosts.push(HostEntry {
     ip: ip.clone(),
     domain: domain.clone(),
     disabled,
   });
 
-  write_groups(&groups)?;
-  Ok(format!(
-    "已添加: {} {} → {}（禁用: {}）",
-    ip, domain, group, disabled
+  let token = write_groups(&groups, expected)?;
+  Ok((
+    format!("已添加: {} {} → {}（禁用: {}）", ip, domain, group, disabled),
+    token,
   ))
 }
 
@@ -214,30 +280,64 @@ impl AgentTool for HostsAdd {
     )
   }
 
-  async fn call(&self, args: Value, _snapshot: Option<String>) -> ToolOutcome {
-    match add_impl(args) {
-      Ok(msg) => ToolOutcome::text(msg),
+  fn dynamic_risk(&self, args: &Value) -> RiskLevel {
+    match args.get("domain").and_then(|v| v.as_str()) {
+      Some(d) if is_sensitive(d) => RiskLevel::System,
+      _ => RiskLevel::Write,
+    }
+  }
+
+  async fn dry_run(&self, args: &Value) -> Result<Option<ToolPreview>, String> {
+    let ip = get_str(args, "ip")?;
+    let domain = get_str(args, "domain")?;
+    let group = get_str(args, "group")?;
+    let disabled = args.get("disabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let groups = read_system_hosts().map_err(|e| format!("读取 hosts 失败: {}", e))?;
+    let exists = groups
+      .iter()
+      .find(|g| g.name == group)
+      .map(|g| g.hosts.iter().any(|h| h.domain == domain))
+      .unwrap_or(false);
+    let diff = if exists {
+      format!("（无变化）{} 已存在于分组「{}」", domain, group)
+    } else {
+      format!(
+        "+ {} {}  →  分组「{}」{}",
+        ip,
+        domain,
+        group,
+        if disabled { "  [禁用]" } else { "" }
+      )
+    };
+    preview(diff)
+  }
+
+  async fn call(&self, args: Value, snapshot: Option<String>) -> ToolOutcome {
+    match add_apply(&args, snapshot) {
+      Ok((msg, token)) => ToolOutcome::text(msg).with_undo(token),
       Err(e) => ToolOutcome::error(e),
     }
+  }
+
+  async fn undo(&self, token: &str) -> Result<(), String> {
+    restore_hosts(token)
   }
 }
 
 // ============================================================================
-// hosts_remove
+// hosts_remove（Write）
 // ============================================================================
 
 pub struct HostsRemove;
 
-fn remove_impl(args: Value) -> Result<String, String> {
-  let domain = get_str(&args, "domain")?;
+fn remove_apply(args: &Value, expected: Option<String>) -> Result<(String, String), String> {
+  let domain = get_str(args, "domain")?;
   let group_filter = args.get("group").and_then(|v| v.as_str());
-
   let mut groups = read_system_hosts().map_err(|e| format!("读取 hosts 失败: {}", e))?;
-
   let mut removed_from = Vec::new();
   for group in groups.iter_mut() {
-    if let Some(filter) = group_filter {
-      if group.name != filter {
+    if let Some(f) = group_filter {
+      if group.name != f {
         continue;
       }
     }
@@ -247,16 +347,13 @@ fn remove_impl(args: Value) -> Result<String, String> {
       removed_from.push(group.name.clone());
     }
   }
-
   if removed_from.is_empty() {
     return Err(format!("未找到域名 '{}'", domain));
   }
-
-  write_groups(&groups)?;
-  Ok(format!(
-    "已从分组 [{}] 删除 '{}'",
-    removed_from.join(", "),
-    domain
+  let token = write_groups(&groups, expected)?;
+  Ok((
+    format!("已从分组 [{}] 删除 '{}'", removed_from.join(", "), domain),
+    token,
   ))
 }
 
@@ -278,26 +375,44 @@ impl AgentTool for HostsRemove {
     )
   }
 
-  async fn call(&self, args: Value, _snapshot: Option<String>) -> ToolOutcome {
-    match remove_impl(args) {
-      Ok(msg) => ToolOutcome::text(msg),
+  async fn dry_run(&self, args: &Value) -> Result<Option<ToolPreview>, String> {
+    let domain = get_str(args, "domain")?;
+    let groups = read_system_hosts().map_err(|e| format!("读取 hosts 失败: {}", e))?;
+    let hits: Vec<String> = groups
+      .iter()
+      .filter(|g| g.hosts.iter().any(|h| h.domain == domain))
+      .map(|g| g.name.clone())
+      .collect();
+    let diff = if hits.is_empty() {
+      format!("（无变化）未找到 {}", domain)
+    } else {
+      format!("- {}  （来自分组：{}）", domain, hits.join(", "))
+    };
+    preview(diff)
+  }
+
+  async fn call(&self, args: Value, snapshot: Option<String>) -> ToolOutcome {
+    match remove_apply(&args, snapshot) {
+      Ok((msg, token)) => ToolOutcome::text(msg).with_undo(token),
       Err(e) => ToolOutcome::error(e),
     }
+  }
+
+  async fn undo(&self, token: &str) -> Result<(), String> {
+    restore_hosts(token)
   }
 }
 
 // ============================================================================
-// hosts_toggle
+// hosts_toggle（Write / 命中敏感域名→System）
 // ============================================================================
 
 pub struct HostsToggle;
 
-fn toggle_impl(args: Value) -> Result<String, String> {
-  let domain = get_str(&args, "domain")?;
+fn toggle_apply(args: &Value, expected: Option<String>) -> Result<(String, String), String> {
+  let domain = get_str(args, "domain")?;
   let target_disabled = args.get("disabled").and_then(|v| v.as_bool());
-
   let mut groups = read_system_hosts().map_err(|e| format!("读取 hosts 失败: {}", e))?;
-
   let mut changes = Vec::new();
   for group in groups.iter_mut() {
     for host in group.hosts.iter_mut() {
@@ -309,13 +424,11 @@ fn toggle_impl(args: Value) -> Result<String, String> {
       }
     }
   }
-
   if changes.is_empty() {
     return Err(format!("未找到域名 '{}'", domain));
   }
-
-  write_groups(&groups)?;
-  Ok(format!("已切换 '{}':\n{}", domain, changes.join("\n")))
+  let token = write_groups(&groups, expected)?;
+  Ok((format!("已切换 '{}':\n{}", domain, changes.join("\n")), token))
 }
 
 #[async_trait]
@@ -336,30 +449,48 @@ impl AgentTool for HostsToggle {
     )
   }
 
-  async fn call(&self, args: Value, _snapshot: Option<String>) -> ToolOutcome {
-    match toggle_impl(args) {
-      Ok(msg) => ToolOutcome::text(msg),
+  fn dynamic_risk(&self, args: &Value) -> RiskLevel {
+    match args.get("domain").and_then(|v| v.as_str()) {
+      Some(d) if is_sensitive(d) => RiskLevel::System,
+      _ => RiskLevel::Write,
+    }
+  }
+
+  async fn dry_run(&self, args: &Value) -> Result<Option<ToolPreview>, String> {
+    let domain = get_str(args, "domain")?;
+    preview(format!("~ 切换 {} 的启用/禁用状态", domain))
+  }
+
+  async fn call(&self, args: Value, snapshot: Option<String>) -> ToolOutcome {
+    match toggle_apply(&args, snapshot) {
+      Ok((msg, token)) => ToolOutcome::text(msg).with_undo(token),
       Err(e) => ToolOutcome::error(e),
     }
+  }
+
+  async fn undo(&self, token: &str) -> Result<(), String> {
+    restore_hosts(token)
   }
 }
 
 // ============================================================================
-// hosts_write
+// hosts_write（Write / 命中敏感域名→System）
 // ============================================================================
 
 pub struct HostsWrite;
 
-fn write_impl(args: Value) -> Result<String, String> {
+fn write_apply(args: &Value, expected: Option<String>) -> Result<(String, String), String> {
   let groups_value = args
     .get("groups")
     .ok_or_else(|| "缺少参数: groups".to_string())?;
   let groups: Vec<GroupHosts> =
     serde_json::from_value(groups_value.clone()).map_err(|e| format!("groups 格式错误: {}", e))?;
-
-  write_groups(&groups)?;
+  let token = write_groups(&groups, expected)?;
   let total: usize = groups.iter().map(|g| g.hosts.len()).sum();
-  Ok(format!("已写入 {} 个分组，共 {} 条记录", groups.len(), total))
+  Ok((
+    format!("已写入 {} 个分组，共 {} 条记录", groups.len(), total),
+    token,
+  ))
 }
 
 #[async_trait]
@@ -401,11 +532,56 @@ impl AgentTool for HostsWrite {
     )
   }
 
-  async fn call(&self, args: Value, _snapshot: Option<String>) -> ToolOutcome {
-    match write_impl(args) {
-      Ok(msg) => ToolOutcome::text(msg),
+  fn dynamic_risk(&self, args: &Value) -> RiskLevel {
+    let sensitive = args
+      .get("groups")
+      .and_then(|v| v.as_array())
+      .map(|groups| {
+        groups.iter().any(|g| {
+          g.get("hosts")
+            .and_then(|h| h.as_array())
+            .map(|hosts| {
+              hosts.iter().any(|h| {
+                h.get("domain")
+                  .and_then(|d| d.as_str())
+                  .map(is_sensitive)
+                  .unwrap_or(false)
+              })
+            })
+            .unwrap_or(false)
+        })
+      })
+      .unwrap_or(false);
+    if sensitive {
+      RiskLevel::System
+    } else {
+      RiskLevel::Write
+    }
+  }
+
+  async fn dry_run(&self, args: &Value) -> Result<Option<ToolPreview>, String> {
+    let groups_value = args
+      .get("groups")
+      .ok_or_else(|| "缺少参数: groups".to_string())?;
+    let groups: Vec<GroupHosts> = serde_json::from_value(groups_value.clone())
+      .map_err(|e| format!("groups 格式错误: {}", e))?;
+    let total: usize = groups.iter().map(|g| g.hosts.len()).sum();
+    preview(format!(
+      "! 覆盖全部 Jedi 分组 → {} 个分组、{} 条记录",
+      groups.len(),
+      total
+    ))
+  }
+
+  async fn call(&self, args: Value, snapshot: Option<String>) -> ToolOutcome {
+    match write_apply(&args, snapshot) {
+      Ok((msg, token)) => ToolOutcome::text(msg).with_undo(token),
       Err(e) => ToolOutcome::error(e),
     }
+  }
+
+  async fn undo(&self, token: &str) -> Result<(), String> {
+    restore_hosts(token)
   }
 }
 
@@ -419,10 +595,7 @@ mod tests {
 
   #[test]
   fn test_tools_count_and_names() {
-    let names: Vec<String> = tools()
-      .iter()
-      .map(|t| t.declaration().name)
-      .collect();
+    let names: Vec<String> = tools().iter().map(|t| t.declaration().name).collect();
     assert_eq!(names.len(), 6);
     for expected in [
       "hosts_read",
@@ -441,20 +614,47 @@ mod tests {
     let d = HostsAdd.declaration();
     let required = d.input_schema["required"].as_array().unwrap();
     assert!(required.iter().any(|x| x == "ip"));
-    assert!(required.iter().any(|x| x == "domain"));
-    assert!(required.iter().any(|x| x == "group"));
     assert_eq!(d.risk, RiskLevel::Write);
   }
 
   #[test]
-  fn test_read_is_read_risk() {
-    assert_eq!(HostsRead.declaration().risk, RiskLevel::Read);
-    assert_eq!(HostsList.declaration().risk, RiskLevel::Read);
+  fn test_sensitive_domain_escalates_risk() {
+    assert!(is_sensitive("update.microsoft.com"));
+    assert!(is_sensitive("MICROSOFT.COM"));
+    assert!(!is_sensitive("example.com"));
+
+    let esc = HostsAdd.dynamic_risk(&json!({ "domain": "foo.microsoft.com" }));
+    assert_eq!(esc, RiskLevel::System);
+    let normal = HostsAdd.dynamic_risk(&json!({ "domain": "test.local" }));
+    assert_eq!(normal, RiskLevel::Write);
   }
 
   #[test]
-  fn test_add_impl_missing_param() {
-    let err = add_impl(json!({ "ip": "127.0.0.1" })).unwrap_err();
-    assert!(err.contains("缺少参数"));
+  fn test_render_hosts_preserves_non_jedi() {
+    let base = "127.0.0.1 keep.local\n# === JEDI HOSTS MANAGER ===\n# +old+\n1.1.1.1 old.test\n# === END JEDI HOSTS MANAGER ===\n";
+    let groups = vec![GroupHosts {
+      name: "dev".into(),
+      hosts: vec![HostEntry {
+        ip: "127.0.0.1".into(),
+        domain: "new.test".into(),
+        disabled: false,
+      }],
+    }];
+    let out = render_hosts(base, &groups);
+    assert!(out.contains("127.0.0.1 keep.local"));
+    assert!(out.contains("# +dev+"));
+    assert!(out.contains("127.0.0.1 new.test"));
+    assert!(!out.contains("old.test"));
+  }
+
+  #[test]
+  fn test_hash_changes_with_content() {
+    assert_ne!(hash_str("a"), hash_str("b"));
+    assert_eq!(hash_str("a"), hash_str("a"));
+  }
+
+  #[test]
+  fn test_restore_missing_token() {
+    assert!(restore_hosts("nonexistent-token").is_err());
   }
 }

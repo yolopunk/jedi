@@ -1,141 +1,55 @@
 // AI Chat Agent 工具调用回路
-// Phase 4: 将 MCP 工具接入聊天，实现 Agent 工具调用（function calling）
+// Phase 4 / P1：Agent 通过统一的 ToolRegistry 调用工具（function calling）
 //
-// 本模块把已实现的 MCP Server（当前为 Hosts）暴露给 LLM，
-// 通过 OpenAI / Anthropic 的 function calling 能力实现"边思考边调工具"的 Agent 回路：
-//
-//   用户消息 → LLM（携带工具定义）→ 若返回 tool_calls → 执行 MCP 工具 →
-//   把结果回填 → 再次调用 LLM → ... → 直到 LLM 给出最终回答
-//
-// 每一步都会通过 `agent-event-{request_id}` 事件推送给前端，用于 Agent Trace 面板。
+// 回路：用户消息 → LLM（携带工具声明）→ 若返回 tool_calls → 经 ToolRegistry 执行 →
+// 结果回填 → 再次调用 LLM → ... → 直到 LLM 给出最终回答。
+// 每一步通过 `agent-event-{request_id}` 事件推送给前端 Trace 面板。
 
 use crate::api::ai_chat::models::{Message, MessageRole, ModelProviderManagerState};
-use crate::mcp::servers::HostsMcpServer;
-use crate::mcp::types::{CallToolResult, Content, Tool};
+use crate::tools::{ToolDeclaration, ToolFilter, ToolOutcome, ToolRegistry, ToolSource};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::collections::HashMap;
 use tauri::{Emitter, State};
 
 /// Agent 回路最大迭代次数（防止工具调用无限循环）
 const MAX_ITERATIONS: usize = 8;
 
 // ============================================================================
-// MCP 服务注册表（当前仅内置 Hosts，后续可扩展）
-// ============================================================================
-
-/// 列出指定 MCP 服务的工具
-pub fn list_server_tools(server_id: &str) -> Result<Vec<Tool>, String> {
-  match server_id {
-    "hosts" => {
-      let mut server = HostsMcpServer::new();
-      server.initialize().map_err(|e| e.to_string())?;
-      server.list_tools().map_err(|e| e.to_string())
-    }
-    other => Err(format!("Unknown MCP server: {}", other)),
-  }
-}
-
-/// 调用指定 MCP 服务的工具
-pub fn call_server_tool(
-  server_id: &str,
-  tool_name: &str,
-  arguments: Option<HashMap<String, Value>>,
-) -> Result<CallToolResult, String> {
-  match server_id {
-    "hosts" => {
-      let mut server = HostsMcpServer::new();
-      server.initialize().map_err(|e| e.to_string())?;
-      server
-        .call_tool(tool_name, arguments)
-        .map_err(|e| e.to_string())
-    }
-    other => Err(format!("Unknown MCP server: {}", other)),
-  }
-}
-
-/// 前端展示用的工具信息
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ToolInfo {
-  /// 所属 MCP 服务 ID
-  pub server: String,
-  /// 工具名称
-  pub name: String,
-  /// 工具描述
-  pub description: Option<String>,
-  /// 输入 JSON Schema
-  pub input_schema: Value,
-}
-
-/// 收集一组已启用 MCP 服务的全部工具，并建立 工具名 → 服务ID 的映射
-fn collect_tools(servers: &[String]) -> Result<(Vec<(String, Tool)>, HashMap<String, String>), String> {
-  let mut tools = Vec::new();
-  let mut tool_to_server = HashMap::new();
-
-  for server_id in servers {
-    let server_tools = list_server_tools(server_id)?;
-    for tool in server_tools {
-      tool_to_server.insert(tool.name.clone(), server_id.clone());
-      tools.push((server_id.clone(), tool));
-    }
-  }
-
-  Ok((tools, tool_to_server))
-}
-
-// ============================================================================
 // 工具定义格式转换
 // ============================================================================
 
-/// 把 MCP 工具的输入 schema 转换为标准 JSON Schema 对象
-fn input_schema_json(tool: &Tool) -> Value {
-  let mut schema = json!({
-    "type": "object",
-    "properties": tool.input_schema.properties.clone().unwrap_or_default(),
-  });
-  if let Some(required) = &tool.input_schema.required {
-    schema["required"] = json!(required);
-  }
-  schema
-}
-
 /// 转换为 OpenAI function calling 的 tool 定义
-fn tool_to_openai(tool: &Tool) -> Value {
+fn tool_to_openai(decl: &ToolDeclaration) -> Value {
   json!({
     "type": "function",
     "function": {
-      "name": tool.name,
-      "description": tool.description.clone().unwrap_or_default(),
-      "parameters": input_schema_json(tool),
+      "name": decl.name,
+      "description": decl.description,
+      "parameters": decl.input_schema,
     }
   })
 }
 
 /// 转换为 Anthropic 的 tool 定义
-fn tool_to_anthropic(tool: &Tool) -> Value {
+fn tool_to_anthropic(decl: &ToolDeclaration) -> Value {
   json!({
-    "name": tool.name,
-    "description": tool.description.clone().unwrap_or_default(),
-    "input_schema": input_schema_json(tool),
+    "name": decl.name,
+    "description": decl.description,
+    "input_schema": decl.input_schema,
   })
 }
 
-/// 把工具调用结果拍平为纯文本（用于回填给 LLM）
-fn flatten_result(result: &CallToolResult) -> String {
-  result
-    .content
+/// 工具的展示标签（内置=分组名，MCP=server_id）
+fn tool_label(tools: &[ToolDeclaration], name: &str) -> String {
+  tools
     .iter()
-    .map(|c| match c {
-      Content::Text { text } => text.clone(),
-      Content::Image { mime_type, .. } => format!("[image: {}]", mime_type),
-      Content::Resource { resource } => resource
-        .text
-        .clone()
-        .unwrap_or_else(|| format!("[resource: {}]", resource.uri)),
+    .find(|d| d.name == name)
+    .map(|d| match &d.source {
+      ToolSource::Native => d.group.clone(),
+      ToolSource::Mcp { server_id, .. } => server_id.clone(),
     })
-    .collect::<Vec<_>>()
-    .join("\n")
+    .unwrap_or_default()
 }
 
 // ============================================================================
@@ -175,6 +89,47 @@ fn emit_event(app: &tauri::AppHandle, request_id: &str, event: AgentEvent) {
   let _ = app.emit(&format!("agent-event-{}", request_id), &event);
 }
 
+/// 执行单个工具调用并推送事件，返回 (结果文本, 是否出错)
+async fn execute_tool(
+  app: &tauri::AppHandle,
+  request_id: &str,
+  registry: &ToolRegistry,
+  tools: &[ToolDeclaration],
+  id: &str,
+  name: &str,
+  arguments: &Value,
+) -> (String, bool) {
+  let server = tool_label(tools, name);
+
+  emit_event(
+    app,
+    request_id,
+    AgentEvent::ToolCall {
+      id: id.to_string(),
+      server,
+      name: name.to_string(),
+      arguments: arguments.clone(),
+    },
+  );
+
+  let ToolOutcome {
+    content, is_error, ..
+  } = registry.call(name, arguments.clone(), None).await;
+
+  emit_event(
+    app,
+    request_id,
+    AgentEvent::ToolResult {
+      id: id.to_string(),
+      name: name.to_string(),
+      content: content.clone(),
+      is_error,
+    },
+  );
+
+  (content, is_error)
+}
+
 // ============================================================================
 // Provider 回路实现
 // ============================================================================
@@ -188,9 +143,11 @@ fn to_openai_messages(messages: &[Message]) -> Vec<Value> {
 }
 
 /// OpenAI（及兼容协议）工具调用回路
+#[allow(clippy::too_many_arguments)]
 async fn run_openai_loop(
   app: &tauri::AppHandle,
   request_id: &str,
+  registry: &ToolRegistry,
   client: &Client,
   base_url: &str,
   api_key: Option<&str>,
@@ -198,11 +155,10 @@ async fn run_openai_loop(
   messages: &[Message],
   temperature: Option<f32>,
   max_tokens: Option<u32>,
-  tools: &[(String, Tool)],
-  tool_to_server: &HashMap<String, String>,
+  tools: &[ToolDeclaration],
 ) -> Result<String, String> {
   let mut native_messages = to_openai_messages(messages);
-  let openai_tools: Vec<Value> = tools.iter().map(|(_, t)| tool_to_openai(t)).collect();
+  let openai_tools: Vec<Value> = tools.iter().map(tool_to_openai).collect();
 
   for _ in 0..MAX_ITERATIONS {
     let mut body = json!({
@@ -256,22 +212,15 @@ async fn run_openai_loop(
 
     match tool_calls {
       Some(calls) if !calls.is_empty() => {
-        // 先展示可能的中间思考文本
         if let Some(text) = message.get("content").and_then(|c| c.as_str()) {
           if !text.trim().is_empty() {
             emit_event(app, request_id, AgentEvent::Thinking { text: text.to_string() });
           }
         }
-        // 把 assistant（含 tool_calls）消息加入历史
         native_messages.push(message.clone());
 
-        // 依次执行每个工具调用
         for call in calls {
-          let id = call
-            .get("id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
+          let id = call.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
           let name = call
             .get("function")
             .and_then(|f| f.get("name"))
@@ -285,19 +234,17 @@ async fn run_openai_loop(
             .unwrap_or("{}");
           let args_value: Value = serde_json::from_str(args_str).unwrap_or_else(|_| json!({}));
 
-          let (result_text, is_error) =
-            execute_tool(app, request_id, tool_to_server, &id, &name, &args_value);
+          let (result_text, _is_error) =
+            execute_tool(app, request_id, registry, tools, &id, &name, &args_value).await;
 
           native_messages.push(json!({
             "role": "tool",
             "tool_call_id": id,
             "content": result_text,
           }));
-          let _ = is_error;
         }
       }
       _ => {
-        // 没有工具调用 → 最终回答
         let content = message
           .get("content")
           .and_then(|c| c.as_str())
@@ -310,16 +257,15 @@ async fn run_openai_loop(
     }
   }
 
-  Err(format!(
-    "Agent 达到最大迭代次数 ({})，未能完成任务",
-    MAX_ITERATIONS
-  ))
+  Err(format!("Agent 达到最大迭代次数 ({})，未能完成任务", MAX_ITERATIONS))
 }
 
 /// Anthropic 工具调用回路
+#[allow(clippy::too_many_arguments)]
 async fn run_anthropic_loop(
   app: &tauri::AppHandle,
   request_id: &str,
+  registry: &ToolRegistry,
   client: &Client,
   base_url: &str,
   api_key: &str,
@@ -327,10 +273,8 @@ async fn run_anthropic_loop(
   messages: &[Message],
   temperature: Option<f32>,
   max_tokens: Option<u32>,
-  tools: &[(String, Tool)],
-  tool_to_server: &HashMap<String, String>,
+  tools: &[ToolDeclaration],
 ) -> Result<String, String> {
-  // 分离 system 消息
   let system = messages
     .iter()
     .find(|m| m.role == MessageRole::System)
@@ -342,7 +286,7 @@ async fn run_anthropic_loop(
     .map(|m| json!({ "role": m.role.to_string(), "content": m.content }))
     .collect();
 
-  let anthropic_tools: Vec<Value> = tools.iter().map(|(_, t)| tool_to_anthropic(t)).collect();
+  let anthropic_tools: Vec<Value> = tools.iter().map(tool_to_anthropic).collect();
 
   for _ in 0..MAX_ITERATIONS {
     let mut body = json!({
@@ -390,7 +334,6 @@ async fn run_anthropic_loop(
       .cloned()
       .unwrap_or_default();
 
-    // 收集 tool_use 块与文本块
     let mut has_tool_use = false;
     let mut text_parts: Vec<String> = Vec::new();
     let mut tool_result_blocks: Vec<Value> = Vec::new();
@@ -409,7 +352,7 @@ async fn run_anthropic_loop(
           let input = block.get("input").cloned().unwrap_or_else(|| json!({}));
 
           let (result_text, is_error) =
-            execute_tool(app, request_id, tool_to_server, &id, &name, &input);
+            execute_tool(app, request_id, registry, tools, &id, &name, &input).await;
 
           tool_result_blocks.push(json!({
             "type": "tool_result",
@@ -423,14 +366,11 @@ async fn run_anthropic_loop(
     }
 
     if has_tool_use {
-      // 展示中间思考文本
       let thinking = text_parts.join("\n");
       if !thinking.trim().is_empty() {
         emit_event(app, request_id, AgentEvent::Thinking { text: thinking });
       }
-      // assistant 回合（原样回填 content 块）
       native_messages.push(json!({ "role": "assistant", "content": content_blocks }));
-      // user 回合携带 tool_result
       native_messages.push(json!({ "role": "user", "content": tool_result_blocks }));
     } else {
       let content = text_parts.join("\n");
@@ -440,103 +380,37 @@ async fn run_anthropic_loop(
     }
   }
 
-  Err(format!(
-    "Agent 达到最大迭代次数 ({})，未能完成任务",
-    MAX_ITERATIONS
-  ))
-}
-
-/// 执行单个工具调用并推送事件，返回 (结果文本, 是否出错)
-fn execute_tool(
-  app: &tauri::AppHandle,
-  request_id: &str,
-  tool_to_server: &HashMap<String, String>,
-  id: &str,
-  name: &str,
-  arguments: &Value,
-) -> (String, bool) {
-  let server = tool_to_server.get(name).cloned().unwrap_or_default();
-
-  emit_event(
-    app,
-    request_id,
-    AgentEvent::ToolCall {
-      id: id.to_string(),
-      server: server.clone(),
-      name: name.to_string(),
-      arguments: arguments.clone(),
-    },
-  );
-
-  // 把 JSON 对象参数转换为 HashMap
-  let args_map: Option<HashMap<String, Value>> = arguments
-    .as_object()
-    .map(|obj| obj.clone().into_iter().collect());
-
-  let (result_text, is_error) = if server.is_empty() {
-    (format!("未知工具: {}", name), true)
-  } else {
-    match call_server_tool(&server, name, args_map) {
-      Ok(result) => {
-        let is_err = result.is_error.unwrap_or(false);
-        (flatten_result(&result), is_err)
-      }
-      Err(e) => (format!("工具执行失败: {}", e), true),
-    }
-  };
-
-  emit_event(
-    app,
-    request_id,
-    AgentEvent::ToolResult {
-      id: id.to_string(),
-      name: name.to_string(),
-      content: result_text.clone(),
-      is_error,
-    },
-  );
-
-  (result_text, is_error)
+  Err(format!("Agent 达到最大迭代次数 ({})，未能完成任务", MAX_ITERATIONS))
 }
 
 // ============================================================================
 // Tauri commands
 // ============================================================================
 
-/// 列出已启用 MCP 服务的所有工具（供前端展示）
+/// 列出全部已注册工具（供工具浏览器）
 #[tauri::command]
-pub fn mcp_list_tools(servers: Vec<String>) -> Result<Vec<ToolInfo>, String> {
-  let mut infos = Vec::new();
-  for server_id in &servers {
-    for tool in list_server_tools(server_id)? {
-      infos.push(ToolInfo {
-        server: server_id.clone(),
-        input_schema: input_schema_json(&tool),
-        name: tool.name,
-        description: tool.description,
-      });
-    }
-  }
-  Ok(infos)
+pub fn tool_list_all(registry: State<'_, ToolRegistry>) -> Vec<ToolDeclaration> {
+  registry.all_declarations()
 }
 
-/// 直接调用某个 MCP 工具（供手动/调试使用）
+/// 直接调用某个工具（手动/调试）
 #[tauri::command]
-pub fn mcp_call_tool(
-  server: String,
+pub async fn tool_call(
+  registry: State<'_, ToolRegistry>,
   name: String,
-  arguments: Option<HashMap<String, Value>>,
-) -> Result<CallToolResult, String> {
-  call_server_tool(&server, &name, arguments)
+  args: Option<Value>,
+) -> Result<ToolOutcome, String> {
+  Ok(registry.call(&name, args.unwrap_or_else(|| json!({})), None).await)
 }
 
-/// Agent 聊天：携带 MCP 工具运行工具调用回路，返回最终回答
-///
+/// Agent 聊天：携带启用的工具运行工具调用回路，返回最终回答。
 /// 过程事件通过 `agent-event-{request_id}` 推送给前端。
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn agent_chat(
   app: tauri::AppHandle,
   state: State<'_, ModelProviderManagerState>,
+  registry: State<'_, ToolRegistry>,
   provider: String,
   model: String,
   messages: Vec<Message>,
@@ -545,14 +419,12 @@ pub async fn agent_chat(
   max_tokens: Option<u32>,
   request_id: String,
 ) -> Result<String, String> {
-  // 收集工具
-  let (tools, tool_to_server) = match collect_tools(&servers) {
-    Ok(v) => v,
-    Err(e) => {
-      emit_event(&app, &request_id, AgentEvent::Error { message: e.clone() });
-      return Err(e);
-    }
+  // servers 同时作为内置分组与 MCP server 的启用集合
+  let filter = ToolFilter {
+    enabled_groups: servers.clone(),
+    enabled_servers: servers,
   };
+  let tools = registry.declarations(&filter);
 
   let (api_key, endpoint) = state.get_credentials(&provider)?;
   let client = Client::new();
@@ -562,43 +434,25 @@ pub async fn agent_chat(
       let key = api_key.ok_or_else(|| "Anthropic API key not found".to_string())?;
       let base_url = endpoint.unwrap_or_else(|| "https://api.anthropic.com/v1".to_string());
       run_anthropic_loop(
-        &app,
-        &request_id,
-        &client,
-        &base_url,
-        &key,
-        &model,
-        &messages,
-        temperature,
-        max_tokens,
-        &tools,
-        &tool_to_server,
+        &app, &request_id, &registry, &client, &base_url, &key, &model, &messages, temperature,
+        max_tokens, &tools,
       )
       .await
     }
     "ollama" => {
       let base_url = endpoint.unwrap_or_else(|| "http://localhost:11434/v1".to_string());
       run_openai_loop(
-        &app,
-        &request_id,
-        &client,
-        &base_url,
-        None,
-        &model,
-        &messages,
-        temperature,
-        max_tokens,
-        &tools,
-        &tool_to_server,
+        &app, &request_id, &registry, &client, &base_url, None, &model, &messages, temperature,
+        max_tokens, &tools,
       )
       .await
     }
-    // openai 及其它 OpenAI 兼容协议（deepseek 等）
     _ => {
       let base_url = endpoint.unwrap_or_else(|| "https://api.openai.com/v1".to_string());
       run_openai_loop(
         &app,
         &request_id,
+        &registry,
         &client,
         &base_url,
         api_key.as_deref(),
@@ -607,7 +461,6 @@ pub async fn agent_chat(
         temperature,
         max_tokens,
         &tools,
-        &tool_to_server,
       )
       .await
     }
@@ -627,66 +480,46 @@ pub async fn agent_chat(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::tools::RiskLevel;
 
-  #[test]
-  fn test_list_hosts_tools() {
-    let tools = list_server_tools("hosts").unwrap();
-    assert!(!tools.is_empty());
-    let names: Vec<_> = tools.iter().map(|t| t.name.as_str()).collect();
-    assert!(names.contains(&"hosts_read"));
-    assert!(names.contains(&"hosts_add"));
-  }
-
-  #[test]
-  fn test_unknown_server() {
-    assert!(list_server_tools("nope").is_err());
-    assert!(call_server_tool("nope", "x", None).is_err());
-  }
-
-  #[test]
-  fn test_collect_tools_builds_map() {
-    let (tools, map) = collect_tools(&["hosts".to_string()]).unwrap();
-    assert!(!tools.is_empty());
-    assert_eq!(map.get("hosts_read").map(|s| s.as_str()), Some("hosts"));
+  fn sample_decl() -> ToolDeclaration {
+    ToolDeclaration {
+      name: "hosts_add".into(),
+      description: "add".into(),
+      input_schema: json!({ "type":"object", "properties": { "ip": {"type":"string"} }, "required": ["ip"] }),
+      risk: RiskLevel::Write,
+      source: ToolSource::Native,
+      group: "hosts".into(),
+    }
   }
 
   #[test]
   fn test_tool_to_openai_shape() {
-    let tools = list_server_tools("hosts").unwrap();
-    let add = tools.iter().find(|t| t.name == "hosts_add").unwrap();
-    let v = tool_to_openai(add);
+    let v = tool_to_openai(&sample_decl());
     assert_eq!(v["type"], "function");
     assert_eq!(v["function"]["name"], "hosts_add");
     assert_eq!(v["function"]["parameters"]["type"], "object");
-    // hosts_add 要求 ip/domain/group
-    let required = v["function"]["parameters"]["required"].as_array().unwrap();
-    assert!(required.iter().any(|x| x == "ip"));
   }
 
   #[test]
   fn test_tool_to_anthropic_shape() {
-    let tools = list_server_tools("hosts").unwrap();
-    let read = tools.iter().find(|t| t.name == "hosts_read").unwrap();
-    let v = tool_to_anthropic(read);
-    assert_eq!(v["name"], "hosts_read");
+    let v = tool_to_anthropic(&sample_decl());
+    assert_eq!(v["name"], "hosts_add");
     assert_eq!(v["input_schema"]["type"], "object");
   }
 
   #[test]
-  fn test_flatten_result_text() {
-    let result = CallToolResult {
-      content: vec![Content::text("line1"), Content::text("line2")],
-      is_error: Some(false),
-    };
-    assert_eq!(flatten_result(&result), "line1\nline2");
+  fn test_tool_label_native_uses_group() {
+    let tools = vec![sample_decl()];
+    assert_eq!(tool_label(&tools, "hosts_add"), "hosts");
+    assert_eq!(tool_label(&tools, "unknown"), "");
   }
 
   #[test]
-  fn test_input_schema_json_defaults_empty_properties() {
-    let tools = list_server_tools("hosts").unwrap();
-    let read = tools.iter().find(|t| t.name == "hosts_read").unwrap();
-    let schema = input_schema_json(read);
-    // hosts_read 无参数，properties 应为对象（可能为空）
-    assert!(schema["properties"].is_object());
+  fn test_registry_call_unknown_tool() {
+    let reg = ToolRegistry::with_builtins();
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let outcome = rt.block_on(reg.call("does_not_exist", json!({}), None));
+    assert!(outcome.is_error);
   }
 }

@@ -2,11 +2,13 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use crate::api::ai_chat::{
-  // Phase 4: Agent 工具调用 / MCP
+  // Phase 4: Agent 工具调用 / 统一工具
   agent_chat,
   append_message,
   create_session,
   delete_api_key,
+  tool_call,
+  tool_list_all,
   delete_session,
   encode_html_entities,
   get_api_key_info,
@@ -15,8 +17,6 @@ use crate::api::ai_chat::{
   list_api_key_providers,
   list_sessions,
   log_security_event,
-  mcp_call_tool,
-  mcp_list_tools,
   query_security_logs,
   sanitize,
   // Phase 2: 模型和会话管理
@@ -60,6 +60,7 @@ use tauri::{Manager, RunEvent, TitleBarStyle, WebviewUrl, WebviewWindowBuilder};
 mod api;
 mod config;
 mod mcp;
+mod tools;
 mod utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -88,6 +89,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   // Phase 3: 初始化 models.dev 管理器状态
   let models_dev_manager_state = ModelsDevManagerState::new();
 
+  // P1: 初始化统一工具注册表（注册全部内置工具）
+  let tool_registry = crate::tools::ToolRegistry::with_builtins();
+
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_shell::init())
@@ -106,6 +110,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .manage(model_provider_manager_state)
     // Phase 3: 管理 models.dev 状态
     .manage(models_dev_manager_state)
+    // P1: 管理统一工具注册表
+    .manage(tool_registry)
     .setup(|app| {
       // 创建主窗口
       let mut win_builder =
@@ -201,10 +207,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       get_models_for_provider,
       get_models_providers,
       search_models_dev,
-      // Phase 4: Agent 工具调用 / MCP commands
+      // Phase 4: Agent 工具调用 / 统一工具 commands
       agent_chat,
-      mcp_list_tools,
-      mcp_call_tool
+      tool_list_all,
+      tool_call
     ])
     .build(tauri::generate_context!())?;
 

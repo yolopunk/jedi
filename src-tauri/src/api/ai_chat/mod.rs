@@ -20,7 +20,7 @@ pub use security::{
 pub use models::{send_chat_message, send_chat_message_stream, ModelProviderManagerState};
 
 // 重新导出 Agent 工具调用相关 commands
-pub use agent::{agent_chat, mcp_call_tool, mcp_list_tools};
+pub use agent::{agent_chat, tool_call, tool_list_all};
 
 // 重新导出会话相关类型和 commands
 pub use sessions::{

@@ -290,20 +290,31 @@ export async function getModelsProviders() {
   return await invoke<ProviderSummary[]>('get_models_providers')
 }
 
-// ========== Agent / MCP 工具调用 API ==========
+// ========== Agent / 统一工具调用 API ==========
 
-/** MCP 工具信息（供前端展示） */
-export interface ToolInfo {
-  server: string
+/** 工具风险等级 */
+export type RiskLevel = 'read' | 'write' | 'system'
+
+/** 工具来源 */
+export type ToolSource =
+  | { kind: 'native' }
+  | { kind: 'mcp'; server_id: string; remote_name: string }
+
+/** 工具声明（后端 ToolDeclaration） */
+export interface ToolDeclaration {
   name: string
-  description?: string
+  description: string
   input_schema: Record<string, unknown>
+  risk: RiskLevel
+  source: ToolSource
+  group: string
 }
 
-/** MCP 工具调用结果 */
-export interface CallToolResult {
-  content: Array<{ type: string; text?: string; [k: string]: unknown }>
-  is_error?: boolean
+/** 工具执行结果（后端 ToolOutcome） */
+export interface ToolOutcome {
+  content: string
+  is_error: boolean
+  undo_token?: string | null
 }
 
 /** 消息格式（后端 Message 结构） */
@@ -324,21 +335,17 @@ export type AgentEvent =
   | { type: 'error'; message: string }
 
 /**
- * 列出已启用 MCP 服务的所有工具
+ * 列出全部已注册工具（供工具浏览器）
  */
-export async function mcpListTools(servers: string[]) {
-  return await invoke<ToolInfo[]>('mcp_list_tools', { servers })
+export async function toolListAll() {
+  return await invoke<ToolDeclaration[]>('tool_list_all')
 }
 
 /**
- * 直接调用某个 MCP 工具（手动/调试）
+ * 直接调用某个工具（手动/调试）
  */
-export async function mcpCallTool(
-  server: string,
-  name: string,
-  args?: Record<string, unknown>
-) {
-  return await invoke<CallToolResult>('mcp_call_tool', { server, name, arguments: args ?? null })
+export async function toolCall(name: string, args?: Record<string, unknown>) {
+  return await invoke<ToolOutcome>('tool_call', { name, args: args ?? null })
 }
 
 /**

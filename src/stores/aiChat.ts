@@ -118,6 +118,7 @@ export const DEFAULT_MCP_SERVERS: McpServer[] = [
   { id: 'wallpaper', name: 'Wallpaper', description: '知识壁纸浏览与设置', enabled: false, icon: 'mdi-image' },
   { id: 'podcast', name: 'Podcast', description: '播客订阅与剧集', enabled: false, icon: 'mdi-podcast' },
   { id: 'system', name: 'System Info', description: '系统信息查询', enabled: false, icon: 'mdi-monitor' },
+  { id: 'memory', name: 'Memory', description: '跨会话记住偏好与配置', enabled: false, icon: 'mdi-brain' },
 ]
 
 export const useAiChatStore = defineStore('aiChat', () => {

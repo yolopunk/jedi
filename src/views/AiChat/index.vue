@@ -339,8 +339,9 @@ const mcpSkills = ref([
   { id: 'wallpaper', name: 'WALLPAPER', enabled: false, hotkey: 'F2', desc: 'Knowledge wallpapers' },
   { id: 'podcast', name: 'PODCAST', enabled: false, hotkey: 'F3', desc: 'Manage podcasts' },
   { id: 'system', name: 'SYSTEM', enabled: false, hotkey: 'F4', desc: 'System info' },
-  { id: 'terminal', name: 'TERMINAL', enabled: false, hotkey: 'F5', desc: 'Coming soon' },
-  { id: 'browser', name: 'BROWSER', enabled: false, hotkey: 'F6', desc: 'Coming soon' },
+  { id: 'memory', name: 'MEMORY', enabled: false, hotkey: 'F5', desc: 'Remember preferences' },
+  { id: 'terminal', name: 'TERMINAL', enabled: false, hotkey: 'F6', desc: 'Coming soon' },
+  { id: 'browser', name: 'BROWSER', enabled: false, hotkey: 'F7', desc: 'Coming soon' },
 ])
 
 // Boot sequence

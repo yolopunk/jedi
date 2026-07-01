@@ -1,6 +1,7 @@
 // 内置工具（主力层）：直接复用现有 api::* 函数，不走 MCP
 
 pub mod hosts;
+pub mod memory;
 pub mod podcast;
 pub mod system;
 pub mod wallpaper;
@@ -38,6 +39,9 @@ pub fn register_all(reg: &ToolRegistry) {
     let _ = reg.register(tool);
   }
   for tool in podcast::tools() {
+    let _ = reg.register(tool);
+  }
+  for tool in memory::tools() {
     let _ = reg.register(tool);
   }
 }

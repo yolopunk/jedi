@@ -178,8 +178,23 @@
               </div>
             </div>
 
-            <!-- 流式输出指示器 -->
-            <div v-if="store.isLoading" class="streaming-indicator">
+            <!-- 流式回答实时渲染 -->
+            <div v-if="store.isLoading && store.streamingContent" class="console-message assistant">
+              <div class="message-row">
+                <div class="message-content ai-message">
+                  <div class="message-header">
+                    <span class="message-role">&lt;R2D2_STREAM&gt;</span>
+                    <span class="message-model">[{{ currentModelName }}]</span>
+                  </div>
+                  <div class="message-body">
+                    <div class="markdown-body" v-html="renderMessage(store.streamingContent)"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 流式输出指示器（首 token 前） -->
+            <div v-if="store.isLoading && !store.streamingContent" class="streaming-indicator">
               <div class="streaming-cursor"></div>
               <span class="streaming-text">PROCESSING</span>
               <span class="streaming-dots">

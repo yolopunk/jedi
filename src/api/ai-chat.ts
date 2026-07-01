@@ -329,6 +329,7 @@ export interface AgentMessage {
 export type AgentEvent =
   | { type: 'thinking'; text: string }
   | { type: 'notice'; text: string }
+  | { type: 'content_delta'; text: string }
   | { type: 'tool_call'; id: string; server: string; name: string; arguments: unknown }
   | {
       type: 'confirm_request'

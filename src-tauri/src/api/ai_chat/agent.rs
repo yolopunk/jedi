@@ -10,9 +10,11 @@ use crate::api::ai_chat::confirm::{
 };
 use crate::api::ai_chat::models::{Message, MessageRole, ModelProviderManagerState};
 use crate::tools::{RiskLevel, ToolDeclaration, ToolFilter, ToolOutcome, ToolRegistry, ToolSource};
+use futures::StreamExt;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::collections::BTreeMap;
 use std::time::Duration;
 use tauri::{Emitter, State};
 
@@ -84,6 +86,8 @@ pub enum AgentEvent {
   Thinking { text: String },
   /// 提示信息（如降级为纯对话）
   Notice { text: String },
+  /// 流式回答的增量文本片段
+  ContentDelta { text: String },
   /// 发起一次工具调用
   ToolCall {
     id: String,
@@ -272,7 +276,72 @@ fn to_openai_messages(messages: &[Message]) -> Vec<Value> {
     .collect()
 }
 
-/// OpenAI（及兼容协议）工具调用回路
+/// OpenAI 流式增量的累加器（可单测）
+#[derive(Default)]
+struct OpenAiToolCall {
+  id: String,
+  name: String,
+  args: String,
+}
+
+#[derive(Default)]
+struct OpenAiStreamAcc {
+  content: String,
+  tool_calls: BTreeMap<u64, OpenAiToolCall>,
+  done: bool,
+}
+
+impl OpenAiStreamAcc {
+  /// 处理一条 SSE `data:` 负载，返回新增的内容片段（用于流式 delta）
+  fn push(&mut self, data: &str) -> Option<String> {
+    if data.trim() == "[DONE]" {
+      self.done = true;
+      return None;
+    }
+    let v: Value = serde_json::from_str(data).ok()?;
+    let choice = v.get("choices").and_then(|c| c.get(0))?;
+    let delta = choice.get("delta")?;
+
+    let mut new_content = None;
+    if let Some(c) = delta.get("content").and_then(|x| x.as_str()) {
+      if !c.is_empty() {
+        self.content.push_str(c);
+        new_content = Some(c.to_string());
+      }
+    }
+    if let Some(tcs) = delta.get("tool_calls").and_then(|x| x.as_array()) {
+      for tc in tcs {
+        let idx = tc.get("index").and_then(|x| x.as_u64()).unwrap_or(0);
+        let entry = self.tool_calls.entry(idx).or_default();
+        if let Some(id) = tc.get("id").and_then(|x| x.as_str()) {
+          if !id.is_empty() {
+            entry.id = id.to_string();
+          }
+        }
+        if let Some(f) = tc.get("function") {
+          if let Some(n) = f.get("name").and_then(|x| x.as_str()) {
+            if !n.is_empty() {
+              entry.name = n.to_string();
+            }
+          }
+          if let Some(a) = f.get("arguments").and_then(|x| x.as_str()) {
+            entry.args.push_str(a);
+          }
+        }
+      }
+    }
+    if choice.get("finish_reason").and_then(|x| x.as_str()).is_some() {
+      self.done = true;
+    }
+    new_content
+  }
+
+  fn has_tool_calls(&self) -> bool {
+    !self.tool_calls.is_empty()
+  }
+}
+
+/// OpenAI（及兼容协议）工具调用回路 — 流式
 #[allow(clippy::too_many_arguments)]
 async fn run_openai_loop(
   ctx: &ExecCtx<'_>,
@@ -291,7 +360,7 @@ async fn run_openai_loop(
     let mut body = json!({
       "model": model,
       "messages": native_messages,
-      "stream": false,
+      "stream": true,
     });
     if !openai_tools.is_empty() {
       body["tools"] = json!(openai_tools);
@@ -321,70 +390,175 @@ async fn run_openai_loop(
       return Err(format!("OpenAI API error: {}", error_text));
     }
 
-    let data: Value = response
-      .json()
-      .await
-      .map_err(|e| format!("Failed to parse OpenAI response: {}", e))?;
-
-    let message = data
-      .get("choices")
-      .and_then(|c| c.get(0))
-      .and_then(|c| c.get("message"))
-      .ok_or_else(|| "No choices in OpenAI response".to_string())?;
-
-    let tool_calls = message.get("tool_calls").and_then(|v| v.as_array());
-
-    match tool_calls {
-      Some(calls) if !calls.is_empty() => {
-        if let Some(text) = message.get("content").and_then(|c| c.as_str()) {
-          if !text.trim().is_empty() {
-            emit_event(ctx.app, ctx.request_id, AgentEvent::Thinking { text: text.to_string() });
+    // 逐块解析 SSE，实时推送内容片段
+    let mut acc = OpenAiStreamAcc::default();
+    let mut buffer = String::new();
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+      let bytes = chunk.map_err(|e| format!("Stream error: {}", e))?;
+      buffer.push_str(&String::from_utf8_lossy(&bytes));
+      while let Some(pos) = buffer.find('\n') {
+        let line: String = buffer.drain(..=pos).collect();
+        let line = line.trim();
+        if let Some(data) = line.strip_prefix("data: ") {
+          if let Some(piece) = acc.push(data) {
+            emit_event(ctx.app, ctx.request_id, AgentEvent::ContentDelta { text: piece });
           }
         }
-        native_messages.push(message.clone());
-
-        for call in calls {
-          let id = call.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-          let name = call
-            .get("function")
-            .and_then(|f| f.get("name"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-          let args_str = call
-            .get("function")
-            .and_then(|f| f.get("arguments"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("{}");
-          let args_value: Value = serde_json::from_str(args_str).unwrap_or_else(|_| json!({}));
-
-          let (result_text, _is_error) = execute_tool(ctx, &id, &name, &args_value).await;
-
-          native_messages.push(json!({
-            "role": "tool",
-            "tool_call_id": id,
-            "content": result_text,
-          }));
-        }
-
-        if ctx.pending.is_cancelled(ctx.request_id) {
-          emit_event(ctx.app, ctx.request_id, AgentEvent::Done);
-          return Ok("操作已被用户取消".to_string());
-        }
       }
-      _ => {
-        let content = message.get("content").and_then(|c| c.as_str()).unwrap_or("").to_string();
-        emit_event(ctx.app, ctx.request_id, AgentEvent::Content { text: content.clone() });
+      if acc.done {
+        break;
+      }
+    }
+
+    if acc.has_tool_calls() {
+      // 组装 assistant（含 tool_calls）消息
+      let tool_calls_json: Vec<Value> = acc
+        .tool_calls
+        .values()
+        .map(|t| {
+          json!({
+            "id": t.id,
+            "type": "function",
+            "function": { "name": t.name, "arguments": t.args }
+          })
+        })
+        .collect();
+      native_messages.push(json!({
+        "role": "assistant",
+        "content": acc.content,
+        "tool_calls": tool_calls_json,
+      }));
+
+      for t in acc.tool_calls.values() {
+        let args_value: Value = serde_json::from_str(&t.args).unwrap_or_else(|_| json!({}));
+        let (result_text, _is_error) = execute_tool(ctx, &t.id, &t.name, &args_value).await;
+        native_messages.push(json!({
+          "role": "tool",
+          "tool_call_id": t.id,
+          "content": result_text,
+        }));
+      }
+
+      if ctx.pending.is_cancelled(ctx.request_id) {
         emit_event(ctx.app, ctx.request_id, AgentEvent::Done);
-        return Ok(content);
+        return Ok("操作已被用户取消".to_string());
       }
+    } else {
+      emit_event(ctx.app, ctx.request_id, AgentEvent::Content { text: acc.content.clone() });
+      emit_event(ctx.app, ctx.request_id, AgentEvent::Done);
+      return Ok(acc.content);
     }
   }
 
   Err(format!("Agent 达到最大迭代次数 ({})，未能完成任务", MAX_ITERATIONS))
 }
 
-/// Anthropic 工具调用回路
+/// Anthropic 流式块累加器（可单测）
+#[derive(Default)]
+struct AnthBlock {
+  kind: String, // "text" | "tool_use"
+  text: String, // 文本内容，或 tool_use 的 input JSON 累加
+  id: String,
+  name: String,
+}
+
+#[derive(Default)]
+struct AnthropicStreamAcc {
+  blocks: BTreeMap<u64, AnthBlock>,
+  done: bool,
+}
+
+impl AnthropicStreamAcc {
+  /// 处理一条 SSE `data:` 负载（按其内部 type 分派），返回新增文本片段
+  fn push(&mut self, data: &str) -> Option<String> {
+    let v: Value = serde_json::from_str(data).ok()?;
+    match v.get("type").and_then(|t| t.as_str()) {
+      Some("content_block_start") => {
+        let idx = v.get("index").and_then(|x| x.as_u64()).unwrap_or(0);
+        let cb = v.get("content_block");
+        let block = AnthBlock {
+          kind: cb
+            .and_then(|c| c.get("type"))
+            .and_then(|t| t.as_str())
+            .unwrap_or("text")
+            .to_string(),
+          id: cb
+            .and_then(|c| c.get("id"))
+            .and_then(|s| s.as_str())
+            .unwrap_or("")
+            .to_string(),
+          name: cb
+            .and_then(|c| c.get("name"))
+            .and_then(|s| s.as_str())
+            .unwrap_or("")
+            .to_string(),
+          text: String::new(),
+        };
+        self.blocks.insert(idx, block);
+        None
+      }
+      Some("content_block_delta") => {
+        let idx = v.get("index").and_then(|x| x.as_u64()).unwrap_or(0);
+        let delta = v.get("delta")?;
+        let entry = self.blocks.entry(idx).or_default();
+        match delta.get("type").and_then(|t| t.as_str()) {
+          Some("text_delta") => {
+            let text = delta.get("text").and_then(|s| s.as_str()).unwrap_or("");
+            entry.text.push_str(text);
+            if entry.kind.is_empty() {
+              entry.kind = "text".to_string();
+            }
+            Some(text.to_string())
+          }
+          Some("input_json_delta") => {
+            let pj = delta.get("partial_json").and_then(|s| s.as_str()).unwrap_or("");
+            entry.text.push_str(pj);
+            None
+          }
+          _ => None,
+        }
+      }
+      Some("message_stop") => {
+        self.done = true;
+        None
+      }
+      _ => None,
+    }
+  }
+
+  fn has_tool_use(&self) -> bool {
+    self.blocks.values().any(|b| b.kind == "tool_use")
+  }
+
+  /// 还原 assistant content 块数组
+  fn assistant_content(&self) -> Vec<Value> {
+    self
+      .blocks
+      .values()
+      .map(|b| {
+        if b.kind == "tool_use" {
+          let input: Value = serde_json::from_str(&b.text).unwrap_or_else(|_| json!({}));
+          json!({ "type": "tool_use", "id": b.id, "name": b.name, "input": input })
+        } else {
+          json!({ "type": "text", "text": b.text })
+        }
+      })
+      .collect()
+  }
+
+  fn text(&self) -> String {
+    self
+      .blocks
+      .values()
+      .filter(|b| b.kind != "tool_use")
+      .map(|b| b.text.clone())
+      .collect::<Vec<_>>()
+      .join("")
+  }
+}
+
+/// Anthropic 工具调用回路 — 流式
 #[allow(clippy::too_many_arguments)]
 async fn run_anthropic_loop(
   ctx: &ExecCtx<'_>,
@@ -414,7 +588,7 @@ async fn run_anthropic_loop(
       "model": model,
       "messages": native_messages,
       "max_tokens": max_tokens.unwrap_or(4096),
-      "stream": false,
+      "stream": true,
     });
     if let Some(sys) = &system {
       body["system"] = json!(sys);
@@ -441,53 +615,40 @@ async fn run_anthropic_loop(
       return Err(format!("Anthropic API error: {}", error_text));
     }
 
-    let data: Value = response
-      .json()
-      .await
-      .map_err(|e| format!("Failed to parse Anthropic response: {}", e))?;
-
-    let content_blocks = data
-      .get("content")
-      .and_then(|c| c.as_array())
-      .cloned()
-      .unwrap_or_default();
-
-    let mut has_tool_use = false;
-    let mut text_parts: Vec<String> = Vec::new();
-    let mut tool_result_blocks: Vec<Value> = Vec::new();
-
-    for block in &content_blocks {
-      match block.get("type").and_then(|v| v.as_str()) {
-        Some("text") => {
-          if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
-            text_parts.push(text.to_string());
+    let mut acc = AnthropicStreamAcc::default();
+    let mut buffer = String::new();
+    let mut stream = response.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+      let bytes = chunk.map_err(|e| format!("Stream error: {}", e))?;
+      buffer.push_str(&String::from_utf8_lossy(&bytes));
+      while let Some(pos) = buffer.find('\n') {
+        let line: String = buffer.drain(..=pos).collect();
+        let line = line.trim();
+        if let Some(data) = line.strip_prefix("data: ") {
+          if let Some(piece) = acc.push(data) {
+            emit_event(ctx.app, ctx.request_id, AgentEvent::ContentDelta { text: piece });
           }
         }
-        Some("tool_use") => {
-          has_tool_use = true;
-          let id = block.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
-          let name = block.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-          let input = block.get("input").cloned().unwrap_or_else(|| json!({}));
-
-          let (result_text, is_error) = execute_tool(ctx, &id, &name, &input).await;
-
-          tool_result_blocks.push(json!({
-            "type": "tool_result",
-            "tool_use_id": id,
-            "content": result_text,
-            "is_error": is_error,
-          }));
-        }
-        _ => {}
+      }
+      if acc.done {
+        break;
       }
     }
 
-    if has_tool_use {
-      let thinking = text_parts.join("\n");
-      if !thinking.trim().is_empty() {
-        emit_event(ctx.app, ctx.request_id, AgentEvent::Thinking { text: thinking });
+    if acc.has_tool_use() {
+      native_messages.push(json!({ "role": "assistant", "content": acc.assistant_content() }));
+
+      let mut tool_result_blocks: Vec<Value> = Vec::new();
+      for b in acc.blocks.values().filter(|b| b.kind == "tool_use") {
+        let input: Value = serde_json::from_str(&b.text).unwrap_or_else(|_| json!({}));
+        let (result_text, is_error) = execute_tool(ctx, &b.id, &b.name, &input).await;
+        tool_result_blocks.push(json!({
+          "type": "tool_result",
+          "tool_use_id": b.id,
+          "content": result_text,
+          "is_error": is_error,
+        }));
       }
-      native_messages.push(json!({ "role": "assistant", "content": content_blocks }));
       native_messages.push(json!({ "role": "user", "content": tool_result_blocks }));
 
       if ctx.pending.is_cancelled(ctx.request_id) {
@@ -495,7 +656,7 @@ async fn run_anthropic_loop(
         return Ok("操作已被用户取消".to_string());
       }
     } else {
-      let content = text_parts.join("\n");
+      let content = acc.text();
       emit_event(ctx.app, ctx.request_id, AgentEvent::Content { text: content.clone() });
       emit_event(ctx.app, ctx.request_id, AgentEvent::Done);
       return Ok(content);
@@ -671,5 +832,70 @@ mod tests {
   fn test_short_args_truncates() {
     let long = json!({ "k": "x".repeat(200) });
     assert!(short_args(&long).ends_with('…'));
+  }
+
+  #[test]
+  fn test_stream_acc_content_pieces() {
+    let mut acc = OpenAiStreamAcc::default();
+    let p1 = acc.push(r#"{"choices":[{"delta":{"content":"Hel"}}]}"#);
+    let p2 = acc.push(r#"{"choices":[{"delta":{"content":"lo"}}]}"#);
+    assert_eq!(p1.as_deref(), Some("Hel"));
+    assert_eq!(p2.as_deref(), Some("lo"));
+    assert_eq!(acc.content, "Hello");
+    assert!(!acc.has_tool_calls());
+    acc.push("[DONE]");
+    assert!(acc.done);
+  }
+
+  #[test]
+  fn test_stream_acc_tool_calls_assembly() {
+    let mut acc = OpenAiStreamAcc::default();
+    // 分片到达的 tool_call
+    acc.push(r#"{"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{"name":"hosts_add","arguments":"{\"ip\":"}}]}}]}"#);
+    acc.push(r#"{"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\"1.2.3.4\"}"}}]}}]}"#);
+    acc.push(r#"{"choices":[{"delta":{},"finish_reason":"tool_calls"}]}"#);
+    assert!(acc.has_tool_calls());
+    assert!(acc.done);
+    let tc = acc.tool_calls.get(&0).unwrap();
+    assert_eq!(tc.id, "call_1");
+    assert_eq!(tc.name, "hosts_add");
+    assert_eq!(tc.args, "{\"ip\":\"1.2.3.4\"}");
+    // 累加的参数应为合法 JSON
+    let v: Value = serde_json::from_str(&tc.args).unwrap();
+    assert_eq!(v["ip"], "1.2.3.4");
+  }
+
+  #[test]
+  fn test_stream_acc_ignores_garbage() {
+    let mut acc = OpenAiStreamAcc::default();
+    assert_eq!(acc.push("not json"), None);
+    assert_eq!(acc.content, "");
+  }
+
+  #[test]
+  fn test_anthropic_acc_text() {
+    let mut acc = AnthropicStreamAcc::default();
+    acc.push(r#"{"type":"content_block_start","index":0,"content_block":{"type":"text"}}"#);
+    let p = acc.push(r#"{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hi"}}"#);
+    acc.push(r#"{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":" there"}}"#);
+    acc.push(r#"{"type":"message_stop"}"#);
+    assert_eq!(p.as_deref(), Some("Hi"));
+    assert_eq!(acc.text(), "Hi there");
+    assert!(!acc.has_tool_use());
+    assert!(acc.done);
+  }
+
+  #[test]
+  fn test_anthropic_acc_tool_use() {
+    let mut acc = AnthropicStreamAcc::default();
+    acc.push(r#"{"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_1","name":"hosts_add"}}"#);
+    acc.push(r#"{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"ip\":"}}"#);
+    acc.push(r#"{"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\"1.2.3.4\"}"}}"#);
+    acc.push(r#"{"type":"message_stop"}"#);
+    assert!(acc.has_tool_use());
+    let content = acc.assistant_content();
+    assert_eq!(content[0]["type"], "tool_use");
+    assert_eq!(content[0]["name"], "hosts_add");
+    assert_eq!(content[0]["input"]["ip"], "1.2.3.4");
   }
 }

@@ -327,8 +327,14 @@ export const useAiChatStore = defineStore('aiChat', () => {
 
         const unlisten = await listen<AgentEvent>(`agent-event-${requestId}`, (event) => {
           const payload = event.payload
+          // 流式增量：直接累加到 streamingContent，不进 Trace
+          if (payload.type === 'content_delta') {
+            streamingContent.value += payload.text
+            return
+          }
           agentTrace.value.push(payload)
           if (payload.type === 'content') {
+            // 最终回答（覆盖流式累加，去掉可能的中间预备文本）
             streamingContent.value = payload.text
           }
         })

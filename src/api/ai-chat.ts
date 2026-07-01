@@ -328,6 +328,7 @@ export interface AgentMessage {
  */
 export type AgentEvent =
   | { type: 'thinking'; text: string }
+  | { type: 'notice'; text: string }
   | { type: 'tool_call'; id: string; server: string; name: string; arguments: unknown }
   | {
       type: 'confirm_request'
@@ -371,6 +372,8 @@ export async function agentChat(params: {
   requestId: string
   confirmMode?: 'normal' | 'auto'
   autoApprove?: string[]
+  /** 所选模型是否支持工具调用；false 时后端降级为纯对话 */
+  supportsTools?: boolean
 }) {
   return await invoke<string>('agent_chat', {
     provider: params.provider,
@@ -382,6 +385,7 @@ export async function agentChat(params: {
     requestId: params.requestId,
     confirmMode: params.confirmMode ?? null,
     autoApprove: params.autoApprove ?? null,
+    supportsTools: params.supportsTools ?? null,
   })
 }
 

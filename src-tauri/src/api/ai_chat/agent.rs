@@ -82,6 +82,8 @@ fn short_args(args: &Value) -> String {
 pub enum AgentEvent {
   /// 模型的中间思考文本
   Thinking { text: String },
+  /// 提示信息（如降级为纯对话）
+  Notice { text: String },
   /// 发起一次工具调用
   ToolCall {
     id: String,
@@ -541,12 +543,28 @@ pub async fn agent_chat(
   request_id: String,
   confirm_mode: Option<String>,
   auto_approve: Option<Vec<String>>,
+  supports_tools: Option<bool>,
 ) -> Result<String, String> {
   let filter = ToolFilter {
     enabled_groups: servers.clone(),
     enabled_servers: servers,
   };
-  let tools = registry.declarations(&filter);
+  // ②：所选模型明确不支持 function calling → 跳过工具注入，降级为纯对话
+  let tools = if supports_tools == Some(false) {
+    let all = registry.declarations(&filter);
+    if !all.is_empty() {
+      emit_event(
+        &app,
+        &request_id,
+        AgentEvent::Notice {
+          text: "所选模型不支持工具调用，已降级为纯对话。".to_string(),
+        },
+      );
+    }
+    Vec::new()
+  } else {
+    registry.declarations(&filter)
+  };
   let auto_approve = auto_approve.unwrap_or_default();
 
   let ctx = ExecCtx {

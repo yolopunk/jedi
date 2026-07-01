@@ -10,6 +10,7 @@ import {
   turnUndo,
   mcpConnect,
   mcpDisconnect,
+  getModelsForProvider,
   type AgentEvent,
   type McpServerConfig,
 } from '../api/ai-chat'
@@ -141,6 +142,20 @@ export const useAiChatStore = defineStore('aiChat', () => {
   // 第三方 MCP server 配置（持久化于 localStorage）与已连接 id
   const thirdPartyMcpServers = ref<McpServerConfig[]>([])
   const mcpConnectedIds = ref<string[]>([])
+  // 模型是否支持 function calling（来自 models.dev，best-effort 缓存）
+  const modelToolSupport = ref<Record<string, boolean>>({})
+
+  // 惰性查询所选模型是否支持工具调用（未知返回 undefined → 后端按默认注入工具）
+  async function resolveModelToolSupport(provider: string, model: string): Promise<boolean | undefined> {
+    if (model in modelToolSupport.value) return modelToolSupport.value[model]
+    try {
+      const models = await getModelsForProvider(provider)
+      models.forEach(m => { modelToolSupport.value[m.id] = m.tool_call })
+    } catch (e) {
+      console.warn('无法获取模型能力:', e)
+    }
+    return modelToolSupport.value[model]
+  }
 
   // Chat settings
   const temperature = ref<number>(0.7)
@@ -318,6 +333,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
           }
         })
 
+        const supportsTools = await resolveModelToolSupport(session.provider, session.model)
+
         try {
           const finalContent = await agentChat({
             provider: session.provider,
@@ -328,6 +345,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
             maxTokens: options?.maxTokens ?? maxTokens.value,
             requestId,
             confirmMode: confirmMode.value,
+            supportsTools,
           })
 
           const assistantMessage: ChatMessage = {

@@ -18,6 +18,12 @@
           <pre class="trace-detail">{{ truncate(event.text) }}</pre>
         </div>
 
+        <!-- 提示（降级等） -->
+        <div v-else-if="event.type === 'notice'" class="trace-row notice">
+          <div class="trace-line"><span class="trace-marker">ⓘ</span><span class="trace-label">NOTICE</span></div>
+          <pre class="trace-detail">{{ event.text }}</pre>
+        </div>
+
         <!-- 工具调用 -->
         <div v-else-if="event.type === 'tool_call'" class="trace-row tool-call">
           <div class="trace-line">
@@ -200,6 +206,8 @@ async function undo(token: string) {
 /* 各事件类型配色 */
 .trace-row.thinking { border-left-color: #a78bfa; }
 .trace-row.thinking .trace-marker, .trace-row.thinking .trace-label { color: #a78bfa; }
+.trace-row.notice { border-left-color: #fbbf24; }
+.trace-row.notice .trace-marker, .trace-row.notice .trace-label { color: #fbbf24; }
 .trace-row.tool-call { border-left-color: #22d3ee; }
 .trace-row.tool-call .trace-marker, .trace-row.tool-call .trace-label { color: #22d3ee; }
 .trace-row.tool-result { border-left-color: #4ade80; }

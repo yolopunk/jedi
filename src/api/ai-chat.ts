@@ -416,3 +416,46 @@ export async function turnUndo(requestId: string) {
 export async function toolUndo(requestId: string, undoToken: string) {
   return await invoke<string>('tool_undo', { requestId, undoToken })
 }
+
+// ========== 第三方 MCP server（P3）==========
+
+/** 第三方 MCP server 配置 */
+export interface McpServerConfig {
+  id: string
+  name: string
+  transport?: 'stdio' | 'sse'
+  command?: string
+  args?: string[]
+  env?: Record<string, string>
+  /** 前端本地状态：是否期望连接（后端忽略此字段） */
+  enabled?: boolean
+}
+
+/** MCP server 连接状态 */
+export interface McpServerStatus {
+  id: string
+  name: string
+  connected: boolean
+  tool_count: number
+  tools: string[]
+}
+
+/** 连接一个第三方 MCP server，注入其工具 */
+export async function mcpConnect(config: McpServerConfig) {
+  return await invoke<McpServerStatus>('mcp_connect', { config })
+}
+
+/** 断开某个 MCP server */
+export async function mcpDisconnect(serverId: string) {
+  return await invoke<void>('mcp_disconnect', { serverId })
+}
+
+/** 列出已连接的 MCP server */
+export async function mcpListConnected() {
+  return await invoke<McpServerStatus[]>('mcp_list_connected')
+}
+
+/** 测试并连接一个 MCP server */
+export async function mcpServerTest(config: McpServerConfig) {
+  return await invoke<McpServerStatus>('mcp_server_test', { config })
+}

@@ -127,6 +127,39 @@
       </div>
     </div>
 
+    <div class="divider-line my-4"></div>
+
+    <div class="section-header">
+      <span class="section-title">第三方 MCP 服务器</span>
+      <span class="section-desc">接入外部 MCP server（stdio），扩展 Agent 可用工具</span>
+    </div>
+
+    <div class="setting-item" v-for="srv in store.thirdPartyMcpServers" :key="srv.id">
+      <div class="setting-icon">🔌</div>
+      <div class="setting-info">
+        <div class="setting-label">{{ srv.name || srv.id }}</div>
+        <div class="setting-subtitle">{{ srv.command }} {{ (srv.args || []).join(' ') }}</div>
+      </div>
+      <div class="setting-action">
+        <span class="status-chip" :class="{ success: isConnected(srv.id) }">
+          {{ isConnected(srv.id) ? 'CONNECTED' : 'OFFLINE' }}
+        </span>
+        <button class="console-btn small" @click="toggleConnect(srv)">
+          {{ isConnected(srv.id) ? 'Disconnect' : 'Connect' }}
+        </button>
+        <button class="console-btn small danger" @click="store.removeMcpServer(srv.id)">✕</button>
+      </div>
+    </div>
+
+    <div class="mcp-add-form">
+      <input v-model="newServer.id" class="console-input" placeholder="id (唯一)" />
+      <input v-model="newServer.name" class="console-input" placeholder="名称" />
+      <input v-model="newServer.command" class="console-input" placeholder="命令，例如 npx" />
+      <input v-model="newServer.argsText" class="console-input" placeholder="参数（空格分隔）" />
+      <button class="console-btn small primary" @click="addServer">+ 添加服务器</button>
+    </div>
+    <div v-if="mcpError" class="mcp-error">{{ mcpError }}</div>
+
     <!-- Provider Config Dialog -->
     <v-dialog v-model="showProviderDialog" max-width="500">
       <v-card class="scifi-card">
@@ -218,6 +251,44 @@ const chatSettings = ref({
 
 const mcpServers = ref<McpServer[]>([...store.mcpServers])
 
+// 第三方 MCP server 管理
+const newServer = ref({ id: '', name: '', command: '', argsText: '' })
+const mcpError = ref('')
+
+function isConnected(id: string) {
+  return store.mcpConnectedIds.includes(id)
+}
+
+async function toggleConnect(srv: { id: string }) {
+  mcpError.value = ''
+  try {
+    if (isConnected(srv.id)) {
+      await store.disconnectMcp(srv.id)
+    } else {
+      await store.connectMcp(srv as any)
+    }
+  } catch (e) {
+    mcpError.value = String(e)
+  }
+}
+
+function addServer() {
+  if (!newServer.value.id || !newServer.value.command) {
+    mcpError.value = 'id 和 命令 为必填'
+    return
+  }
+  mcpError.value = ''
+  const argsText = newServer.value.argsText.trim()
+  store.addMcpServer({
+    id: newServer.value.id,
+    name: newServer.value.name || newServer.value.id,
+    transport: 'stdio',
+    command: newServer.value.command,
+    args: argsText ? argsText.split(/\s+/) : [],
+  })
+  newServer.value = { id: '', name: '', command: '', argsText: '' }
+}
+
 const showProviderDialog = ref(false)
 const currentProvider = ref<typeof providerList[0] | null>(null)
 const providerConfig = ref({
@@ -290,6 +361,7 @@ function loadAiChatSettings() {
 
 async function loadSettings() {
   loadAiChatSettings()
+  store.loadMcpServers()
   await store.loadProviders()
 }
 
@@ -509,5 +581,39 @@ defineExpose({ loadSettings })
 
 .mb-4 {
   margin-bottom: 16px;
+}
+
+/* 第三方 MCP 添加表单 */
+.mcp-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  margin-top: 4px;
+  background: rgba(0, 255, 255, 0.03);
+  border: 1px solid rgba(0, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.mcp-add-form .console-input {
+  font-size: 11px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 255, 255, 0.15);
+  border-radius: 3px;
+  color: #e4e4e7;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.console-btn.danger {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.mcp-error {
+  font-size: 10px;
+  color: #f87171;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 6px 12px;
 }
 </style>

@@ -49,6 +49,7 @@ use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
 };
 use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
+use crate::mcp::manager::{mcp_connect, mcp_disconnect, mcp_list_connected, mcp_server_test};
 use crate::api::os::{get_os_info, SystemState};
 use crate::api::podcast::{
   fetch_episodes, fetch_rss_channel, get_subscriptions, import_opml, refresh_subscription,
@@ -100,6 +101,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   // P2: 确认挂起表 + per-turn 回滚栈
   let pending_confirmations = PendingConfirmations::new();
   let undo_stacks = UndoStacks::new();
+  // P3: 第三方 MCP server 连接管理
+  let mcp_manager = crate::mcp::manager::McpManager::new();
 
   let app = tauri::Builder::default()
     .plugin(tauri_plugin_fs::init())
@@ -124,6 +127,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // P2: 管理确认挂起表与回滚栈
     .manage(pending_confirmations)
     .manage(undo_stacks)
+    // P3: 管理第三方 MCP 连接
+    .manage(mcp_manager)
     .setup(|app| {
       // 创建主窗口
       let mut win_builder =
@@ -229,7 +234,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       tool_confirm,
       agent_cancel,
       turn_undo,
-      tool_undo
+      tool_undo,
+      // P3: 第三方 MCP server commands
+      mcp_connect,
+      mcp_disconnect,
+      mcp_list_connected,
+      mcp_server_test
     ])
     .build(tauri::generate_context!())?;
 

@@ -2,7 +2,17 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
-import { agentChat, agentCancel, toolConfirm, toolUndo, turnUndo, type AgentEvent } from '../api/ai-chat'
+import {
+  agentChat,
+  agentCancel,
+  toolConfirm,
+  toolUndo,
+  turnUndo,
+  mcpConnect,
+  mcpDisconnect,
+  type AgentEvent,
+  type McpServerConfig,
+} from '../api/ai-chat'
 
 // 提供商信息（后端返回格式）
 export interface ProviderInfo {
@@ -128,6 +138,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const selectedProvider = ref<string>('openai')
   const enabledMcpServers = ref<string[]>([])
   const mcpServers = ref<McpServer[]>([...DEFAULT_MCP_SERVERS])
+  // 第三方 MCP server 配置（持久化于 localStorage）与已连接 id
+  const thirdPartyMcpServers = ref<McpServerConfig[]>([])
+  const mcpConnectedIds = ref<string[]>([])
 
   // Chat settings
   const temperature = ref<number>(0.7)
@@ -292,8 +305,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
     error.value = null
 
     try {
-      // 当启用了工具分组时，走 Agent 工具调用回路
-      if (enabledMcpServers.value.length > 0) {
+      // 当启用了工具分组或连接了第三方 MCP 时，走 Agent 工具调用回路
+      if (enabledMcpServers.value.length > 0 || mcpConnectedIds.value.length > 0) {
         const requestId = `agent-${Date.now()}`
         agentRequestId.value = requestId
 
@@ -310,7 +323,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
             provider: session.provider,
             model: session.model,
             messages: session.messages.map(m => ({ role: m.role, content: m.content })),
-            servers: [...enabledMcpServers.value],
+            servers: [...enabledMcpServers.value, ...mcpConnectedIds.value],
             temperature: options?.temperature ?? temperature.value,
             maxTokens: options?.maxTokens ?? maxTokens.value,
             requestId,
@@ -423,6 +436,50 @@ export const useAiChatStore = defineStore('aiChat', () => {
     return await turnUndo(agentRequestId.value)
   }
 
+  // ===== 第三方 MCP server 管理 =====
+  function loadMcpServers() {
+    try {
+      const saved = localStorage.getItem('mcp-third-party')
+      if (saved) thirdPartyMcpServers.value = JSON.parse(saved)
+    } catch (e) {
+      console.error('Failed to load MCP servers:', e)
+    }
+  }
+
+  function saveMcpServers() {
+    try {
+      localStorage.setItem('mcp-third-party', JSON.stringify(thirdPartyMcpServers.value))
+    } catch (e) {
+      console.error('Failed to save MCP servers:', e)
+    }
+  }
+
+  function addMcpServer(config: McpServerConfig) {
+    const idx = thirdPartyMcpServers.value.findIndex(s => s.id === config.id)
+    if (idx >= 0) thirdPartyMcpServers.value[idx] = config
+    else thirdPartyMcpServers.value.push(config)
+    saveMcpServers()
+  }
+
+  async function removeMcpServer(id: string) {
+    await disconnectMcp(id).catch(() => {})
+    thirdPartyMcpServers.value = thirdPartyMcpServers.value.filter(s => s.id !== id)
+    saveMcpServers()
+  }
+
+  async function connectMcp(config: McpServerConfig) {
+    const status = await mcpConnect(config)
+    if (!mcpConnectedIds.value.includes(status.id)) {
+      mcpConnectedIds.value.push(status.id)
+    }
+    return status
+  }
+
+  async function disconnectMcp(id: string) {
+    await mcpDisconnect(id)
+    mcpConnectedIds.value = mcpConnectedIds.value.filter(x => x !== id)
+  }
+
   // Toggle MCP server
   function toggleMcpServer(serverId: string) {
     const server = mcpServers.value.find(s => s.id === serverId)
@@ -502,6 +559,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
     selectedProvider,
     enabledMcpServers,
     mcpServers,
+    thirdPartyMcpServers,
+    mcpConnectedIds,
     temperature,
     maxTokens,
     streamEnabled,
@@ -524,6 +583,12 @@ export const useAiChatStore = defineStore('aiChat', () => {
     cancelAgent,
     undoTool,
     undoTurn,
+    loadMcpServers,
+    saveMcpServers,
+    addMcpServer,
+    removeMcpServer,
+    connectMcp,
+    disconnectMcp,
     toggleMcpServer,
     setSelectedModel,
     loadSettings,

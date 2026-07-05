@@ -72,6 +72,13 @@ mod mcp;
 mod utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+  // Outbound MCP server mode: `jedi --mcp-server` runs a stdio MCP server that
+  // exposes Jedi's read-only tools to external MCP clients, then exits. No GUI.
+  if std::env::args().any(|a| a == "--mcp-server") {
+    crate::mcp::server::run_stdio_server();
+    return Ok(());
+  }
+
   let _logger_guard = logger::init();
 
   // 初始化审计日志记录器状态

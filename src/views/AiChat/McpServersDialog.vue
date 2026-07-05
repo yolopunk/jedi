@@ -58,6 +58,14 @@
           </template>
           <button class="mcp-btn primary" :disabled="!canAdd" @click="add">添加</button>
         </div>
+
+        <div class="mcp-export">
+          <div class="mcp-add-title">把 Jedi 作为 MCP server</div>
+          <p class="mcp-hint">
+            在其他 MCP 客户端（如 Claude Desktop）中，将 Jedi 配置为以下命令，即可使用 Jedi 的只读工具（记忆 / 网页）：
+          </p>
+          <code class="mcp-code">jedi --mcp-server</code>
+        </div>
       </div>
     </div>
   </Transition>
@@ -252,6 +260,24 @@ function add(): void {
   background: rgba(91, 140, 255, 0.18);
   border-color: rgba(91, 140, 255, 0.5);
   color: #fff;
+}
+
+.mcp-export {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mcp-code {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--mono-font, monospace);
+  font-size: 12px;
+  color: #9ecbff;
 }
 
 .mcp-input {

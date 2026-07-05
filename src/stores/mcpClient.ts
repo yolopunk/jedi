@@ -15,10 +15,13 @@ import type { ParameterSchema, Skill } from '@/skills/types'
 export interface McpServerConfig {
   id: string
   name: string
+  /** Local stdio command; may be empty for a remote (url) server. */
   command: string
   args: string[]
   /** Extra env vars as [name, value] pairs. */
   env: [string, string][]
+  /** Remote MCP server URL (HTTP+SSE). When set, stdio fields are ignored. */
+  url?: string
 }
 
 export interface McpToolInfo {

@@ -20,7 +20,7 @@
                 <span class="mcp-dot" :class="{ on: store.isConnected(s.id) }"></span>
                 {{ s.name }}
               </div>
-              <div class="mcp-item-cmd">{{ s.command }} {{ s.args.join(' ') }}</div>
+              <div class="mcp-item-cmd">{{ s.url ? s.url : `${s.command} ${s.args.join(' ')}` }}</div>
             </div>
             <div class="mcp-item-actions">
               <button
@@ -40,9 +40,22 @@
 
         <div class="mcp-add">
           <div class="mcp-add-title">添加服务器</div>
+          <div class="mcp-mode">
+            <button class="mcp-tab" :class="{ on: form.mode === 'stdio' }" @click="form.mode = 'stdio'">
+              本地 (stdio)
+            </button>
+            <button class="mcp-tab" :class="{ on: form.mode === 'sse' }" @click="form.mode = 'sse'">
+              远程 (SSE)
+            </button>
+          </div>
           <input v-model="form.name" class="mcp-input" placeholder="名称，如 Filesystem" />
-          <input v-model="form.command" class="mcp-input" placeholder="命令，如 npx" />
-          <input v-model="form.argsText" class="mcp-input" placeholder="参数（空格分隔），如 -y @modelcontextprotocol/server-filesystem /tmp" />
+          <template v-if="form.mode === 'stdio'">
+            <input v-model="form.command" class="mcp-input" placeholder="命令，如 npx" />
+            <input v-model="form.argsText" class="mcp-input" placeholder="参数（空格分隔），如 -y @modelcontextprotocol/server-filesystem /tmp" />
+          </template>
+          <template v-else>
+            <input v-model="form.url" class="mcp-input" placeholder="URL，如 http://localhost:3000/sse" />
+          </template>
           <button class="mcp-btn primary" :disabled="!canAdd" @click="add">添加</button>
         </div>
       </div>
@@ -59,9 +72,12 @@ const emit = defineEmits<{ 'update:modelValue': [boolean] }>()
 
 const store = useMcpClientStore()
 
-const form = reactive({ name: '', command: '', argsText: '' })
+const form = reactive({ mode: 'stdio' as 'stdio' | 'sse', name: '', command: '', argsText: '', url: '' })
 
-const canAdd = computed(() => form.name.trim() !== '' && form.command.trim() !== '')
+const canAdd = computed(() => {
+  if (form.name.trim() === '') return false
+  return form.mode === 'stdio' ? form.command.trim() !== '' : form.url.trim() !== ''
+})
 
 function close(): void {
   emit('update:modelValue', false)
@@ -70,11 +86,16 @@ function close(): void {
 function add(): void {
   if (!canAdd.value) return
   const id = `${form.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`
-  const args = form.argsText.trim() ? form.argsText.trim().split(/\s+/) : []
-  store.addServer({ id, name: form.name.trim(), command: form.command.trim(), args, env: [] })
+  if (form.mode === 'sse') {
+    store.addServer({ id, name: form.name.trim(), command: '', args: [], env: [], url: form.url.trim() })
+  } else {
+    const args = form.argsText.trim() ? form.argsText.trim().split(/\s+/) : []
+    store.addServer({ id, name: form.name.trim(), command: form.command.trim(), args, env: [] })
+  }
   form.name = ''
   form.command = ''
   form.argsText = ''
+  form.url = ''
 }
 </script>
 
@@ -209,6 +230,28 @@ function add(): void {
   font-size: 12px;
   font-weight: 600;
   opacity: 0.72;
+}
+
+.mcp-mode {
+  display: flex;
+  gap: 6px;
+}
+
+.mcp-tab {
+  flex: 1;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #bdbdc2;
+}
+
+.mcp-tab.on {
+  background: rgba(91, 140, 255, 0.18);
+  border-color: rgba(91, 140, 255, 0.5);
+  color: #fff;
 }
 
 .mcp-input {

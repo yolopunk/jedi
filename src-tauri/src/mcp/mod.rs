@@ -42,6 +42,7 @@
 pub mod manager;
 pub mod protocol;
 pub mod servers;
+pub mod sse_transport;
 pub mod transport;
 pub mod types;
 

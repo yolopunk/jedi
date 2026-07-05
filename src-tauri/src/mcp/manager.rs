@@ -9,24 +9,30 @@
 // its work on a blocking thread via `spawn_blocking` to avoid stalling the async
 // runtime / UI.
 
-use crate::mcp::{McpClient, McpClientBuilder, TransportConfig};
+use crate::mcp::sse_transport::SseClient;
 use crate::mcp::types::Content;
+use crate::mcp::{McpClient, McpClientBuilder, TransportConfig};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tauri::State;
 
-/// Connection config for one third-party MCP server (stdio transport).
+/// Connection config for one third-party MCP server. A `url` selects the remote
+/// HTTP+SSE transport; otherwise `command`/`args` spawn a local stdio server.
 #[derive(Debug, Clone, Deserialize)]
 pub struct McpServerConfig {
   pub id: String,
   pub name: String,
+  #[serde(default)]
   pub command: String,
   #[serde(default)]
   pub args: Vec<String>,
   /// Extra environment variables as [name, value] pairs.
   #[serde(default)]
   pub env: Vec<(String, String)>,
+  /// Remote MCP server URL (HTTP+SSE). When set, stdio fields are ignored.
+  #[serde(default)]
+  pub url: Option<String>,
 }
 
 /// A tool discovered on a connected MCP server, shaped for the frontend.
@@ -51,10 +57,17 @@ struct Connection {
   tools: Vec<McpToolInfo>,
 }
 
-/// Tauri-managed state holding every live MCP connection.
+struct SseConnection {
+  name: String,
+  client: SseClient,
+  tools: Vec<McpToolInfo>,
+}
+
+/// Tauri-managed state holding every live MCP connection (stdio + remote SSE).
 #[derive(Default)]
 pub struct McpManager {
   conns: Arc<Mutex<HashMap<String, Connection>>>,
+  sse: Arc<tokio::sync::Mutex<HashMap<String, SseConnection>>>,
 }
 
 impl McpManager {
@@ -84,6 +97,27 @@ pub async fn mcp_connect(
   manager: State<'_, McpManager>,
   config: McpServerConfig,
 ) -> Result<McpConnectedServer, String> {
+  // Remote HTTP+SSE transport.
+  if let Some(url) = config.url.clone() {
+    let (client, tools) = SseClient::connect(&url, "jedi", env!("CARGO_PKG_VERSION")).await?;
+    let snapshot = McpConnectedServer {
+      id: config.id.clone(),
+      name: config.name.clone(),
+      tools: tools.clone(),
+    };
+    let mut map = manager.sse.lock().await;
+    map.insert(
+      config.id.clone(),
+      SseConnection {
+        name: config.name,
+        client,
+        tools,
+      },
+    );
+    return Ok(snapshot);
+  }
+
+  // Local stdio transport.
   let conns = manager.conns.clone();
   tauri::async_runtime::spawn_blocking(move || {
     let transport = TransportConfig::new(config.command.clone())
@@ -125,13 +159,17 @@ pub async fn mcp_connect(
 /// Disconnect a server and stop its child process.
 #[tauri::command]
 pub async fn mcp_disconnect(manager: State<'_, McpManager>, id: String) -> Result<(), String> {
+  // Drop any remote SSE connection (its reader task is aborted on drop).
+  manager.sse.lock().await.remove(&id);
+
   let conns = manager.conns.clone();
+  let stdio_id = id.clone();
   tauri::async_runtime::spawn_blocking(move || {
     let mut map = conns.lock().map_err(|e| e.to_string())?;
-    if let Some(mut conn) = map.remove(&id) {
+    if let Some(mut conn) = map.remove(&stdio_id) {
       let _ = conn.client.stop();
     }
-    Ok(())
+    Ok::<(), String>(())
   })
   .await
   .map_err(|e| e.to_string())?
@@ -142,10 +180,22 @@ pub async fn mcp_disconnect(manager: State<'_, McpManager>, id: String) -> Resul
 pub async fn mcp_list_connected(
   manager: State<'_, McpManager>,
 ) -> Result<Vec<McpConnectedServer>, String> {
+  let mut out: Vec<McpConnectedServer> = manager
+    .sse
+    .lock()
+    .await
+    .iter()
+    .map(|(id, conn)| McpConnectedServer {
+      id: id.clone(),
+      name: conn.name.clone(),
+      tools: conn.tools.clone(),
+    })
+    .collect();
+
   let conns = manager.conns.clone();
-  tauri::async_runtime::spawn_blocking(move || {
+  let mut stdio: Vec<McpConnectedServer> = tauri::async_runtime::spawn_blocking(move || {
     let map = conns.lock().map_err(|e| e.to_string())?;
-    Ok(
+    Ok::<Vec<McpConnectedServer>, String>(
       map
         .iter()
         .map(|(id, conn)| McpConnectedServer {
@@ -157,7 +207,10 @@ pub async fn mcp_list_connected(
     )
   })
   .await
-  .map_err(|e| e.to_string())?
+  .map_err(|e| e.to_string())??;
+
+  out.append(&mut stdio);
+  Ok(out)
 }
 
 /// Call a tool on a connected server, returning its text output.
@@ -168,6 +221,14 @@ pub async fn mcp_call_tool(
   tool: String,
   args: Option<serde_json::Value>,
 ) -> Result<String, String> {
+  // Remote SSE connection takes precedence if present.
+  {
+    let guard = manager.sse.lock().await;
+    if let Some(conn) = guard.get(&id) {
+      return conn.client.call_tool(&tool, args).await;
+    }
+  }
+
   let conns = manager.conns.clone();
   tauri::async_runtime::spawn_blocking(move || {
     let arguments = match args {

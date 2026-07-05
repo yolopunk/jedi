@@ -268,6 +268,9 @@
 
     <!-- Agent Pool Panel -->
     <AgentPoolPanel v-model:showPanel="showWorkersPanel" />
+
+    <!-- Tool confirmation card (write/system-risk tools) -->
+    <ToolConfirmCard />
   </div>
 </template>
 
@@ -286,6 +289,7 @@ import { useSkillsStore } from '@/stores/skills'
 import { renderSafe, sharedMd } from '@/utils/markdown'
 import AgentTrace from './AgentTrace.vue'
 import ModelSettings from './ModelSettings.vue'
+import ToolConfirmCard from './ToolConfirmCard.vue'
 
 const store = useAiChatStore()
 const skillsStore = useSkillsStore()

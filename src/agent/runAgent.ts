@@ -13,12 +13,20 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { generateText, isLoopFinished, jsonSchema, stepCountIs, streamText, tool } from 'ai'
 import { skillRegistry } from '@/skills/registry'
+import type { SkillRisk } from '@/skills/types'
 
 export const DEFAULT_STEP_LIMIT = 8
 
 export interface ChatTurn {
   role: 'user' | 'assistant' | 'system'
   content: string
+}
+
+export interface ConfirmToolRequest {
+  skillId: string
+  skillName: string
+  risk: SkillRisk
+  args: unknown
 }
 
 export interface RunAgentSpec {
@@ -30,6 +38,9 @@ export interface RunAgentSpec {
   sessionId: string
   stepLimit?: number
   signal?: AbortSignal
+  // Gate invoked before a write/system-risk tool runs. Return false to deny;
+  // when omitted, every tool runs unconditionally (read-only tools never ask).
+  confirmTool?: (req: ConfirmToolRequest) => Promise<boolean>
 }
 
 export interface RunAgentHooks {
@@ -315,6 +326,29 @@ export async function runAgent(
             args,
             startedAt,
           })
+          // Gate write/system-risk tools behind the caller's confirmation.
+          const risk: SkillRisk = skill.risk ?? 'read'
+          if (risk !== 'read' && spec.confirmTool) {
+            const approved = await spec.confirmTool({
+              skillId: skill.id,
+              skillName: skill.name,
+              risk,
+              args,
+            })
+            if (!approved) {
+              const denial = `用户拒绝了 ${skill.name} 操作。`
+              hooks.onToolEnd?.({
+                skillId: skill.id,
+                skillName: skill.name,
+                args,
+                startedAt,
+                error: denial,
+              })
+              // Return (not throw) so the model sees the denial and can adjust
+              // instead of the whole run failing.
+              return { denied: true, message: denial }
+            }
+          }
           try {
             toolCount += 1
             const output = await skill.execute(args, { sessionId: spec.sessionId })

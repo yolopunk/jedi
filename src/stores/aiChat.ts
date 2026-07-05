@@ -132,6 +132,36 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const enabledMcpServers = ref<string[]>([])
   const mcpServers = ref<McpServer[]>([...DEFAULT_MCP_SERVERS])
 
+  // Tool-confirmation State: set while a write/system tool waits for the user's
+  // approval. The chat view renders a card bound to this and calls
+  // resolveConfirmation() when the user clicks approve/deny.
+  const pendingConfirmation = ref<{
+    skillId: string
+    skillName: string
+    risk: 'read' | 'write' | 'system'
+    args: unknown
+  } | null>(null)
+  let confirmationResolver: ((approved: boolean) => void) | null = null
+
+  function requestConfirmation(req: {
+    skillId: string
+    skillName: string
+    risk: 'read' | 'write' | 'system'
+    args: unknown
+  }): Promise<boolean> {
+    // Only one confirmation is in flight at a time (the agent loop is sequential).
+    return new Promise<boolean>(resolve => {
+      pendingConfirmation.value = req
+      confirmationResolver = resolve
+    })
+  }
+
+  function resolveConfirmation(approved: boolean): void {
+    confirmationResolver?.(approved)
+    confirmationResolver = null
+    pendingConfirmation.value = null
+  }
+
   // Stores
   const providerConfigStore = useProviderConfigStore()
   const modelsDevStore = useModelsDevStore()
@@ -437,6 +467,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
           messages: aiMessages,
           sessionId: session.id,
           stepLimit,
+          confirmTool: requestConfirmation,
         },
         {
           onToolStart: ({ skillId, skillName, skillDescription, args, startedAt }) => {
@@ -723,6 +754,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
     } finally {
       isLoading.value = false
       streamingContent.value = ''
+      // If the run ended (error/abort) while a confirmation was still pending,
+      // resolve it as denied so no promise is left dangling.
+      if (pendingConfirmation.value) resolveConfirmation(false)
     }
   }
 
@@ -787,11 +821,13 @@ export const useAiChatStore = defineStore('aiChat', () => {
     streamingContent,
     enabledMcpServers,
     mcpServers,
+    pendingConfirmation,
 
     // Computed
     currentSession,
 
     // Actions
+    resolveConfirmation,
     loadSessions,
     createSession,
     deleteSession,

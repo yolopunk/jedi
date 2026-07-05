@@ -30,6 +30,7 @@ export const terminalSkill: Skill = {
   icon: '⌘',
   enabled: true,
   autoCallable: true,
+  risk: 'system',
   parameters,
   execute: executeTerminal,
 }

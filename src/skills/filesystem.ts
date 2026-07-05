@@ -34,6 +34,7 @@ export const filesystemSkill: Skill = {
   icon: '📁',
   enabled: true,
   autoCallable: true,
+  risk: 'write',
   parameters,
   execute: executeFilesystem,
 }

@@ -27,6 +27,13 @@
               </svg>
               <span v-if="workers.length > 0" class="workers-count">{{ workers.length }}</span>
             </button>
+            <button class="workers-btn" @click="showMcpServers = true" title="MCP 服务器">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 2v6M15 2v6M9 8h6M12 8v6a4 4 0 0 1-4 4H7"/>
+                <circle cx="6" cy="20" r="2"/>
+              </svg>
+              <span v-if="mcpClientStore.connectedIds.length > 0" class="workers-count">{{ mcpClientStore.connectedIds.length }}</span>
+            </button>
           </div>
         </div>
 
@@ -271,6 +278,9 @@
 
     <!-- Tool confirmation card (write/system-risk tools) -->
     <ToolConfirmCard />
+
+    <!-- Third-party MCP servers management -->
+    <McpServersDialog v-model="showMcpServers" />
   </div>
 </template>
 
@@ -287,11 +297,14 @@ import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
 import { useSkillsStore } from '@/stores/skills'
 import { renderSafe, sharedMd } from '@/utils/markdown'
+import { useMcpClientStore } from '@/stores/mcpClient'
 import AgentTrace from './AgentTrace.vue'
+import McpServersDialog from './McpServersDialog.vue'
 import ModelSettings from './ModelSettings.vue'
 import ToolConfirmCard from './ToolConfirmCard.vue'
 
 const store = useAiChatStore()
+const mcpClientStore = useMcpClientStore()
 const skillsStore = useSkillsStore()
 const agentStore = useAgentStore()
 const modelsDevStore = useModelsDevStore()
@@ -320,6 +333,7 @@ watch(inputText, value => {
   commandActiveIndex.value = 0
 })
 const showModelSettings = ref(false)
+const showMcpServers = ref(false)
 const showAttachmentMenu = ref(false)
 const showModelDropdown = ref(false)
 const isHistoryCollapsed = ref(true)
@@ -629,6 +643,7 @@ watch(
 
 onMounted(async () => {
   skillsStore.loadFromStorage()
+  mcpClientStore.loadFromStorage()
   await Promise.all([
     modelsDevStore.fetchProviders(),
     providerConfigStore.loadConfiguredProviders(),

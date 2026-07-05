@@ -47,6 +47,9 @@ use crate::api::app::{
 use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
 use crate::api::memory::{memory_delete, memory_list, memory_recall, memory_save};
 use crate::api::os::{get_os_info, SystemState};
+use crate::mcp::manager::{
+  mcp_call_tool, mcp_connect, mcp_disconnect, mcp_list_connected, McpManager,
+};
 use crate::api::podcast::{
   fetch_episodes, fetch_rss_channel, get_subscriptions, import_opml, refresh_subscription,
   remove_subscription, resolve_xiaoyuzhou_podcast, save_subscription,
@@ -114,6 +117,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .manage(models_dev_manager_state)
     // Agent pool state
     .manage(PoolState(tokio::sync::Mutex::new(AgentPool::new(4))))
+    // Third-party MCP client connections
+    .manage(McpManager::new())
     .setup(|app| {
       // 创建主窗口
       let mut win_builder =
@@ -237,7 +242,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       memory_save,
       memory_recall,
       memory_list,
-      memory_delete
+      memory_delete,
+      // Third-party MCP client commands
+      mcp_connect,
+      mcp_disconnect,
+      mcp_list_connected,
+      mcp_call_tool
     ])
     .build(tauri::generate_context!())?;
 

@@ -17,6 +17,10 @@ export class SkillRegistry {
     this.skills.set(skill.id, skill)
   }
 
+  unregister(id: string): void {
+    this.skills.delete(id)
+  }
+
   get(id: string): Skill | undefined {
     return this.skills.get(id)
   }

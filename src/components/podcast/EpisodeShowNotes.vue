@@ -23,6 +23,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { open } from '@tauri-apps/plugin-shell'
 import { computed, ref } from 'vue'
 
@@ -105,7 +106,7 @@ function handleClick(event: MouseEvent) {
 <style>
 .show-notes-content {
   line-height: 1.8;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgb(var(--text-rgb) / 0.9);
 }
 .show-notes-content img {
   max-width: 100%;
@@ -133,7 +134,7 @@ function handleClick(event: MouseEvent) {
 }
 .show-notes-content blockquote {
   border-left: 4px solid rgba(var(--v-theme-primary), 0.5);
-  background: rgba(255,255,255,0.05);
+  background:rgb(var(--ink-rgb) / 0.05);
   padding: 1rem;
   margin: 1.5rem 0;
   border-radius: 0 8px 8px 0;
@@ -164,68 +165,5 @@ function handleClick(event: MouseEvent) {
 }
 .cursor-pointer {
     cursor: pointer;
-}
-
-/* =========================================
-   Light Theme Styles (Tatooine Outpost)
-   ========================================= */
-.light-theme .show-notes-content {
-    color: #3d2914;
-}
-
-.light-theme .show-notes-content a {
-    color: #cd7f32;
-    border-bottom-color: rgba(205, 127, 50, 0.5);
-}
-
-.light-theme .show-notes-content a:hover {
-    color: #b8860b;
-    border-bottom-color: #b8860b;
-}
-
-.light-theme .show-notes-content blockquote {
-    background: rgba(184, 134, 11, 0.08);
-    border-left-color: #cd7f32;
-    color: #6b4423;
-}
-
-.light-theme .show-notes-content pre {
-    background: rgba(107, 68, 35, 0.08);
-    border-color: #d4a574;
-    color: #3d2914;
-}
-
-.light-theme .show-notes-content code {
-    color: #b8860b;
-}
-
-.light-theme .show-notes-content h1,
-.light-theme .show-notes-content h2,
-.light-theme .show-notes-content h3,
-.light-theme .show-notes-content h4 {
-    color: #cd7f32;
-}
-
-.light-theme .show-notes-content strong {
-    color: #3d2914;
-}
-
-.light-theme .show-notes-content li {
-    color: #3d2914;
-}
-
-.light-theme .show-notes-content img {
-    box-shadow: 0 4px 6px rgba(107, 68, 35, 0.15);
-}
-
-.light-theme .timestamp-link {
-    color: #cd7f32;
-    font-weight: 600;
-    background: rgba(205, 127, 50, 0.1);
-}
-
-.light-theme .timestamp-link:hover {
-    background: rgba(205, 127, 50, 0.2);
-    color: #b8860b;
 }
 </style>

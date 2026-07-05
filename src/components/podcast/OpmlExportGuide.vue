@@ -119,7 +119,7 @@ const images = [
 
 <style scoped>
 .model-settings-card {
-  background: #0a0e14 !important;
+  background: var(--bg-terminal) !important;
   border-radius: 16px !important;
   overflow: hidden;
   max-height: 85vh;
@@ -132,8 +132,8 @@ const images = [
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: rgba(20, 30, 40, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgb(var(--bg-rgb) / 0.6);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.06);
   flex-shrink: 0;
 }
 
@@ -149,23 +149,23 @@ const images = [
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
-  border: 1px solid rgba(0, 255, 255, 0.25);
+  background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.15) 0%, rgb(var(--success-rgb) / 0.05) 100%);
+  border: 1px solid rgb(var(--accent-rgb) / 0.25);
   border-radius: 10px;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .brand-text h2 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .brand-text p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
 }
 
 .close-btn {
@@ -175,17 +175,17 @@ const images = [
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  background: rgba(255, 107, 107, 0.1);
-  border-color: rgba(255, 107, 107, 0.3);
-  color: #ff6b6b;
+  background: rgb(var(--danger-rgb) / 0.1);
+  border-color: rgb(var(--danger-rgb) / 0.3);
+  color: var(--danger);
 }
 
 .card-body {
@@ -198,7 +198,7 @@ const images = [
 }
 
 .opml-carousel {
-  border: 1px solid rgba(0, 255, 255, 0.1);
+  border: 1px solid rgb(var(--accent-rgb) / 0.1);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -210,12 +210,12 @@ const images = [
   justify-content: center;
   height: 100%;
   padding: 16px;
-  background: rgba(0, 0, 0, 0.2);
+  background:rgb(var(--ink-rgb) / 0.2);
 }
 
 .slide-image {
   border-radius: 8px;
-  border: 1px solid rgba(0, 255, 255, 0.08);
+  border: 1px solid rgb(var(--accent-rgb) / 0.08);
   overflow: hidden;
 }
 
@@ -224,7 +224,7 @@ const images = [
   align-items: center;
   gap: 10px;
   margin-top: 12px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgb(var(--text-rgb) / 0.8);
   font-size: 13px;
 }
 
@@ -234,12 +234,12 @@ const images = [
   justify-content: center;
   width: 24px;
   height: 24px;
-  background: rgba(0, 255, 255, 0.15);
-  border: 1px solid rgba(0, 255, 255, 0.3);
+  background: rgb(var(--accent-rgb) / 0.15);
+  border: 1px solid rgb(var(--accent-rgb) / 0.3);
   border-radius: 6px;
   font-size: 12px;
   font-weight: 700;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .step-text {
@@ -255,7 +255,7 @@ const images = [
 .step-dot {
   width: 8px;
   height: 8px;
-  background: rgba(255, 255, 255, 0.15);
+  background:rgb(var(--ink-rgb) / 0.15);
   border: none;
   border-radius: 50%;
   cursor: pointer;
@@ -263,12 +263,12 @@ const images = [
 }
 
 .step-dot:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background:rgb(var(--ink-rgb) / 0.3);
 }
 
 .step-dot.active {
-  background: #00ffff;
-  box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+  background: var(--accent);
+  box-shadow: 0 0 8px rgb(var(--accent-rgb) / 0.5);
 }
 
 ::-webkit-scrollbar {
@@ -280,11 +280,11 @@ const images = [
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background:rgb(var(--ink-rgb) / 0.1);
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background:rgb(var(--ink-rgb) / 0.15);
 }
 </style>

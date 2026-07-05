@@ -40,8 +40,8 @@ function toggleSkill(id: string): void {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  border-right: 1px solid rgba(0, 255, 255, 0.2);
+  background:rgb(var(--ink-rgb) / 0.3);
+  border-right: 1px solid rgb(var(--accent-rgb) / 0.2);
 }
 
 .panel-header {
@@ -49,22 +49,22 @@ function toggleSkill(id: string): void {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-  background: rgba(0, 255, 255, 0.05);
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.2);
+  background: rgb(var(--accent-rgb) / 0.05);
 }
 
 .panel-title {
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
   font-size: 12px;
   font-weight: 700;
-  color: #00ffff;
+  color: var(--accent);
   letter-spacing: 1px;
 }
 
 .panel-status {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: #00ff88;
+  color: var(--success);
 }
 
 .skills-list {
@@ -86,25 +86,25 @@ function toggleSkill(id: string): void {
 }
 
 .skill-item:hover {
-  background: rgba(0, 255, 255, 0.05);
-  border-color: rgba(0, 255, 255, 0.2);
+  background: rgb(var(--accent-rgb) / 0.05);
+  border-color: rgb(var(--accent-rgb) / 0.2);
 }
 
 .skill-item.active {
-  background: rgba(0, 255, 136, 0.1);
-  border-color: rgba(0, 255, 136, 0.4);
+  background: rgb(var(--success-rgb) / 0.1);
+  border-color: rgb(var(--success-rgb) / 0.4);
 }
 
 .skill-indicator {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #52525b;
+  background: var(--text-subtle);
 }
 
 .skill-indicator.enabled {
-  background: #00ff88;
-  box-shadow: 0 0 8px #00ff88;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
 }
 
 .skill-icon {
@@ -117,20 +117,20 @@ function toggleSkill(id: string): void {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   font-weight: 600;
-  color: #e4e4e7;
+  color: var(--border);
   letter-spacing: 0.5px;
 }
 
 .panel-footer {
   padding: 12px 16px;
-  border-top: 1px solid rgba(0, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.1);
+  background:rgb(var(--ink-rgb) / 0.2);
 }
 
 .footer-text {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: #52525b;
+  color: var(--text-subtle);
   letter-spacing: 1px;
 }
 
@@ -144,7 +144,7 @@ function toggleSkill(id: string): void {
 }
 
 .skills-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 255, 0.2);
+  background: rgb(var(--accent-rgb) / 0.2);
   border-radius: 3px;
 }
 </style>

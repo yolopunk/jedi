@@ -58,7 +58,7 @@
 defineProps<{ modelValue: boolean }>()
 defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 
-const _helpItems = [
+const helpItems = [
   { icon: 'add-group', text: 'Add group to organize hosts entries' },
   { icon: 'add-entry', text: 'Add host entries with IP and domain' },
   { icon: 'toggle', text: 'Toggle entries on/off individually' },
@@ -68,7 +68,7 @@ const _helpItems = [
 
 <style scoped>
 .model-settings-card {
-  background: #0a0e14 !important;
+  background: var(--bg-terminal) !important;
   border-radius: 16px !important;
   overflow: hidden;
   max-height: 85vh;
@@ -81,8 +81,8 @@ const _helpItems = [
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: rgba(20, 30, 40, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgb(var(--bg-rgb) / 0.6);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.06);
   flex-shrink: 0;
 }
 
@@ -98,23 +98,23 @@ const _helpItems = [
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
-  border: 1px solid rgba(0, 255, 255, 0.25);
+  background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.15) 0%, rgb(var(--success-rgb) / 0.05) 100%);
+  border: 1px solid rgb(var(--accent-rgb) / 0.25);
   border-radius: 10px;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .brand-text h2 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .brand-text p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
 }
 
 .close-btn {
@@ -124,17 +124,17 @@ const _helpItems = [
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  background: rgba(255, 107, 107, 0.1);
-  border-color: rgba(255, 107, 107, 0.3);
-  color: #ff6b6b;
+  background: rgb(var(--danger-rgb) / 0.1);
+  border-color: rgb(var(--danger-rgb) / 0.3);
+  color: var(--danger);
 }
 
 .card-body {
@@ -154,15 +154,15 @@ const _helpItems = [
   align-items: center;
   gap: 14px;
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background:rgb(var(--ink-rgb) / 0.02);
+  border: 1px solid rgb(var(--text-rgb) / 0.06);
   border-radius: 10px;
   transition: all 0.15s ease;
 }
 
 .help-item:hover {
-  background: rgba(0, 255, 255, 0.04);
-  border-color: rgba(0, 255, 255, 0.15);
+  background: rgb(var(--accent-rgb) / 0.04);
+  border-color: rgb(var(--accent-rgb) / 0.15);
 }
 
 .help-icon {
@@ -171,15 +171,15 @@ const _helpItems = [
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 255, 255, 0.08);
+  background: rgb(var(--accent-rgb) / 0.08);
   border-radius: 8px;
-  color: #00ffff;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
 .help-text {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgb(var(--text-rgb) / 0.75);
   line-height: 1.4;
 }
 
@@ -187,7 +187,7 @@ const _helpItems = [
   display: flex;
   justify-content: flex-end;
   padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgb(var(--text-rgb) / 0.06);
   flex-shrink: 0;
 }
 
@@ -200,11 +200,11 @@ const _helpItems = [
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background:rgb(var(--ink-rgb) / 0.1);
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background:rgb(var(--ink-rgb) / 0.15);
 }
 </style>

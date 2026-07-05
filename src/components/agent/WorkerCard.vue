@@ -71,9 +71,9 @@ const statusLabels: Record<WorkerStatusKind, string> = {
   stopped: 'Stopped',
 }
 
-const _statusText = computed(() => statusLabels[props.worker.status])
+const statusText = computed(() => statusLabels[props.worker.status])
 
-const _elapsedTime = computed(() => {
+const elapsedTime = computed(() => {
   if (!props.worker.started_at || props.worker.status === 'idle') return null
   const elapsed = Date.now() - props.worker.started_at
   const seconds = Math.floor(elapsed / 1000)
@@ -92,37 +92,37 @@ const _elapsedTime = computed(() => {
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background:rgb(var(--ink-rgb) / 0.03);
+  border: 1px solid rgb(var(--text-rgb) / 0.06);
   border-radius: 10px;
   transition: all 0.2s ease;
 }
 
 .worker-card:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background:rgb(var(--ink-rgb) / 0.05);
 }
 
 .worker-card.status-idle {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgb(var(--text-rgb) / 0.08);
 }
 
 .worker-card.status-running {
-  border-color: rgba(0, 255, 255, 0.25);
-  background: rgba(0, 255, 255, 0.04);
+  border-color: rgb(var(--accent-rgb) / 0.25);
+  background: rgb(var(--accent-rgb) / 0.04);
 }
 
 .worker-card.status-completed {
-  border-color: rgba(0, 255, 136, 0.25);
-  background: rgba(0, 255, 136, 0.03);
+  border-color: rgb(var(--success-rgb) / 0.25);
+  background: rgb(var(--success-rgb) / 0.03);
 }
 
 .worker-card.status-failed {
-  border-color: rgba(255, 107, 107, 0.25);
-  background: rgba(255, 107, 107, 0.03);
+  border-color: rgb(var(--danger-rgb) / 0.25);
+  background: rgb(var(--danger-rgb) / 0.03);
 }
 
 .worker-card.status-stopped {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgb(var(--text-rgb) / 0.08);
   opacity: 0.7;
 }
 
@@ -137,28 +137,28 @@ const _elapsedTime = computed(() => {
 }
 
 .status-idle .status-icon {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.3);
+  background:rgb(var(--ink-rgb) / 0.06);
+  color: rgb(var(--text-rgb) / 0.3);
 }
 
 .status-running .status-icon {
-  background: rgba(0, 255, 255, 0.1);
-  color: #00ffff;
+  background: rgb(var(--accent-rgb) / 0.1);
+  color: var(--accent);
 }
 
 .status-completed .status-icon {
-  background: rgba(0, 255, 136, 0.1);
-  color: #00ff88;
+  background: rgb(var(--success-rgb) / 0.1);
+  color: var(--success);
 }
 
 .status-failed .status-icon {
-  background: rgba(255, 107, 107, 0.1);
-  color: #ff6b6b;
+  background: rgb(var(--danger-rgb) / 0.1);
+  color: var(--danger);
 }
 
 .status-stopped .status-icon {
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.3);
+  background:rgb(var(--ink-rgb) / 0.04);
+  color: rgb(var(--text-rgb) / 0.3);
 }
 
 .worker-info {
@@ -169,7 +169,7 @@ const _elapsedTime = computed(() => {
 .worker-description {
   font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgb(var(--text-rgb) / 0.85);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -184,30 +184,30 @@ const _elapsedTime = computed(() => {
 
 .worker-status-text {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgb(var(--text-rgb) / 0.35);
 }
 
 .status-running .worker-status-text {
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .status-completed .worker-status-text {
-  color: #00ff88;
+  color: var(--success);
 }
 
 .status-failed .worker-status-text {
-  color: #ff6b6b;
+  color: var(--danger);
 }
 
 .worker-progress {
   font-size: 11px;
-  color: #00ffff;
+  color: var(--accent);
   font-family: 'JetBrains Mono', monospace;
 }
 
 .worker-elapsed {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgb(var(--text-rgb) / 0.25);
   font-family: 'JetBrains Mono', monospace;
 }
 
@@ -222,17 +222,17 @@ const _elapsedTime = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 107, 107, 0.08);
-  border: 1px solid rgba(255, 107, 107, 0.2);
+  background: rgb(var(--danger-rgb) / 0.08);
+  border: 1px solid rgb(var(--danger-rgb) / 0.2);
   border-radius: 6px;
-  color: #ff6b6b;
+  color: var(--danger);
   cursor: pointer;
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
 
 .stop-btn:hover {
-  background: rgba(255, 107, 107, 0.15);
-  border-color: rgba(255, 107, 107, 0.4);
+  background: rgb(var(--danger-rgb) / 0.15);
+  border-color: rgb(var(--danger-rgb) / 0.4);
 }
 </style>

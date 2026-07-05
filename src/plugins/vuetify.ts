@@ -18,35 +18,37 @@ export const vuetify = createVuetify({
       mdi,
     },
   },
+  // Colors mirror the semantic tokens in src/assets/theme.css (single source of truth).
+  // CSS variables drive visual rendering; these keep Vuetify's internal calculations aligned.
   theme: {
     defaultTheme: 'dark', // Default to dark for the Jedi vibe
     themes: {
       light: {
         dark: false,
         colors: {
-          background: '#f5e6d3', // Warm sand
-          surface: '#efe0cc', // Light sand
-          primary: '#cd7f32', // Copper
-          secondary: '#6b4423', // Sandstone brown
-          accent: '#daa520', // Dark gold
-          error: '#b22222', // Firebrick red
-          info: '#b8860b', // Dark goldenrod
-          success: '#daa520', // Dark gold
-          warning: '#cd853f', // Peru
+          background: '#ffffff', // Int UI Grey 14
+          surface: '#f7f8fa', // Int UI Grey 13
+          primary: '#3574f0', // Int UI Blue 4
+          secondary: '#6c707e', // Int UI Grey 6 (neutral, so text-secondary reads muted)
+          accent: '#834df0', // Int UI Purple
+          error: '#db3b4b', // Int UI Red 3
+          info: '#3574f0', // Int UI Blue 4
+          success: '#208a3c', // Int UI Green 3
+          warning: '#a46704', // Int UI Yellow (dark)
         },
       },
       dark: {
         dark: true,
         colors: {
-          background: '#111113', // Slightly lighter for better visibility
+          background: '#111113', // Zinc near-black
           surface: '#18181b', // Zinc-900
-          primary: '#00ffff', // Sci-Fi Cyan
-          secondary: '#00ff88', // Sci-Fi Green
-          accent: '#ff00ff', // Sci-Fi Magenta
-          error: '#ff4444', // Sci-Fi Red
-          info: '#00ffff', // Sci-Fi Cyan
-          success: '#00ff88', // Sci-Fi Green
-          warning: '#ffaa00', // Sci-Fi Amber
+          primary: '#38bdf8', // Unified sci-fi cyan (was #00ffff)
+          secondary: '#c084fc', // Purple-400
+          accent: '#c084fc', // Purple-400
+          error: '#f87171', // Red-400
+          info: '#38bdf8', // Cyan
+          success: '#4ade80', // Green-400
+          warning: '#fbbf24', // Amber-400
         },
       },
     },

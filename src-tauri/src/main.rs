@@ -10,6 +10,7 @@ use crate::api::ai_chat::{
   create_session,
   delete_api_key,
   delete_session,
+  update_session_title,
   encode_html_entities,
   // Phase 3: Models.dev 集成
   fetch_models_dev,
@@ -49,9 +50,11 @@ use crate::api::podcast::{
   fetch_episodes, fetch_rss_channel, get_subscriptions, import_opml, refresh_subscription,
   remove_subscription, resolve_xiaoyuzhou_podcast, save_subscription,
 };
+use crate::api::terminal::execute_command;
 use crate::api::wallpapers::{
   get_current_wallpaper, get_wallpapers, set_desktop_wallpaper, show_in_folder, sync_wallpapers,
 };
+use crate::api::web::{web_fetch, web_search};
 use crate::utils::logger;
 use std::sync::Mutex;
 use sysinfo::{Networks, System};
@@ -96,6 +99,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .plugin(tauri_plugin_store::Builder::default().build())
     .plugin(tauri_plugin_updater::Builder::new().build())
     .plugin(tauri_plugin_process::init())
+    .plugin(tauri_plugin_http::init())
     .manage(SystemState {
       system: Mutex::new(System::new_all()),
       networks: Mutex::new(Networks::new_with_refreshed_list()),
@@ -208,6 +212,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       list_sessions,
       get_session,
       delete_session,
+      update_session_title,
       append_message,
       get_api_key,
       // Phase 3: Models.dev commands
@@ -221,7 +226,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       get_pool_status,
       schedule_task,
       stop_worker,
-      remove_worker
+      remove_worker,
+      // Web access tools (AI agent)
+      web_fetch,
+      web_search,
+      // Shell execution tool (AI agent)
+      execute_command
     ])
     .build(tauri::generate_context!())?;
 

@@ -45,26 +45,20 @@
 </template>
 
 <script setup lang="ts">
-import { stopWorker } from '@/agent/pool'
 import { useAgentPool } from '@/agent/useAgentPool'
 
-const _props = defineProps<{
+defineProps<{
   showPanel: boolean
 }>()
 
-const _emit = defineEmits<{
+defineEmits<{
   'update:showPanel': [value: boolean]
 }>()
 
-const { workers, refresh } = useAgentPool()
+const { workers, stop } = useAgentPool()
 
-async function _handleStop(workerId: string) {
-  try {
-    await stopWorker(workerId)
-    await refresh()
-  } catch (e) {
-    console.error('Failed to stop worker:', e)
-  }
+function handleStop(workerId: string) {
+  stop(workerId)
 }
 </script>
 
@@ -75,13 +69,13 @@ async function _handleStop(workerId: string) {
   right: 20px;
   width: 340px;
   max-height: 400px;
-  background: #0a0e14;
-  border: 1px solid rgba(0, 255, 255, 0.15);
+  background: var(--bg-terminal);
+  border: 1px solid rgb(var(--accent-rgb) / 0.15);
   border-radius: 14px;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.3),
     0 8px 32px rgba(0, 0, 0, 0.5),
-    0 0 60px rgba(0, 255, 255, 0.05);
+    0 0 60px rgb(var(--accent-rgb) / 0.05);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -93,8 +87,8 @@ async function _handleStop(workerId: string) {
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  background: rgba(20, 30, 40, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgb(var(--bg-rgb) / 0.6);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.06);
   flex-shrink: 0;
 }
 
@@ -102,13 +96,13 @@ async function _handleStop(workerId: string) {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .header-title {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .worker-count {
@@ -118,12 +112,12 @@ async function _handleStop(workerId: string) {
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
-  background: rgba(0, 255, 255, 0.15);
-  border: 1px solid rgba(0, 255, 255, 0.25);
+  background: rgb(var(--accent-rgb) / 0.15);
+  border: 1px solid rgb(var(--accent-rgb) / 0.25);
   border-radius: 10px;
   font-size: 11px;
   font-weight: 600;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .close-btn {
@@ -133,17 +127,17 @@ async function _handleStop(workerId: string) {
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
   border-radius: 7px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .close-btn:hover {
-  background: rgba(255, 107, 107, 0.1);
-  border-color: rgba(255, 107, 107, 0.3);
-  color: #ff6b6b;
+  background: rgb(var(--danger-rgb) / 0.1);
+  border-color: rgb(var(--danger-rgb) / 0.3);
+  color: var(--danger);
 }
 
 .panel-body {
@@ -159,7 +153,7 @@ async function _handleStop(workerId: string) {
   justify-content: center;
   gap: 10px;
   padding: 32px 16px;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgb(var(--text-rgb) / 0.25);
 }
 
 .empty-state span {
@@ -194,11 +188,11 @@ async function _handleStop(workerId: string) {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background:rgb(var(--ink-rgb) / 0.08);
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background:rgb(var(--ink-rgb) / 0.12);
 }
 </style>

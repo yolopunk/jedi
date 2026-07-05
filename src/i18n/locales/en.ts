@@ -205,6 +205,7 @@ export default {
         'You can manually add a group or use the default configuration to start managing your hosts file',
       addGroup: 'Add Group',
       useDefault: 'Use Default',
+      noEntries: 'No host entries in this group',
     },
     table: {
       addHost: 'Add Host',
@@ -213,6 +214,7 @@ export default {
       status: 'Status',
       actions: 'Actions',
       noMore: 'No more data',
+      loadMore: 'Load more',
       search: 'Search',
       entries: 'Entries',
       active: 'Active',
@@ -290,6 +292,7 @@ export default {
     refresh: 'Refresh',
     add: 'Add',
     close: 'Close',
+    loading: 'Loading...',
     noData: 'No Data',
   },
   wallpapers: {

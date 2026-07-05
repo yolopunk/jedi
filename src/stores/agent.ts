@@ -3,8 +3,9 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { AgentLoop } from '@/agent/loop'
-import { scheduleTask } from '@/agent/pool'
 import type { AgentConfig, AgentEvent, AgentState, AgentStep, AgentStepType } from '@/agent/types'
+import { useAgentPoolStore } from './agentPool'
+import type { MessageMetadata } from './aiChat'
 
 const defaultConfig: AgentConfig = {
   model: '',
@@ -24,6 +25,9 @@ export const useAgentStore = defineStore('agent', () => {
   })
   const traceLog = ref<AgentEvent[]>([])
   const tracePanelOpen = ref(false)
+  // Metadata of the message whose trace the right rail is focused on. Null means
+  // "follow the latest assistant turn" (live streaming view).
+  const selectedTrace = ref<MessageMetadata | null>(null)
 
   let loop: AgentLoop | null = null
   let manualStepCounter = 0
@@ -48,15 +52,15 @@ export const useAgentStore = defineStore('agent', () => {
     await loop?.run(message)
   }
 
-  async function runWithPool(prompt: string, description: string): Promise<string> {
-    const workerId = await scheduleTask({
+  function runWithPool(prompt: string, description: string): string {
+    const pool = useAgentPoolStore()
+    return pool.schedule({
       id: `task-${Date.now()}`,
       description,
       prompt,
       tools: ['read', 'edit', 'bash', 'search'],
       abort_on_error: true,
     })
-    return workerId
   }
 
   async function executeSkill(skillId: string, args: any): Promise<any> {
@@ -142,6 +146,7 @@ export const useAgentStore = defineStore('agent', () => {
     state,
     traceLog,
     tracePanelOpen,
+    selectedTrace,
     isRunning,
     history,
     currentStatus,

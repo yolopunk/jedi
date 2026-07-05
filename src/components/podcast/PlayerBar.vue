@@ -222,7 +222,7 @@ function onTrackMouseDown(e: MouseEvent) {
   position: fixed;
   inset: 0;
   z-index: 3000;
-  background: rgba(0, 0, 0, 0.3);
+  background:rgb(var(--ink-rgb) / 0.3);
   display: flex;
   align-items: flex-end;
   justify-content: center;

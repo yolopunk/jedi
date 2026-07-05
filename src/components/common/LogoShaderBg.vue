@@ -332,19 +332,20 @@ function initWebGL(canvas: HTMLCanvasElement): boolean {
   })
   if (!gl) return false
 
-  function compile(type: number, src: string): WebGLShader | null {
-    const s = gl.createShader(type)
-    gl.shaderSource(s, src)
-    gl.compileShader(s)
-    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-      console.error('[LogoShader] compile error:', gl.getShaderInfoLog(s))
+  function compile(ctx: WebGLRenderingContext, type: number, src: string): WebGLShader | null {
+    const s = ctx.createShader(type)
+    if (!s) return null
+    ctx.shaderSource(s, src)
+    ctx.compileShader(s)
+    if (!ctx.getShaderParameter(s, ctx.COMPILE_STATUS)) {
+      console.error('[LogoShader] compile error:', ctx.getShaderInfoLog(s))
       return null
     }
     return s
   }
 
-  const vs = compile(gl.VERTEX_SHADER, vertSrc)
-  const fs = compile(gl.FRAGMENT_SHADER, fragSrc)
+  const vs = compile(gl, gl.VERTEX_SHADER, vertSrc)
+  const fs = compile(gl, gl.FRAGMENT_SHADER, fragSrc)
   if (!vs || !fs) return false
 
   prog = gl.createProgram()!
@@ -559,10 +560,10 @@ watch(
   right: 6px;
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 9px;
-  color: rgba(0, 255, 255, 0.6);
+  color: rgb(var(--accent-rgb) / 0.6);
   letter-spacing: 0.5px;
   pointer-events: none;
   z-index: 10;
-  text-shadow: 0 0 4px rgba(0, 255, 255, 0.3);
+  text-shadow: 0 0 4px rgb(var(--accent-rgb) / 0.3);
 }
 </style>

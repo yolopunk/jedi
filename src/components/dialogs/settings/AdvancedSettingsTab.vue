@@ -45,7 +45,7 @@ const { t } = useI18n()
 
 const hostsPath = '/etc/hosts'
 
-async function _openHostsFile() {
+async function openHostsFile() {
   try {
     await showInFolder(hostsPath)
   } catch (error) {
@@ -65,7 +65,7 @@ async function _openHostsFile() {
 }
 
 .setting-item:not(.no-hover):hover {
-  background: rgba(0, 255, 255, 0.03);
+  background: rgb(var(--accent-rgb) / 0.03);
 }
 
 .setting-icon {
@@ -82,7 +82,7 @@ async function _openHostsFile() {
 .setting-label {
   font-size: 12px;
   font-weight: 600;
-  color: #e4e4e7;
+  color: var(--border);
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 

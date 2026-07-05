@@ -5,11 +5,11 @@
       <v-icon
         :icon="mdiDomain"
         size="80"
-        color="var(--jedi-accent)"
+        color="var(--text-subtle)"
         class="death-star jedi-hover-scale"
       ></v-icon>
     </div>
-    <h2 class="text-h5 font-weight-bold mb-2 text-primary">{{ $t('hosts.empty.title') }}</h2>
+    <h2 class="text-h5 font-weight-bold mb-2" style="color: var(--text);">{{ $t('hosts.empty.title') }}</h2>
     <p class="text-body-1 text-secondary mb-8 text-center" style="max-width: 500px;">
       {{ $t('hosts.empty.description') }}
     </p>
@@ -39,6 +39,8 @@
 </template>
 
 <script setup lang="ts">
+import { mdiDomain, mdiPlus } from '@mdi/js'
+
 // 定义组件事件
 defineEmits<{
   (e: 'add-group'): void

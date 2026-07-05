@@ -56,7 +56,7 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
-const _tabs = computed(() => [
+const tabs = computed(() => [
   { value: 'general', label: t('settings.general') },
   { value: 'wallpaper', label: t('settings.wallpaper') },
   { value: 'advanced', label: t('settings.advanced') },
@@ -65,12 +65,12 @@ const _tabs = computed(() => [
 defineProps<{ modelValue: boolean }>()
 defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 
-const _settingsTab = ref('general')
+const settingsTab = ref('general')
 </script>
 
 <style scoped>
 .model-settings-card {
-  background: #0a0e14 !important;
+  background: var(--bg-terminal) !important;
   border-radius: 16px !important;
   overflow: hidden;
   max-height: 85vh;
@@ -83,8 +83,8 @@ const _settingsTab = ref('general')
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: rgba(20, 30, 40, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgb(var(--bg-rgb) / 0.6);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.06);
   flex-shrink: 0;
 }
 
@@ -100,23 +100,23 @@ const _settingsTab = ref('general')
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
-  border: 1px solid rgba(0, 255, 255, 0.25);
+  background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.15) 0%, rgb(var(--success-rgb) / 0.05) 100%);
+  border: 1px solid rgb(var(--accent-rgb) / 0.25);
   border-radius: 10px;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .brand-text h2 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .brand-text p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
 }
 
 .close-btn {
@@ -126,25 +126,25 @@ const _settingsTab = ref('general')
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  background: rgba(255, 107, 107, 0.1);
-  border-color: rgba(255, 107, 107, 0.3);
-  color: #ff6b6b;
+  background: rgb(var(--danger-rgb) / 0.1);
+  border-color: rgb(var(--danger-rgb) / 0.3);
+  color: var(--danger);
 }
 
 .settings-tabs {
   display: flex;
   gap: 4px;
   padding: 12px 16px;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background:rgb(var(--ink-rgb) / 0.2);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.04);
   flex-shrink: 0;
 }
 
@@ -153,7 +153,7 @@ const _settingsTab = ref('general')
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -161,14 +161,14 @@ const _settingsTab = ref('general')
 }
 
 .tab-btn:hover {
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.6);
+  background:rgb(var(--ink-rgb) / 0.03);
+  color: rgb(var(--text-rgb) / 0.6);
 }
 
 .tab-btn.active {
-  background: rgba(0, 255, 255, 0.1);
-  border-color: rgba(0, 255, 255, 0.25);
-  color: #00ffff;
+  background: rgb(var(--accent-rgb) / 0.1);
+  border-color: rgb(var(--accent-rgb) / 0.25);
+  color: var(--accent);
 }
 
 .card-body {
@@ -186,11 +186,11 @@ const _settingsTab = ref('general')
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background:rgb(var(--ink-rgb) / 0.1);
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background:rgb(var(--ink-rgb) / 0.15);
 }
 </style>

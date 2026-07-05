@@ -319,10 +319,10 @@ async function copyToClipboard() {
 
 /* Highlight.js theme overrides for dark/light mode */
 :global(.v-theme--dark) .message-text :deep(pre) {
-  background: rgba(0, 0, 0, 0.3);
+  background:rgb(var(--ink-rgb) / 0.3);
 }
 
 :global(.v-theme--dark) .message-text :deep(:not(pre) > code) {
-  background: rgba(255, 255, 255, 0.1);
+  background:rgb(var(--ink-rgb) / 0.1);
 }
 </style>

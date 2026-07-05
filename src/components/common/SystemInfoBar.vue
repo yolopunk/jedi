@@ -223,16 +223,7 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import {
-  mdiCpu64Bit,
-  mdiDownload,
-  mdiEthernet,
-  mdiMemory,
-  mdiPause,
-  mdiPlay,
-  mdiServer,
-  mdiUpload,
-} from '@mdi/js'
+import { mdiCpu64Bit, mdiDownload, mdiEthernet, mdiMemory, mdiServer, mdiUpload } from '@mdi/js'
 import { getOsInfo } from '@/api/hosts'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useUpdate } from '@/composables/useUpdate'
@@ -244,7 +235,7 @@ import pkg from '../../../package.json'
 const appVersion = pkg.version
 
 // Audio player
-const { currentPlaying, isPaused, togglePlay } = useAudioPlayer()
+const { currentPlaying } = useAudioPlayer()
 
 // Update composable
 const { hasUpdate, updateInfo, isChecking, isInstalling, installUpdate } = useUpdate()
@@ -327,7 +318,6 @@ const formatPercentage = _formatPercentage
 const formatNetworkSpeed = _formatNetworkSpeed
 const formatDataSize = _formatDataSize
 const getMemoryUsagePercentage = _getMemoryUsagePercentage
-const handleInstallUpdate = _handleInstallUpdate
 </script>
 
 <style scoped>

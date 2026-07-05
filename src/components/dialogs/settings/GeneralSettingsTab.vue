@@ -157,17 +157,17 @@ const themeModes = computed(() => [
   { label: t('settings.themeSystem'), value: 'system', icon: '💻' },
 ])
 
-const _currentThemeLabel = computed(() => {
+const currentThemeLabel = computed(() => {
   return themeModes.value.find(m => m.value === themeMode.value)?.label || t('settings.themeSystem')
 })
 
-const _currentLangLabel = computed(() => {
+const currentLangLabel = computed(() => {
   return (
     languages.value.find((l: { value: string }) => l.value === locale.value)?.label || '简体中文'
   )
 })
 
-const _changeLanguage = async (lang: string) => {
+const changeLanguage = async (lang: string) => {
   locale.value = lang
   await setItem('language', lang)
 }
@@ -188,20 +188,20 @@ const {
 
 const showUpdateDialog = ref(false)
 
-const _handleAutoUpdateChange = (value: boolean | null) => {
+const handleAutoUpdateChange = (value: boolean | null) => {
   if (value !== null) {
     autoUpdateEnabled.value = value
   }
 }
 
-const _handleManualCheck = async () => {
+const handleManualCheck = async () => {
   await checkForUpdate()
   if (hasUpdate.value) {
     showUpdateDialog.value = true
   }
 }
 
-const _handleInstallUpdate = async () => {
+const handleInstallUpdate = async () => {
   try {
     await installUpdate()
     showUpdateDialog.value = false
@@ -210,7 +210,7 @@ const _handleInstallUpdate = async () => {
   }
 }
 
-async function _toggleAutostart(value: boolean | null) {
+async function toggleAutostart(value: boolean | null) {
   if (value === null) return
   try {
     autostartLoading.value = true
@@ -256,7 +256,7 @@ onMounted(async () => {
 }
 
 .setting-item:not(.no-hover):hover {
-  background: rgba(0, 255, 255, 0.03);
+  background: rgb(var(--accent-rgb) / 0.03);
 }
 
 .setting-icon {
@@ -273,13 +273,13 @@ onMounted(async () => {
 .setting-label {
   font-size: 12px;
   font-weight: 600;
-  color: #e4e4e7;
+  color: var(--border);
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 
 .setting-subtitle {
   font-size: 10px;
-  color: #52525b;
+  color: var(--text-subtle);
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 
@@ -296,7 +296,7 @@ onMounted(async () => {
 .slider-value {
   font-size: 12px;
   font-weight: 600;
-  color: #00ffff;
+  color: var(--accent);
   font-family: 'JetBrains Mono', monospace;
   min-width: 40px;
   text-align: right;
@@ -306,24 +306,24 @@ onMounted(async () => {
 .toggle-switch {
   width: 40px;
   height: 22px;
-  background: rgba(82, 82, 91, 0.5);
+  background:rgb(var(--ink-rgb) / 0.5);
   border-radius: 12px;
   position: relative;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 1px solid rgba(82, 82, 91, 0.5);
+  border: 1px solid rgb(var(--text-rgb) / 0.5);
 }
 
 .toggle-switch.active {
-  background: rgba(0, 255, 136, 0.15);
-  border-color: rgba(0, 255, 136, 0.5);
+  background: rgb(var(--success-rgb) / 0.15);
+  border-color: rgb(var(--success-rgb) / 0.5);
 }
 
 .toggle-handle {
   position: absolute;
   width: 16px;
   height: 16px;
-  background: #52525b;
+  background: var(--text-subtle);
   border-radius: 50%;
   top: 2px;
   left: 2px;
@@ -331,57 +331,8 @@ onMounted(async () => {
 }
 
 .toggle-switch.active .toggle-handle {
-  background: #00ff88;
-  box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  background: var(--success);
+  box-shadow: 0 0 10px rgb(var(--success-rgb) / 0.5);
   left: 20px;
-}
-
-/* =========================================
-   Light Theme Styles
-   ========================================= */
-.light-theme .setting-item {
-  border-bottom-color: #d4a574;
-}
-
-.light-theme .setting-label {
-  color: #3d2914;
-}
-
-.light-theme .setting-subtitle {
-  color: #6b4423;
-}
-
-.light-theme .setting-icon {
-  color: #cd7f32;
-}
-
-.light-theme .toggle-switch {
-  background: #d4a574;
-}
-
-.light-theme .toggle-switch.active {
-  background: #cd7f32;
-}
-
-.light-theme .toggle-switch .toggle-handle {
-  background: #ffffff;
-}
-
-.light-theme .console-menu {
-  background: #efe0cc !important;
-  border-color: rgba(184, 134, 11, 0.3) !important;
-}
-
-.light-theme .menu-item {
-  color: #6b4423;
-}
-
-.light-theme .menu-item:hover {
-  background: rgba(205, 127, 50, 0.12);
-  color: #cd7f32;
-}
-
-.light-theme .menu-check {
-  color: #daa520;
 }
 </style>

@@ -7,6 +7,7 @@ import { podcastSkill } from './podcast'
 import { terminalSkill } from './terminal'
 import type { Skill } from './types'
 import { wallpaperSkill } from './wallpaper'
+import { webFetchSkill, webSearchSkill } from './web'
 
 export class SkillRegistry {
   private skills: Map<string, Skill> = new Map()
@@ -48,6 +49,8 @@ skillRegistry.register(hostsSkill)
 skillRegistry.register(browserSkill)
 skillRegistry.register(podcastSkill)
 skillRegistry.register(wallpaperSkill)
+skillRegistry.register(webSearchSkill)
+skillRegistry.register(webFetchSkill)
 
 // Set initial enabled states
 skillRegistry.setEnabled('browser', false)

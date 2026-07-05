@@ -18,11 +18,11 @@ const initStore = async () => {
         // 使用 ensureJediDir API 确保 .jedi 目录存在
         const jediDir = await import('@/api/app').then(api => api.ensureJediDir())
         // 创建存储（禁用加密，避免密钥环授权提示）
+        // 不传 encryptionKey：默认即不加密，避免 Linux 下反复请求密钥环授权
+        // （存储的都是非敏感配置数据，无需加密）
         store = await Store.load(`${jediDir}/settings.json`, {
           autoSave: true,
-          // 禁用加密，避免Linux下反复请求密钥环授权
-          // 存储的都是非敏感配置数据，不需要加密
-          encryptionKey: null,
+          defaults: {},
         })
       } else {
         // 非Tauri环境，直接使用localStorage

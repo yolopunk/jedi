@@ -105,10 +105,10 @@ defineEmits<{
   (e: 'install'): void
 }>()
 
-const _currentVersion = pkg.version
+const currentVersion = pkg.version
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
-const _formattedReleaseNotes = computed(() => {
+const formattedReleaseNotes = computed(() => {
   if (!props.updateInfo.body) return ''
   return md.render(props.updateInfo.body)
 })
@@ -116,7 +116,7 @@ const _formattedReleaseNotes = computed(() => {
 
 <style scoped>
 .model-settings-card {
-  background: #0a0e14 !important;
+  background: var(--bg-terminal) !important;
   border-radius: 16px !important;
   overflow: hidden;
   max-height: 85vh;
@@ -129,8 +129,8 @@ const _formattedReleaseNotes = computed(() => {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: rgba(20, 30, 40, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgb(var(--bg-rgb) / 0.6);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.06);
   flex-shrink: 0;
 }
 
@@ -146,23 +146,23 @@ const _formattedReleaseNotes = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
-  border: 1px solid rgba(0, 255, 136, 0.25);
+  background: linear-gradient(135deg, rgb(var(--success-rgb) / 0.15) 0%, rgb(var(--success-rgb) / 0.05) 100%);
+  border: 1px solid rgb(var(--success-rgb) / 0.25);
   border-radius: 10px;
-  color: #00ff88;
+  color: var(--success);
 }
 
 .brand-text h2 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .brand-text p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
 }
 
 .close-btn {
@@ -172,17 +172,17 @@ const _formattedReleaseNotes = computed(() => {
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  background: rgba(255, 107, 107, 0.1);
-  border-color: rgba(255, 107, 107, 0.3);
-  color: #ff6b6b;
+  background: rgb(var(--danger-rgb) / 0.1);
+  border-color: rgb(var(--danger-rgb) / 0.3);
+  color: var(--danger);
 }
 
 .card-body {
@@ -200,8 +200,8 @@ const _formattedReleaseNotes = computed(() => {
   justify-content: center;
   gap: 16px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background:rgb(var(--ink-rgb) / 0.02);
+  border: 1px solid rgb(var(--text-rgb) / 0.06);
   border-radius: 12px;
 }
 
@@ -216,7 +216,7 @@ const _formattedReleaseNotes = computed(() => {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgb(var(--text-rgb) / 0.35);
   text-transform: uppercase;
 }
 
@@ -227,16 +227,16 @@ const _formattedReleaseNotes = computed(() => {
 }
 
 .version-value.current {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
 }
 
 .version-value.new {
-  color: #00ff88;
-  text-shadow: 0 0 12px rgba(0, 255, 136, 0.4);
+  color: var(--success);
+  text-shadow: 0 0 12px rgb(var(--success-rgb) / 0.4);
 }
 
 .version-arrow {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgb(var(--text-rgb) / 0.2);
 }
 
 .release-notes-section {
@@ -252,17 +252,17 @@ const _formattedReleaseNotes = computed(() => {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   text-transform: uppercase;
 }
 
 .section-title svg {
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .release-notes-box {
-  background: rgba(0, 255, 255, 0.02);
-  border: 1px solid rgba(0, 255, 255, 0.08);
+  background: rgb(var(--accent-rgb) / 0.02);
+  border: 1px solid rgb(var(--accent-rgb) / 0.08);
   border-radius: 10px;
   padding: 14px;
   max-height: 200px;
@@ -272,7 +272,7 @@ const _formattedReleaseNotes = computed(() => {
 .release-notes {
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgb(var(--text-rgb) / 0.6);
   line-height: 1.6;
 }
 
@@ -281,7 +281,7 @@ const _formattedReleaseNotes = computed(() => {
 .release-notes :deep(h3) {
   margin: 8px 0 4px;
   font-weight: 700;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .release-notes :deep(h1) { font-size: 14px; }
@@ -299,14 +299,14 @@ const _formattedReleaseNotes = computed(() => {
 }
 
 .release-notes :deep(code) {
-  background: rgba(0, 255, 255, 0.08);
+  background: rgb(var(--accent-rgb) / 0.08);
   padding: 2px 6px;
   border-radius: 4px;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .release-notes :deep(a) {
-  color: #00ff88;
+  color: var(--success);
 }
 
 .install-progress {
@@ -317,7 +317,7 @@ const _formattedReleaseNotes = computed(() => {
 
 .progress-bar {
   height: 4px;
-  background: rgba(0, 255, 136, 0.1);
+  background: rgb(var(--success-rgb) / 0.1);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -325,7 +325,7 @@ const _formattedReleaseNotes = computed(() => {
 .progress-fill {
   height: 100%;
   width: 30%;
-  background: linear-gradient(90deg, #00ffff, #00ff88);
+  background: linear-gradient(90deg, var(--accent), var(--success));
   border-radius: 2px;
   animation: progress-slide 1.5s ease-in-out infinite;
 }
@@ -337,7 +337,7 @@ const _formattedReleaseNotes = computed(() => {
 
 .progress-text {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
   text-align: center;
   letter-spacing: 0.5px;
 }
@@ -346,7 +346,7 @@ const _formattedReleaseNotes = computed(() => {
   display: flex;
   align-items: center;
   padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgb(var(--text-rgb) / 0.06);
   flex-shrink: 0;
 }
 
@@ -359,11 +359,11 @@ const _formattedReleaseNotes = computed(() => {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background:rgb(var(--ink-rgb) / 0.1);
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background:rgb(var(--ink-rgb) / 0.15);
 }
 </style>

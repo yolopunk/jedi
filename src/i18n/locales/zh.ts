@@ -194,6 +194,7 @@ export default {
       description: '您可以手动添加分组或使用默认配置来开始管理您的 hosts 文件',
       addGroup: '添加分组',
       useDefault: '使用默认配置',
+      noEntries: '该分组下暂无主机条目',
     },
     table: {
       addHost: '添加条目',
@@ -202,6 +203,7 @@ export default {
       status: '状态',
       actions: '操作',
       noMore: '没有更多数据了',
+      loadMore: '显示更多',
       search: '搜索',
       entries: '条目',
       active: '活跃',
@@ -282,6 +284,7 @@ export default {
     refresh: '刷新',
     add: '添加',
     close: '关闭',
+    loading: '加载中...',
     noData: '暂无数据',
   },
   wallpapers: {

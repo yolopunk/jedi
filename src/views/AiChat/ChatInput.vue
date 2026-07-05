@@ -342,8 +342,8 @@ defineExpose({ focus, setText })
 
 /* Dark mode adjustments */
 :global(.v-theme--dark) .input-bar {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.1);
+  background:rgb(var(--ink-rgb) / 0.08);
+  border-color: rgb(var(--text-rgb) / 0.1);
 }
 
 :global(.v-theme--dark) .input-bar:focus-within {

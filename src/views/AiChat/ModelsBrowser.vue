@@ -2,7 +2,7 @@
   <v-dialog v-model="dialogModel" max-width="1200">
     <v-card class="scifi-card models-browser-dialog">
       <v-card-title class="console-title-bar">
-        <span class="dialog-title">[ MODEL_HUB ]</span>
+        <span class="dialog-title">{{ $t('sidebar.models') }}</span>
         <v-spacer></v-spacer>
         <button class="console-btn icon-only" @click="dialogModel = false">
           <span class="btn-icon">✕</span>
@@ -31,7 +31,7 @@
 
               <div class="header-right">
                 <div class="input-wrapper">
-                  <span class="input-prompt">>></span>
+                  <v-icon :icon="mdiMagnify" size="16" class="search-icon" />
                   <input
                     v-model="searchQuery"
                     type="text"
@@ -169,6 +169,7 @@ import {
   mdiImage,
   mdiLan,
   mdiLightningBolt,
+  mdiMagnify,
   mdiRobot,
   mdiStar,
   mdiWave,
@@ -314,8 +315,8 @@ watch(dialogModel, newVal => {
 
 .console-header-bar {
   padding: 12px 20px;
-  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-  background: rgba(0, 255, 255, 0.05);
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.2);
+  background: rgb(var(--accent-rgb) / 0.05);
 }
 
 .header-row {
@@ -339,13 +340,13 @@ watch(dialogModel, newVal => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #00ff88;
-  box-shadow: 0 0 8px #00ff88;
+  background: var(--success);
+  box-shadow: 0 0 8px var(--success);
 }
 
 .status-light.standby {
-  background: #ffaa00;
-  box-shadow: 0 0 8px #ffaa00;
+  background: var(--warning);
+  box-shadow: 0 0 8px var(--warning);
   animation: pulse 1s ease-in-out infinite;
 }
 
@@ -362,15 +363,15 @@ watch(dialogModel, newVal => {
 .metric-item {
   font-family: 'Courier New', monospace;
   font-size: 0.75rem;
-  color: #888;
+  color: var(--text-subtle);
 }
 
 .metric-label {
-  color: #555;
+  color: var(--text-muted);
 }
 
 .metric-value {
-  color: #00ff88;
+  color: var(--success);
   font-weight: 600;
 }
 
@@ -383,65 +384,31 @@ watch(dialogModel, newVal => {
 .input-wrapper {
   display: flex;
   align-items: center;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 255, 255, 0.3);
+  background:rgb(var(--ink-rgb) / 0.3);
+  border: 1px solid rgb(var(--accent-rgb) / 0.3);
   border-radius: 6px;
   padding: 6px 10px;
   gap: 6px;
 }
 
-.input-prompt {
-  color: #00ff88;
-  font-family: 'Courier New', monospace;
-  font-size: 0.875rem;
+.search-icon {
+  color: var(--text-subtle);
+  margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .console-input {
   background: transparent;
   border: none;
   outline: none;
-  color: #fff;
+  color: var(--text);
   font-family: 'Courier New', monospace;
   font-size: 0.875rem;
   width: 180px;
 }
 
 .console-input::placeholder {
-  color: #555;
-}
-
-.console-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  background: transparent;
-  border: 1px solid rgba(0, 255, 255, 0.5);
-  border-radius: 6px;
-  color: #00ffff;
-  font-family: 'Courier New', monospace;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.console-btn:hover {
-  background: rgba(0, 255, 255, 0.1);
-  border-color: #00ffff;
-}
-
-.console-btn.icon-only {
-  padding: 8px;
-}
-
-.console-btn.small {
-  padding: 6px 10px;
-  font-size: 0.6875rem;
-}
-
-.console-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  color: var(--text-muted);
 }
 
 .btn-icon.spinning {
@@ -467,7 +434,7 @@ watch(dialogModel, newVal => {
 
 .providers-panel {
   width: 250px;
-  border-right: 1px solid rgba(0, 255, 255, 0.2);
+  border-right: 1px solid rgb(var(--accent-rgb) / 0.2);
   display: flex;
   flex-direction: column;
 }
@@ -481,8 +448,8 @@ watch(dialogModel, newVal => {
 
 .panel-header {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-  background: rgba(0, 255, 255, 0.03);
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.2);
+  background: rgb(var(--accent-rgb) / 0.03);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -492,7 +459,7 @@ watch(dialogModel, newVal => {
   font-family: 'Courier New', monospace;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #00ffff;
+  color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
@@ -500,7 +467,7 @@ watch(dialogModel, newVal => {
 .panel-count {
   font-family: 'Courier New', monospace;
   font-size: 0.6875rem;
-  color: #666;
+  color: var(--text-subtle);
 }
 
 .providers-list {
@@ -521,12 +488,12 @@ watch(dialogModel, newVal => {
 }
 
 .provider-item:hover {
-  background: rgba(0, 255, 255, 0.05);
+  background: rgb(var(--accent-rgb) / 0.05);
 }
 
 .provider-item.active {
-  background: rgba(0, 255, 255, 0.1);
-  border-color: rgba(0, 255, 255, 0.5);
+  background: rgb(var(--accent-rgb) / 0.1);
+  border-color: rgb(var(--accent-rgb) / 0.5);
 }
 
 .provider-icon {
@@ -535,9 +502,9 @@ watch(dialogModel, newVal => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 255, 255, 0.1);
+  background: rgb(var(--accent-rgb) / 0.1);
   border-radius: 6px;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .provider-info {
@@ -548,22 +515,22 @@ watch(dialogModel, newVal => {
 .provider-name {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #fff;
+  color: var(--text);
 }
 
 .provider-meta {
   font-size: 0.6875rem;
-  color: #666;
+  color: var(--text-subtle);
   font-family: 'Courier New', monospace;
 }
 
 .provider-badge {
   font-size: 0.5625rem;
   padding: 2px 6px;
-  background: rgba(0, 255, 136, 0.2);
-  border: 1px solid rgba(0, 255, 136, 0.5);
+  background: rgb(var(--success-rgb) / 0.2);
+  border: 1px solid rgb(var(--success-rgb) / 0.5);
   border-radius: 4px;
-  color: #00ff88;
+  color: var(--success);
   font-family: 'Courier New', monospace;
 }
 
@@ -584,7 +551,7 @@ watch(dialogModel, newVal => {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .empty-icon {
@@ -597,8 +564,8 @@ watch(dialogModel, newVal => {
 }
 
 .model-card {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 255, 255, 0.2);
+  background:rgb(var(--ink-rgb) / 0.3);
+  border: 1px solid rgb(var(--accent-rgb) / 0.2);
   border-radius: 8px;
   padding: 12px;
   display: flex;
@@ -608,8 +575,8 @@ watch(dialogModel, newVal => {
 }
 
 .model-card:hover {
-  border-color: rgba(0, 255, 255, 0.5);
-  background: rgba(0, 255, 255, 0.05);
+  border-color: rgb(var(--accent-rgb) / 0.5);
+  background: rgb(var(--accent-rgb) / 0.05);
 }
 
 .model-header {
@@ -621,12 +588,12 @@ watch(dialogModel, newVal => {
 .model-name {
   font-size: 1rem;
   font-weight: 600;
-  color: #fff;
+  color: var(--text);
 }
 
 .model-id {
   font-size: 0.75rem;
-  color: #666;
+  color: var(--text-subtle);
   font-family: 'Courier New', monospace;
 }
 
@@ -644,27 +611,27 @@ watch(dialogModel, newVal => {
 }
 
 .tag.reasoning {
-  background: rgba(255, 170, 0, 0.2);
-  border: 1px solid rgba(255, 170, 0, 0.5);
-  color: #ffaa00;
+  background: rgb(var(--warning-rgb) / 0.2);
+  border: 1px solid rgb(var(--warning-rgb) / 0.5);
+  color: var(--warning);
 }
 
 .tag.tool {
-  background: rgba(0, 255, 136, 0.2);
-  border: 1px solid rgba(0, 255, 136, 0.5);
-  color: #00ff88;
+  background: rgb(var(--success-rgb) / 0.2);
+  border: 1px solid rgb(var(--success-rgb) / 0.5);
+  color: var(--success);
 }
 
 .tag.attachment {
-  background: rgba(0, 255, 255, 0.2);
-  border: 1px solid rgba(0, 255, 255, 0.5);
-  color: #00ffff;
+  background: rgb(var(--accent-rgb) / 0.2);
+  border: 1px solid rgb(var(--accent-rgb) / 0.5);
+  color: var(--accent);
 }
 
 .tag.open {
   background: rgba(255, 0, 255, 0.2);
   border: 1px solid rgba(255, 0, 255, 0.5);
-  color: #ff00ff;
+  color: var(--accent-2);
 }
 
 .model-details {
@@ -672,8 +639,8 @@ watch(dialogModel, newVal => {
   flex-wrap: wrap;
   gap: 10px;
   padding: 6px 0;
-  border-top: 1px solid rgba(0, 255, 255, 0.1);
-  border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.1);
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.1);
 }
 
 .detail-item {
@@ -684,14 +651,14 @@ watch(dialogModel, newVal => {
 
 .detail-label {
   font-size: 0.625rem;
-  color: #555;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .detail-value {
   font-size: 0.75rem;
-  color: #00ffff;
+  color: var(--accent);
   font-family: 'Courier New', monospace;
 }
 
@@ -704,7 +671,7 @@ watch(dialogModel, newVal => {
 
 .modality-label {
   font-size: 0.6875rem;
-  color: #555;
+  color: var(--text-muted);
   font-family: 'Courier New', monospace;
 }
 
@@ -715,10 +682,10 @@ watch(dialogModel, newVal => {
 .modality-tag {
   font-size: 0.625rem;
   padding: 2px 6px;
-  background: rgba(0, 255, 136, 0.15);
-  border: 1px solid rgba(0, 255, 136, 0.3);
+  background: rgb(var(--success-rgb) / 0.15);
+  border: 1px solid rgb(var(--success-rgb) / 0.3);
   border-radius: 4px;
-  color: #00ff88;
+  color: var(--success);
   font-family: 'Courier New', monospace;
 }
 
@@ -741,7 +708,7 @@ watch(dialogModel, newVal => {
 
 .providers-list::-webkit-scrollbar-thumb,
 .models-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 255, 0.2);
+  background: rgb(var(--accent-rgb) / 0.2);
   border-radius: 3px;
 }
 </style>

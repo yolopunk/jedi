@@ -109,6 +109,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiCog, mdiGithub, mdiHelpCircle, mdiInformation } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStorage } from '@/composables/useStorage'
@@ -121,18 +122,18 @@ const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
 const { setItem } = useStorage()
 
 // 语言切换
-const _langTooltip = computed(() => {
+const langTooltip = computed(() => {
   return locale.value === 'zh' ? 'Switch to English' : '切换到中文'
 })
 
-async function _toggleLanguage() {
+async function toggleLanguage() {
   const newLang = locale.value === 'zh' ? 'en' : 'zh'
   locale.value = newLang
   await setItem('language', newLang)
 }
 
 // Language flag
-const _langFlag = computed(() => {
+const langFlag = computed(() => {
   return locale.value === 'zh' ? '' : ''
 })
 
@@ -179,7 +180,7 @@ defineEmits<{
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(180deg, #020409 0%, #050b1a 40%, #0a1835 100%);
+    background: linear-gradient(180deg, var(--bg-terminal) 0%, var(--bg-terminal) 40%, var(--bg-terminal) 100%);
     z-index: -2;
 }
 
@@ -193,7 +194,7 @@ defineEmits<{
     height: 150px;
     background: radial-gradient(
         ellipse at center,
-        rgba(60, 100, 255, 0.25) 0%,
+        rgb(var(--accent-rgb) / 0.25) 0%,
         transparent 70%
     );
     z-index: -1;
@@ -216,20 +217,20 @@ defineEmits<{
     height: 1px;
     background: transparent;
     box-shadow:
-        10px 10px #fff,
-        50px 80px #fff,
-        120px 30px #fff,
-        180px 10px #fff,
-        40px 110px #fff,
-        150px 90px #fff,
-        90px 40px #fff,
-        20px 60px #fff,
-        160px 50px #fff,
-        70px 20px #fff,
-        110px 100px #fff,
-        190px 70px #fff,
-        30px 30px rgba(255, 255, 255, 0.5),
-        140px 20px rgba(255, 255, 255, 0.5);
+        10px 10px var(--text),
+        50px 80px var(--text),
+        120px 30px var(--text),
+        180px 10px var(--text),
+        40px 110px var(--text),
+        150px 90px var(--text),
+        90px 40px var(--text),
+        20px 60px var(--text),
+        160px 50px var(--text),
+        70px 20px var(--text),
+        110px 100px var(--text),
+        190px 70px var(--text),
+        30px 30px rgb(var(--text-rgb) / 0.5),
+        140px 20px rgb(var(--text-rgb) / 0.5);
     animation: stars-move-1 100s linear infinite;
 }
 
@@ -238,10 +239,10 @@ defineEmits<{
     height: 2px;
     background: transparent;
     box-shadow:
-        30px 50px rgba(255, 255, 255, 0.6),
-        100px 20px rgba(255, 255, 255, 0.6),
-        160px 80px rgba(255, 255, 255, 0.6),
-        60px 90px rgba(255, 255, 255, 0.6);
+        30px 50px rgb(var(--text-rgb) / 0.6),
+        100px 20px rgb(var(--text-rgb) / 0.6),
+        160px 80px rgb(var(--text-rgb) / 0.6),
+        60px 90px rgb(var(--text-rgb) / 0.6);
     animation: stars-move-2 150s linear infinite;
 }
 
@@ -255,7 +256,7 @@ defineEmits<{
     width: 100%;
     height: 100%;
     /* 沙漠日落渐变: 顶部深红褐 -> 中部橙红 -> 底部金黄 */
-    background: linear-gradient(180deg, #5d4037 0%, #d84315 40%, #ffa000 100%);
+    background: linear-gradient(180deg, var(--text-muted) 0%, var(--warning) 40%, var(--warning) 100%);
     z-index: -2;
 }
 
@@ -269,8 +270,8 @@ defineEmits<{
     height: 120px;
     background: radial-gradient(
         ellipse at center,
-        rgba(255, 236, 179, 0.4) 0%,
-        rgba(255, 111, 0, 0.1) 60%,
+        rgb(var(--warning-rgb) / 0.4) 0%,
+        rgb(var(--warning-rgb) / 0.1) 60%,
         transparent 80%
     );
     z-index: -1;
@@ -286,25 +287,24 @@ defineEmits<{
     right: 0;
     bottom: 0;
     z-index: -1;
-    background-image:
-        radial-gradient(
+    background-image:radial-gradient(
             1px 1px at 20px 30px,
-            rgba(255, 255, 255, 0.6),
+            rgb(var(--ink-rgb) / 0.6),
             transparent
         ),
         radial-gradient(
             1px 1px at 40px 70px,
-            rgba(255, 255, 255, 0.6),
+            rgb(var(--ink-rgb) / 0.6),
             transparent
         ),
         radial-gradient(
             2px 2px at 90px 40px,
-            rgba(255, 224, 178, 0.5),
+            rgb(var(--warning-rgb) / 0.5),
             transparent
         ),
         radial-gradient(
             1px 1px at 160px 120px,
-            rgba(255, 255, 255, 0.6),
+            rgb(var(--ink-rgb) / 0.6),
             transparent
         );
     background-size: 200px 200px;
@@ -321,17 +321,17 @@ defineEmits<{
     backdrop-filter: blur(2px);
     background: linear-gradient(
         to top,
-        rgba(10, 20, 40, 0.9),
-        rgba(10, 20, 40, 0)
+        rgb(var(--bg-rgb) / 0.9),
+        rgb(var(--bg-rgb) / 0)
     );
     transition: background 0.3s ease;
 }
 
 .footer-console.light-console {
-    background: linear-gradient(
+    background:linear-gradient(
         to top,
-        rgba(93, 64, 55, 0.8),
-        rgba(93, 64, 55, 0)
+        rgb(var(--ink-rgb) / 0.8),
+        rgb(var(--ink-rgb) / 0)
     );
 }
 
@@ -353,7 +353,7 @@ defineEmits<{
     background: linear-gradient(
         90deg,
         transparent,
-        rgba(255, 160, 0, 0.6),
+        rgb(var(--warning-rgb) / 0.6),
         transparent
     );
 }
@@ -362,7 +362,7 @@ defineEmits<{
 .copyright-text {
     /* font-family: var(--jedi-font-ui); */
     font-size: 11px;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgb(var(--text-rgb) / 0.8);
     letter-spacing: 1px;
     text-transform: uppercase;
     font-weight: 500;
@@ -370,24 +370,24 @@ defineEmits<{
 }
 
 .copyright-text.light-text {
-    color: rgba(255, 248, 225, 0.9);
-    text-shadow: 0 0 3px rgba(62, 39, 35, 0.5);
+    color: rgb(var(--warning-rgb) / 0.9);
+    text-shadow: 0 0 3px rgb(var(--text-rgb) / 0.5);
 }
 
 .brand-text {
-    color: #a0c4ff;
+    color: var(--accent);
     font-weight: 700;
     text-shadow:
-        0 0 8px rgba(60, 100, 255, 0.8),
-        0 0 15px rgba(60, 100, 255, 0.4);
+        0 0 8px rgb(var(--accent-rgb) / 0.8),
+        0 0 15px rgb(var(--accent-rgb) / 0.4);
     margin-left: 4px;
 }
 
 .brand-text.light-brand {
-    color: #ffecb3;
+    color: var(--warning);
     text-shadow:
-        0 0 8px rgba(255, 111, 0, 0.8),
-        0 0 15px rgba(255, 111, 0, 0.4);
+        0 0 8px rgb(var(--warning-rgb) / 0.8),
+        0 0 15px rgb(var(--warning-rgb) / 0.4);
 }
 
 /* 按钮样式 */
@@ -399,8 +399,8 @@ defineEmits<{
 .jedi-icon-btn:hover {
     opacity: 1;
     transform: translateY(-2px);
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.05);
+    text-shadow: 0 0 8px rgb(var(--text-rgb) / 0.6);
+    background:rgb(var(--ink-rgb) / 0.05);
 }
 
 /* ================== 动画定义 ================== */
@@ -452,39 +452,6 @@ defineEmits<{
     100% {
         background-position: 50px -100px;
     }
-}
-
-/* =========================================
-   Light Theme Styles (Tatooine Outpost)
-   ========================================= */
-.light-theme .deep-space-bg {
-    background: linear-gradient(180deg, #f5e6d3 0%, #efe0cc 50%, #e8d4bc 100%);
-}
-
-.light-theme .nebula-glow {
-    background: radial-gradient(
-        ellipse at center,
-        rgba(205, 127, 50, 0.15) 0%,
-        transparent 70%
-    );
-}
-
-.light-theme .footer-console {
-    background: rgba(245, 230, 211, 0.95);
-    backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(184, 134, 11, 0.3);
-}
-
-.light-theme .footer-btn {
-    color: #6b4423;
-}
-
-.light-theme .footer-btn:hover {
-    color: #cd7f32;
-}
-
-.light-theme .footer-divider {
-    background: #d4a574;
 }
 
 .lang-flag {

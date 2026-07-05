@@ -5,7 +5,13 @@ import { computed, ref } from 'vue'
 import { skillRegistry } from '@/skills/registry'
 
 export const useSkillsStore = defineStore('skills', () => {
-  const enabledSkills = ref<string[]>(['terminal', 'filesystem', 'hosts'])
+  const enabledSkills = ref<string[]>([
+    'terminal',
+    'filesystem',
+    'hosts',
+    'web_search',
+    'web_fetch',
+  ])
   const skillPanelOpen = ref(false)
 
   const allSkills = computed(() => skillRegistry.list())

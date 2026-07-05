@@ -1,267 +1,264 @@
 /*
- * Jedi Theme System - Destructive Refactor v2.0
- * Based on Zed Editor Aesthetics (Zinc Scale)
- * Strictly Semantic Variables
+ * Jedi Theme System v3.0 — Single Semantic Token Source
+ * -----------------------------------------------------
+ * One vocabulary, two palettes:
+ *   - Light : clean neutral (Zinc + single blue accent)
+ *   - Dark  : sci-fi console (Zed-matte zinc + cyan accent)
+ *
+ * Rules:
+ *   1. Components MUST consume semantic tokens, never raw hex.
+ *   2. Alpha-composited colors use the *-rgb channel tokens:
+ *        background: rgb(var(--accent-rgb) / 0.12);
+ *   3. Palette values live ONLY here. No per-component .light-theme doubles.
+ *   4. --jedi-* / --scifi-* / --v-theme-* are compatibility aliases that
+ *      resolve onto the same tokens (legacy + Vuetify bridge).
  */
 
+/* =========================================================
+   Fonts
+   ========================================================= */
 :root {
-  /* =========================================
-     Color Primitives (Internal Use Only)
-     ========================================= */
   --jedi-font-ui: 'CangErJinKai', '苍耳今楷', '仓耳今楷05-W04', '仓耳今楷05 W04', '仓耳今楷', 'Kaiti SC', 'STKaiti', 'KaiTi', 'Songti SC', ui-serif, serif;
   --jedi-font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
 
-  /* Zinc Scale */
-  --color-zinc-50: #fafafa;
-  --color-zinc-100: #f4f4f5;
-  --color-zinc-200: #e4e4e7;
-  --color-zinc-300: #d4d4d8;
-  --color-zinc-400: #a1a1aa;
-  --color-zinc-500: #71717a;
-  --color-zinc-600: #52525b;
-  --color-zinc-700: #3f3f46;
-  --color-zinc-800: #27272a;
-  --color-zinc-900: #18181b;
-  --color-zinc-950: #09090b;
-
-  /* Sci-Fi Console Colors */
-  --color-scifi-bg-dark: #0a0a0f;
-  --color-scifi-bg-darker: #0d0d14;
-  --color-scifi-bg-terminal: #0f0f1a;
-  --color-scifi-cyan: #00ffff;
-  --color-scifi-green: #00ff88;
-  --color-scifi-magenta: #ff00ff;
-  --color-scifi-amber: #ffaa00;
-  --color-scifi-red: #ff4444;
-  --color-scifi-blue: #00aaff;
-  --color-scifi-border: #1a1a2e;
-  --color-scifi-border-light: #1a1a3a;
-
-  /* Blue Scale (Electric) */
-  --color-blue-400: #60a5fa;
-  --color-blue-500: #3b82f6;
-  --color-blue-600: #2563eb;
-
-  /* Green Scale (Success) */
-  --color-green-400: #4ade80;
-  --color-green-500: #22c55e;
-
-  /* Red Scale (Danger) */
-  --color-red-400: #f87171;
-  --color-red-500: #ef4444;
-
-  /* Amber Scale (Warning) */
-  --color-amber-400: #fbbf24;
-  --color-amber-500: #f59e0b;
-
-  /* Syntax Highlighting */
-  --color-syntax-purple: #c084fc;
-  --color-syntax-lime: #a3e635;
-  --color-syntax-cyan: #22d3ee;
-
-  /* Default Vuetify Theme Variables (Dark theme as default fallback) */
-  --v-theme-background: 17, 17, 19;
-  --v-theme-surface: 24, 24, 27;
-  --v-theme-surface-light: 39, 39, 42;
-  --v-theme-surface-dark: 9, 9, 11;
-  --v-theme-primary: 96, 165, 250;
-  --v-theme-primary-light: 147, 197, 253;
-  --v-theme-primary-dark: 59, 130, 246;
-  --v-theme-secondary: 161, 161, 170;
-  --v-theme-secondary-light: 194, 194, 200;
-  --v-theme-secondary-dark: 113, 113, 122;
-  --v-theme-error: 248, 113, 113;
-  --v-theme-error-light: 252, 165, 165;
-  --v-theme-error-dark: 239, 68, 68;
-  --v-theme-info: 96, 165, 250;
-  --v-theme-info-light: 147, 197, 253;
-  --v-theme-info-dark: 59, 130, 246;
-  --v-theme-success: 74, 222, 128;
-  --v-theme-success-light: 134, 239, 172;
-  --v-theme-success-dark: 34, 197, 94;
-  --v-theme-warning: 251, 191, 36;
-  --v-theme-warning-light: 253, 230, 138;
-  --v-theme-warning-dark: 245, 158, 11;
-  --v-theme-on-background: 244, 244, 245;
-  --v-theme-on-surface: 244, 244, 245;
-  --v-theme-on-primary: 9, 9, 11;
-  --v-theme-on-secondary: 9, 9, 11;
-  --v-theme-on-error: 9, 9, 11;
-  --v-theme-on-info: 9, 9, 11;
-  --v-theme-on-success: 9, 9, 11;
-  --v-theme-on-warning: 9, 9, 11;
+  /* Dark fallback before the .light-theme/.dark-theme class is applied.
+     MUST stay above the theme classes: :root and .light-theme share
+     specificity (0,1,0), so the later-in-source rule wins. */
+  --bg: #111113;
+  --bg-elevated: #18181b;
+  --bg-elevated-2: #27272a;
+  --bg-terminal: #0a0a0f;
+  --text: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --text-subtle: #52525b;
+  --border: #27272a;
+  --accent: #38bdf8;
+  --accent-rgb: 56 189 248;
+  --text-rgb: 244 244 245;
 }
 
-/* =========================================
-   Light Theme (TATOOINE OUTPOST - Sand & Metal)
-   ========================================= */
+/* =========================================================
+   LIGHT THEME — Clean Neutral
+   ========================================================= */
 .light-theme {
-  /* Backgrounds - Warm Sand Gradient */
-  --jedi-bg-app: #f5e6d3;
-  --jedi-bg-surface: #efe0cc;
-  --jedi-bg-surface-hover: #e8d4bc;
-  --jedi-bg-sidebar: #e8d4bc;
-  --jedi-bg-input: #faf3e8;
+  color-scheme: light;
 
-  /* Borders - Brass */
-  --jedi-border: #b8860b;
-  --jedi-border-focus: #cd7f32;
+  /* Surfaces — JetBrains Int UI Light grey ramp */
+  --bg: #ffffff;            /* Grey 14 — editor/content */
+  --bg-elevated: #f7f8fa;   /* Grey 13 — tool windows / panels / sidebar */
+  --bg-elevated-2: #ebecf0; /* Grey 12 — hover / selected surface */
+  --bg-sidebar: #f7f8fa;    /* Grey 13 */
+  --bg-input: #ffffff;
+  --bg-overlay: #ffffff;
+  --bg-terminal: #ffffff;
+  --bg-rgb: 255 255 255;
+  --bg-elevated-rgb: 247 248 250;
 
-  /* Text - Sandstone Browns */
-  --jedi-text-primary: #3d2914;
-  --jedi-text-secondary: #6b4423;
-  --jedi-text-tertiary: #9a7b5a;
-  --jedi-text-inverse: #ffffff;
+  /* Text — Int UI grey ramp */
+  --text: #27282e;          /* Grey 2 — primary label */
+  --text-muted: #6c707e;    /* Grey 6 — secondary */
+  --text-subtle: #818594;   /* Grey 7 — tertiary / disabled */
+  --text-inverse: #ffffff;
+  --text-rgb: 39 40 46;
+  /* Ink overlay — darkens surfaces in BOTH themes (zebra/hover/scrim) */
+  --ink-rgb: 39 40 46;
 
-  /* Functional - Metal Tones */
-  --jedi-primary: #cd7f32;
-  --jedi-primary-hover: #e6be8a;
-  --jedi-accent: #daa520;
-  --jedi-success: #daa520;
-  --jedi-warning: #cd853f;
-  --jedi-danger: #b22222;
+  /* Borders — Int UI */
+  --border: #dfe1e5;        /* Grey 11 — component/panel border */
+  --border-strong: #c9ccd6; /* Grey 9 */
+  --border-focus: #3574f0;  /* Blue 4 */
+  --border-rgb: 223 225 229;
 
-  /* Syntax */
-  --jedi-syntax-ip: #cd7f32;
-  --jedi-syntax-domain: #b8860b;
+  /* Accent — Int UI Blue 4 (primary action / links / selection) */
+  --accent: #3574f0;
+  --accent-rgb: 53 116 240;
+  --accent-hover: #366ace;
+  --on-accent: #ffffff;
 
-  /* Sci-Fi Console (Tatooine Version) */
-  --scifi-bg: #f5e6d3;
-  --scifi-bg-terminal: #faf3e8;
-  --scifi-cyan: #b8860b;
-  --scifi-green: #daa520;
-  --scifi-magenta: #cd7f32;
-  --scifi-amber: #cd853f;
-  --scifi-red: #b22222;
-  --scifi-border: #b8860b;
+  /* Secondary accent — Int UI Purple */
+  --accent-2: #834df0;
+  --accent-2-rgb: 131 77 240;
 
-  /* Shadows - Metal Glow (No Neon) */
-  --jedi-shadow-sm: 0 2px 4px rgba(184, 134, 11, 0.1);
-  --jedi-shadow-md: 0 2px 8px rgba(184, 134, 11, 0.2);
+  /* Functional — Int UI semantic */
+  --success: #208a3c;       /* Green 3 */
+  --success-rgb: 32 138 60;
+  --warning: #a46704;       /* Yellow (dark, readable) */
+  --warning-rgb: 164 103 4;
+  --danger: #db3b4b;        /* Red 3 */
+  --danger-rgb: 219 59 75;
+  --info: #3574f0;
+  --info-rgb: 53 116 240;
 
-  /* Glow effects - SUBTLE METAL ONLY */
-  --glow-border: rgba(205, 127, 50, 0.15);
-  --glow-text: rgba(184, 134, 11, 0.3);
-  --glow-hover: rgba(205, 127, 50, 0.08);
+  /* Elevation — subtle Int UI popup shadows */
+  --shadow-sm: 0 1px 2px rgba(39, 40, 46, 0.05);
+  --shadow-md: 0 2px 8px rgba(39, 40, 46, 0.12);
+  --shadow-lg: 0 6px 20px rgba(39, 40, 46, 0.16);
 
-  /* Vuetify Theme Variables (RGB channels) */
-  --v-theme-background: 245, 230, 211;
-  --v-theme-surface: 239, 224, 204;
-  --v-theme-surface-light: 232, 212, 188;
-  --v-theme-surface-dark: 250, 243, 232;
-  --v-theme-primary: 205, 127, 50;
-  --v-theme-primary-light: 230, 190, 138;
-  --v-theme-primary-dark: 184, 134, 11;
-  --v-theme-secondary: 107, 68, 35;
-  --v-theme-secondary-light: 154, 123, 90;
-  --v-theme-secondary-dark: 61, 41, 20;
-  --v-theme-error: 178, 34, 34;
-  --v-theme-error-light: 205, 68, 68;
-  --v-theme-error-dark: 139, 0, 0;
-  --v-theme-info: 184, 134, 11;
-  --v-theme-info-light: 218, 165, 32;
-  --v-theme-info-dark: 139, 105, 20;
-  --v-theme-success: 218, 165, 32;
-  --v-theme-success-light: 230, 190, 138;
-  --v-theme-success-dark: 139, 105, 20;
-  --v-theme-warning: 205, 133, 63;
-  --v-theme-warning-light: 222, 170, 120;
-  --v-theme-warning-dark: 139, 90, 43;
-  --v-theme-on-background: 61, 41, 20;
-  --v-theme-on-surface: 61, 41, 20;
+  /* Glow disabled in light mode (flat) */
+  --glow-accent: none;
+  --glow-accent-hover: var(--shadow-md);
+  --glow-success: none;
+  --glow-text-accent: none;
+  --glow-text-success: none;
+  --glow-text-accent-2: none;
+
+  /* Decorative overlays (CRT effects) — neutralized */
+  --grid-line: rgba(39, 40, 46, 0.035);
+  --scanline: rgba(39, 40, 46, 0.012);
+  --vignette: rgba(39, 40, 46, 0.03);
+}
+
+/* =========================================================
+   DARK THEME — Sci-Fi Console (Zed matte + cyan)
+   ========================================================= */
+.dark-theme {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg: #111113;
+  --bg-elevated: #18181b;
+  --bg-elevated-2: #27272a;
+  --bg-sidebar: #0d0d11;
+  --bg-input: #18181b;
+  --bg-overlay: #0a0a0f;
+  --bg-terminal: #0a0a0f;
+  --bg-rgb: 17 17 19;
+  --bg-elevated-rgb: 24 24 27;
+
+  /* Text */
+  --text: #f4f4f5;
+  --text-muted: #a1a1aa;
+  --text-subtle: #52525b;
+  --text-inverse: #09090b;
+  --text-rgb: 244 244 245;
+  /* Ink overlay — black so overlays darken on the dark surface (original intent) */
+  --ink-rgb: 0 0 0;
+
+  /* Borders */
+  --border: #27272a;
+  --border-strong: #3f3f46;
+  --border-focus: #38bdf8;
+  --border-rgb: 39 39 42;
+
+  /* Accent (primary) — unified cyan, kills #00ffff/#60a5fa split */
+  --accent: #38bdf8;
+  --accent-rgb: 56 189 248;
+  --accent-hover: #7dd3fc;
+  --on-accent: #09090b;
+
+  /* Secondary accent (was "magenta") */
+  --accent-2: #c084fc;
+  --accent-2-rgb: 192 132 252;
+
+  /* Functional */
+  --success: #4ade80;
+  --success-rgb: 74 222 128;
+  --warning: #fbbf24;
+  --warning-rgb: 251 191 36;
+  --danger: #f87171;
+  --danger-rgb: 248 113 113;
+  --info: #38bdf8;
+  --info-rgb: 56 189 248;
+
+  /* Elevation — matte, minimal shadow */
+  --shadow-sm: none;
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+
+  /* Glow — the sci-fi identity */
+  --glow-accent: 0 0 8px rgb(var(--accent-rgb) / 0.4);
+  --glow-accent-hover: 0 0 12px rgb(var(--accent-rgb) / 0.5);
+  --glow-success: 0 0 10px rgb(var(--success-rgb) / 0.5);
+  --glow-text-accent: 0 0 8px rgb(var(--accent-rgb) / 0.35);
+  --glow-text-success: 0 0 8px rgb(var(--success-rgb) / 0.35);
+  --glow-text-accent-2: 0 0 8px rgb(var(--accent-2-rgb) / 0.35);
+
+  /* Decorative overlays (CRT effects) */
+  --grid-line: rgb(var(--accent-rgb) / 0.03);
+  --scanline: rgba(0, 0, 0, 0.15);
+  --vignette: rgba(0, 0, 0, 0.4);
+}
+
+/* =========================================================
+   Compatibility aliases — legacy --jedi-* / --scifi-*
+   (so any not-yet-migrated rule still themes correctly)
+   ========================================================= */
+.light-theme,
+.dark-theme {
+  --jedi-bg-app: var(--bg);
+  --jedi-bg-surface: var(--bg-elevated);
+  --jedi-bg-surface-hover: var(--bg-elevated-2);
+  --jedi-bg-sidebar: var(--bg-sidebar);
+  --jedi-bg-input: var(--bg-input);
+  --jedi-border: var(--border);
+  --jedi-border-focus: var(--border-focus);
+  --jedi-text-primary: var(--text);
+  --jedi-text-secondary: var(--text-muted);
+  --jedi-text-tertiary: var(--text-subtle);
+  --jedi-text-inverse: var(--text-inverse);
+  --jedi-primary: var(--accent);
+  --jedi-primary-hover: var(--accent-hover);
+  --jedi-accent: var(--accent-2);
+  --jedi-success: var(--success);
+  --jedi-warning: var(--warning);
+  --jedi-danger: var(--danger);
+  --jedi-syntax-ip: var(--accent-2);
+  --jedi-syntax-domain: var(--success);
+  --jedi-shadow-sm: var(--shadow-sm);
+  --jedi-shadow-md: var(--shadow-md);
+
+  --scifi-bg: var(--bg-terminal);
+  --scifi-bg-terminal: var(--bg-terminal);
+  --scifi-cyan: var(--accent);
+  --scifi-green: var(--success);
+  --scifi-magenta: var(--accent-2);
+  --scifi-amber: var(--warning);
+  --scifi-red: var(--danger);
+  --scifi-border: var(--border);
+}
+
+/* Vuetify bridge — feed Vuetify the same source of truth (RGB channels, comma form) */
+.light-theme {
+  --v-theme-background: 255, 255, 255;
+  --v-theme-surface: 247, 248, 250;
+  --v-theme-surface-light: 235, 236, 240;
+  --v-theme-surface-bright: 255, 255, 255;
+  --v-theme-surface-variant: 108, 112, 126;
+  --v-theme-on-surface-variant: 255, 255, 255;
+  --v-theme-primary: 53, 116, 240;
+  --v-theme-primary-darken-1: 54, 106, 206;
+  /* secondary = neutral grey (Int UI Grey 6) so .text-secondary reads muted */
+  --v-theme-secondary: 108, 112, 126;
+  --v-theme-secondary-darken-1: 90, 93, 107;
+  --v-theme-error: 219, 59, 75;
+  --v-theme-info: 53, 116, 240;
+  --v-theme-success: 32, 138, 60;
+  --v-theme-warning: 164, 103, 4;
+  --v-theme-on-background: 39, 40, 46;
+  --v-theme-on-surface: 39, 40, 46;
   --v-theme-on-primary: 255, 255, 255;
   --v-theme-on-secondary: 255, 255, 255;
   --v-theme-on-error: 255, 255, 255;
-  --v-theme-on-info: 61, 41, 20;
-  --v-theme-on-success: 61, 41, 20;
-  --v-theme-on-warning: 61, 41, 20;
+  --v-theme-on-info: 255, 255, 255;
+  --v-theme-on-success: 255, 255, 255;
+  --v-theme-on-warning: 255, 255, 255;
 }
 
-/* =========================================
-   Dark Theme (Zed Inspired - Matte Zinc)
-   ========================================= */
 .dark-theme {
-  /* Backgrounds */
-  --jedi-bg-app: #111113;
-  /* Slightly lighter than Zinc-950 for better visibility */
-  --jedi-bg-surface: #18181b;
-  /* Zinc-900 */
-  --jedi-bg-surface-hover: #27272a;
-  /* Zinc-800 */
-  --jedi-bg-sidebar: #111113;
-  /* Seamless sidebar */
-  --jedi-bg-input: #18181b;
-  /* Surface input */
-
-  /* Borders - Critical for "Border over Shadow" look */
-  --jedi-border: #27272a;
-  /* Zinc-800 */
-  --jedi-border-focus: #60a5fa;
-  /* Blue-400 */
-
-  /* Text */
-  --jedi-text-primary: #f4f4f5;
-  /* Zinc-100 */
-  --jedi-text-secondary: #a1a1aa;
-  /* Zinc-400 */
-  --jedi-text-tertiary: #52525b;
-  /* Zinc-600 */
-  --jedi-text-inverse: #09090b;
-
-  /* Functional */
-  --jedi-primary: #60a5fa;
-  /* Blue-400 */
-  --jedi-primary-hover: #93c5fd;
-  --jedi-accent: #818cf8;
-  /* Indigo-400 */
-  --jedi-success: #4ade80;
-  /* Green-400 */
-  --jedi-warning: #fbbf24;
-  --jedi-danger: #f87171;
-
-  /* Syntax */
-  --jedi-syntax-ip: #c084fc;
-  /* Purple-400 */
-  --jedi-syntax-domain: #a3e635;
-  /* Lime-400 */
-
-  /* Sci-Fi Console (Dark Theme) */
-  --scifi-bg: #0a0a0f;
-  --scifi-bg-terminal: #0f0f1a;
-  --scifi-cyan: #00ffff;
-  --scifi-green: #00ff88;
-  --scifi-magenta: #ff00ff;
-  --scifi-amber: #ffaa00;
-  --scifi-red: #ff4444;
-  --scifi-border: #1a1a2e;
-
-  /* Shadows - Minimal/None for matte look */
-  --jedi-shadow-sm: none;
-  --jedi-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-
-  /* Vuetify Theme Variables (RGB channels) */
   --v-theme-background: 17, 17, 19;
   --v-theme-surface: 24, 24, 27;
   --v-theme-surface-light: 39, 39, 42;
-  --v-theme-surface-dark: 9, 9, 11;
-  --v-theme-primary: 96, 165, 250;
-  --v-theme-primary-light: 147, 197, 253;
-  --v-theme-primary-dark: 59, 130, 246;
-  --v-theme-secondary: 161, 161, 170;
-  --v-theme-secondary-light: 194, 194, 200;
-  --v-theme-secondary-dark: 113, 113, 122;
+  --v-theme-surface-bright: 39, 39, 42;
+  --v-theme-surface-variant: 161, 161, 170;
+  --v-theme-on-surface-variant: 9, 9, 11;
+  --v-theme-primary: 56, 189, 248;
+  --v-theme-primary-darken-1: 14, 165, 233;
+  --v-theme-secondary: 192, 132, 252;
+  --v-theme-secondary-darken-1: 168, 85, 247;
   --v-theme-error: 248, 113, 113;
-  --v-theme-error-light: 252, 165, 165;
-  --v-theme-error-dark: 239, 68, 68;
-  --v-theme-info: 96, 165, 250;
-  --v-theme-info-light: 147, 197, 253;
-  --v-theme-info-dark: 59, 130, 246;
+  --v-theme-info: 56, 189, 248;
   --v-theme-success: 74, 222, 128;
-  --v-theme-success-light: 134, 239, 172;
-  --v-theme-success-dark: 34, 197, 94;
   --v-theme-warning: 251, 191, 36;
-  --v-theme-warning-light: 253, 230, 138;
-  --v-theme-warning-dark: 245, 158, 11;
   --v-theme-on-background: 244, 244, 245;
   --v-theme-on-surface: 244, 244, 245;
   --v-theme-on-primary: 9, 9, 11;
@@ -272,12 +269,12 @@
   --v-theme-on-warning: 9, 9, 11;
 }
 
-/* =========================================
+/* =========================================================
    Global Resets & Utilities
-   ========================================= */
+   ========================================================= */
 body {
-  background-color: var(--jedi-bg-app);
-  color: var(--jedi-text-primary);
+  background-color: var(--bg);
+  color: var(--text);
   font-family: var(--jedi-font-ui);
   -webkit-font-smoothing: antialiased;
 }
@@ -293,25 +290,23 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(128, 128, 128, 0.3);
+  background-color: rgb(var(--text-rgb) / 0.22);
   border-radius: 4px;
-  /* border: 2px solid transparent; */
-  /* background-clip: content-box; */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(128, 128, 128, 0.5);
+  background-color: rgb(var(--text-rgb) / 0.4);
 }
 
 /* Firefox Scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+  scrollbar-color: rgb(var(--text-rgb) / 0.22) transparent;
 }
 
-/* =========================================
+/* =========================================================
    Global Typography Overrides for Vuetify
-   ========================================= */
+   ========================================================= */
 .v-application,
 .v-card,
 .v-btn,
@@ -330,76 +325,51 @@ body {
   font-family: var(--jedi-font-ui) !important;
 }
 
-/* =========================================
-   Jedi Console - 光剑效果
-   ========================================= */
-
-/* 光剑发光 - 限制使用范围 */
+/* =========================================================
+   Glow / Saber accents (token-driven; auto-flat in light)
+   ========================================================= */
 .glow-saber {
-  box-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+  box-shadow: var(--glow-accent);
   will-change: box-shadow;
 }
 
-/* 悬停发光 */
 .glow-hover:hover {
-  box-shadow: 0 0 12px rgba(96, 165, 250, 0.5);
+  box-shadow: var(--glow-accent-hover);
 }
 
-/* 浅色主题 - TATOOINE 金属效果 */
-.light-theme .glow-saber {
-  box-shadow: 0 0 8px rgba(184, 134, 11, 0.3);
+.neon-glow-cyan { text-shadow: var(--glow-text-accent); }
+.neon-glow-green { text-shadow: var(--glow-text-success); }
+.neon-glow-magenta { text-shadow: var(--glow-text-accent-2); }
+
+.neon-box-cyan {
+  box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / 0.18), var(--glow-accent);
+}
+.neon-box-green {
+  box-shadow: 0 0 0 1px rgb(var(--success-rgb) / 0.18), var(--glow-success);
 }
 
-.light-theme .glow-hover:hover {
-  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.2);
-}
-
-/* 浅色主题 - 金属发光文本 */
-.light-theme .neon-glow-cyan {
-  text-shadow: 0 0 6px rgba(184, 134, 11, 0.4);
-}
-
-.light-theme .neon-glow-green {
-  text-shadow: 0 0 6px rgba(218, 165, 32, 0.4);
-}
-
-.light-theme .neon-glow-magenta {
-  text-shadow: 0 0 6px rgba(205, 127, 50, 0.4);
-}
-
-.light-theme .neon-box-cyan {
-  box-shadow: 0 2px 6px rgba(184, 134, 11, 0.2);
-}
-
-.light-theme .neon-box-green {
-  box-shadow: 0 2px 6px rgba(218, 165, 32, 0.2);
-}
-
-/* 焦点指示器 - 无障碍 */
+/* Focus ring — accessibility */
 .glow-focus:focus-visible,
 .btn:focus-visible,
 .sidebar-item:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-primary));
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* =========================================
-   Sci-Fi Console Utility Classes
-   ========================================= */
+/* =========================================================
+   Sci-Fi Console Utility Classes (token-driven)
+   ========================================================= */
 
 /* CRT Scanlines Overlay */
 .scanlines {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   pointer-events: none;
   z-index: 100;
   background: repeating-linear-gradient(
     0deg,
-    rgba(0, 0, 0, 0.15),
-    rgba(0, 0, 0, 0.15) 1px,
+    var(--scanline),
+    var(--scanline) 1px,
     transparent 1px,
     transparent 2px
   );
@@ -408,13 +378,10 @@ body {
 /* CRT Vignette Effect */
 .crt-vignette {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   pointer-events: none;
   z-index: 99;
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+  background: radial-gradient(ellipse at center, transparent 0%, var(--vignette) 100%);
 }
 
 /* Grid Background */
@@ -425,38 +392,13 @@ body {
 .grid-bg::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-image:
-    linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   z-index: 0;
-}
-
-/* Light Theme Grid - TATOOINE Sand Grid */
-.light-theme .grid-bg::before {
-  background-image:
-    linear-gradient(rgba(184, 134, 11, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(184, 134, 11, 0.08) 1px, transparent 1px);
-}
-
-/* Light Theme - Disable/Soft CRT Effects */
-.light-theme .scanlines {
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(107, 68, 35, 0.03),
-    rgba(107, 68, 35, 0.03) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-}
-
-.light-theme .crt-vignette {
-  background: radial-gradient(ellipse at center, transparent 0%, rgba(107, 68, 35, 0.1) 100%);
 }
 
 /* Terminal Font */
@@ -464,53 +406,26 @@ body {
   font-family: var(--jedi-font-mono);
 }
 
-/* Neon Glow Effects */
-.neon-glow-cyan {
-  text-shadow: 0 0 10px rgba(0, 255, 255, 0.8), 0 0 20px rgba(0, 255, 255, 0.4);
-}
-
-.neon-glow-green {
-  text-shadow: 0 0 10px rgba(0, 255, 136, 0.8), 0 0 20px rgba(0, 255, 136, 0.4);
-}
-
-.neon-glow-magenta {
-  text-shadow: 0 0 10px rgba(255, 0, 255, 0.8), 0 0 20px rgba(255, 0, 255, 0.4);
-}
-
-.neon-box-cyan {
-  box-shadow: 0 0 10px rgba(0, 255, 255, 0.4), 0 0 20px rgba(0, 255, 255, 0.2);
-}
-
-.neon-box-green {
-  box-shadow: 0 0 10px rgba(0, 255, 136, 0.4), 0 0 20px rgba(0, 255, 136, 0.2);
-}
-
 /* Console Container */
 .console-container {
   position: relative;
-  background: linear-gradient(180deg, #0a0a0f 0%, #0d0d14 50%, #0a0a0f 100%);
-  border: 1px solid #1a1a2e;
+  background: var(--bg-terminal);
+  border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   font-family: var(--jedi-font-mono);
+  box-shadow: var(--shadow-sm);
 }
 
-/* Light Theme Console - TATOOINE OUTPOST Terminal */
-.light-theme .console-container {
-  background: linear-gradient(180deg, #f5e6d3 0%, #efe0cc 50%, #f5e6d3 100%);
-  border: 1px solid #b8860b;
-  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.2);
-}
-
-.light-theme .console-container::before {
+.console-container::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, #b8860b, #cd7f32, #daa520, transparent);
-  opacity: 0.6;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
 }
 
 /* Status Light */
@@ -522,36 +437,20 @@ body {
 }
 
 .status-light.online {
-  background: #00ff88;
-  box-shadow: 0 0 10px #00ff88, 0 0 20px rgba(0, 255, 136, 0.33);
+  background: var(--success);
+  box-shadow: var(--glow-success);
   animation: pulse-online 2s ease-in-out infinite;
 }
 
 .status-light.standby {
-  background: #ffaa00;
-  box-shadow: 0 0 10px #ffaa00, 0 0 20px rgba(255, 170, 0, 0.33);
+  background: var(--warning);
+  box-shadow: 0 0 10px rgb(var(--warning-rgb) / 0.5);
   animation: pulse-standby 1.5s ease-in-out infinite;
 }
 
 .status-light.offline {
-  background: #ff4444;
-  box-shadow: 0 0 10px #ff4444, 0 0 20px rgba(255, 68, 68, 0.33);
-}
-
-/* Light Theme Status Lights - TATOOINE */
-.light-theme .status-light.online {
-  background: #daa520;
-  box-shadow: 0 0 8px rgba(218, 165, 32, 0.4);
-}
-
-.light-theme .status-light.standby {
-  background: #cd853f;
-  box-shadow: 0 0 8px rgba(205, 133, 63, 0.4);
-}
-
-.light-theme .status-light.offline {
-  background: #8b4513;
-  box-shadow: 0 0 8px rgba(139, 69, 19, 0.4);
+  background: var(--danger);
+  box-shadow: 0 0 10px rgb(var(--danger-rgb) / 0.4);
 }
 
 @keyframes pulse-online {
@@ -574,87 +473,59 @@ body {
   50% { opacity: 0; }
 }
 
-/* Console Button */
+/* Console Button — clean Int UI (secondary / primary / danger) */
 .console-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  background: transparent;
-  border: 1px solid #00ff88;
-  color: #00ff88;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-family: var(--jedi-font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  height: 32px;
+  padding: 0 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  font-family: var(--jedi-font-ui);
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
 .console-btn:hover {
-  background: rgba(0, 255, 136, 0.07);
-  box-shadow: 0 0 15px rgba(0, 255, 136, 0.27), inset 0 0 15px rgba(0, 255, 136, 0.07);
+  background: rgb(var(--ink-rgb) / 0.04);
+  border-color: var(--border-strong);
 }
 
 .console-btn.primary {
-  border-color: #00ffff;
-  color: #00ffff;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
 }
 
 .console-btn.primary:hover {
-  background: rgba(0, 255, 255, 0.07);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.27), inset 0 0 15px rgba(0, 255, 255, 0.07);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .console-btn.danger {
-  border-color: #ff4444;
-  color: #ff4444;
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
 }
 
 .console-btn.danger:hover {
-  background: rgba(255, 68, 68, 0.07);
-  box-shadow: 0 0 15px rgba(255, 68, 68, 0.27), inset 0 0 15px rgba(255, 68, 68, 0.07);
-}
-
-/* Light Theme Console Buttons - TATOOINE */
-.light-theme .console-btn {
-  border-color: #b8860b;
-  color: #6b4423;
-}
-
-.light-theme .console-btn:hover {
-  background: rgba(184, 134, 11, 0.1);
-  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.2);
-}
-
-.light-theme .console-btn.primary {
-  border-color: #cd7f32;
-  color: #cd7f32;
-}
-
-.light-theme .console-btn.primary:hover {
-  background: rgba(205, 127, 50, 0.1);
-  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
-}
-
-.light-theme .console-btn.danger {
-  border-color: #8b4513;
-  color: #8b4513;
-}
-
-.light-theme .console-btn.danger:hover {
-  background: rgba(139, 69, 19, 0.1);
-  box-shadow: 0 2px 8px rgba(139, 69, 19, 0.3);
+  background: rgb(var(--danger-rgb) / 0.88);
+  border-color: rgb(var(--danger-rgb) / 0.88);
 }
 
 /* Console Input */
 .console-input {
-  background: rgba(5, 5, 8, 0.9);
-  border: 1px solid #1a1a3a;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 8px 12px;
-  color: #00ffff;
+  color: var(--text);
   font-family: var(--jedi-font-mono);
   font-size: 12px;
   outline: none;
@@ -662,37 +533,21 @@ body {
 }
 
 .console-input:focus {
-  border-color: #00ffff;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.15), inset 0 0 0 1px rgba(0, 255, 255, 0.3);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / 0.3);
 }
 
 .console-input::placeholder {
-  color: #888;
-}
-
-/* Light Theme Console Input - TATOOINE */
-.light-theme .console-input {
-  background: #faf3e8;
-  border: 1px solid #b8860b;
-  color: #3d2914;
-}
-
-.light-theme .console-input:focus {
-  border-color: #cd7f32;
-  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
-}
-
-.light-theme .console-input::placeholder {
-  color: #8b7355;
+  color: var(--text-subtle);
 }
 
 /* Terminal Text Colors */
-.term-cyan { color: #00ffff; }
-.term-green { color: #00ff88; }
-.term-magenta { color: #ff00ff; }
-.term-amber { color: #ffaa00; }
-.term-red { color: #ff4444; }
-.term-dim { color: #52525b; }
+.term-cyan { color: var(--accent); }
+.term-green { color: var(--success); }
+.term-magenta { color: var(--accent-2); }
+.term-amber { color: var(--warning); }
+.term-red { color: var(--danger); }
+.term-dim { color: var(--text-subtle); }
 
 /* Page Container for Sci-Fi */
 .scifi-page {
@@ -700,17 +555,18 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background: linear-gradient(180deg, #0a0a0f 0%, #0d0d14 50%, #0a0a0f 100%);
+  background: var(--bg-terminal);
   font-family: var(--jedi-font-mono);
 }
 
 /* Card with Sci-Fi Border */
 .scifi-card {
-  background: linear-gradient(135deg, rgba(10, 10, 15, 0.95) 0%, rgba(13, 13, 18, 0.9) 100%);
-  border: 1px solid rgba(0, 255, 255, 0.2);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: 8px;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .scifi-card::before {
@@ -720,87 +576,64 @@ body {
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #00ffff, transparent);
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
   opacity: 0.5;
 }
 
-/* Light Theme Sci-Fi Card - TATOOINE OUTPOST */
-.light-theme .scifi-page {
-  background: linear-gradient(180deg, #f5e6d3 0%, #efe0cc 50%, #f5e6d3 100%);
-}
-
-.light-theme .scifi-card {
-  background: linear-gradient(135deg, rgba(245, 230, 211, 0.98) 0%, rgba(239, 224, 204, 0.95) 100%);
-  border: 1px solid #b8860b;
-  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.2);
-}
-
-.light-theme .scifi-card::before {
-  background: linear-gradient(90deg, transparent, #b8860b, #cd7f32, #daa520, transparent);
-  opacity: 0.6;
-  height: 2px;
-}
-
-/* Scrollbar for Console */
+/* Console scrollbar */
 .console-scroll::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 .console-scroll::-webkit-scrollbar-track {
-  background: #0a0a0f;
+  background: var(--bg-elevated-2);
 }
 
 .console-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 255, 0.2);
+  background: rgb(var(--accent-rgb) / 0.3);
   border-radius: 4px;
 }
 
 .console-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 255, 255, 0.33);
+  background: rgb(var(--accent-rgb) / 0.5);
 }
 
-/* Header Bar for Console */
+/* Header / Footer / Title bars */
 .console-header-bar {
-  background: linear-gradient(180deg, #0f0f1a 0%, #0a0a12 100%);
-  border-bottom: 1px solid rgba(0, 255, 255, 0.13);
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
   padding: 12px 16px;
 }
 
-/* Footer Bar for Console */
 .console-footer-bar {
-  background: linear-gradient(180deg, #0a0a12 0%, #0f0f1a 100%);
-  border-top: 1px solid #1a1a2e;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
   padding: 10px 16px;
 }
 
-/* Console Title Bar for Dialogs */
 .console-title-bar {
-  background: linear-gradient(180deg, #0f0f1a 0%, #0a0a12 100%);
-  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
   padding: 12px 16px;
 }
 
 .dialog-title {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #00ff88;
-  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--jedi-font-ui);
 }
 
-/* Console Card Text for Dialogs */
 .console-card-text {
-  background: #0a0a0f;
+  background: var(--bg-terminal);
   padding: 20px 16px;
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-family: var(--jedi-font-mono);
 }
 
-/* Console Card Actions for Dialogs */
 .console-card-actions {
-  background: linear-gradient(0deg, #0f0f1a 0%, #0a0a12 100%);
-  border-top: 1px solid rgba(0, 255, 255, 0.15);
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
   padding: 12px 16px;
 }
 
@@ -809,18 +642,18 @@ body {
   position: relative;
   display: flex;
   align-items: center;
-  background: rgba(5, 5, 8, 0.9);
-  border: 1px solid #1a1a3a;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 8px 12px;
 }
 
 .input-prompt {
-  color: #00ff88;
+  color: var(--success);
   font-size: 12px;
   margin-right: 8px;
-  text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
-  font-family: 'JetBrains Mono', monospace;
+  text-shadow: var(--glow-text-success);
+  font-family: var(--jedi-font-mono);
 }
 
 /* Global snackbar scrim disable */
@@ -832,10 +665,11 @@ body {
 
 /* Console Menu */
 .console-menu {
-  background: rgba(10, 10, 15, 0.98) !important;
-  border: 1px solid rgba(0, 255, 255, 0.2) !important;
+  background: var(--bg-overlay) !important;
+  border: 1px solid var(--border) !important;
   border-radius: 4px !important;
   padding: 4px !important;
+  box-shadow: var(--shadow-md) !important;
 }
 
 .menu-item {
@@ -846,25 +680,25 @@ body {
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.15s ease;
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-family: var(--jedi-font-mono);
   font-size: 11px;
-  color: #a1a1aa;
+  color: var(--text-muted);
 }
 
 .menu-item:hover {
-  background: rgba(0, 255, 255, 0.08);
-  color: #00ffff;
+  background: rgb(var(--accent-rgb) / 0.08);
+  color: var(--accent);
 }
 
 .menu-item.active {
-  background: rgba(0, 255, 255, 0.1);
-  color: #00ffff;
+  background: rgb(var(--accent-rgb) / 0.1);
+  color: var(--accent);
 }
 
 .menu-check {
   width: 16px;
   text-align: center;
-  color: #00ff88;
+  color: var(--success);
 }
 
 .menu-text {
@@ -873,7 +707,7 @@ body {
 
 .menu-divider {
   height: 1px;
-  background: rgba(0, 255, 255, 0.15);
+  background: var(--border);
   margin: 4px 0;
 }
 
@@ -881,110 +715,35 @@ body {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 2px;
-  color: #52525b;
+  color: var(--text-subtle);
   padding: 8px 12px 4px;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--jedi-font-mono);
 }
 
 /* Dialog Instruction Text */
 .dialog-instruction {
   font-size: 12px;
-  color: #71717a;
+  color: var(--text-muted);
   margin-bottom: 16px;
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-family: var(--jedi-font-mono);
 }
 
-/* =========================================
-   Light Theme (TATOOINE OUTPOST) - Component Styles
-   ========================================= */
-
-/* Light Theme Console Scrollbar */
-.light-theme .console-scroll::-webkit-scrollbar-track {
-  background: #e8d4bc;
+/* =========================================================
+   Light mode: drop CRT/sci-fi decoration for a clean IDE look
+   (these effects only read well on dark surfaces)
+   ========================================================= */
+.light-theme .scanlines,
+.light-theme .crt-vignette {
+  display: none !important;
 }
 
-.light-theme .console-scroll::-webkit-scrollbar-thumb {
-  background: rgba(184, 134, 11, 0.4);
+.light-theme .grid-background,
+.light-theme .grid-bg::before {
+  background-image: none !important;
 }
 
-.light-theme .console-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(184, 134, 11, 0.6);
-}
-
-/* Light Theme Header/Footer Bars */
-.light-theme .console-header-bar {
-  background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
-  border-bottom: 1px solid #b8860b;
-}
-
-.light-theme .console-footer-bar {
-  background: linear-gradient(180deg, #e8d4bc 0%, #efe0cc 100%);
-  border-top: 1px solid #b8860b;
-}
-
-/* Light Theme Console Title Bar */
-.light-theme .console-title-bar {
-  background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
-  border-bottom: 1px solid #b8860b;
-}
-
-.light-theme .dialog-title {
-  color: #cd7f32;
-}
-
-/* Light Theme Console Card Text & Actions */
-.light-theme .console-card-text {
-  background: #faf3e8;
-}
-
-.light-theme .console-card-actions {
-  background: linear-gradient(0deg, #e8d4bc 0%, #efe0cc 100%);
-  border-top: 1px solid #b8860b;
-}
-
-/* Light Theme Input Wrapper */
-.light-theme .input-wrapper {
-  background: #faf3e8;
-  border: 1px solid #b8860b;
-}
-
-.light-theme .input-prompt {
-  color: #b8860b;
-}
-
-/* Light Theme Console Menu */
-.light-theme .console-menu {
-  background: rgba(239, 224, 204, 0.98) !important;
-  border: 1px solid #b8860b !important;
-  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.2) !important;
-}
-
-.light-theme .menu-item {
-  color: #3d2914;
-}
-
-.light-theme .menu-item:hover {
-  background: rgba(205, 127, 50, 0.1);
-  color: #cd7f32;
-}
-
-.light-theme .menu-item.active {
-  background: rgba(184, 134, 11, 0.15);
-  color: #b8860b;
-}
-
-.light-theme .menu-check {
-  color: #daa520;
-}
-
-.light-theme .menu-divider {
-  background: rgba(184, 134, 11, 0.3);
-}
-
-.light-theme .menu-header {
-  color: #6b4423;
-}
-
-.light-theme .dialog-instruction {
-  color: #6b4423;
+/* Top accent hairline on consoles/cards — keep but very subtle in light */
+.light-theme .console-container::before,
+.light-theme .scifi-card::before {
+  opacity: 0.35;
 }

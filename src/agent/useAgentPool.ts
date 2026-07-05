@@ -1,68 +1,34 @@
-import { onMounted, onUnmounted, ref } from 'vue'
-import { getPoolStatus, type WorkerStatus } from './pool'
+import { storeToRefs } from 'pinia'
+import { ref } from 'vue'
+import { useAgentPoolStore } from '@/stores/agentPool'
+import type { WorkerStatus } from './pool'
 
-const POOL_POLL_INTERVAL = 1000
-
-let onWorkerCompleteCallback: ((worker: WorkerStatus) => void) | null = null
+// The worker pool is now a reactive Pinia store (see `stores/agentPool.ts`).
+// These wrappers preserve the previous composable API so existing components
+// keep working without the old 1s Rust polling loop.
 
 export function setOnWorkerCompleteCallback(cb: (worker: WorkerStatus) => void) {
-  onWorkerCompleteCallback = cb
+  useAgentPoolStore().setOnWorkerComplete(cb)
 }
 
 export function useAgentPool() {
-  const workers = ref<WorkerStatus[]>([])
+  const store = useAgentPoolStore()
+  const { workers } = storeToRefs(store)
   const panelOpen = ref(false)
-  let pollTimer: ReturnType<typeof setInterval> | null = null
-  let previousWorkers: WorkerStatus[] = []
-
-  async function refresh() {
-    try {
-      const newWorkers = await getPoolStatus()
-
-      // Check for newly completed workers
-      if (onWorkerCompleteCallback) {
-        for (const worker of newWorkers) {
-          const prev = previousWorkers.find(p => p.id === worker.id)
-          if (
-            prev &&
-            prev.status === 'running' &&
-            (worker.status === 'completed' || worker.status === 'failed')
-          ) {
-            onWorkerCompleteCallback(worker)
-          }
-        }
-      }
-
-      previousWorkers = [...newWorkers]
-      workers.value = newWorkers
-    } catch (e) {
-      console.error('Failed to fetch pool status:', e)
-    }
-  }
-
-  function startPolling() {
-    refresh()
-    pollTimer = setInterval(refresh, POOL_POLL_INTERVAL)
-  }
-
-  function stopPolling() {
-    if (pollTimer) {
-      clearInterval(pollTimer)
-      pollTimer = null
-    }
-  }
-
-  onMounted(() => startPolling())
-  onUnmounted(() => stopPolling())
 
   function togglePanel() {
     panelOpen.value = !panelOpen.value
   }
+
+  // State is reactive via the store; refresh is kept as a no-op for compatibility.
+  async function refresh() {}
 
   return {
     workers,
     panelOpen,
     togglePanel,
     refresh,
+    stop: store.stop,
+    remove: store.remove,
   }
 }

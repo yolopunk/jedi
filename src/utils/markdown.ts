@@ -10,7 +10,8 @@ export function createMarkdownRenderer(): MarkdownIt {
     highlight(str: string, lang: string): string {
       if (lang && hljs.getLanguage(lang)) {
         try {
-          return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang }).value}</code></pre>`
+          const safeLang = lang.replace(/[^\w-]/g, '')
+          return `<pre class="hljs" data-lang="${safeLang}"><code>${hljs.highlight(str, { language: lang }).value}</code></pre>`
         } catch (_) {}
       }
       return `<pre class="hljs"><code>${new MarkdownIt().utils.escapeHtml(str)}</code></pre>`

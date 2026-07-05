@@ -4,7 +4,7 @@
       <span class="trace-title">// AGENT TRACE</span>
       <div class="trace-header-actions">
         <span class="trace-status" :class="statusClass">{{ agentStore.currentStatus.toUpperCase() }}</span>
-        <button class="trace-close" @click="agentStore.tracePanelOpen = false">CLOSE</button>
+        <button class="trace-close" @click="handleClose">CLOSE</button>
       </div>
     </div>
     <div v-if="latestMetadata?.run" class="trace-run-meta">
@@ -146,7 +146,10 @@ const latestAssistantMessage = computed(() => {
   const messages = aiChatStore.currentSession?.messages || []
   return [...messages].reverse().find(message => message.role === 'assistant') || null
 })
-const latestMetadata = computed(() => latestAssistantMessage.value?.metadata || null)
+// Focused message (clicked the trace button) wins; otherwise follow the latest turn.
+const latestMetadata = computed(
+  () => agentStore.selectedTrace || latestAssistantMessage.value?.metadata || null
+)
 const latestTrace = computed(() => latestMetadata.value?.trace || [])
 const ungroupedTrace = computed(() =>
   latestTrace.value.filter(item => item.stepIndex === undefined)
@@ -160,6 +163,11 @@ const statusClass = computed(() => ({
   error: agentStore.currentStatus === 'error',
 }))
 const usageSummary = computed(() => formatUsageSummary(latestMetadata.value?.usage))
+
+function handleClose(): void {
+  agentStore.tracePanelOpen = false
+  agentStore.selectedTrace = null
+}
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleTimeString('en-US', { hour12: false })
@@ -285,8 +293,8 @@ watch(
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  border-left: 1px solid rgba(0, 255, 255, 0.2);
+  background: var(--bg-terminal);
+  border-left: 1px solid rgb(var(--accent-rgb) / 0.22);
 }
 
 .trace-header {
@@ -294,8 +302,8 @@ watch(
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-  background: rgba(0, 255, 255, 0.05);
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.2);
+  background: rgb(var(--accent-rgb) / 0.05);
 }
 
 .trace-header-actions {
@@ -308,7 +316,7 @@ watch(
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   font-weight: 700;
-  color: #00ffff;
+  color: var(--accent);
   letter-spacing: 1px;
 }
 
@@ -319,16 +327,16 @@ watch(
   border-radius: 3px;
 }
 
-.trace-status.idle { color: #52525b; }
-.trace-status.running { color: #00ffff; }
-.trace-status.done { color: #00ff88; }
-.trace-status.error { color: #ff4444; }
+.trace-status.idle { color: var(--text-subtle); }
+.trace-status.running { color: var(--accent); }
+.trace-status.done { color: var(--success); }
+.trace-status.error { color: var(--danger); }
 
 .trace-close {
-  border: 1px solid rgba(0, 255, 255, 0.2);
+  border: 1px solid rgb(var(--accent-rgb) / 0.2);
   border-radius: 6px;
-  background: rgba(0, 255, 255, 0.08);
-  color: #7dd3fc;
+  background: rgb(var(--accent-rgb) / 0.08);
+  color: var(--accent-hover);
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   padding: 4px 8px;
@@ -336,7 +344,7 @@ watch(
 }
 
 .trace-close:hover {
-  background: rgba(0, 255, 255, 0.14);
+  background: rgb(var(--accent-rgb) / 0.14);
 }
 
 .trace-list {
@@ -347,8 +355,8 @@ watch(
 
 .trace-run-meta {
   padding: 12px;
-  border-bottom: 1px solid rgba(0, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.18);
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.12);
+  background:rgb(var(--ink-rgb) / 0.18);
 }
 
 .meta-grid {
@@ -362,9 +370,9 @@ watch(
   flex-direction: column;
   gap: 3px;
   padding: 8px;
-  border: 1px solid rgba(0, 255, 255, 0.12);
+  border: 1px solid rgb(var(--accent-rgb) / 0.12);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background:rgb(var(--ink-rgb) / 0.03);
 }
 
 .meta-label,
@@ -372,7 +380,7 @@ watch(
 .usage-label {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: #52525b;
+  color: var(--text-subtle);
   letter-spacing: 0.8px;
 }
 
@@ -381,7 +389,7 @@ watch(
 .usage-value {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  color: #d4faff;
+  color: var(--accent-hover);
   line-height: 1.5;
   word-break: break-word;
 }
@@ -397,17 +405,17 @@ watch(
 .trace-card {
   margin-bottom: 8px;
   padding: 10px;
-  border-left: 2px solid rgba(0, 255, 255, 0.24);
+  border-left: 2px solid rgb(var(--accent-rgb) / 0.24);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
+  background:rgb(var(--ink-rgb) / 0.03);
 }
 
 .trace-card.tool {
-  border-left-color: rgba(74, 222, 128, 0.7);
+  border-left-color: rgb(var(--success-rgb) / 0.7);
 }
 
 .trace-card.error {
-  border-left-color: rgba(248, 113, 113, 0.75);
+  border-left-color: rgb(var(--danger-rgb) / 0.75);
 }
 
 .trace-card.step-child {
@@ -416,9 +424,9 @@ watch(
 
 .trace-step-group {
   margin-bottom: 10px;
-  border: 1px solid rgba(125, 211, 252, 0.18);
+  border: 1px solid rgb(var(--accent-rgb) / 0.18);
   border-radius: 8px;
-  background: rgba(125, 211, 252, 0.04);
+  background: rgb(var(--accent-rgb) / 0.04);
 }
 
 .trace-step-summary {
@@ -430,23 +438,23 @@ watch(
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
   font-weight: 700;
-  color: #d4faff;
+  color: var(--accent-hover);
 }
 
 .trace-step-title {
-  color: #7dd3fc;
+  color: var(--accent-hover);
 }
 
 .trace-step-kind,
 .trace-step-status,
 .trace-step-duration {
-  color: #94a3b8;
+  color: var(--text-subtle);
   font-size: 10px;
 }
 
 .trace-step-text {
   padding: 0 10px 8px;
-  color: #a1a1aa;
+  color: var(--text-muted);
   font-size: 11px;
   line-height: 1.55;
 }
@@ -454,10 +462,10 @@ watch(
 .raw-divider {
   margin: 12px 0 8px;
   padding-top: 8px;
-  border-top: 1px dashed rgba(0, 255, 255, 0.14);
+  border-top: 1px dashed rgb(var(--accent-rgb) / 0.14);
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: #52525b;
+  color: var(--text-subtle);
   letter-spacing: 0.8px;
 }
 
@@ -472,20 +480,20 @@ watch(
 .trace-name {
   flex: 1;
   min-width: 0;
-  color: #d4faff;
+  color: var(--accent-hover);
   font-weight: 700;
 }
 
 .trace-kind,
 .trace-state,
 .trace-duration {
-  color: #7dd3fc;
+  color: var(--accent-hover);
   font-size: 10px;
 }
 
 .trace-description {
   margin-top: 6px;
-  color: #a1a1aa;
+  color: var(--text-muted);
   font-size: 11px;
   line-height: 1.55;
   white-space: pre-wrap;
@@ -501,7 +509,7 @@ watch(
 }
 
 .trace-time {
-  color: #52525b;
+  color: var(--text-subtle);
   flex-shrink: 0;
 }
 
@@ -511,33 +519,33 @@ watch(
   text-align: center;
 }
 
-.trace-entry.step_start .trace-icon { color: #00ffff; }
-.trace-entry.step_done .trace-icon { color: #00ff88; }
-.trace-entry.step_error .trace-icon { color: #ff4444; }
-.trace-entry.status_change .trace-icon { color: #ffaa00; }
-.trace-entry.confirmation_needed .trace-icon { color: #ff00ff; }
+.trace-entry.step_start .trace-icon { color: var(--accent); }
+.trace-entry.step_done .trace-icon { color: var(--success); }
+.trace-entry.step_error .trace-icon { color: var(--danger); }
+.trace-entry.status_change .trace-icon { color: var(--warning); }
+.trace-entry.confirmation_needed .trace-icon { color: var(--accent-2); }
 
 .trace-entry.raw {
   opacity: 0.82;
-  border-top: 1px dashed rgba(0, 255, 255, 0.08);
+  border-top: 1px dashed rgb(var(--accent-rgb) / 0.08);
   margin-top: 10px;
   padding-top: 10px;
 }
 
 .trace-content {
-  color: #a1a1aa;
+  color: var(--text-muted);
   word-break: break-word;
 }
 
 .trace-details {
   margin-top: 8px;
-  color: #a5f3fc;
+  color: var(--accent-hover);
   font-size: 10px;
 }
 
 .trace-details summary {
   cursor: pointer;
-  color: #67e8f9;
+  color: var(--accent);
 }
 
 .trace-details pre {
@@ -546,8 +554,8 @@ watch(
   margin: 6px 0 0;
   padding: 8px;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.26);
-  color: #a5f3fc;
+  background:rgb(var(--ink-rgb) / 0.26);
+  color: var(--accent-hover);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -562,24 +570,24 @@ watch(
 .empty-text {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  color: #3f3f46;
+  color: var(--border-strong);
   letter-spacing: 1px;
 }
 
 .trace-footer {
   padding: 8px 16px;
-  border-top: 1px solid rgba(0, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.1);
+  background:rgb(var(--ink-rgb) / 0.2);
 }
 
 .footer-text {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: #52525b;
+  color: var(--text-subtle);
   letter-spacing: 1px;
 }
 
 .trace-list::-webkit-scrollbar { width: 6px; }
 .trace-list::-webkit-scrollbar-track { background: transparent; }
-.trace-list::-webkit-scrollbar-thumb { background: rgba(0, 255, 255, 0.2); border-radius: 3px; }
+.trace-list::-webkit-scrollbar-thumb { background: rgb(var(--accent-rgb) / 0.2); border-radius: 3px; }
 </style>

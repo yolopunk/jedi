@@ -87,7 +87,7 @@ const {
 } = useWallpaper()
 const allCategories = ref<string[]>([])
 
-async function _toggleCategory(cat: string) {
+async function toggleCategory(cat: string) {
   if (!wallpaperSettings.value.selectedCategories) {
     wallpaperSettings.value.selectedCategories = []
   }
@@ -124,7 +124,7 @@ onMounted(async () => {
 }
 
 .setting-item:not(.no-hover):hover {
-  background: rgba(0, 255, 255, 0.03);
+  background: rgb(var(--accent-rgb) / 0.03);
 }
 
 .setting-icon {
@@ -141,13 +141,13 @@ onMounted(async () => {
 .setting-label {
   font-size: 12px;
   font-weight: 600;
-  color: #e4e4e7;
+  color: var(--border);
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 
 .setting-subtitle {
   font-size: 10px;
-  color: #52525b;
+  color: var(--text-subtle);
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 
@@ -160,24 +160,24 @@ onMounted(async () => {
 .toggle-switch {
   width: 40px;
   height: 22px;
-  background: rgba(82, 82, 91, 0.5);
+  background:rgb(var(--ink-rgb) / 0.5);
   border-radius: 12px;
   position: relative;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 1px solid rgba(82, 82, 91, 0.5);
+  border: 1px solid rgb(var(--text-rgb) / 0.5);
 }
 
 .toggle-switch.active {
-  background: rgba(0, 255, 136, 0.15);
-  border-color: rgba(0, 255, 136, 0.5);
+  background: rgb(var(--success-rgb) / 0.15);
+  border-color: rgb(var(--success-rgb) / 0.5);
 }
 
 .toggle-handle {
   position: absolute;
   width: 16px;
   height: 16px;
-  background: #52525b;
+  background: var(--text-subtle);
   border-radius: 50%;
   top: 2px;
   left: 2px;
@@ -185,14 +185,14 @@ onMounted(async () => {
 }
 
 .toggle-switch.active .toggle-handle {
-  background: #00ff88;
-  box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  background: var(--success);
+  box-shadow: 0 0 10px rgb(var(--success-rgb) / 0.5);
   left: 20px;
 }
 
 .console-menu {
   background: rgba(20, 20, 25, 0.95);
-  border: 1px solid rgba(0, 255, 255, 0.2);
+  border: 1px solid rgb(var(--accent-rgb) / 0.2);
   border-radius: 6px;
   padding: 4px;
   min-width: 150px;
@@ -207,23 +207,23 @@ onMounted(async () => {
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
-  color: #a1a1aa;
+  color: var(--text-muted);
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 11px;
 }
 
 .menu-item:hover {
-  background: rgba(0, 255, 255, 0.1);
-  color: #00ffff;
+  background: rgb(var(--accent-rgb) / 0.1);
+  color: var(--accent);
 }
 
 .menu-item.active {
-  background: rgba(0, 255, 255, 0.15);
-  color: #00ffff;
+  background: rgb(var(--accent-rgb) / 0.15);
+  color: var(--accent);
 }
 
 .menu-check {
-  color: #00ffff;
+  color: var(--accent);
   font-size: 10px;
   width: 14px;
   text-align: center;

@@ -59,8 +59,8 @@ function selectTool(serverId: string, tool: McpTool): void {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: rgba(0, 0, 0, 0.3);
-  border-right: 1px solid rgba(0, 255, 255, 0.2);
+  background:rgb(var(--ink-rgb) / 0.3);
+  border-right: 1px solid rgb(var(--accent-rgb) / 0.2);
 }
 
 .panel-header {
@@ -68,22 +68,22 @@ function selectTool(serverId: string, tool: McpTool): void {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-  background: rgba(0, 255, 255, 0.05);
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.2);
+  background: rgb(var(--accent-rgb) / 0.05);
 }
 
 .panel-title {
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   font-weight: 700;
-  color: #00ffff;
+  color: var(--accent);
   letter-spacing: 1px;
 }
 
 .panel-status {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: #00ff88;
+  color: var(--success);
 }
 
 .mcp-servers {
@@ -111,32 +111,32 @@ function selectTool(serverId: string, tool: McpTool): void {
 }
 
 .server-toggle:hover {
-  background: rgba(0, 255, 255, 0.05);
+  background: rgb(var(--accent-rgb) / 0.05);
 }
 
 .toggle-indicator {
   width: 12px;
   height: 12px;
   border-radius: 3px;
-  border: 2px solid #52525b;
+  border: 2px solid var(--text-subtle);
   background: transparent;
   transition: all 0.2s;
 }
 
 .server-toggle.enabled .toggle-indicator {
-  border-color: #00ff88;
-  background: #00ff88;
+  border-color: var(--success);
+  background: var(--success);
 }
 
 .server-name {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   font-weight: 600;
-  color: #a1a1aa;
+  color: var(--text-muted);
 }
 
 .server-toggle.enabled .server-name {
-  color: #e4e4e7;
+  color: var(--border);
 }
 
 .tools-list {
@@ -156,8 +156,8 @@ function selectTool(serverId: string, tool: McpTool): void {
 }
 
 .tool-item:hover {
-  background: rgba(0, 255, 255, 0.05);
-  border-left-color: #00ffff;
+  background: rgb(var(--accent-rgb) / 0.05);
+  border-left-color: var(--accent);
 }
 
 .tool-icon {
@@ -175,30 +175,30 @@ function selectTool(serverId: string, tool: McpTool): void {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
   font-weight: 600;
-  color: #a1a1aa;
+  color: var(--text-muted);
 }
 
 .tool-desc {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: #52525b;
+  color: var(--text-subtle);
   line-height: 1.3;
 }
 
 .panel-footer {
   padding: 12px 16px;
-  border-top: 1px solid rgba(0, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.1);
+  background:rgb(var(--ink-rgb) / 0.2);
 }
 
 .footer-text {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: #52525b;
+  color: var(--text-subtle);
   letter-spacing: 1px;
 }
 
 .mcp-servers::-webkit-scrollbar { width: 6px; }
 .mcp-servers::-webkit-scrollbar-track { background: transparent; }
-.mcp-servers::-webkit-scrollbar-thumb { background: rgba(0, 255, 255, 0.2); border-radius: 3px; }
+.mcp-servers::-webkit-scrollbar-thumb { background: rgb(var(--accent-rgb) / 0.2); border-radius: 3px; }
 </style>

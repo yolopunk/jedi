@@ -1,10 +1,14 @@
-import { createAnthropic } from '@ai-sdk/anthropic'
-import { createOpenAI } from '@ai-sdk/openai'
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { invoke } from '@tauri-apps/api/core'
-import { isLoopFinished, jsonSchema, stepCountIs, streamText, tool } from 'ai'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import {
+  type ChatTurn,
+  DEFAULT_STEP_LIMIT,
+  distillTitle,
+  runAgent,
+  summarizeUsage,
+  summarizeValue,
+} from '@/agent/runAgent'
 import { skillRegistry } from '@/skills/registry'
 import { useAgentStore } from './agent'
 import { useModelsDevStore } from './modelsDev'
@@ -105,129 +109,13 @@ export const DEFAULT_MCP_SERVERS: McpServer[] = [
   },
 ]
 
-// ========== AI SDK Provider 工厂 ==========
-
-function createProviderClient(providerId: string, settings: { apiKey: string; baseURL?: string }) {
-  // If there's a custom baseURL, determine which SDK to use based on the API format
-  if (settings.baseURL) {
-    // Check if the endpoint uses Anthropic API format
-    if (settings.baseURL.includes('anthropic') || providerId === 'anthropic') {
-      return createAnthropic({
-        apiKey: settings.apiKey,
-        baseURL: settings.baseURL,
-      })
-    }
-    // Otherwise use OpenAI-compatible
-    return createOpenAICompatible({
-      name: providerId,
-      apiKey: settings.apiKey,
-      baseURL: settings.baseURL,
-    })
-  }
-
-  // For providers without custom baseURL, use official SDKs
-  switch (providerId) {
-    case 'openai':
-      return createOpenAI({
-        apiKey: settings.apiKey,
-      })
-    case 'anthropic':
-      return createAnthropic({
-        apiKey: settings.apiKey,
-      })
-    default:
-      // For unknown providers without baseURL, throw an error - they need to specify an endpoint
-      throw new Error(`Provider ${providerId} requires a baseURL endpoint to be configured`)
-  }
-}
-
-function createAgentSystemPrompt(enabledToolNames: string[]): string {
-  const toolHint =
-    enabledToolNames.length > 0
-      ? `Available tools: ${enabledToolNames.join(', ')}. Use tools when they materially improve accuracy or can verify the user's request.`
-      : 'No tools are currently enabled.'
-
-  return [
-    'You are Jedi, a desktop AI agent for developers.',
-    'Work autonomously: understand the task, make a brief plan, use tools when useful, verify results, and then answer clearly.',
-    'Expose concise progress summaries, tool choices, and verification outcomes. Do not reveal hidden chain-of-thought; provide short reasoning summaries instead.',
-    'When a tool result is relevant, incorporate it into the final answer. If a tool fails, recover when possible and explain the useful part.',
-    toolHint,
-  ].join('\n')
-}
-
-function summarizeValue(value: unknown, maxLength = 1600): string {
-  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2)
-  if (!text) return ''
-  return text.length > maxLength ? `${text.slice(0, maxLength)}\n...` : text
-}
+// ========== Trace id helper ==========
 
 let traceCounter = 0
 
 function nextTraceId(prefix: string): string {
   traceCounter += 1
   return `${prefix}-${Date.now()}-${traceCounter}`
-}
-
-function summarizeUsage(usage: unknown): string {
-  if (!usage || typeof usage !== 'object') return 'No usage data'
-  const usageRecord = usage as Record<string, unknown>
-  const inputTokens =
-    typeof usageRecord.inputTokens === 'number'
-      ? usageRecord.inputTokens
-      : typeof usageRecord.promptTokens === 'number'
-        ? usageRecord.promptTokens
-        : typeof usageRecord.input_tokens === 'number'
-          ? usageRecord.input_tokens
-          : null
-  const outputTokens =
-    typeof usageRecord.outputTokens === 'number'
-      ? usageRecord.outputTokens
-      : typeof usageRecord.completionTokens === 'number'
-        ? usageRecord.completionTokens
-        : typeof usageRecord.output_tokens === 'number'
-          ? usageRecord.output_tokens
-          : null
-  const reasoningTokens =
-    typeof usageRecord.reasoningTokens === 'number' ? usageRecord.reasoningTokens : null
-  const totalTokens =
-    typeof usageRecord.totalTokens === 'number'
-      ? usageRecord.totalTokens
-      : typeof usageRecord.total_tokens === 'number'
-        ? usageRecord.total_tokens
-        : null
-
-  return [
-    inputTokens !== null ? `in ${inputTokens}` : null,
-    outputTokens !== null ? `out ${outputTokens}` : null,
-    reasoningTokens !== null ? `reason ${reasoningTokens}` : null,
-    totalTokens !== null ? `total ${totalTokens}` : null,
-  ]
-    .filter(Boolean)
-    .join(' / ')
-}
-
-function extractTextFromContentParts(content: unknown): string {
-  if (!Array.isArray(content)) return ''
-  return content
-    .map(part => {
-      if (!part || typeof part !== 'object') return ''
-      const record = part as Record<string, unknown>
-      if (typeof record.text === 'string') return record.text
-      if (typeof record.content === 'string') return record.content
-      if (typeof record.value === 'string') return record.value
-      return ''
-    })
-    .filter(Boolean)
-    .join('')
-    .trim()
-}
-
-function extractStepText(step: unknown): string {
-  if (!step || typeof step !== 'object') return ''
-  const record = step as Record<string, unknown>
-  if (typeof record.text === 'string' && record.text.trim()) return record.text.trim()
-  return extractTextFromContentParts(record.content)
 }
 
 // ========== Store ==========
@@ -254,10 +142,41 @@ export const useAiChatStore = defineStore('aiChat', () => {
     () => sessions.value.find(s => s.id === currentSessionId.value) || null
   )
 
+  // Normalize a session coming back from the SQLite store into the UI shape:
+  // restore message timestamps and parse the persisted agent metadata JSON.
+  function normalizeSession(raw: any): Session {
+    const messages: ChatMessage[] = (raw.messages || []).map((m: any) => {
+      let metadata: MessageMetadata | undefined
+      if (m.metadata) {
+        try {
+          metadata = typeof m.metadata === 'string' ? JSON.parse(m.metadata) : m.metadata
+        } catch {
+          metadata = undefined
+        }
+      }
+      return {
+        role: m.role,
+        content: m.content,
+        timestamp: m.created_at ? Date.parse(m.created_at) : undefined,
+        metadata,
+      }
+    })
+    return {
+      id: raw.id,
+      title: raw.title,
+      provider: raw.provider,
+      model: raw.model,
+      created_at: raw.created_at,
+      updated_at: raw.updated_at,
+      messages,
+    }
+  }
+
   // Actions
   async function loadSessions() {
     try {
-      sessions.value = await invoke('list_sessions')
+      const raw = await invoke<any[]>('list_sessions')
+      sessions.value = raw.map(normalizeSession)
       error.value = null
     } catch (e) {
       error.value = `加载会话失败: ${e}`
@@ -285,6 +204,30 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
   }
 
+  // Titles we treat as "unnamed" and are free to overwrite with a distilled one.
+  const DEFAULT_TITLES = new Set(['新对话', '新会话', 'New Chat', ''])
+
+  /** Quick provisional title from the first user message (instant, no LLM). */
+  function heuristicTitle(text: string): string {
+    const oneLine = text.replace(/\s+/g, ' ').trim()
+    return oneLine.slice(0, 18) || '新对话'
+  }
+
+  /** Rename a session locally and persist it (best-effort). */
+  async function updateSessionTitle(sessionId: string, title: string) {
+    const clean = title.trim()
+    if (!clean) return
+    const session = sessions.value.find(s => s.id === sessionId)
+    if (session) session.title = clean
+    try {
+      await invoke('update_session_title', {
+        request: { session_id: sessionId, title: clean },
+      })
+    } catch (e) {
+      console.error('Failed to update session title:', e)
+    }
+  }
+
   async function deleteSession(sessionId: string) {
     try {
       await invoke('delete_session', { session_id: sessionId })
@@ -304,7 +247,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
     const provider = modelsDevStore.selectedProviderId || 'openai'
     const model = modelsDevStore.selectedModelId || 'gpt-4o-mini'
     const runStartedAt = Date.now()
-    const stepLimit = 8
+    const stepLimit = DEFAULT_STEP_LIMIT
 
     // Create session if needed
     if (!currentSession.value) {
@@ -312,8 +255,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
 
     const session = currentSession.value!
+    // Only auto-name a session whose title is still the placeholder.
+    const shouldAutoTitle = DEFAULT_TITLES.has(session.title)
     const userMessage: ChatMessage = { role: 'user', content, timestamp: Date.now() }
-    const assistantMessage: ChatMessage = {
+    const assistantDraft: ChatMessage = {
       role: 'assistant',
       content: '',
       timestamp: Date.now(),
@@ -334,7 +279,13 @@ export const useAiChatStore = defineStore('aiChat', () => {
     }
 
     session.messages.push(userMessage)
-    session.messages.push(assistantMessage)
+    session.messages.push(assistantDraft)
+    // Vue wraps a pushed plain object in a reactive *proxy*; the local
+    // `assistantDraft` still points at the raw target. Mutating the raw target's
+    // `content` / `metadata` during streaming bypasses the proxy's set trap, so no
+    // re-render is triggered and the bubble only updates once at the very end.
+    // Re-bind to the stored proxy so every streaming mutation is reactive.
+    const assistantMessage = session.messages[session.messages.length - 1]
 
     isLoading.value = true
     streamingContent.value = ''
@@ -391,20 +342,19 @@ export const useAiChatStore = defineStore('aiChat', () => {
         },
       })
 
+      // Instant provisional title from the first message so the sidebar stops
+      // showing "新会话"; refined into a distilled title once the answer lands.
+      if (shouldAutoTitle) {
+        void updateSessionTitle(session.id, heuristicTitle(content))
+      }
+
       // Get API key for provider
       const apiKeyInfo = await providerConfigStore.getApiKey(provider)
       if (!apiKeyInfo) {
         throw new Error(`API key not configured for provider: ${provider}`)
       }
 
-      // Create provider client
-      const providerClient = createProviderClient(provider, {
-        apiKey: apiKeyInfo.key,
-        baseURL: apiKeyInfo.endpoint,
-      })
-
-      const enabledSkills = skillRegistry.listAutoCallable()
-      const enabledToolNames = enabledSkills.map(skill => skill.name)
+      const enabledToolNames = skillRegistry.listAutoCallable().map(skill => skill.name)
       if (assistantMessage.metadata?.run) {
         assistantMessage.metadata.run.enabledTools = enabledToolNames
       }
@@ -425,58 +375,11 @@ export const useAiChatStore = defineStore('aiChat', () => {
         durationMs: 0,
       })
 
-      const tools = Object.fromEntries(
-        enabledSkills.map(skill => [
-          skill.id,
-          tool({
-            description: `${skill.name}: ${skill.description}`,
-            inputSchema: jsonSchema(skill.parameters as any),
-            execute: async args => {
-              const startedAt = Date.now()
-              const relatedDecisionTrace = [...toolDecisionTraces.values()]
-                .reverse()
-                .find(trace => trace.toolName === skill.name && trace.status === 'running')
-              const traceEntry = pushTrace({
-                id: `${skill.id}-${startedAt}`,
-                type: 'tool',
-                status: 'running',
-                title: `Executing ${skill.name}`,
-                content: `Executing ${skill.name}. ${skill.description}`,
-                input: args,
-                timestamp: startedAt,
-                toolName: skill.name,
-                toolCallId: relatedDecisionTrace?.toolCallId,
-              })
-              if (relatedDecisionTrace?.toolCallId) {
-                const traces = toolExecutionTraces.get(relatedDecisionTrace.toolCallId) || []
-                traces.push(traceEntry)
-                toolExecutionTraces.set(relatedDecisionTrace.toolCallId, traces)
-              }
-              const step = agentStore.startStep(
-                'tool',
-                `Calling ${skill.name}`,
-                summarizeValue(args, 600)
-              )
-
-              try {
-                agentStore.setStatus('executing')
-                if (assistantMessage.metadata?.run) {
-                  assistantMessage.metadata.run.toolCount += 1
-                }
-                const output = await skill.execute(args, { sessionId: session.id })
-                completeTrace(traceEntry, output)
-                agentStore.completeStep(step, summarizeValue(output, 1000))
-                return output
-              } catch (e) {
-                const message = e instanceof Error ? e.message : String(e)
-                failTrace(traceEntry, message)
-                agentStore.failStep(step, message)
-                throw e
-              }
-            },
-          }),
-        ])
-      )
+      // Correlate per-tool execution between runAgent's onToolStart / onToolEnd hooks.
+      const toolStepMap = new Map<
+        string,
+        { traceEntry: AgentTraceDetail; step: ReturnType<typeof agentStore.startStep> }
+      >()
 
       planTrace = pushTrace({
         id: nextTraceId('think'),
@@ -504,203 +407,213 @@ export const useAiChatStore = defineStore('aiChat', () => {
       })
       const planStep = agentStore.startStep('think', 'Planning response', content)
 
-      // Convert messages to AI SDK format
-      type AIMessage = { role: 'user' | 'assistant' | 'system'; content: string }
-      const aiMessages: AIMessage[] = session.messages
+      // Convert messages to the shared executor format
+      const aiMessages: ChatTurn[] = session.messages
         .filter(m => !m.isStreaming)
         .map(m => ({
-          role: m.role as AIMessage['role'],
+          role: m.role as ChatTurn['role'],
           content: m.content,
         }))
 
-      // Collect model output across providers. Some providers emit the final answer
-      // only on step finish instead of text-delta chunks.
-      let fullContent = ''
-      let reasoningSummary = ''
       let planCompleted = false
-      let lastStepText = ''
-      let finishText = ''
-
-      // Use streamText for streaming
-      const result = streamText({
-        model: providerClient.languageModel(model),
-        system: createAgentSystemPrompt(enabledToolNames),
-        messages: aiMessages,
-        tools,
-        stopWhen: [stepCountIs(stepLimit), isLoopFinished()],
-        onStepFinish: step => {
-          stepCounter += 1
-          const stepKind =
-            step.toolResults.length > 0
-              ? 'tool-result'
-              : step.stepNumber === 0
-                ? 'initial'
-                : 'continue'
-          const stepText = extractStepText(step)
-          assistantMessage.metadata!.finishReason = step.finishReason
-          assistantMessage.metadata!.usage = step.usage
-          if (assistantMessage.metadata?.run) {
-            assistantMessage.metadata.run.finishReason = step.finishReason
-            assistantMessage.metadata.run.usage = step.usage
-          }
-          if (stepText) {
-            lastStepText = stepText
-            assistantMessage.content = stepText
-            if (!fullContent.trim()) {
-              streamingContent.value = stepText
-            }
-          }
-          pushTrace({
-            id: nextTraceId('step'),
-            type: 'step',
-            status: 'done',
-            title: `LLM step ${stepCounter}`,
-            content: `Step ${stepCounter} finished as ${stepKind} with ${step.finishReason}.`,
-            output: {
-              type: stepKind,
-              finishReason: step.finishReason,
-              usage: step.usage,
-              usageSummary: summarizeUsage(step.usage),
-              toolCalls: step.toolCalls,
-              toolResults: step.toolResults,
-              text: step.text,
-            },
-            timestamp: Date.now(),
-            stepIndex: currentStreamStepIndex,
-          })
-          currentStreamStepIndex = step.stepNumber + 2
-        },
-        onFinish: event => {
-          finishText = extractStepText(event)
-          assistantMessage.metadata!.finishReason = event.finishReason
-          assistantMessage.metadata!.usage = event.totalUsage
-          if (assistantMessage.metadata?.run) {
-            assistantMessage.metadata.run.finishReason = event.finishReason
-            assistantMessage.metadata.run.usage = event.totalUsage
-          }
-        },
-      })
-
-      // Collect streaming response
-      for await (const chunk of result.fullStream) {
-        if (chunk.type === 'text-delta') {
-          fullContent += (chunk as any).delta ?? (chunk as any).text ?? ''
-          streamingContent.value = fullContent
-          assistantMessage.content = fullContent
-          updateTrace(answerTrace, {
-            content: fullContent
-              ? `Streaming ${fullContent.length} chars of assistant output.`
-              : 'Streaming assistant response...',
-          })
-        } else if (chunk.type === 'reasoning-delta') {
-          reasoningSummary += (chunk as any).delta ?? (chunk as any).text ?? ''
-          assistantMessage.metadata!.reasoning = reasoningSummary
-          const now = Date.now()
-          if (
-            now - lastReasoningTraceUpdateAt > 250 ||
-            reasoningSummary.length < 240 ||
-            reasoningSummary.length % 320 < 40
-          ) {
-            updateTrace(reasoningTrace, {
-              content: summarizeValue(reasoningSummary, 1400),
-            })
-            lastReasoningTraceUpdateAt = now
-          }
-          if (!planCompleted && reasoningSummary.trim()) {
-            agentStore.completeStep(planStep, summarizeValue(reasoningSummary, 800))
-            completeTrace(planTrace, summarizeValue(reasoningSummary, 800))
-            planCompleted = true
-          }
-        } else if (chunk.type === 'tool-call') {
-          const toolName = (chunk as any).toolName || (chunk as any).toolCall?.toolName || 'unknown'
-          const toolCallId = (chunk as any).toolCallId || (chunk as any).toolCall?.toolCallId
-          const input =
-            (chunk as any).input ??
-            (chunk as any).args ??
-            (chunk as any).toolCall?.args ??
-            (chunk as any).toolCall?.input
-          const decisionTrace = pushTrace({
-            id: nextTraceId('tool-call'),
-            type: 'tool',
-            status: 'running',
-            title: `Tool requested: ${toolName}`,
-            content: `Model selected ${toolName} for verification.`,
-            input,
-            timestamp: Date.now(),
-            toolName,
-            toolCallId,
-          })
-          if (toolCallId) {
-            toolDecisionTraces.set(toolCallId, decisionTrace)
-          }
-          if (!planCompleted) {
-            agentStore.completeStep(planStep, 'Selected a tool for verification.')
-            completeTrace(planTrace, 'Selected a tool for verification.')
-            planCompleted = true
-          }
-        } else if (chunk.type === 'tool-result') {
-          const toolName =
-            (chunk as any).toolName || (chunk as any).toolResult?.toolName || 'unknown'
-          const toolCallId = (chunk as any).toolCallId || (chunk as any).toolResult?.toolCallId
-          const output =
-            (chunk as any).output ??
-            (chunk as any).result ??
-            (chunk as any).toolResult?.output ??
-            (chunk as any).toolResult?.result
-          const decisionTrace = toolCallId ? toolDecisionTraces.get(toolCallId) : undefined
-          if (decisionTrace?.status === 'running') {
-            completeTrace(decisionTrace, output)
-          }
-          const executionTrace = toolCallId
-            ? (toolExecutionTraces.get(toolCallId) || []).find(trace => trace.status === 'running')
-            : undefined
-          if (executionTrace?.status === 'running') {
-            completeTrace(executionTrace, output)
-          }
-          pushTrace({
-            id: nextTraceId('tool-result'),
-            type: 'tool',
-            status: 'done',
-            title: `Tool result received: ${toolName}`,
-            content: `Model received ${toolName} output and can continue reasoning.`,
-            output,
-            timestamp: Date.now(),
-            toolName,
-            toolCallId,
-          })
-        } else if (chunk.type === 'finish') {
-          assistantMessage.metadata!.finishReason = chunk.finishReason
-          if (assistantMessage.metadata?.run) {
-            assistantMessage.metadata.run.finishReason = chunk.finishReason
-          }
+      let streamingHasText = false
+      const ensurePlanCompleted = (summary: string) => {
+        if (!planCompleted) {
+          agentStore.completeStep(planStep, summary)
+          completeTrace(planTrace!, summary)
+          planCompleted = true
         }
       }
 
-      lastStepText = assistantMessage.content.trim()
-
-      if (!planCompleted) {
-        agentStore.completeStep(planStep, 'Answered directly.')
-        completeTrace(planTrace, 'Answered directly.')
-      }
-      completeTrace(
-        reasoningTrace,
-        summarizeValue(reasoningSummary || 'No reasoning summary emitted.', 1400)
+      // Drive the run through the shared executor. All streamText plumbing and the
+      // final-answer resolution live in runAgent; here we only map its events onto
+      // the trace/agent-store bookkeeping that the chat UI renders.
+      const runResult = await runAgent(
+        {
+          provider,
+          model,
+          apiKey: apiKeyInfo.key,
+          endpoint: apiKeyInfo.endpoint,
+          messages: aiMessages,
+          sessionId: session.id,
+          stepLimit,
+        },
+        {
+          onToolStart: ({ skillId, skillName, skillDescription, args, startedAt }) => {
+            const relatedDecisionTrace = [...toolDecisionTraces.values()]
+              .reverse()
+              .find(trace => trace.toolName === skillName && trace.status === 'running')
+            const traceEntry = pushTrace({
+              id: `${skillId}-${startedAt}`,
+              type: 'tool',
+              status: 'running',
+              title: `Executing ${skillName}`,
+              content: `Executing ${skillName}. ${skillDescription}`,
+              input: args,
+              timestamp: startedAt,
+              toolName: skillName,
+              toolCallId: relatedDecisionTrace?.toolCallId,
+            })
+            if (relatedDecisionTrace?.toolCallId) {
+              const traces = toolExecutionTraces.get(relatedDecisionTrace.toolCallId) || []
+              traces.push(traceEntry)
+              toolExecutionTraces.set(relatedDecisionTrace.toolCallId, traces)
+            }
+            const step = agentStore.startStep(
+              'tool',
+              `Calling ${skillName}`,
+              summarizeValue(args, 600)
+            )
+            toolStepMap.set(`${skillId}-${startedAt}`, { traceEntry, step })
+            agentStore.setStatus('executing')
+            if (assistantMessage.metadata?.run) {
+              assistantMessage.metadata.run.toolCount += 1
+            }
+          },
+          onToolEnd: ({ skillId, startedAt, output, error: toolError }) => {
+            const rec = toolStepMap.get(`${skillId}-${startedAt}`)
+            if (!rec) return
+            if (toolError) {
+              failTrace(rec.traceEntry, toolError)
+              agentStore.failStep(rec.step, toolError)
+            } else {
+              completeTrace(rec.traceEntry, output)
+              agentStore.completeStep(rec.step, summarizeValue(output, 1000))
+            }
+          },
+          onStepFinish: ({
+            stepNumber,
+            finishReason,
+            usage,
+            stepKind,
+            stepText,
+            toolCalls,
+            toolResults,
+            text,
+          }) => {
+            stepCounter += 1
+            assistantMessage.metadata!.finishReason = finishReason
+            assistantMessage.metadata!.usage = usage
+            if (assistantMessage.metadata?.run) {
+              assistantMessage.metadata.run.finishReason = finishReason
+              assistantMessage.metadata.run.usage = usage
+            }
+            if (stepText) {
+              assistantMessage.content = stepText
+              if (!streamingHasText) {
+                streamingContent.value = stepText
+              }
+            }
+            pushTrace({
+              id: nextTraceId('step'),
+              type: 'step',
+              status: 'done',
+              title: `LLM step ${stepCounter}`,
+              content: `Step ${stepCounter} finished as ${stepKind} with ${finishReason}.`,
+              output: {
+                type: stepKind,
+                finishReason,
+                usage,
+                usageSummary: summarizeUsage(usage),
+                toolCalls,
+                toolResults,
+                text,
+              },
+              timestamp: Date.now(),
+              stepIndex: currentStreamStepIndex,
+            })
+            currentStreamStepIndex = stepNumber + 2
+          },
+          onTextDelta: ({ fullContent }) => {
+            streamingHasText = true
+            streamingContent.value = fullContent
+            assistantMessage.content = fullContent
+            updateTrace(answerTrace!, {
+              content: fullContent
+                ? `Streaming ${fullContent.length} chars of assistant output.`
+                : 'Streaming assistant response...',
+            })
+          },
+          onReasoningDelta: ({ fullReasoning }) => {
+            assistantMessage.metadata!.reasoning = fullReasoning
+            const now = Date.now()
+            if (
+              now - lastReasoningTraceUpdateAt > 250 ||
+              fullReasoning.length < 240 ||
+              fullReasoning.length % 320 < 40
+            ) {
+              updateTrace(reasoningTrace!, {
+                content: summarizeValue(fullReasoning, 1400),
+              })
+              lastReasoningTraceUpdateAt = now
+            }
+            if (fullReasoning.trim()) {
+              ensurePlanCompleted(summarizeValue(fullReasoning, 800))
+            }
+          },
+          onToolCall: ({ toolName, toolCallId, input }) => {
+            const decisionTrace = pushTrace({
+              id: nextTraceId('tool-call'),
+              type: 'tool',
+              status: 'running',
+              title: `Tool requested: ${toolName}`,
+              content: `Model selected ${toolName} for verification.`,
+              input,
+              timestamp: Date.now(),
+              toolName,
+              toolCallId,
+            })
+            if (toolCallId) {
+              toolDecisionTraces.set(toolCallId, decisionTrace)
+            }
+            ensurePlanCompleted('Selected a tool for verification.')
+          },
+          onToolResult: ({ toolName, toolCallId, output }) => {
+            const decisionTrace = toolCallId ? toolDecisionTraces.get(toolCallId) : undefined
+            if (decisionTrace?.status === 'running') {
+              completeTrace(decisionTrace, output)
+            }
+            const executionTrace = toolCallId
+              ? (toolExecutionTraces.get(toolCallId) || []).find(
+                  trace => trace.status === 'running'
+                )
+              : undefined
+            if (executionTrace?.status === 'running') {
+              completeTrace(executionTrace, output)
+            }
+            pushTrace({
+              id: nextTraceId('tool-result'),
+              type: 'tool',
+              status: 'done',
+              title: `Tool result received: ${toolName}`,
+              content: `Model received ${toolName} output and can continue reasoning.`,
+              output,
+              timestamp: Date.now(),
+              toolName,
+              toolCallId,
+            })
+          },
+          onFinish: ({ finishReason }) => {
+            assistantMessage.metadata!.finishReason = finishReason
+            if (assistantMessage.metadata?.run) {
+              assistantMessage.metadata.run.finishReason = finishReason
+            }
+          },
+        }
       )
-      if (!fullContent.trim() && lastStepText) {
-        fullContent = lastStepText
-      } else if (!fullContent.trim() && finishText.trim()) {
-        fullContent = finishText.trim()
-      } else if (!fullContent.trim()) {
-        const resultText = await Promise.resolve(result.text).catch(() => '')
-        const resultContent = await Promise.resolve(result.content).catch(() => [])
-        fullContent = resultText.trim() || extractTextFromContentParts(resultContent)
-      }
+
+      ensurePlanCompleted('Answered directly.')
+      completeTrace(
+        reasoningTrace!,
+        summarizeValue(runResult.reasoning || 'No reasoning summary emitted.', 1400)
+      )
+      let fullContent = runResult.text
       if (!fullContent.trim()) {
         fullContent =
           '模型本轮没有返回可展示的文本内容。请在 Trace 中查看 finish reason、usage 和原始事件。'
       }
       completeTrace(
-        answerTrace,
+        answerTrace!,
         summarizeValue(fullContent || 'No final answer text emitted.', 1800)
       )
 
@@ -728,14 +641,41 @@ export const useAiChatStore = defineStore('aiChat', () => {
       })
       agentStore.setStatus('done')
 
-      // Persist to backend
+      // Persist to backend, including the agent run metadata (trace / usage /
+      // reasoning) so it survives a restart.
+      let metadataJson: string | undefined
+      try {
+        metadataJson = assistantMessage.metadata
+          ? JSON.stringify(assistantMessage.metadata)
+          : undefined
+      } catch {
+        metadataJson = undefined
+      }
       await invoke('append_message', {
         request: {
           session_id: session.id,
           role: 'assistant',
           content: fullContent,
+          metadata: metadataJson,
         },
       })
+
+      // Distill a concise title from the first exchange. Best-effort and
+      // non-blocking: the provisional heuristic title stays if this fails.
+      if (shouldAutoTitle && fullContent.trim()) {
+        void distillTitle({
+          provider,
+          model,
+          apiKey: apiKeyInfo.key,
+          endpoint: apiKeyInfo.endpoint,
+          userMessage: content,
+          assistantMessage: fullContent,
+        })
+          .then(title => {
+            if (title) return updateSessionTitle(session.id, title)
+          })
+          .catch(e => console.warn('Session title distillation failed:', e))
+      }
     } catch (e: any) {
       error.value = `发送消息失败: ${e}`
       console.error('Failed to send message:', e)
@@ -766,6 +706,19 @@ export const useAiChatStore = defineStore('aiChat', () => {
         durationMs: Date.now() - runStartedAt,
       })
       agentStore.setStatus('error')
+      // Persist the failed turn so the real error is visible in history (and the DB).
+      try {
+        await invoke('append_message', {
+          request: {
+            session_id: session.id,
+            role: 'assistant',
+            content: assistantMessage.content,
+            metadata: assistantMessage.metadata
+              ? JSON.stringify(assistantMessage.metadata)
+              : undefined,
+          },
+        })
+      } catch {}
       throw e
     } finally {
       isLoading.value = false
@@ -842,6 +795,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
     loadSessions,
     createSession,
     deleteSession,
+    updateSessionTitle,
     sendMessage,
     toggleMcpServer,
     loadSettings,

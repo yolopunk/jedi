@@ -1,11 +1,13 @@
 <template>
-  <div class="command-popup" v-if="visible">
+  <div class="command-popup" v-if="visible && commands.length > 0">
     <div class="popup-list">
       <div
-        v-for="cmd in _commands"
+        v-for="(cmd, i) in commands"
         :key="cmd.name"
         class="popup-item"
-        @click="_selectCommand(cmd)"
+        :class="{ active: i === activeIndex }"
+        @click="selectCommand(cmd)"
+        @mouseenter="$emit('hover', i)"
       >
         <span class="item-icon">{{ cmd.icon }}</span>
         <span class="item-name">{{ cmd.name }}</span>
@@ -16,17 +18,24 @@
 </template>
 
 <script setup lang="ts">
-import { SLASH_COMMANDS, type SlashCommand } from '@/agent/slashCommands'
+import type { SlashCommand } from '@/agent/slashCommands'
 
-defineProps<{ visible: boolean }>()
+withDefaults(
+  defineProps<{
+    visible: boolean
+    commands: SlashCommand[]
+    activeIndex?: number
+  }>(),
+  { activeIndex: 0 }
+)
+
 const emit = defineEmits<{
   (e: 'select', command: SlashCommand): void
+  (e: 'hover', index: number): void
   (e: 'close'): void
 }>()
 
-const _commands = SLASH_COMMANDS
-
-function _selectCommand(cmd: SlashCommand) {
+function selectCommand(cmd: SlashCommand) {
   emit('select', cmd)
   emit('close')
 }
@@ -39,8 +48,8 @@ function _selectCommand(cmd: SlashCommand) {
   left: 0;
   margin-bottom: 8px;
   width: 280px;
-  background: #0a0e14;
-  border: 1px solid rgba(0, 255, 255, 0.2);
+  background: var(--bg-terminal);
+  border: 1px solid rgb(var(--accent-rgb) / 0.2);
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
@@ -63,8 +72,9 @@ function _selectCommand(cmd: SlashCommand) {
   transition: background 0.1s;
 }
 
-.popup-item:hover {
-  background: rgba(0, 255, 255, 0.08);
+.popup-item:hover,
+.popup-item.active {
+  background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .item-icon {
@@ -74,12 +84,12 @@ function _selectCommand(cmd: SlashCommand) {
 .item-name {
   font-size: 12px;
   font-weight: 600;
-  color: #00ffff;
+  color: var(--accent);
   min-width: 70px;
 }
 
 .item-desc {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
 }
 </style>

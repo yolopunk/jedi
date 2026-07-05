@@ -1,9 +1,5 @@
 <template>
   <div class="hosts-container scifi-page">
-    <!-- CRT Effects -->
-    <div class="scanlines"></div>
-    <div class="crt-vignette"></div>
-
     <div class="content-wrapper">
       <!-- 分组管理区域 -->
       <group-manager
@@ -53,11 +49,10 @@
   <v-dialog v-model="dialogs.renameGroup" max-width="400">
     <v-card class="scifi-card">
       <v-card-title class="console-title-bar">
-        <span class="dialog-title">[ RENAME_GROUP ]</span>
+        <span class="dialog-title">{{ $t('hosts.dialog.renameGroupTitle') }}</span>
       </v-card-title>
       <v-card-text class="console-card-text">
         <div class="input-wrapper">
-          <span class="input-prompt">>></span>
           <input
             v-model="renameGroupName"
             type="text"
@@ -72,13 +67,13 @@
           class="console-btn"
           @click="dialogs.renameGroup = false"
         >
-          <span class="btn-text">{{ t('common.cancel').toUpperCase() }}</span>
+          <span class="btn-text">{{ t('common.cancel') }}</span>
         </button>
         <button
           class="console-btn primary"
           @click="handleConfirmRenameGroup"
         >
-          <span class="btn-text">{{ t('common.save').toUpperCase() }}</span>
+          <span class="btn-text">{{ t('common.save') }}</span>
         </button>
       </v-card-actions>
     </v-card>
@@ -243,148 +238,33 @@ onMounted(async () => {
   padding: 8px;
 }
 
-/* Sci-Fi Card Overrides for Dialog */
+/* Clean dialog chrome */
 .console-title-bar {
-  background: linear-gradient(180deg, #0f0f1a 0%, #0a0a12 100%);
-  border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-  padding: 12px 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px;
 }
 
 .dialog-title {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #00ff88;
-  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
-  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--jedi-font-ui);
+}
+
+.dialog-input {
+  width: 100%;
 }
 
 .console-card-text {
-  background: #0a0a0f;
+  background: var(--bg-terminal);
   padding: 20px 16px;
 }
 
 .console-card-actions {
-  background: linear-gradient(0deg, #0f0f1a 0%, #0a0a12 100%);
-  border-top: 1px solid rgba(0, 255, 255, 0.15);
+  background: linear-gradient(0deg, var(--bg-terminal) 0%, var(--bg-terminal) 100%);
+  border-top: 1px solid rgb(var(--accent-rgb) / 0.15);
   padding: 12px 16px;
 }
 
-.console-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: 1px solid #00ff88;
-  color: #00ff88;
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.console-btn:hover {
-  background: rgba(0, 255, 136, 0.07);
-  box-shadow: 0 0 15px rgba(0, 255, 136, 0.27), inset 0 0 15px rgba(0, 255, 136, 0.07);
-}
-
-.console-btn.primary {
-  border-color: #00ffff;
-  color: #00ffff;
-}
-
-.console-btn.primary:hover {
-  background: rgba(0, 255, 255, 0.07);
-  box-shadow: 0 0 15px rgba(0, 255, 255, 0.27), inset 0 0 15px rgba(0, 255, 255, 0.07);
-}
-
-.btn-text {
-  letter-spacing: 1px;
-}
-
-/* =========================================
-   Light Theme Styles (Tatooine Outpost)
-   ========================================= */
-.light-theme .console-title-bar {
-  background: linear-gradient(180deg, #efe0cc 0%, #e8d4bc 100%);
-  border-bottom: 1px solid #b8860b;
-}
-
-.light-theme .dialog-title {
-  color: #cd7f32;
-  text-shadow: 0 0 8px rgba(205, 127, 50, 0.3);
-}
-
-.light-theme .console-card-text {
-  background: #faf3e8;
-}
-
-.light-theme .console-card-actions {
-  background: linear-gradient(0deg, #e8d4bc 0%, #efe0cc 100%);
-  border-top: 1px solid #b8860b;
-}
-
-.light-theme .console-btn {
-  border-color: #cd7f32;
-  color: #cd7f32;
-}
-
-.light-theme .console-btn:hover {
-  background: rgba(205, 127, 50, 0.1);
-  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.25);
-}
-
-.light-theme .console-btn.primary {
-  border-color: #cd7f32;
-  color: #cd7f32;
-}
-
-.light-theme .console-btn.primary:hover {
-  background: rgba(205, 127, 50, 0.1);
-  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
-}
-
-/* Tatooine Texture Enhancements */
-.light-theme .hosts-container {
-  background: 
-    linear-gradient(180deg, rgba(245, 230, 211, 0.95) 0%, rgba(239, 224, 204, 0.98) 100%),
-    repeating-linear-gradient(
-      -45deg,
-      transparent,
-      transparent 20px,
-      rgba(184, 134, 11, 0.015) 20px,
-      rgba(184, 134, 11, 0.015) 40px
-    );
-}
-
-.light-theme .content-wrapper {
-  background: transparent;
-}
-
-.light-theme .scifi-card {
-  background: linear-gradient(135deg, #efe0cc 0%, #e8d4bc 100%);
-  border-color: #b8860b;
-  box-shadow: 
-    0 4px 20px rgba(107, 68, 35, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
-.light-theme .console-title-bar {
-  background: linear-gradient(180deg, #e8d4bc 0%, #dcc8a8 100%);
-  border-bottom-color: #b8860b;
-}
-
-.light-theme .console-card-text {
-  background: #faf3e8;
-  border-top: none;
-}
-
-.light-theme .console-card-actions {
-  background: linear-gradient(0deg, #dcc8a8 0%, #e8d4bc 100%);
-  border-top-color: #b8860b;
-}
 </style>

@@ -119,7 +119,7 @@ function closeDialog() {
   emit('update:modelValue', false)
 }
 
-function _confirmAdd() {
+function confirmAdd() {
   if (!validateHostInput(hostIp.value, hostDomain.value)) {
     emit('error', 'IP and domain cannot be empty')
     return
@@ -135,7 +135,7 @@ function _confirmAdd() {
 
 <style scoped>
 .model-settings-card {
-  background: #0a0e14 !important;
+  background: var(--bg-terminal) !important;
   border-radius: 16px !important;
   overflow: hidden;
   max-height: 85vh;
@@ -148,8 +148,8 @@ function _confirmAdd() {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: rgba(20, 30, 40, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgb(var(--bg-rgb) / 0.6);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.06);
   flex-shrink: 0;
 }
 
@@ -165,23 +165,23 @@ function _confirmAdd() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
-  border: 1px solid rgba(0, 255, 255, 0.25);
+  background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.15) 0%, rgb(var(--success-rgb) / 0.05) 100%);
+  border: 1px solid rgb(var(--accent-rgb) / 0.25);
   border-radius: 10px;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .brand-text h2 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .brand-text p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
 }
 
 .close-btn {
@@ -191,17 +191,17 @@ function _confirmAdd() {
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  background: rgba(255, 107, 107, 0.1);
-  border-color: rgba(255, 107, 107, 0.3);
-  color: #ff6b6b;
+  background: rgb(var(--danger-rgb) / 0.1);
+  border-color: rgb(var(--danger-rgb) / 0.3);
+  color: var(--danger);
 }
 
 .card-body {
@@ -226,27 +226,27 @@ function _confirmAdd() {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   text-transform: uppercase;
 }
 
 .form-label svg {
-  color: #00ff88;
+  color: var(--success);
 }
 
 .input-wrapper {
   display: flex;
   align-items: center;
-  background: rgba(0, 255, 255, 0.03);
-  border: 1px solid rgba(0, 255, 255, 0.12);
+  background: rgb(var(--accent-rgb) / 0.03);
+  border: 1px solid rgb(var(--accent-rgb) / 0.12);
   border-radius: 10px;
   overflow: hidden;
   transition: border-color 0.15s;
 }
 
 .input-wrapper:focus-within {
-  border-color: rgba(0, 255, 255, 0.4);
-  box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.1);
+  border-color: rgb(var(--accent-rgb) / 0.4);
+  box-shadow: 0 0 0 2px rgb(var(--accent-rgb) / 0.1);
 }
 
 .input-prefix {
@@ -254,9 +254,9 @@ function _confirmAdd() {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: rgba(0, 255, 255, 0.6);
-  background: rgba(0, 255, 255, 0.05);
-  border-right: 1px solid rgba(0, 255, 255, 0.12);
+  color: rgb(var(--accent-rgb) / 0.6);
+  background: rgb(var(--accent-rgb) / 0.05);
+  border-right: 1px solid rgb(var(--accent-rgb) / 0.12);
   min-width: 52px;
   text-align: center;
 }
@@ -267,13 +267,13 @@ function _confirmAdd() {
   background: transparent;
   border: none;
   outline: none;
-  color: #ffffff;
+  color: var(--text);
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
 }
 
 .form-input::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgb(var(--text-rgb) / 0.2);
 }
 
 .form-input.with-prefix {
@@ -284,7 +284,7 @@ function _confirmAdd() {
   display: flex;
   align-items: center;
   padding: 16px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgb(var(--text-rgb) / 0.06);
   flex-shrink: 0;
 }
 
@@ -293,13 +293,13 @@ function _confirmAdd() {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
 }
 
 .hint-dot {
   width: 6px;
   height: 6px;
-  background: #00ff88;
+  background: var(--success);
   border-radius: 50%;
   animation: pulse 2s infinite;
 }
@@ -318,11 +318,11 @@ function _confirmAdd() {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background:rgb(var(--ink-rgb) / 0.1);
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background:rgb(var(--ink-rgb) / 0.15);
 }
 </style>

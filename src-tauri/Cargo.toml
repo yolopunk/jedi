@@ -41,6 +41,7 @@ rss = "2.0.12"
 futures = "0.3.31"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+tauri-plugin-http = "2"
 gray_matter = "0.3.2"
 # AI Chat 安全依赖
 rusqlite = { version = "0.31", features = ["bundled"] }

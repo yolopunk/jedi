@@ -46,6 +46,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiDomain, mdiPencil, mdiPlus } from '@mdi/js'
 import { computed } from 'vue'
 import type { Group } from '@/types/hosts'
 
@@ -63,7 +64,7 @@ const emit = defineEmits<{
 }>()
 
 // 计算属性：当前选中的标签
-const _selectedTab = computed({
+const selectedTab = computed({
   get: () => props.modelValue,
   set: value => {
     if (value !== 'add-group') {

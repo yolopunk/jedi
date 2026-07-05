@@ -44,12 +44,12 @@
 
             <div class="header-right" v-if="currentView === 'library'">
               <div class="input-wrapper">
-                <span class="input-prompt">>></span>
+                <v-icon :icon="mdiMagnify" size="16" class="search-icon" />
                 <input
                   v-model="searchQuery"
                   type="text"
                   class="console-input"
-                  :placeholder="$t('common.search') + '...'"
+                  :placeholder="$t('common.search')"
                 />
               </div>
               <button class="console-btn icon-only" @click="refreshLibrary" :disabled="libraryRefreshLoading" :title="$t('common.refresh')">
@@ -105,12 +105,11 @@
     <v-dialog v-model="showAddDialog" max-width="500" persistent>
       <v-card class="scifi-card">
         <v-card-title class="console-title-bar">
-          <span class="dialog-title">[ IMPORT_OPML ]</span>
+          <span class="dialog-title">{{ $t('podcast.importOpml') }}</span>
         </v-card-title>
         <v-card-text class="console-card-text">
           <div class="dialog-instruction mb-3">{{ $t('podcast.selectOpml') }}</div>
           <div class="input-wrapper">
-            <span class="input-prompt">>></span>
             <v-file-input
               v-model="opmlFile"
               class="console-file-input"
@@ -223,6 +222,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiMagnify } from '@mdi/js'
 import CrtOverlay from '@/components/common/CrtOverlay.vue'
 import EpisodeShowNotes from '@/components/podcast/EpisodeShowNotes.vue'
 import OpmlExportGuide from '@/components/podcast/OpmlExportGuide.vue'
@@ -279,6 +279,12 @@ const {
   overflow: hidden;
 }
 
+.search-icon {
+  color: var(--text-subtle);
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
 .content-wrapper {
   position: relative;
   z-index: 2;
@@ -299,8 +305,8 @@ const {
 /* Header */
 .console-header-bar {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(0, 255, 255, 0.15);
-  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.15);
+  background:rgb(var(--ink-rgb) / 0.2);
   flex-shrink: 0;
 }
 
@@ -330,7 +336,7 @@ const {
 
 .metric-label {
   font-size: 9px;
-  color: #52525b;
+  color: var(--text-subtle);
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 1px;
 }
@@ -338,14 +344,14 @@ const {
 .metric-value {
   font-size: 12px;
   font-weight: 700;
-  color: #00ff88;
+  color: var(--success);
   font-family: 'JetBrains Mono', monospace;
 }
 
 /* Snackbar */
 .console-snackbar :deep(.v-snackbar__wrapper) {
-  background: rgba(0, 0, 0, 0.9) !important;
-  border: 1px solid rgba(0, 255, 255, 0.2);
+  background:rgb(var(--ink-rgb) / 0.9) !important;
+  border: 1px solid rgb(var(--accent-rgb) / 0.2);
 }
 
 .snackbar-content {
@@ -354,28 +360,5 @@ const {
   gap: 8px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-}
-
-/* Light Theme */
-.light-theme .console-header-bar {
-  background: rgba(184, 134, 11, 0.05);
-  border-bottom-color: rgba(184, 134, 11, 0.2);
-}
-
-.light-theme .metric-label {
-  color: #6b4423;
-}
-
-.light-theme .metric-value {
-  color: #cd7f32;
-}
-
-.light-theme .console-snackbar :deep(.v-snackbar__wrapper) {
-  background: #efe0cc !important;
-  border-color: rgba(184, 134, 11, 0.3);
-}
-
-.light-theme .snackbar-content {
-  color: #3d2914;
 }
 </style>

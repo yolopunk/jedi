@@ -611,7 +611,7 @@ function isUrl(str: string): boolean {
 
 <style scoped>
 .model-settings-card {
-  background: #0a0e14 !important;
+  background: var(--bg-terminal) !important;
   border-radius: 16px !important;
   overflow: hidden;
   max-height: 85vh;
@@ -625,8 +625,8 @@ function isUrl(str: string): boolean {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: rgba(20, 30, 40, 0.6);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgb(var(--bg-rgb) / 0.6);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.06);
   flex-shrink: 0;
 }
 
@@ -642,23 +642,23 @@ function isUrl(str: string): boolean {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15) 0%, rgba(0, 255, 136, 0.05) 100%);
-  border: 1px solid rgba(0, 255, 255, 0.25);
+  background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.15) 0%, rgb(var(--success-rgb) / 0.05) 100%);
+  border: 1px solid rgb(var(--accent-rgb) / 0.25);
   border-radius: 10px;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .brand-text h2 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .brand-text p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
 }
 
 .close-btn {
@@ -668,17 +668,17 @@ function isUrl(str: string): boolean {
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .close-btn:hover {
-  background: rgba(255, 107, 107, 0.1);
-  border-color: rgba(255, 107, 107, 0.3);
-  color: #ff6b6b;
+  background: rgb(var(--danger-rgb) / 0.1);
+  border-color: rgb(var(--danger-rgb) / 0.3);
+  color: var(--danger);
 }
 
 /* Loading & Error */
@@ -690,15 +690,15 @@ function isUrl(str: string): boolean {
   justify-content: center;
   padding: 48px 24px;
   gap: 12px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   font-size: 13px;
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 2px solid rgba(0, 255, 255, 0.2);
-  border-top-color: #00ffff;
+  border: 2px solid rgb(var(--accent-rgb) / 0.2);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -708,15 +708,15 @@ function isUrl(str: string): boolean {
 }
 
 .error-state {
-  color: #ff6b6b;
+  color: var(--danger);
 }
 
 .retry-btn {
   padding: 8px 16px;
-  background: rgba(0, 255, 255, 0.1);
-  border: 1px solid rgba(0, 255, 255, 0.3);
+  background: rgb(var(--accent-rgb) / 0.1);
+  border: 1px solid rgb(var(--accent-rgb) / 0.3);
   border-radius: 6px;
-  color: #00ffff;
+  color: var(--accent);
   font-size: 12px;
   cursor: pointer;
 }
@@ -739,7 +739,7 @@ function isUrl(str: string): boolean {
 
 .list-header {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.04);
 }
 
 .list-label {
@@ -747,7 +747,7 @@ function isUrl(str: string): boolean {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(var(--text-rgb) / 0.3);
   margin-bottom: 10px;
 }
 
@@ -759,10 +759,10 @@ function isUrl(str: string): boolean {
 .provider-search {
   margin-top: 10px;
   padding: 8px 12px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:rgb(var(--ink-rgb) / 0.2);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--text);
   font-size: 12px;
   outline: none;
   width: 100%;
@@ -770,11 +770,11 @@ function isUrl(str: string): boolean {
 }
 
 .provider-search:focus {
-  border-color: rgba(0, 255, 255, 0.3);
+  border-color: rgb(var(--accent-rgb) / 0.3);
 }
 
 .provider-search::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(var(--text-rgb) / 0.3);
 }
 
 .pill {
@@ -783,34 +783,34 @@ function isUrl(str: string): boolean {
   gap: 6px;
   padding: 6px 12px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
   border-radius: 20px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .pill:hover {
-  background: rgba(255, 255, 255, 0.03);
-  border-color: rgba(255, 255, 255, 0.15);
+  background:rgb(var(--ink-rgb) / 0.03);
+  border-color: rgb(var(--text-rgb) / 0.15);
 }
 
 .pill.active {
-  background: rgba(0, 255, 255, 0.1);
-  border-color: rgba(0, 255, 255, 0.35);
-  color: #00ffff;
+  background: rgb(var(--accent-rgb) / 0.1);
+  border-color: rgb(var(--accent-rgb) / 0.35);
+  color: var(--accent);
 }
 
 .pill-count {
   padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background:rgb(var(--ink-rgb) / 0.08);
   border-radius: 10px;
   font-size: 10px;
 }
 
 .pill.active .pill-count {
-  background: rgba(0, 255, 255, 0.2);
+  background: rgb(var(--accent-rgb) / 0.2);
 }
 
 .providers-scroll {
@@ -837,26 +837,26 @@ function isUrl(str: string): boolean {
 }
 
 .provider-main:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background:rgb(var(--ink-rgb) / 0.03);
   border-radius: 10px;
   margin: -4px;
   padding: 4px;
 }
 
 .provider-item:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background:rgb(var(--ink-rgb) / 0.03);
 }
 
 .provider-item.configured {
-  background: rgba(0, 255, 136, 0.03);
+  background: rgb(var(--success-rgb) / 0.03);
 }
 
 .select-btn {
   padding: 6px 14px;
-  background: rgba(0, 255, 255, 0.1);
-  border: 1px solid rgba(0, 255, 255, 0.3);
+  background: rgb(var(--accent-rgb) / 0.1);
+  border: 1px solid rgb(var(--accent-rgb) / 0.3);
   border-radius: 6px;
-  color: #00ffff;
+  color: var(--accent);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -865,14 +865,14 @@ function isUrl(str: string): boolean {
 }
 
 .select-btn:hover {
-  background: rgba(0, 255, 255, 0.2);
-  border-color: rgba(0, 255, 255, 0.5);
+  background: rgb(var(--accent-rgb) / 0.2);
+  border-color: rgb(var(--accent-rgb) / 0.5);
 }
 
 .select-btn.active {
-  background: rgba(0, 255, 136, 0.15);
-  border-color: rgba(0, 255, 136, 0.4);
-  color: #00ff88;
+  background: rgb(var(--success-rgb) / 0.15);
+  border-color: rgb(var(--success-rgb) / 0.4);
+  color: var(--success);
   cursor: default;
 }
 
@@ -882,30 +882,30 @@ function isUrl(str: string): boolean {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(0, 200, 255, 0.1) 100%);
-  border: 1px solid rgba(0, 255, 255, 0.4);
+  background:linear-gradient(135deg, rgb(var(--accent-rgb) / 0.2) 0%, rgba(0, 200, 255, 0.1) 100%);
+  border: 1px solid rgb(var(--accent-rgb) / 0.4);
   border-radius: 10px;
   flex-shrink: 0;
   overflow: hidden;
   box-shadow:
-    0 0 16px rgba(0, 255, 255, 0.25),
-    0 0 32px rgba(0, 255, 255, 0.1),
-    inset 0 0 12px rgba(0, 255, 255, 0.1);
+    0 0 16px rgb(var(--accent-rgb) / 0.25),
+    0 0 32px rgb(var(--accent-rgb) / 0.1),
+    inset 0 0 12px rgb(var(--accent-rgb) / 0.1);
   animation: logo-pulse 3s ease-in-out infinite;
 }
 
 @keyframes logo-pulse {
   0%, 100% {
     box-shadow:
-      0 0 16px rgba(0, 255, 255, 0.25),
-      0 0 32px rgba(0, 255, 255, 0.1),
-      inset 0 0 12px rgba(0, 255, 255, 0.1);
+      0 0 16px rgb(var(--accent-rgb) / 0.25),
+      0 0 32px rgb(var(--accent-rgb) / 0.1),
+      inset 0 0 12px rgb(var(--accent-rgb) / 0.1);
   }
   50% {
     box-shadow:
-      0 0 20px rgba(0, 255, 255, 0.35),
-      0 0 40px rgba(0, 255, 255, 0.15),
-      inset 0 0 16px rgba(0, 255, 255, 0.15);
+      0 0 20px rgb(var(--accent-rgb) / 0.35),
+      0 0 40px rgb(var(--accent-rgb) / 0.15),
+      inset 0 0 16px rgb(var(--accent-rgb) / 0.15);
   }
 }
 
@@ -933,12 +933,12 @@ function isUrl(str: string): boolean {
 .provider-name {
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .provider-models {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgb(var(--text-rgb) / 0.35);
 }
 
 .provider-meta {
@@ -954,10 +954,10 @@ function isUrl(str: string): boolean {
   gap: 4px;
   font-size: 10px;
   padding: 2px 6px;
-  background: rgba(0, 255, 255, 0.05);
-  border: 1px solid rgba(0, 255, 255, 0.15);
+  background: rgb(var(--accent-rgb) / 0.05);
+  border: 1px solid rgb(var(--accent-rgb) / 0.15);
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
   font-family: 'JetBrains Mono', monospace;
   max-width: 200px;
   overflow: hidden;
@@ -975,7 +975,7 @@ function isUrl(str: string): boolean {
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  color: #00ffff;
+  color: var(--accent);
   text-decoration: none;
   opacity: 0.7;
   transition: opacity 0.15s;
@@ -996,13 +996,13 @@ function isUrl(str: string): boolean {
   padding: 4px 8px;
   font-size: 10px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.4);
+  background:rgb(var(--ink-rgb) / 0.05);
+  color: rgb(var(--text-rgb) / 0.4);
 }
 
 .status-badge.configured {
-  background: rgba(0, 255, 136, 0.12);
-  color: #00ff88;
+  background: rgb(var(--success-rgb) / 0.12);
+  color: var(--success);
 }
 
 .status-badge svg {
@@ -1010,7 +1010,7 @@ function isUrl(str: string): boolean {
 }
 
 .chevron {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgb(var(--text-rgb) / 0.2);
   flex-shrink: 0;
 }
 
@@ -1019,7 +1019,7 @@ function isUrl(str: string): boolean {
   align-items: center;
   justify-content: center;
   padding: 32px;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgb(var(--text-rgb) / 0.25);
   font-size: 13px;
 }
 
@@ -1036,7 +1036,7 @@ function isUrl(str: string): boolean {
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.06);
 }
 
 .back-btn {
@@ -1046,14 +1046,14 @@ function isUrl(str: string): boolean {
   padding: 6px 0;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--text-rgb) / 0.5);
   font-size: 12px;
   cursor: pointer;
   transition: color 0.15s;
 }
 
 .back-btn:hover {
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .selected-provider {
@@ -1068,7 +1068,7 @@ function isUrl(str: string): boolean {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.04);
 }
 
 .endpoint-label {
@@ -1078,13 +1078,13 @@ function isUrl(str: string): boolean {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
 }
 
 .endpoint-value {
   font-size: 13px;
   font-family: 'JetBrains Mono', monospace;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgb(var(--text-rgb) / 0.6);
   word-break: break-all;
 }
 
@@ -1098,7 +1098,7 @@ function isUrl(str: string): boolean {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.04);
 }
 
 .form-group {
@@ -1111,7 +1111,7 @@ function isUrl(str: string): boolean {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: #00ffff;
+  color: var(--accent);
 }
 
 .input-row {
@@ -1122,10 +1122,10 @@ function isUrl(str: string): boolean {
 .api-input {
   flex: 1;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:rgb(var(--ink-rgb) / 0.03);
+  border: 1px solid rgb(var(--text-rgb) / 0.1);
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--text);
   font-size: 13px;
   font-family: 'JetBrains Mono', monospace;
   transition: border-color 0.15s;
@@ -1133,26 +1133,26 @@ function isUrl(str: string): boolean {
 
 .api-input:focus {
   outline: none;
-  border-color: rgba(0, 255, 255, 0.4);
+  border-color: rgb(var(--accent-rgb) / 0.4);
 }
 
 .api-input::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgb(var(--text-rgb) / 0.2);
 }
 
 .toggle-btn {
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:rgb(var(--ink-rgb) / 0.03);
+  border: 1px solid rgb(var(--text-rgb) / 0.1);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--text-rgb) / 0.4);
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.7);
+  background:rgb(var(--ink-rgb) / 0.06);
+  color: rgb(var(--text-rgb) / 0.7);
 }
 
 .form-actions {
@@ -1171,18 +1171,18 @@ function isUrl(str: string): boolean {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(255, 107, 107, 0.08);
-  border: 1px solid rgba(255, 107, 107, 0.3);
+  background: rgb(var(--danger-rgb) / 0.08);
+  border: 1px solid rgb(var(--danger-rgb) / 0.3);
   border-radius: 6px;
-  color: #ff6b6b;
+  color: var(--danger);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .delete-btn:hover {
-  background: rgba(255, 107, 107, 0.15);
-  border-color: rgba(255, 107, 107, 0.5);
+  background: rgb(var(--danger-rgb) / 0.15);
+  border-color: rgb(var(--danger-rgb) / 0.5);
 }
 
 .delete-btn svg {
@@ -1200,13 +1200,13 @@ function isUrl(str: string): boolean {
 }
 
 .test-result.success {
-  background: rgba(0, 255, 136, 0.1);
-  color: #00ff88;
+  background: rgb(var(--success-rgb) / 0.1);
+  color: var(--success);
 }
 
 .test-result.error {
-  background: rgba(255, 107, 107, 0.1);
-  color: #ff6b6b;
+  background: rgb(var(--danger-rgb) / 0.1);
+  color: var(--danger);
 }
 
 /* Model Section */
@@ -1229,12 +1229,12 @@ function isUrl(str: string): boolean {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(var(--text-rgb) / 0.3);
 }
 
 .model-count {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgb(var(--text-rgb) / 0.35);
 }
 
 /* Model Search */
@@ -1244,13 +1244,13 @@ function isUrl(str: string): boolean {
   gap: 8px;
   margin: 0 16px 8px;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:rgb(var(--ink-rgb) / 0.03);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
   border-radius: 8px;
 }
 
 .model-search svg {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(var(--text-rgb) / 0.3);
   flex-shrink: 0;
 }
 
@@ -1258,19 +1258,19 @@ function isUrl(str: string): boolean {
   flex: 1;
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: var(--text);
   font-size: 13px;
   outline: none;
 }
 
 .search-input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(var(--text-rgb) / 0.3);
 }
 
 .clear-search {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(var(--text-rgb) / 0.3);
   cursor: pointer;
   padding: 2px;
   display: flex;
@@ -1279,7 +1279,7 @@ function isUrl(str: string): boolean {
 }
 
 .clear-search:hover {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgb(var(--text-rgb) / 0.6);
 }
 
 .models-scroll {
@@ -1299,11 +1299,11 @@ function isUrl(str: string): boolean {
 }
 
 .model-item:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background:rgb(var(--ink-rgb) / 0.04);
 }
 
 .model-item.selected {
-  background: rgba(0, 255, 255, 0.08);
+  background: rgb(var(--accent-rgb) / 0.08);
 }
 
 .model-info {
@@ -1323,7 +1323,7 @@ function isUrl(str: string): boolean {
 .model-name {
   font-size: 13px;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1331,7 +1331,7 @@ function isUrl(str: string): boolean {
 
 .model-id {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(var(--text-rgb) / 0.3);
   font-family: 'JetBrains Mono', monospace;
   white-space: nowrap;
   overflow: hidden;
@@ -1356,22 +1356,22 @@ function isUrl(str: string): boolean {
 
 .badge.context {
   padding: 2px 6px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.6);
+  background:rgb(var(--ink-rgb) / 0.08);
+  color: rgb(var(--text-rgb) / 0.6);
 }
 
 .badge.reasoning {
   width: 18px;
   height: 18px;
-  background: rgba(168, 85, 247, 0.2);
-  color: #a855f7;
+  background: rgb(var(--accent-2-rgb) / 0.2);
+  color: var(--accent-2);
 }
 
 .badge.tools {
   width: 18px;
   height: 18px;
-  background: rgba(0, 212, 255, 0.2);
-  color: #00d4ff;
+  background: rgb(var(--accent-rgb) / 0.2);
+  color: var(--accent);
 }
 
 .model-cost {
@@ -1381,8 +1381,8 @@ function isUrl(str: string): boolean {
 .cost-chip {
   font-size: 10px;
   padding: 2px 6px;
-  background: rgba(0, 255, 136, 0.08);
-  color: #00ff88;
+  background: rgb(var(--success-rgb) / 0.08);
+  color: var(--success);
   border-radius: 4px;
   cursor: help;
 }
@@ -1392,7 +1392,7 @@ function isUrl(str: string): boolean {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgb(var(--text-rgb) / 0.25);
   font-size: 12px;
 }
 
@@ -1406,11 +1406,11 @@ function isUrl(str: string): boolean {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background:rgb(var(--ink-rgb) / 0.1);
   border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background:rgb(var(--ink-rgb) / 0.15);
 }
 </style>

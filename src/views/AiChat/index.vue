@@ -1,10 +1,5 @@
 <template>
   <div class="chat-console-page">
-    <!-- 扫描线覆盖层 -->
-    <div class="scanlines"></div>
-    <!-- CRT 晕影 -->
-    <div class="crt-vignette"></div>
-
     <div class="chat-console-layout">
       <!-- 主聊天区域 -->
       <div class="chat-console-area">
@@ -36,59 +31,24 @@
         </div>
 
         <!-- 消息容器 -->
-        <div ref="messagesContainer" class="messages-container" @scroll="handleScroll">
-          <!-- 欢迎界面 -->
-          <div v-if="!store.currentSession || store.currentSession.messages.length === 0" class="boot-screen">
-            <div class="boot-content">
-              <div class="boot-messages-layout">
-                <!-- 左侧消息列 -->
-                <div class="message-column left">
-                  <div
-                    v-for="(msg, i) in displayedLeftMessages"
-                    :key="`left-${i}`"
-                    class="boot-message-bubble left"
-                    :style="{ animationDelay: `${i * 0.5}s` }"
-                  >
-                    <span class="msg-prefix">[SYSTEM]</span>
-                    <span class="msg-text">{{ msg }}</span>
-                    <span class="typing-cursor" v-if="i === displayedLeftMessages.length - 1 && isTyping"></span>
-                  </div>
-                </div>
-
-                <!-- 中心BB-8机器人 -->
-                <div class="boot-logo">
-                  <!-- BB-8 风格动画 -->
-                  <div class="bb8-container">
-                    <div class="bb8-body">
-                      <div class="bb8-head">
-                        <div class="bb8-eye left"></div>
-                        <div class="bb8-eye right"></div>
-                      </div>
-                      <div class="bb8-circle"></div>
-                      <div class="bb8-line horizontal"></div>
-                      <div class="bb8-line vertical"></div>
-                    </div>
-                    <!-- 思考时的声波动画 -->
-                    <div class="sound-waves">
-                      <span v-for="i in 3" :key="i" class="wave" :style="{ animationDelay: `${i * 0.1}s` }"></span>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 右侧消息列 -->
-                <div class="message-column right">
-                  <div
-                    v-for="(msg, i) in displayedRightMessages"
-                    :key="`right-${i}`"
-                    class="boot-message-bubble right"
-                    :style="{ animationDelay: `${i * 0.5}s` }"
-                  >
-                    <span class="msg-prefix">[SYSTEM]</span>
-                    <span class="msg-text">{{ msg }}</span>
-                    <span class="typing-cursor" v-if="i === displayedRightMessages.length - 1 && isTyping"></span>
-                  </div>
-                </div>
-              </div>
+        <div ref="messagesContainer" class="messages-container" @scroll="handleScroll" @click="handleMessagesClick">
+          <!-- 空状态（专业版，保留 R2 / HOLOCRON 识别度，去除动画特效） -->
+          <div v-if="!store.currentSession || store.currentSession.messages.length === 0" class="chat-empty">
+            <div class="empty-mark">R2</div>
+            <h1 class="empty-title">Jedi Agent</h1>
+            <p class="empty-subtitle">面向开发者的 AI 助手 · 可调用终端 / 文件系统 / Hosts 等技能</p>
+            <div class="empty-examples">
+              <button
+                v-for="ex in examplePrompts"
+                :key="ex"
+                class="example-chip"
+                @click="applyExample(ex)"
+              >
+                {{ ex }}
+              </button>
+            </div>
+            <div class="empty-hint">
+              <kbd>/</kbd> 命令面板 · <kbd>Enter</kbd> 发送 · <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行
             </div>
           </div>
 
@@ -108,11 +68,8 @@
               <div class="message-row">
                 <!-- 用户消息 -->
                 <template v-if="message.role === 'user'">
-                  <div class="user-avatar">
-                    <div class="avatar-container">
-                      <div class="avatar-glow"></div>
-                      <span class="avatar-text">YOU</span>
-                    </div>
+                  <div class="msg-avatar user" aria-hidden="true">
+                    <span class="avatar-monogram">YOU</span>
                   </div>
                   <div class="message-content user-message">
                     <div class="message-body">
@@ -121,27 +78,17 @@
                   </div>
                 </template>
 
-                <!-- AI 消息 - R2-D2 风格 -->
+                <!-- AI 消息 -->
                 <template v-else>
-                  <div class="ai-avatar">
-                    <div
-                      class="r2d2-avatar"
-                      :class="{ thinking: store.isLoading && index === displayMessages.length - 1 }"
-                    >
-                      <div class="r2d2-body">
-                        <div class="r2d2-dome"></div>
-                        <div class="r2d2-sensor main"></div>
-                        <div class="r2d2-sensor small one"></div>
-                        <div class="r2d2-sensor small two"></div>
-                        <div class="r2d2-panel"></div>
-                        <div class="r2d2-arm left"></div>
-                        <div class="r2d2-arm right"></div>
-                      </div>
-                      <!-- 思考时的声波动画 -->
-                      <div v-if="store.isLoading && index === displayMessages.length - 1" class="sound-waves">
-                        <span v-for="i in 5" :key="i" class="wave" :style="{ animationDelay: `${i * 0.1}s` }"></span>
-                      </div>
-                    </div>
+                  <div
+                    class="msg-avatar ai"
+                    :class="{ thinking: store.isLoading && index === displayMessages.length - 1 }"
+                    aria-hidden="true"
+                  >
+                    <svg class="avatar-mark" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+                      <path d="M12 2.5 21.5 12 12 21.5 2.5 12 12 2.5Z" />
+                      <path d="M12 7.5 16.5 12 12 16.5 7.5 12 12 7.5Z" opacity="0.55" />
+                    </svg>
                   </div>
                   <div class="message-content ai-message">
                     <div class="message-meta">
@@ -149,47 +96,19 @@
                     </div>
                     <div class="message-body">
                       <div class="markdown-body" v-html="renderMessage(message.content)"></div>
-                    </div>
-                    <div v-if="message.metadata?.trace?.length" class="agent-activity">
-                      <div class="activity-header">
-                        <span>AGENT RUN</span>
-                        <button class="activity-toggle" @click="agentStore.tracePanelOpen = true">TRACE</button>
-                      </div>
-                      <div v-if="message.metadata?.run" class="activity-summary">
-                        <div class="activity-chip">
-                          <span class="chip-label">PROVIDER</span>
-                          <span class="chip-value">{{ message.metadata.run.provider }}</span>
-                        </div>
-                        <div class="activity-chip">
-                          <span class="chip-label">MODEL</span>
-                          <span class="chip-value">{{ message.metadata.run.model }}</span>
-                        </div>
-                        <div class="activity-chip">
-                          <span class="chip-label">TOOLS</span>
-                          <span class="chip-value">{{ message.metadata.run.toolCount }}</span>
-                        </div>
-                        <div class="activity-chip">
-                          <span class="chip-label">DURATION</span>
-                          <span class="chip-value">{{ formatDuration(message.metadata.run.totalDurationMs) }}</span>
-                        </div>
-                        <div class="activity-chip">
-                          <span class="chip-label">FINISH</span>
-                          <span class="chip-value">{{ message.metadata.run.finishReason || 'pending' }}</span>
-                        </div>
-                      </div>
-                      <div
-                        v-for="highlight in getRunHighlights(message.metadata.trace)"
-                        :key="highlight.id"
-                        class="activity-highlight"
-                        :class="highlight.status"
-                      >
-                        <span class="highlight-icon">{{ getHighlightIcon(highlight.kind, highlight.status) }}</span>
-                        <span class="highlight-label">{{ highlight.label }}</span>
-                        <span class="highlight-value">{{ highlight.value }}</span>
+                      <!-- 流式输出指示器（内嵌于消息框内部） -->
+                      <div v-if="message.isStreaming" class="streaming-indicator inline">
+                        <div class="streaming-cursor"></div>
+                        <span class="streaming-text">PROCESSING</span>
+                        <span class="streaming-dots">
+                          <span class="dot"></span>
+                          <span class="dot"></span>
+                          <span class="dot"></span>
+                        </span>
                       </div>
                     </div>
                     <div class="message-actions">
-                      <button class="action-btn" @click="handleCopyMessage(message.content)" title="Copy">
+                      <button class="action-btn" @click="handleCopyMessage(message.content)" title="复制">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <rect x="9" y="9" width="13" height="13" rx="2"/>
                           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -199,28 +118,28 @@
                         v-if="index === displayMessages.length - 1"
                         class="action-btn"
                         @click="handleRegenerate"
-                        title="Regenerate"
+                        title="重新生成"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M23 4v6h-6M1 20v-6h6"/>
                           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                         </svg>
                       </button>
+                      <button
+                        v-if="message.metadata?.trace?.length"
+                        class="action-btn trace"
+                        :class="{ active: isTraceActive(message) }"
+                        @click="openTrace(message)"
+                        title="查看调用 / 执行链路"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </template>
               </div>
-            </div>
-
-            <!-- 流式输出指示器 -->
-            <div v-if="store.isLoading" class="streaming-indicator">
-              <div class="streaming-cursor"></div>
-              <span class="streaming-text">PROCESSING</span>
-              <span class="streaming-dots">
-                <span class="dot"></span>
-                <span class="dot"></span>
-                <span class="dot"></span>
-              </span>
             </div>
           </div>
         </div>
@@ -230,7 +149,7 @@
           <!-- 统一胶囊容器 -->
           <div class="input-bar">
             <!-- 左侧工具栏 -->
-            <button class="toolbar-btn" @click="showCommands = !showCommands" title="Commands (/)">
+            <button class="toolbar-btn" @click="openCommandPalette" title="Commands (/)">
               <span>/</span>
             </button>
             <button class="toolbar-btn" @click="showAttachmentMenu = !showAttachmentMenu" title="Add">
@@ -284,7 +203,10 @@
           <!-- 浮层（独立于胶囊容器） -->
           <CommandPalette
             :visible="showCommands"
+            :commands="filteredCommands"
+            :active-index="commandActiveIndex"
             @select="handleCommandSelect"
+            @hover="commandActiveIndex = $event"
             @close="showCommands = false"
           />
           <AttachmentMenu
@@ -332,8 +254,13 @@
         </div>
       </div>
 
-      <!-- 右侧：Agent Trace 面板 -->
-      <AgentTrace v-if="agentStore.tracePanelOpen" />
+      <!-- 右侧：Agent Trace 抽屉 -->
+      <Transition name="trace-scrim">
+        <div v-if="agentStore.tracePanelOpen" class="trace-scrim" @click="closeTrace"></div>
+      </Transition>
+      <Transition name="trace-drawer">
+        <AgentTrace v-if="agentStore.tracePanelOpen" class="trace-drawer" />
+      </Transition>
     </div>
 
     <!-- Model Settings Dialog -->
@@ -345,14 +272,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import { formatCommandPrompt, type SLASH_COMMANDS } from '@/agent/slashCommands'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { formatCommandPrompt, SLASH_COMMANDS, type SlashCommand } from '@/agent/slashCommands'
 import { setOnWorkerCompleteCallback, useAgentPool } from '@/agent/useAgentPool'
 import AttachmentMenu from '@/components/AttachmentMenu.vue'
 import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
 import CommandPalette from '@/components/CommandPalette.vue'
 import { useAgentStore } from '@/stores/agent'
-import { type AgentTraceDetail, useAiChatStore } from '@/stores/aiChat'
+import { useAiChatStore } from '@/stores/aiChat'
 import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
 import { useSkillsStore } from '@/stores/skills'
@@ -371,7 +298,23 @@ const inputText = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
 const showCommands = ref(false)
+const commandActiveIndex = ref(0)
 const showScrollButton = ref(false)
+
+// Slash-command palette: open when the input is a single leading "/" token,
+// filter by what's typed, and reset the keyboard highlight as the list changes.
+const filteredCommands = computed<SlashCommand[]>(() => {
+  const text = inputText.value.trimStart()
+  if (!text.startsWith('/')) return []
+  const token = text.slice(1).split(/\s/)[0].toLowerCase()
+  return SLASH_COMMANDS.filter(cmd => cmd.name.slice(1).toLowerCase().startsWith(token))
+})
+
+watch(inputText, value => {
+  const text = value.trimStart()
+  showCommands.value = text.startsWith('/') && !/\s/.test(text) && filteredCommands.value.length > 0
+  commandActiveIndex.value = 0
+})
 const showModelSettings = ref(false)
 const showAttachmentMenu = ref(false)
 const showModelDropdown = ref(false)
@@ -381,27 +324,17 @@ const showWorkersPanel = ref(false)
 // Agent Pool
 const { workers } = useAgentPool()
 
-// Boot state animation
-const displayedLeftMessages = ref<string[]>([])
-const displayedRightMessages = ref<string[]>([])
-const isTyping = ref(false)
-const currentMessageIndex = ref(0)
-const currentCharIndex = ref(0)
-const typingSpeed = 50 // ms per character
-const messagePause = 2000 // ms pause after message completes
-
-// Boot sequence messages
-const bootSequence = [
-  'Initializing Holocron Interface...',
-  'Loading R2-D2 Neural Core...',
-  'Connecting to Jedi Archives...',
-  'Calibrating Lightsaber Matrix...',
-  'System online. Awaiting input.',
-  'May the Force be with you.',
-  'What can I help you build today?',
-  'Need assistance with code debugging?',
-  'I can help optimize your workflow.',
+// Empty-state example prompts (developer-facing)
+const examplePrompts = [
+  '帮我排查 hosts 文件里重复的域名映射',
+  '解释这段 Rust 代码并指出潜在 bug',
+  '用一条 Tauri 命令读取当前系统内存占用',
 ]
+
+function applyExample(text: string) {
+  inputText.value = text
+  autoResize()
+}
 
 // Computed
 const selectedProviderModels = computed(() => {
@@ -448,79 +381,59 @@ const inputConsoleState = computed(() => {
 })
 
 function renderMessage(content: string) {
-  return renderSafe(sharedMd, content)
+  // Inject a language label + copy button into each highlighted code block.
+  // Runs on the already-sanitized HTML with trusted markup; the only dynamic
+  // value is the language id, which the highlighter already restricted to \w-.
+  return renderSafe(sharedMd, content).replace(
+    /<pre class="hljs"(?: data-lang="([^"]*)")?>/g,
+    (_m, lang) => {
+      const label = lang ? `<span class="code-lang">${lang}</span>` : ''
+      return `<pre class="hljs">${label}<button class="code-copy-btn" type="button">Copy</button>`
+    }
+  )
 }
 
-function formatDuration(ms?: number): string {
-  if (ms === undefined) return '--'
-  if (ms < 1000) return `${ms}ms`
-  if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`
-  return `${(ms / 60000).toFixed(2)}m`
-}
-
-type RunHighlight = {
-  id: string
-  kind: 'plan' | 'tool' | 'finish' | 'error'
-  label: string
-  value: string
-  status: AgentTraceDetail['status']
-}
-
-function getRunHighlights(trace: AgentTraceDetail[] = []): RunHighlight[] {
-  const highlights: RunHighlight[] = []
-
-  const planTrace = trace.find(item => item.type === 'think')
-  if (planTrace?.output || planTrace?.content) {
-    highlights.push({
-      id: `${planTrace.id}-plan`,
-      kind: 'plan',
-      label: 'PLAN',
-      value: summarizeText(String(planTrace.output || planTrace.content || ''), 120),
-      status: planTrace.status,
+// Delegated copy handler for the code blocks rendered via v-html.
+function handleMessagesClick(e: MouseEvent) {
+  const target = (e.target as HTMLElement | null)?.closest('.code-copy-btn') as HTMLElement | null
+  if (!target) return
+  const pre = target.closest('pre.hljs')
+  const code = pre?.querySelector('code')
+  if (!code) return
+  navigator.clipboard
+    .writeText(code.textContent || '')
+    .then(() => {
+      target.textContent = 'Copied'
+      target.classList.add('copied')
+      window.setTimeout(() => {
+        target.textContent = 'Copy'
+        target.classList.remove('copied')
+      }, 1500)
     })
-  }
-
-  const toolNames = [
-    ...new Set(
-      trace.filter(item => item.type === 'tool' && item.toolName).map(item => item.toolName!)
-    ),
-  ]
-  if (toolNames.length > 0) {
-    highlights.push({
-      id: 'tools-highlight',
-      kind: 'tool',
-      label: toolNames.length > 1 ? 'TOOLS' : 'TOOL',
-      value: toolNames.join(', '),
-      status: 'done',
-    })
-  }
-
-  const finishTrace = [...trace]
-    .reverse()
-    .find(item => item.type === 'finish' || item.type === 'error')
-  if (finishTrace) {
-    highlights.push({
-      id: `${finishTrace.id}-finish`,
-      kind: finishTrace.type === 'error' ? 'error' : 'finish',
-      label: finishTrace.type === 'error' ? 'ERROR' : 'RESULT',
-      value: summarizeText(String(finishTrace.content || finishTrace.output || ''), 120),
-      status: finishTrace.status,
-    })
-  }
-
-  return highlights
+    .catch(() => {})
 }
 
-function getHighlightIcon(kind: RunHighlight['kind'], status: AgentTraceDetail['status']): string {
-  if (status === 'error') return '!'
-  if (kind === 'tool') return '$'
-  if (kind === 'finish') return '+'
-  return '~'
+// Trace panel: one button per assistant turn opens the right rail focused on
+// that message's run, instead of dumping the whole trace inline under the bubble.
+type ChatMessage = NonNullable<typeof store.currentSession>['messages'][number]
+
+function openTrace(message: ChatMessage) {
+  if (isTraceActive(message)) {
+    agentStore.tracePanelOpen = false
+    agentStore.selectedTrace = null
+    return
+  }
+  agentStore.selectedTrace = message.metadata ?? null
+  agentStore.tracePanelOpen = true
 }
 
-function summarizeText(text: string, maxLength = 120): string {
-  const normalized = text.replace(/\s+/g, ' ').trim()
-  return normalized.length > maxLength ? `${normalized.slice(0, maxLength)}...` : normalized
+function isTraceActive(message: ChatMessage): boolean {
+  return agentStore.tracePanelOpen && agentStore.selectedTrace === message.metadata
+}
+
+function closeTrace() {
+  agentStore.tracePanelOpen = false
+  agentStore.selectedTrace = null
 }
 
 // Formatting
@@ -553,7 +466,14 @@ function showSessionMenu(session: any) {
 }
 
 // Actions
-function handleCommandSelect(cmd: (typeof SLASH_COMMANDS)[0]) {
+function openCommandPalette() {
+  if (!inputText.value.trimStart().startsWith('/')) {
+    inputText.value = '/'
+  }
+  nextTick(() => inputRef.value?.focus())
+}
+
+function handleCommandSelect(cmd: SlashCommand) {
   if (!store.currentSession) {
     store.createSession(
       '新对话',
@@ -562,6 +482,7 @@ function handleCommandSelect(cmd: (typeof SLASH_COMMANDS)[0]) {
     )
   }
   inputText.value = `${cmd.name} `
+  showCommands.value = false
   nextTick(() => {
     inputRef.value?.focus()
   })
@@ -579,6 +500,33 @@ function handleNewSession() {
 }
 
 function handleKeydown(event: KeyboardEvent) {
+  // When the slash-command palette is open, keys drive the list (keyboard-first).
+  if (showCommands.value && filteredCommands.value.length > 0) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      commandActiveIndex.value = (commandActiveIndex.value + 1) % filteredCommands.value.length
+      return
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      commandActiveIndex.value =
+        (commandActiveIndex.value - 1 + filteredCommands.value.length) %
+        filteredCommands.value.length
+      return
+    }
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      const cmd = filteredCommands.value[commandActiveIndex.value]
+      if (cmd) handleCommandSelect(cmd)
+      return
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      showCommands.value = false
+      return
+    }
+  }
+
   if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault()
     handleSend()
@@ -675,70 +623,14 @@ watch(
   }
 )
 
-// Boot typing animation
-let typingInterval: number | null = null
-
-function startTypingAnimation() {
-  // Reset state
-  displayedLeftMessages.value = []
-  displayedRightMessages.value = []
-  currentMessageIndex.value = 0
-  currentCharIndex.value = 0
-
-  function typeNextCharacter() {
-    const currentMessage = bootSequence[currentMessageIndex.value]
-    const isLeftSide = currentMessageIndex.value % 2 === 0 // Even index on left, odd on right
-    const targetArray = isLeftSide ? displayedLeftMessages : displayedRightMessages
-
-    // Start new message if needed
-    if (currentCharIndex.value === 0) {
-      isTyping.value = true
-      // 最多保留3条消息，多了就删掉最旧的
-      if (targetArray.value.length >= 3) {
-        targetArray.value.shift()
-      }
-      targetArray.value.push('')
-    }
-
-    // Add next character
-    if (currentCharIndex.value < currentMessage.length) {
-      targetArray.value[targetArray.value.length - 1] = currentMessage.slice(
-        0,
-        currentCharIndex.value + 1
-      )
-      currentCharIndex.value++
-      typingInterval = window.setTimeout(typeNextCharacter, typingSpeed)
-    } else {
-      // Message complete
-      isTyping.value = false
-      currentCharIndex.value = 0
-      currentMessageIndex.value = (currentMessageIndex.value + 1) % bootSequence.length
-
-      // Pause before next message
-      typingInterval = window.setTimeout(typeNextCharacter, messagePause)
-    }
-  }
-
-  typeNextCharacter()
-}
-
-function stopTypingAnimation() {
-  if (typingInterval) {
-    clearTimeout(typingInterval)
-    typingInterval = null
-  }
-}
-
 onMounted(async () => {
   skillsStore.loadFromStorage()
   await Promise.all([
     modelsDevStore.fetchProviders(),
     providerConfigStore.loadConfiguredProviders(),
+    store.loadSessions(),
   ])
   scrollToBottom()
-
-  // Start boot animation
-  startTypingAnimation()
 
   // Set up worker completion callback
   setOnWorkerCompleteCallback(worker => {
@@ -750,10 +642,246 @@ onMounted(async () => {
     })
   })
 })
-
-onUnmounted(() => {
-  stopTypingAnimation()
-})
 </script>
 
 <style src="./chat.css" scoped></style>
+
+<!--
+  Non-scoped: assistant answers are rendered via v-html, so their DOM does NOT
+  receive the scoped data-v attribute. Markdown/code styling must therefore live
+  in a global block (contained under .markdown-body, which only appears in chat).
+-->
+<style>
+.markdown-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', Roboto, sans-serif;
+  font-size: 14.5px;
+  line-height: 1.72;
+  color: var(--text-muted);
+  word-break: break-word;
+}
+
+.markdown-body > *:first-child {
+  margin-top: 0;
+}
+.markdown-body > *:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body p {
+  margin: 0 0 12px;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  margin: 22px 0 10px;
+  line-height: 1.35;
+  font-weight: 650;
+  color: var(--bg-elevated);
+  letter-spacing: 0.2px;
+}
+.markdown-body h1 {
+  font-size: 20px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid rgb(var(--text-rgb) / 0.08);
+}
+.markdown-body h2 {
+  font-size: 17px;
+}
+.markdown-body h3 {
+  font-size: 15px;
+}
+.markdown-body h4 {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.markdown-body strong {
+  font-weight: 700;
+  color: var(--bg-elevated);
+}
+.markdown-body em {
+  font-style: italic;
+}
+
+.markdown-body a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.35);
+}
+.markdown-body a:hover {
+  border-bottom-color: var(--accent);
+}
+
+/* Lists */
+.markdown-body ul,
+.markdown-body ol {
+  margin: 10px 0 14px;
+  padding-left: 22px;
+}
+.markdown-body li {
+  margin: 5px 0;
+  line-height: 1.65;
+}
+.markdown-body li::marker {
+  color: var(--accent);
+}
+.markdown-body ul ul,
+.markdown-body ol ol,
+.markdown-body ul ol,
+.markdown-body ol ul {
+  margin: 5px 0;
+}
+
+/* Inline code */
+.markdown-body :not(pre) > code {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.86em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgb(var(--accent-rgb) / 0.12);
+  border: 1px solid rgb(var(--accent-rgb) / 0.18);
+  color: var(--accent-hover);
+  white-space: break-spaces;
+}
+
+/* Code blocks: a real card with contained horizontal scroll */
+.markdown-body pre.hljs {
+  position: relative;
+  margin: 12px 0;
+  padding: 34px 14px 14px;
+  background: var(--bg-terminal);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
+  border-radius: 10px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.markdown-body pre.hljs code {
+  display: block;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  white-space: pre;
+}
+
+/* Code block top bar: language label (left) + copy button (right) */
+.markdown-body pre.hljs > .code-lang {
+  position: absolute;
+  top: 9px;
+  left: 13px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+.markdown-body pre.hljs > .code-copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  padding: 3px 10px;
+  background:rgb(var(--ink-rgb) / 0.06);
+  border: 1px solid rgb(var(--text-rgb) / 0.12);
+  border-radius: 6px;
+  color: var(--text-subtle);
+  font-family: -apple-system, sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.markdown-body pre.hljs > .code-copy-btn:hover {
+  background: rgb(var(--accent-rgb) / 0.14);
+  border-color: rgb(var(--accent-rgb) / 0.5);
+  color: var(--accent);
+}
+.markdown-body pre.hljs > .code-copy-btn.copied {
+  color: var(--success);
+  border-color: rgb(var(--success-rgb) / 0.4);
+}
+
+.markdown-body blockquote {
+  margin: 12px 0;
+  padding: 6px 14px;
+  border-left: 3px solid rgb(var(--accent-rgb) / 0.45);
+  background: rgb(var(--accent-rgb) / 0.05);
+  color: var(--text-subtle);
+  border-radius: 0 8px 8px 0;
+}
+
+.markdown-body hr {
+  margin: 18px 0;
+  border: 0;
+  border-top: 1px solid rgb(var(--text-rgb) / 0.08);
+}
+
+.markdown-body table {
+  width: 100%;
+  margin: 14px 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.markdown-body th,
+.markdown-body td {
+  padding: 8px 11px;
+  border: 1px solid rgb(var(--text-rgb) / 0.1);
+  text-align: left;
+}
+.markdown-body th {
+  background:rgb(var(--ink-rgb) / 0.04);
+  font-weight: 600;
+  color: var(--bg-elevated);
+}
+
+/* highlight.js token palette (GitHub-dark-ish), scoped to chat code */
+.markdown-body .hljs-comment,
+.markdown-body .hljs-quote {
+  color: var(--text-subtle);
+  font-style: italic;
+}
+.markdown-body .hljs-keyword,
+.markdown-body .hljs-selector-tag,
+.markdown-body .hljs-built_in,
+.markdown-body .hljs-name,
+.markdown-body .hljs-tag {
+  color: var(--danger);
+}
+.markdown-body .hljs-string,
+.markdown-body .hljs-title,
+.markdown-body .hljs-section,
+.markdown-body .hljs-attribute,
+.markdown-body .hljs-literal,
+.markdown-body .hljs-template-tag,
+.markdown-body .hljs-template-variable,
+.markdown-body .hljs-type,
+.markdown-body .hljs-addition {
+  color: var(--accent);
+}
+.markdown-body .hljs-number,
+.markdown-body .hljs-symbol,
+.markdown-body .hljs-bullet,
+.markdown-body .hljs-link {
+  color: var(--accent);
+}
+.markdown-body .hljs-title.function_,
+.markdown-body .hljs-function .hljs-title {
+  color: var(--accent-2);
+}
+.markdown-body .hljs-attr,
+.markdown-body .hljs-variable,
+.markdown-body .hljs-meta {
+  color: var(--warning);
+}
+.markdown-body .hljs-emphasis {
+  font-style: italic;
+}
+.markdown-body .hljs-strong {
+  font-weight: 700;
+}
+</style>

@@ -3,6 +3,7 @@
 import { browserSkill } from './browser'
 import { filesystemSkill } from './filesystem'
 import { hostsSkill } from './hosts'
+import { memorySkill } from './memory'
 import { podcastSkill } from './podcast'
 import { terminalSkill } from './terminal'
 import type { Skill } from './types'
@@ -51,6 +52,7 @@ skillRegistry.register(podcastSkill)
 skillRegistry.register(wallpaperSkill)
 skillRegistry.register(webSearchSkill)
 skillRegistry.register(webFetchSkill)
+skillRegistry.register(memorySkill)
 
 // Set initial enabled states
 skillRegistry.setEnabled('browser', false)

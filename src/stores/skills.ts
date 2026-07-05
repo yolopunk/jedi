@@ -11,6 +11,7 @@ export const useSkillsStore = defineStore('skills', () => {
     'hosts',
     'web_search',
     'web_fetch',
+    'memory',
   ])
   const skillPanelOpen = ref(false)
 

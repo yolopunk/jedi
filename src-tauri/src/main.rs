@@ -45,6 +45,7 @@ use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
 };
 use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
+use crate::api::memory::{memory_delete, memory_list, memory_recall, memory_save};
 use crate::api::os::{get_os_info, SystemState};
 use crate::api::podcast::{
   fetch_episodes, fetch_rss_channel, get_subscriptions, import_opml, refresh_subscription,
@@ -231,7 +232,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       web_fetch,
       web_search,
       // Shell execution tool (AI agent)
-      execute_command
+      execute_command,
+      // Cross-session memory tool (AI agent)
+      memory_save,
+      memory_recall,
+      memory_list,
+      memory_delete
     ])
     .build(tauri::generate_context!())?;
 

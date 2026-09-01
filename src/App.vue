@@ -46,10 +46,21 @@
           <system-info-bar></system-info-bar>
         </div>
         <div class="status-bar-right" data-tauri-no-drag>
+          <span
+            class="status-text clickable palette-shortcut"
+            @click="showCommandPalette = true"
+            title="唤起命令台 / 问 Agent"
+          >{{ paletteShortcut }}</span>
           <span class="status-text clickable" @click="toggleLanguage" :title="localeTooltip">{{ currentLocale }}</span>
         </div>
       </div>
     </div>
+
+    <!-- Global Command Palette (Cmd/Ctrl+J) -->
+    <command-palette
+      v-model="showCommandPalette"
+      @open-settings="showSettingsDialog = true"
+    />
 
     <!-- Dialog Components -->
     <help-dialog v-model="showHelpDialog" />
@@ -80,6 +91,7 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
 import HelpDialog from '@/components/dialogs/HelpDialog.vue'
 import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
 import AboutDialog from '@/components/dialogs/AboutDialog.vue'
+import CommandPalette from '@/components/common/CommandPalette.vue'
 import { open } from '@tauri-apps/plugin-shell'
 import { initTheme } from '@/composables/useTheme'
 import { useWallpaper } from '@/composables/useWallpaper'
@@ -97,6 +109,12 @@ const audioEl = ref<HTMLAudioElement | null>(null)
 const showHelpDialog = ref(false)
 const showSettingsDialog = ref(false)
 const showAboutDialog = ref(false)
+
+// Global command palette (Cmd/Ctrl+J)
+const showCommandPalette = ref(false)
+const paletteShortcut = /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent)
+  ? '⌘J'
+  : 'Ctrl+J'
 
 // Sidebar state
 const sidebarCollapsed = ref(false)
@@ -316,5 +334,14 @@ onMounted(async () => {
 
 .status-text.clickable:hover {
   color: rgb(var(--v-theme-primary));
+}
+
+.palette-shortcut {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.15);
+  border-radius: 3px;
+  padding: 0 5px;
+  margin-right: 6px;
+  line-height: 16px;
 }
 </style>

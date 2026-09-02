@@ -49,7 +49,7 @@
           <span
             class="status-text clickable palette-shortcut"
             @click="showCommandPalette = true"
-            title="唤起命令台 / 问 Agent"
+            :title="`唤起命令台 / 问 Agent（应用内 ${paletteShortcut}，系统级 ${globalShortcut}）`"
           >{{ paletteShortcut }}</span>
           <span class="status-text clickable" @click="toggleLanguage" :title="localeTooltip">{{ currentLocale }}</span>
         </div>
@@ -83,7 +83,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useStorage } from '@/composables/useStorage'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
@@ -93,6 +93,7 @@ import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
 import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 import CommandPalette from '@/components/common/CommandPalette.vue'
 import { open } from '@tauri-apps/plugin-shell'
+import { listen } from '@tauri-apps/api/event'
 import { initTheme } from '@/composables/useTheme'
 import { useWallpaper } from '@/composables/useWallpaper'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
@@ -112,9 +113,10 @@ const showAboutDialog = ref(false)
 
 // Global command palette (Cmd/Ctrl+J)
 const showCommandPalette = ref(false)
-const paletteShortcut = /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent)
-  ? '⌘J'
-  : 'Ctrl+J'
+const isMacPlatform = /Mac|iPhone|iPad/i.test(navigator.platform || navigator.userAgent)
+const paletteShortcut = isMacPlatform ? '⌘J' : 'Ctrl+J'
+// 系统级热键（后端注册，应用未聚焦也生效）
+const globalShortcut = isMacPlatform ? '⌘⇧J' : 'Ctrl+Shift+J'
 
 // Sidebar state
 const sidebarCollapsed = ref(false)
@@ -197,10 +199,21 @@ watch(sidebarCollapsed, async (newVal) => {
   await setItem('sidebar-collapsed', newVal)
 })
 
+// 系统级全局热键（Cmd/Ctrl+Shift+J）由后端捕获后广播，这里负责打开命令台
+let unlistenPalette: (() => void) | null = null
+
 onMounted(async () => {
   initTheme()
   await initLanguage()
   await loadSidebarState()
+
+  try {
+    unlistenPalette = await listen('open-command-palette', () => {
+      showCommandPalette.value = true
+    })
+  } catch (e) {
+    console.error('Failed to listen for global shortcut:', e)
+  }
 
   // Check and run wallpaper auto-update
   const { startAutoUpdateCheck } = useWallpaper()
@@ -209,6 +222,10 @@ onMounted(async () => {
   // Initialize auto-update check
   const { startAutoCheck } = useUpdate()
   startAutoCheck()
+})
+
+onUnmounted(() => {
+  unlistenPalette?.()
 })
 </script>
 

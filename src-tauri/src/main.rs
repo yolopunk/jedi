@@ -159,6 +159,48 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
       config::app::load_tray_config(app);
 
+      // T5: 系统级全局热键 —— 应用未聚焦时也能唤起命令台。
+      // 用 Cmd/Ctrl+Shift+J，避免与应用内的 Cmd/Ctrl+J 冲突。
+      #[cfg(desktop)]
+      {
+        use tauri::{Emitter, Manager};
+        use tauri_plugin_global_shortcut::{
+          Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState,
+        };
+
+        let palette_shortcut = Shortcut::new(
+          Some(Modifiers::SHIFT | Modifiers::CONTROL | Modifiers::SUPER),
+          Code::KeyJ,
+        );
+
+        let handle = app.handle().clone();
+        if let Err(e) = app.handle().plugin(
+          tauri_plugin_global_shortcut::Builder::new()
+            .with_handler(move |_app, shortcut, event| {
+              // 只在按下时触发一次
+              if event.state() != ShortcutState::Pressed {
+                return;
+              }
+              if shortcut.key != Code::KeyJ {
+                return;
+              }
+              if let Some(win) = handle.get_webview_window("main") {
+                let _ = win.show();
+                let _ = win.unminimize();
+                let _ = win.set_focus();
+              }
+              // 通知前端打开命令台
+              let _ = handle.emit("open-command-palette", ());
+            })
+            .build(),
+        ) {
+          eprintln!("failed to init global-shortcut plugin: {}", e);
+        } else if let Err(e) = app.global_shortcut().register(palette_shortcut) {
+          // 热键被系统或其它应用占用时不影响启动
+          eprintln!("failed to register global shortcut: {}", e);
+        }
+      }
+
       #[cfg(desktop)]
       {
         use tauri_plugin_autostart::MacosLauncher;

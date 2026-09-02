@@ -3,22 +3,78 @@
 // 以 `jedi --mcp-server` 子命令启动一个纯 stdio MCP server，把 Jedi 的**只读**内置工具
 // 暴露给 Claude Desktop / Cursor 等外部 Agent 调用。
 //
-// 安全（§14-1 已决）：仅导出只读工具；写操作须显式白名单，默认拒绝——因此这里只导出
-// 不依赖 Tauri 运行时、且风险为 Read 的原生工具（当前为 hosts_read / hosts_list）。
+// 安全（§14-1 已决）：默认仅导出只读工具；写操作必须经显式白名单逐个开启，否则不导出。
+// 白名单来自 `--allow-write=a,b` 参数或 JEDI_MCP_ALLOW_WRITE 环境变量。
+//
+// 候选池只含**不依赖 Tauri 运行时**的原生工具（hosts / memory）——壁纸/播客/系统工具需要
+// AppHandle，在无头模式下不可用，因此永远不导出。记忆工具涉及用户隐私，也需显式白名单。
 
 use crate::mcp::types::*;
-use crate::tools::{RiskLevel, ToolDeclaration, ToolRegistry};
+use crate::tools::{AgentTool, RiskLevel, ToolDeclaration, ToolRegistry};
 use serde_json::json;
 use std::io::{BufRead, Write};
+use std::sync::Arc;
 
-/// 构建仅含可导出工具的注册表（只读、无需 AppHandle）
-fn build_export_registry() -> ToolRegistry {
+/// 无头模式下可用的候选工具池（不依赖 AppHandle）
+fn exportable_candidates() -> Vec<Arc<dyn AgentTool>> {
+  let mut v = crate::tools::native::hosts::tools();
+  v.extend(crate::tools::native::memory::tools());
+  v
+}
+
+/// 解析写工具白名单：`--allow-write=a,b`、`--allow-write a,b` 或 JEDI_MCP_ALLOW_WRITE
+pub fn parse_allow_write(args: &[String]) -> Vec<String> {
+  let mut raw: Vec<String> = Vec::new();
+
+  for (i, a) in args.iter().enumerate() {
+    if let Some(rest) = a.strip_prefix("--allow-write=") {
+      raw.push(rest.to_string());
+    } else if a == "--allow-write" {
+      if let Some(next) = args.get(i + 1) {
+        if !next.starts_with("--") {
+          raw.push(next.clone());
+        }
+      }
+    }
+  }
+  if let Ok(env) = std::env::var("JEDI_MCP_ALLOW_WRITE") {
+    raw.push(env);
+  }
+
+  let mut out: Vec<String> = Vec::new();
+  for chunk in raw {
+    for name in chunk.split(',') {
+      let name = name.trim();
+      if !name.is_empty() && !out.iter().any(|x| x == name) {
+        out.push(name.to_string());
+      }
+    }
+  }
+  out
+}
+
+/// 构建可导出工具的注册表。
+/// 默认：候选池中的只读 hosts 工具；白名单：按名字显式追加（可含写操作 / 记忆）。
+fn build_export_registry(allow_write: &[String]) -> ToolRegistry {
   let reg = ToolRegistry::new();
+
+  // 默认导出：只读且属于 hosts 分组（记忆默认不导出，避免泄露用户偏好）
   for tool in crate::tools::native::hosts::tools() {
     if tool.declaration().risk == RiskLevel::Read {
       let _ = reg.register(tool);
     }
   }
+
+  // 白名单：显式点名才导出（重复注册会失败，忽略即可）
+  if !allow_write.is_empty() {
+    for tool in exportable_candidates() {
+      let name = tool.declaration().name;
+      if allow_write.iter().any(|n| n == &name) {
+        let _ = reg.register(tool);
+      }
+    }
+  }
+
   reg
 }
 
@@ -99,8 +155,8 @@ fn handle_request(
 }
 
 /// 运行 stdio MCP server（阻塞，直到 stdin 关闭）
-pub fn run_stdio_server() {
-  let registry = build_export_registry();
+pub fn run_stdio_server(allow_write: Vec<String>) {
+  let registry = build_export_registry(&allow_write);
   let rt = tokio::runtime::Runtime::new().expect("failed to create tokio runtime");
 
   let stdin = std::io::stdin();
@@ -138,21 +194,65 @@ mod tests {
 
   #[test]
   fn test_export_registry_only_read() {
-    let reg = build_export_registry();
+    let reg = build_export_registry(&[]);
     let decls = reg.all_declarations();
     assert!(!decls.is_empty());
-    // 仅只读工具
+    // 默认仅只读工具
     assert!(decls.iter().all(|d| d.risk == RiskLevel::Read));
     let names: Vec<_> = decls.iter().map(|d| d.name.as_str()).collect();
     assert!(names.contains(&"hosts_read"));
     assert!(names.contains(&"hosts_list"));
-    // 写工具不导出
+    // 写工具默认不导出
     assert!(!names.contains(&"hosts_add"));
+    // 记忆工具（涉隐私）默认也不导出
+    assert!(!names.contains(&"memory_list"));
+  }
+
+  #[test]
+  fn test_export_registry_honors_whitelist() {
+    let reg = build_export_registry(&["hosts_add".to_string(), "memory_list".to_string()]);
+    let names: Vec<String> = reg.all_declarations().into_iter().map(|d| d.name).collect();
+    // 白名单点名的才追加
+    assert!(names.contains(&"hosts_add".to_string()));
+    assert!(names.contains(&"memory_list".to_string()));
+    // 未点名的写工具仍不导出
+    assert!(!names.contains(&"hosts_remove".to_string()));
+    // 需要 AppHandle 的工具永不导出
+    assert!(!names.contains(&"wallpaper_set".to_string()));
+    assert!(!names.contains(&"system_info".to_string()));
+  }
+
+  #[test]
+  fn test_export_registry_ignores_unknown_whitelist_names() {
+    let reg = build_export_registry(&["not_a_tool".to_string()]);
+    let names: Vec<String> = reg.all_declarations().into_iter().map(|d| d.name).collect();
+    assert!(!names.contains(&"not_a_tool".to_string()));
+    // 默认只读工具仍在
+    assert!(names.contains(&"hosts_read".to_string()));
+  }
+
+  #[test]
+  fn test_parse_allow_write_forms() {
+    let eq = parse_allow_write(&["--mcp-server".into(), "--allow-write=hosts_add,hosts_remove".into()]);
+    assert_eq!(eq, vec!["hosts_add", "hosts_remove"]);
+
+    let spaced = parse_allow_write(&["--allow-write".into(), "hosts_add".into()]);
+    assert_eq!(spaced, vec!["hosts_add"]);
+
+    // 后面跟另一个 flag 时不误吞
+    let dangling = parse_allow_write(&["--allow-write".into(), "--mcp-server".into()]);
+    assert!(dangling.is_empty());
+
+    // 去重 + 去空白
+    let dedup = parse_allow_write(&["--allow-write= hosts_add , hosts_add ,".into()]);
+    assert_eq!(dedup, vec!["hosts_add"]);
+
+    assert!(parse_allow_write(&["--mcp-server".into()]).is_empty());
   }
 
   #[test]
   fn test_export_tools_convert() {
-    let reg = build_export_registry();
+    let reg = build_export_registry(&[]);
     let tools = export_tools(&reg);
     assert!(tools.iter().any(|t| t.name == "hosts_read"));
     let read = tools.iter().find(|t| t.name == "hosts_read").unwrap();
@@ -169,7 +269,7 @@ mod tests {
 
   #[test]
   fn test_handle_tools_list() {
-    let reg = build_export_registry();
+    let reg = build_export_registry(&[]);
     let rt = tokio::runtime::Runtime::new().unwrap();
     let req = JsonRpcRequest::new(RequestId::Number(1), "tools/list");
     let resp = handle_request(&reg, &rt, &req);
@@ -178,7 +278,7 @@ mod tests {
 
   #[test]
   fn test_handle_unknown_method() {
-    let reg = build_export_registry();
+    let reg = build_export_registry(&[]);
     let rt = tokio::runtime::Runtime::new().unwrap();
     let req = JsonRpcRequest::new(RequestId::Number(2), "nope/nope");
     let resp = handle_request(&reg, &rt, &req);

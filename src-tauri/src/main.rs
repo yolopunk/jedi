@@ -72,8 +72,11 @@ mod utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   // P4: 以 MCP server 模式运行（对外暴露只读工具，不启动 GUI）
-  if std::env::args().any(|a| a == "--mcp-server") {
-    crate::mcp::server::run_stdio_server();
+  // 写工具需经 --allow-write=a,b 或 JEDI_MCP_ALLOW_WRITE 显式白名单
+  let cli_args: Vec<String> = std::env::args().collect();
+  if cli_args.iter().any(|a| a == "--mcp-server") {
+    let allow_write = crate::mcp::server::parse_allow_write(&cli_args);
+    crate::mcp::server::run_stdio_server(allow_write);
     return Ok(());
   }
 

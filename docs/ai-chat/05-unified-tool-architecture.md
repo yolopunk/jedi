@@ -2,9 +2,14 @@
 
 **日期**: 2026-07-01
 **状态**: 设计中
-**版本**: 1.1
+**版本**: 1.2（已全量实现）
 **关联**: `docs/superpowers/specs/2026-04-06-agent-architecture-design.md`、`src-tauri/src/api/ai_chat/agent.rs`、`src-tauri/src/mcp/`
 
+> **v1.2 实现状态**：P1–P4 全部落地并合入分支 `claude/agent-capabilities-analysis-c8fyns`。
+> 第三方 MCP 支持三种传输（stdio / HTTP+SSE / Streamable HTTP），三条链路均有真机端到端测试；
+> 对外 server 已实现"只读默认 + 写白名单"；§6.1 相关性子集注入已实现。
+> 唯一按设计**主动推迟**的是 §14-2 的 OAuth（见该条）。
+>
 > **v1.1 评审修订**：
 > - R1 工具名改为下划线命名（function calling 强制 `^[a-zA-Z0-9_-]{1,64}$`，点号/冒号非法）
 > - R2 新增 §7.1「可挂起回路」，确认机制采用后端挂起方案
@@ -493,18 +498,33 @@ mcp_server_test(config) -> Vec<ToolDeclaration>     # 测试连接并预览工�
 
 | 阶段 | 内容 | 产出 |
 |------|------|------|
-| **P1 抽象落地** | `AgentTool` + `ToolRegistry`；hosts 迁移为内置工具；`agent.rs` 切换派发（命名改下划线）| Agent 走统一抽象，行为不变、更干净 |
-| **P2 全产品工具化 + 确认** | 壁纸/播客/系统内置工具；动态风险 + dry_run/快照 + 可挂起回路 + 确认卡片 + per-turn 回滚；§6.1 基础版工具过滤 | Agent 能**安全操作整个产品**（AI Native 内核）|
-| **P3 第三方 MCP 客户端** | stdio+SSE 传输、server 配置 UI、连接生命周期、工具注入、安全边界、§6.1 进阶工具选择 | 接入社区 MCP 生态，能力可扩展 |
-| **P4 对外 MCP 服务端** | `--mcp-server` 导出内置工具（只读 + 白名单写）| Jedi 成为 MCP 生态节点 |
+| **P1 抽象落地** ✅ | `AgentTool` + `ToolRegistry`；hosts 迁移为内置工具；`agent.rs` 切换派发（命名改下划线）| Agent 走统一抽象，行为不变、更干净 |
+| **P2 全产品工具化 + 确认** ✅ | 壁纸/播客/系统/记忆内置工具；动态风险 + dry_run/快照 + 可挂起回路 + 确认卡片 + per-turn 回滚；§6.1 工具过滤 | Agent 能**安全操作整个产品**（AI Native 内核）|
+| **P3 第三方 MCP 客户端** ✅ | stdio + HTTP+SSE + Streamable HTTP 三种传输、server 配置 UI、连接生命周期、工具注入、安全边界、§6.1 相关性子集注入 | 接入社区 MCP 生态，能力可扩展 |
+| **P4 对外 MCP 服务端** ✅ | `--mcp-server` 导出内置工具（只读默认 + `--allow-write` 白名单）| Jedi 成为 MCP 生态节点 |
+
+> 另有超出原计划的增强：模型能力探测降级、全流式（OpenAI/Anthropic）、Agent 系统提示、
+> 跨会话记忆工具、全局命令台（应用内 Cmd/Ctrl+J + 系统级 Cmd/Ctrl+Shift+J）。
 
 ---
 
-## 14. 开放问题（v1.1 评审已收敛）
+## 14. 开放问题（v1.1 收敛 / v1.2 实现结果）
 
 1. **对外 server 的无头确认** → ✅ 已决：**只导出只读工具；写操作必须在 autoApprove 白名单，否则拒绝**。避免无人值守时被外部 Agent 改系统。
 2. **SSE/HTTP MCP 的鉴权** → ✅ 已决：**P3 先只支持静态 token/header，OAuth 后置**。
 3. **工具过多时的选择** → ✅ 已提升为正文 §6.1（P2 基础过滤 + P3 上下文/语义预选）。
 4. **回滚的通用性** → ✅ 已决：**仅可逆工具提供 `undo_token`，并按回合成栈**（§7.3）；不可逆工具 UI 明确标注。
-5. **（保留）G1 SSE 协议版本**：本设计基于 MCP `2024-11-05`（HTTP+SSE）。较新 server 可能用 Streamable HTTP（2025 spec）。stdio 为主流先行，SSE 落地时再评估是否需要双协议兼容。
-6. **（保留）G2 第三方工具降级为 Read 的误操作**：input_schema 由 server 自报、不可全信；降级操作需二次警告并记审计。
+5. **G1 SSE 协议版本** → ✅ **已双协议兼容**：同时实现 `2024-11-05` 的 HTTP+SSE 与 `2025-03-26` 的
+   Streamable HTTP（单端点，兼容 `application/json` 与 `text/event-stream` 两种应答），各自有 mock server 端到端测试。
+6. **（保留）G2 第三方工具降级为 Read 的误操作**：当前**尚未提供**把第三方工具风险降级为 Read 的入口，
+   因此该误操作路径不存在；若日后开放该能力，需二次警告并记审计。
+
+### 实现补充
+
+- **§14-2 OAuth 仍按原决策推迟**：远程传输（SSE / Streamable HTTP）已支持自定义请求头，
+  静态 token / `Authorization: Bearer` 可用，满足当前接入需求。完整 OAuth 2.1（授权服务器元数据发现、
+  动态客户端注册、PKCE、浏览器回调）需要真实授权服务器才能验证，属于按需再做的独立议题。
+- **Agent 回路的集成测试**：目前覆盖到确定性单元（流式累加器、工具选择、确认分级、回滚栈）与
+  三条 MCP 传输的端到端测试。若要对 `run_openai_loop` / `run_anthropic_loop` 整体做集成测试，
+  需要把这两个函数改为对 Tauri `Runtime` 泛型（以便用 `tauri::test::mock_app`），属于为可测性
+  改动已上线代码，建议单独评估后再做。

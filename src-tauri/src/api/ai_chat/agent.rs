@@ -745,10 +745,20 @@ pub async fn agent_chat(
   auto_approve: Option<Vec<String>>,
   supports_tools: Option<bool>,
   system_prompt: Option<String>,
+  max_tools: Option<usize>,
 ) -> Result<String, String> {
+  // §6.1：以用户最后一条消息作为相关性检索的 query
+  let last_user_query = messages
+    .iter()
+    .rev()
+    .find(|m| m.role == MessageRole::User)
+    .map(|m| m.content.clone());
+
   let filter = ToolFilter {
     enabled_groups: servers.clone(),
     enabled_servers: servers,
+    max_tools,
+    query: last_user_query,
   };
   // ②：所选模型明确不支持 function calling → 跳过工具注入，降级为纯对话
   let tools = if supports_tools == Some(false) {
@@ -764,7 +774,29 @@ pub async fn agent_chat(
     }
     Vec::new()
   } else {
-    registry.declarations(&filter)
+    let selected = registry.declarations(&filter);
+    // 不静默裁剪：若因上限只注入了子集，明确告知
+    let total = registry
+      .declarations(&ToolFilter {
+        max_tools: None,
+        query: None,
+        ..filter.clone()
+      })
+      .len();
+    if selected.len() < total {
+      emit_event(
+        &app,
+        &request_id,
+        AgentEvent::Notice {
+          text: format!(
+            "可用工具较多（{} 个），本轮按相关性注入了 {} 个。",
+            total,
+            selected.len()
+          ),
+        },
+      );
+    }
+    selected
   };
   let auto_approve = auto_approve.unwrap_or_default();
 

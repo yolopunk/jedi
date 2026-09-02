@@ -142,6 +142,10 @@ pub struct ToolFilter {
   pub enabled_groups: Vec<String>,
   /// 启用的 MCP server id
   pub enabled_servers: Vec<String>,
+  /// 注入上限：候选超过该数量时，按与 query 的相关性取 top-K
+  pub max_tools: Option<usize>,
+  /// 相关性检索用的查询（通常是用户最后一条消息）
+  pub query: Option<String>,
 }
 
 impl ToolFilter {
@@ -154,6 +158,83 @@ impl ToolFilter {
       ToolSource::Mcp { server_id, .. } => self.enabled_servers.iter().any(|s| s == server_id),
     }
   }
+}
+
+fn is_cjk(c: char) -> bool {
+  matches!(c as u32, 0x4E00..=0x9FFF)
+}
+
+/// 从查询抽取检索词：ASCII 单词（>=2 字符）+ 每段连续 CJK 的双字组合
+fn query_terms(query: &str) -> Vec<String> {
+  let lower = query.to_lowercase();
+  let mut terms: Vec<String> = Vec::new();
+  let push = |t: String, terms: &mut Vec<String>| {
+    if !terms.iter().any(|x| *x == t) {
+      terms.push(t);
+    }
+  };
+
+  for w in lower.split(|c: char| !c.is_ascii_alphanumeric()) {
+    if w.len() >= 2 {
+      push(w.to_string(), &mut terms);
+    }
+  }
+
+  // 逐段连续 CJK 取二元组，避免跨词误配
+  let mut run: Vec<char> = Vec::new();
+  for c in lower.chars().chain(std::iter::once(' ')) {
+    if is_cjk(c) {
+      run.push(c);
+    } else {
+      for pair in run.windows(2) {
+        push(pair.iter().collect::<String>(), &mut terms);
+      }
+      run.clear();
+    }
+  }
+
+  terms
+}
+
+/// 工具与检索词的相关度：命中名称权重最高，其次分组，再次描述
+fn relevance(decl: &ToolDeclaration, terms: &[String]) -> u32 {
+  if terms.is_empty() {
+    return 0;
+  }
+  let name = decl.name.to_lowercase();
+  let group = decl.group.to_lowercase();
+  let desc = decl.description.to_lowercase();
+  let mut score = 0;
+  for t in terms {
+    if name.contains(t.as_str()) {
+      score += 3;
+    }
+    if group.contains(t.as_str()) {
+      score += 2;
+    }
+    if desc.contains(t.as_str()) {
+      score += 1;
+    }
+  }
+  score
+}
+
+/// 按 (相关性降序, 名称升序) 排序并按上限截断；无 query 时退化为稳定的名称序
+fn select_relevant(
+  mut decls: Vec<ToolDeclaration>,
+  query: Option<&str>,
+  max: Option<usize>,
+) -> Vec<ToolDeclaration> {
+  let terms = query.map(query_terms).unwrap_or_default();
+  decls.sort_by(|a, b| {
+    relevance(b, &terms)
+      .cmp(&relevance(a, &terms))
+      .then_with(|| a.name.cmp(&b.name))
+  });
+  if let Some(m) = max {
+    decls.truncate(m);
+  }
+  decls
 }
 
 // ============================================================================
@@ -209,16 +290,18 @@ impl ToolRegistry {
     self.tools.read().ok()?.get(name).cloned()
   }
 
-  /// 按过滤条件列出工具声明（注入给 LLM）
+  /// 按过滤条件列出工具声明（注入给 LLM）。
+  /// 候选超过 max_tools 时按与 query 的相关性取 top-K（§6.1）。
   pub fn declarations(&self, filter: &ToolFilter) -> Vec<ToolDeclaration> {
-    match self.tools.read() {
+    let matched: Vec<ToolDeclaration> = match self.tools.read() {
       Ok(map) => map
         .values()
         .map(|t| t.declaration())
         .filter(|d| filter.accepts(d))
         .collect(),
       Err(_) => Vec::new(),
-    }
+    };
+    select_relevant(matched, filter.query.as_deref(), filter.max_tools)
   }
 
   /// 列出全部工具声明（供工具浏览器）
@@ -278,6 +361,88 @@ mod tests {
     assert!(reg.register(dup).is_err());
   }
 
+  fn decl_of(name: &str, group: &str, desc: &str) -> ToolDeclaration {
+    ToolDeclaration {
+      name: name.into(),
+      description: desc.into(),
+      input_schema: serde_json::json!({ "type": "object" }),
+      risk: RiskLevel::Read,
+      source: ToolSource::Native,
+      group: group.into(),
+    }
+  }
+
+  #[test]
+  fn test_query_terms_ascii_and_cjk() {
+    let t = query_terms("add a Hosts entry");
+    assert!(t.contains(&"add".to_string()));
+    assert!(t.contains(&"hosts".to_string()));
+    assert!(!t.contains(&"a".to_string())); // 单字符忽略
+
+    let z = query_terms("设置壁纸");
+    assert!(z.contains(&"壁纸".to_string()));
+    // 不跨非 CJK 边界组词
+    let split = query_terms("壁纸 播客");
+    assert!(!split.contains(&"纸播".to_string()));
+  }
+
+  #[test]
+  fn test_relevance_ranks_matching_first() {
+    let decls = vec![
+      decl_of("podcast_list", "podcast", "列出播客"),
+      decl_of("hosts_add", "hosts", "添加一条 Hosts 记录"),
+      decl_of("wallpaper_set", "wallpaper", "设置壁纸"),
+    ];
+    let out = select_relevant(decls, Some("帮我加一条 hosts"), None);
+    assert_eq!(out[0].name, "hosts_add");
+  }
+
+  #[test]
+  fn test_relevance_ranks_cjk_query() {
+    let decls = vec![
+      decl_of("hosts_add", "hosts", "添加一条 Hosts 记录"),
+      decl_of("wallpaper_set", "wallpaper", "设置壁纸"),
+    ];
+    let out = select_relevant(decls, Some("换个壁纸"), None);
+    assert_eq!(out[0].name, "wallpaper_set");
+  }
+
+  #[test]
+  fn test_max_tools_truncates_and_is_deterministic() {
+    let decls = vec![
+      decl_of("b_tool", "g", ""),
+      decl_of("a_tool", "g", ""),
+      decl_of("c_tool", "g", ""),
+    ];
+    // 无 query → 名称序，截断到 2
+    let out = select_relevant(decls.clone(), None, Some(2));
+    assert_eq!(out.len(), 2);
+    assert_eq!(out[0].name, "a_tool");
+    assert_eq!(out[1].name, "b_tool");
+    // 未超上限则全保留
+    assert_eq!(select_relevant(decls, None, Some(10)).len(), 3);
+  }
+
+  #[test]
+  fn test_registry_declarations_respect_max_tools() {
+    let reg = ToolRegistry::with_builtins();
+    let base = ToolFilter {
+      enabled_groups: vec!["hosts".into()],
+      ..Default::default()
+    };
+    let all = reg.declarations(&base);
+    assert!(all.len() > 2);
+
+    let capped = reg.declarations(&ToolFilter {
+      max_tools: Some(2),
+      query: Some("添加 hosts".into()),
+      ..base
+    });
+    assert_eq!(capped.len(), 2);
+    // 相关性最高的应被保留
+    assert!(capped.iter().any(|d| d.name == "hosts_add"));
+  }
+
   #[test]
   fn test_filter_by_group() {
     let reg = ToolRegistry::with_builtins();
@@ -286,7 +451,7 @@ mod tests {
 
     let hosts = reg.declarations(&ToolFilter {
       enabled_groups: vec!["hosts".into()],
-      enabled_servers: vec![],
+      ..Default::default()
     });
     assert!(!hosts.is_empty());
     assert!(hosts.iter().all(|d| d.group == "hosts"));

@@ -164,6 +164,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const streamEnabled = ref<boolean>(true)
   // 确认策略：normal=写操作需确认 / auto=仅系统级确认
   const confirmMode = ref<'normal' | 'auto'>('normal')
+  // 单轮注入工具数上限（工具很多时按相关性取 top-K）
+  const maxTools = ref<number>(32)
 
   // Computed
   const currentSession = computed(() =>
@@ -353,6 +355,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
             requestId,
             confirmMode: confirmMode.value,
             supportsTools,
+            maxTools: maxTools.value,
           })
 
           const assistantMessage: ChatMessage = {
@@ -580,6 +583,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
     agentTrace,
     agentRequestId,
     confirmMode,
+    maxTools,
     selectedModelId,
     selectedProvider,
     enabledMcpServers,

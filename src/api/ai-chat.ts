@@ -375,6 +375,8 @@ export async function agentChat(params: {
   autoApprove?: string[]
   /** 所选模型是否支持工具调用；false 时后端降级为纯对话 */
   supportsTools?: boolean
+  /** 单轮注入工具数上限；超出时后端按相关性取 top-K */
+  maxTools?: number
 }) {
   return await invoke<string>('agent_chat', {
     provider: params.provider,
@@ -387,6 +389,7 @@ export async function agentChat(params: {
     confirmMode: params.confirmMode ?? null,
     autoApprove: params.autoApprove ?? null,
     supportsTools: params.supportsTools ?? null,
+    maxTools: params.maxTools ?? null,
   })
 }
 

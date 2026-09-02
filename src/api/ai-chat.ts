@@ -431,7 +431,7 @@ export async function toolUndo(requestId: string, undoToken: string) {
 export interface McpServerConfig {
   id: string
   name: string
-  transport?: 'stdio' | 'sse'
+  transport?: 'stdio' | 'sse' | 'streamable-http'
   /** stdio */
   command?: string
   args?: string[]

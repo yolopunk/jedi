@@ -44,7 +44,7 @@ impl SseConfig {
 }
 
 /// 请求 id → 字符串键
-fn id_key(id: &RequestId) -> String {
+pub(crate) fn id_key(id: &RequestId) -> String {
   match id {
     RequestId::Number(n) => n.to_string(),
     RequestId::String(s) => s.clone(),
@@ -72,7 +72,7 @@ pub fn resolve_endpoint(base: &str, path: &str) -> String {
   path.to_string()
 }
 
-fn build_header_map(headers: &[(String, String)]) -> HeaderMap {
+pub(crate) fn build_header_map(headers: &[(String, String)]) -> HeaderMap {
   let mut map = HeaderMap::new();
   for (k, v) in headers {
     if let (Ok(name), Ok(val)) = (

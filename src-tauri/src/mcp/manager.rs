@@ -5,6 +5,7 @@
 //
 // 安全：第三方 server = 运行外部程序，属信任边界。其工具默认风险 = Write（至少需确认）。
 
+use crate::mcp::http_transport::{StreamableHttpConfig, StreamableHttpTransport};
 use crate::mcp::protocol::McpClient;
 use crate::mcp::sse_transport::{SseConfig, SseTransport};
 use crate::mcp::transport::{StdioTransport, Transport, TransportConfig};
@@ -199,6 +200,14 @@ fn start_client(config: &McpServerConfig) -> Result<(Arc<Mutex<McpClient>>, Vec<
       let headers: Vec<(String, String)> = config.headers.clone().into_iter().collect();
       let sconf = SseConfig::new(&config.url).with_headers(headers);
       Box::new(SseTransport::new(sconf))
+    }
+    "http" | "streamable-http" => {
+      if config.url.trim().is_empty() {
+        return Err("streamable-http 传输需要 url".to_string());
+      }
+      let headers: Vec<(String, String)> = config.headers.clone().into_iter().collect();
+      let hconf = StreamableHttpConfig::new(&config.url).with_headers(headers);
+      Box::new(StreamableHttpTransport::new(hconf))
     }
     other => return Err(format!("暂不支持的传输方式: {}", other)),
   };
@@ -450,6 +459,82 @@ mod tests {
     let text = flatten_result(&result);
     assert_eq!(text, "echo: hi");
     assert_eq!(result.is_error, Some(false));
+  }
+
+  /// 端到端：连接一个真实的 mock MCP server（Streamable HTTP，2025-03-26）。
+  /// 覆盖两条响应路径：initialize/tools/list 走 application/json，tools/call 走 SSE。
+  #[test]
+  fn test_connect_mock_streamable_http_end_to_end() {
+    use std::io::{BufRead, BufReader};
+
+    let script = concat!(
+      env!("CARGO_MANIFEST_DIR"),
+      "/tests/fixtures/mock_streamable_http_server.py"
+    );
+    if !std::path::Path::new(script).exists() {
+      eprintln!("skip: mock streamable-http fixture 不存在");
+      return;
+    }
+
+    let mut child = match std::process::Command::new("python3")
+      .arg(script)
+      .stdout(std::process::Stdio::piped())
+      .spawn()
+    {
+      Ok(c) => c,
+      Err(e) => {
+        eprintln!("skip: 无法启动 python3: {}", e);
+        return;
+      }
+    };
+
+    let port: Option<u16> = child.stdout.take().and_then(|out| {
+      let mut line = String::new();
+      let mut reader = BufReader::new(out);
+      reader.read_line(&mut line).ok()?;
+      line.trim().strip_prefix("PORT ").and_then(|s| s.parse().ok())
+    });
+    let port = match port {
+      Some(p) => p,
+      None => {
+        let _ = child.kill();
+        eprintln!("skip: 未取得端口");
+        return;
+      }
+    };
+
+    let cfg = McpServerConfig {
+      id: "http".into(),
+      name: "HTTP".into(),
+      transport: "streamable-http".into(),
+      command: String::new(),
+      args: vec![],
+      env: HashMap::new(),
+      url: format!("http://127.0.0.1:{}/mcp", port),
+      headers: HashMap::new(),
+    };
+
+    let outcome = (|| -> Result<String, String> {
+      let (client, tools) = start_client(&cfg)?;
+      if !tools.iter().any(|t| t.name == "echo") {
+        return Err("streamable-http 未返回 echo 工具".to_string());
+      }
+      let mut args = HashMap::new();
+      args.insert("text".to_string(), serde_json::json!("hi"));
+      let result = {
+        let mut c = client.lock().unwrap();
+        c.call_tool("echo", Some(args)).map_err(|e| e.to_string())?
+      };
+      Ok(flatten_result(&result))
+    })();
+
+    let _ = child.kill();
+    let _ = child.wait();
+
+    match outcome {
+      Ok(text) => assert_eq!(text, "echo: hi"),
+      Err(e) => panic!("Streamable HTTP 端到端失败: {}", e),
+    }
   }
 
   /// 端到端：连接一个真实的 mock MCP server（HTTP+SSE）。

@@ -131,7 +131,7 @@
 
     <div class="section-header">
       <span class="section-title">第三方 MCP 服务器</span>
-      <span class="section-desc">接入外部 MCP server（stdio），扩展 Agent 可用工具</span>
+      <span class="section-desc">接入外部 MCP server（stdio / SSE / Streamable HTTP），扩展 Agent 可用工具</span>
     </div>
 
     <div class="setting-item" v-for="srv in store.thirdPartyMcpServers" :key="srv.id">
@@ -164,6 +164,11 @@
           :class="{ active: newServer.transport === 'sse' }"
           @click="newServer.transport = 'sse'"
         >SSE</button>
+        <button
+          class="mcp-tab"
+          :class="{ active: newServer.transport === 'streamable-http' }"
+          @click="newServer.transport = 'streamable-http'"
+        >HTTP</button>
       </div>
       <input v-model="newServer.id" class="console-input" placeholder="id (唯一)" />
       <input v-model="newServer.name" class="console-input" placeholder="名称" />
@@ -172,7 +177,13 @@
         <input v-model="newServer.argsText" class="console-input" placeholder="参数（空格分隔）" />
       </template>
       <template v-else>
-        <input v-model="newServer.url" class="console-input" placeholder="URL，例如 http://127.0.0.1:9000/sse" />
+        <input
+          v-model="newServer.url"
+          class="console-input"
+          :placeholder="newServer.transport === 'sse'
+            ? 'URL，例如 http://127.0.0.1:9000/sse'
+            : 'URL，例如 http://127.0.0.1:9000/mcp'"
+        />
       </template>
       <button class="console-btn small primary" @click="addServer">+ 添加服务器</button>
     </div>
@@ -271,7 +282,7 @@ const mcpServers = ref<McpServer[]>([...store.mcpServers])
 
 // 第三方 MCP server 管理
 const newServer = ref<{
-  transport: 'stdio' | 'sse'
+  transport: 'stdio' | 'sse' | 'streamable-http'
   id: string
   name: string
   command: string
@@ -307,8 +318,8 @@ function addServer() {
     mcpError.value = 'stdio 需要命令'
     return
   }
-  if (s.transport === 'sse' && !s.url) {
-    mcpError.value = 'sse 需要 URL'
+  if (s.transport !== 'stdio' && !s.url) {
+    mcpError.value = '远程传输需要 URL'
     return
   }
   mcpError.value = ''
@@ -325,7 +336,7 @@ function addServer() {
     store.addMcpServer({
       id: s.id,
       name: s.name || s.id,
-      transport: 'sse',
+      transport: s.transport,
       url: s.url,
     })
   }

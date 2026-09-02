@@ -39,6 +39,7 @@
 //! client.stop()?;
 //! ```
 
+pub mod http_transport;
 pub mod manager;
 pub mod protocol;
 pub mod server;

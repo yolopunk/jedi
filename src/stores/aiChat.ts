@@ -13,6 +13,7 @@ import { skillRegistry } from '@/skills/registry'
 import { useAgentStore } from './agent'
 import { useModelsDevStore } from './modelsDev'
 import { useProviderConfigStore } from './providerConfig'
+import { useSkillsStore } from './skills'
 
 // MCP Server 接口
 export interface McpServer {
@@ -149,6 +150,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
     risk: 'read' | 'write' | 'system'
     args: unknown
   }): Promise<boolean> {
+    // "始终允许"白名单命中的技能直接放行，不再弹卡。
+    if (useSkillsStore().isAlwaysAllowed(req.skillId)) return Promise.resolve(true)
     // Only one confirmation is in flight at a time (the agent loop is sequential).
     return new Promise<boolean>(resolve => {
       pendingConfirmation.value = req
@@ -156,7 +159,11 @@ export const useAiChatStore = defineStore('aiChat', () => {
     })
   }
 
-  function resolveConfirmation(approved: boolean): void {
+  function resolveConfirmation(approved: boolean, alwaysAllow = false): void {
+    const pending = pendingConfirmation.value
+    if (approved && alwaysAllow && pending) {
+      useSkillsStore().setAlwaysAllowed(pending.skillId, true)
+    }
     confirmationResolver?.(approved)
     confirmationResolver = null
     pendingConfirmation.value = null

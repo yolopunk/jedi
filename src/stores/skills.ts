@@ -11,6 +11,7 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { logSecurityEvent } from '@/api/ai-chat'
 import { deleteCustomSkill, listCustomSkills, saveCustomSkill } from '@/api/skills'
 import { useStorage } from '@/composables/useStorage'
 import { createCustomSkill } from '@/skills/custom'
@@ -21,6 +22,8 @@ import type { CustomSkillDef, SkillSource } from '@/skills/types'
 export interface SkillFlags {
   enabled: boolean
   autoCallable: boolean
+  /** write/system 技能的"始终允许"白名单标志，read 技能无意义 */
+  alwaysAllow?: boolean
 }
 
 type SkillFlagMap = Record<string, SkillFlags>
@@ -66,7 +69,12 @@ export const useSkillsStore = defineStore('skills', () => {
   function persistFlags(id: string): void {
     const skill = skillRegistry.get(id)
     if (!skill) return
-    flagMap.value[id] = { enabled: skill.enabled, autoCallable: skill.autoCallable }
+    // 展开保留 alwaysAllow 等不在本函数管理内的标志
+    flagMap.value[id] = {
+      ...flagMap.value[id],
+      enabled: skill.enabled,
+      autoCallable: skill.autoCallable,
+    }
     void setItem(CONFIG_KEY, flagMap.value)
   }
 
@@ -78,6 +86,33 @@ export const useSkillsStore = defineStore('skills', () => {
   function toggleAutoCallable(id: string, value: boolean): void {
     skillRegistry.setAutoCallable(id, value)
     persistFlags(id)
+  }
+
+  /** 该技能是否在"始终允许"白名单内（write/system 确认门免弹卡） */
+  function isAlwaysAllowed(id: string): boolean {
+    return flagMap.value[id]?.alwaysAllow ?? false
+  }
+
+  /** 白名单变更写入审计日志（fire-and-forget，失败不阻塞主流程） */
+  function auditWhitelistChange(id: string, value: boolean): void {
+    logSecurityEvent({
+      event_type: 'skill_whitelist_change',
+      result: value ? 'granted' : 'revoked',
+      resource: id,
+      action: value ? 'always-allow' : 'revoke-always-allow',
+    }).catch(e => console.error('Failed to log whitelist change:', e))
+  }
+
+  function setAlwaysAllowed(id: string, value: boolean): void {
+    if (isAlwaysAllowed(id) === value) return
+    flagMap.value[id] = {
+      ...flagMap.value[id],
+      enabled: skillRegistry.get(id)?.enabled ?? true,
+      autoCallable: skillRegistry.get(id)?.autoCallable ?? true,
+      alwaysAllow: value,
+    }
+    void setItem(CONFIG_KEY, flagMap.value)
+    auditWhitelistChange(id, value)
   }
 
   /** 旧版 localStorage 'skills-enabled'（仅启用名单）一次性迁移为双向配置 */
@@ -162,6 +197,8 @@ export const useSkillsStore = defineStore('skills', () => {
     skillsBySource,
     isSkillEnabled,
     isSkillAutoCallable,
+    isAlwaysAllowed,
+    setAlwaysAllowed,
     toggleSkill,
     toggleAutoCallable,
     syncRegistryFromConfig,

@@ -48,33 +48,33 @@
 
 **文件:** `src-tauri/src/api/skills.rs`、`src-tauri/src/main.rs`
 
-- [ ] **Step 1:** stats 结构与命令：`stats_path()`、`skill_stats_list`、`skill_stats_save`（截断防护：errors 保留最近 10 条、msg 200 字符）、`skill_stats_clear`
-- [ ] **Step 2:** 单元测试：截断、环形上限、roundtrip
-- [ ] **Step 3:** main.rs 注册
-- [ ] 提交：`git commit -m "feat(skill): backend skill stats storage"`
+- [x] **Step 1:** stats 结构与命令：`stats_path()`、`skill_stats_list`、`skill_stats_save`（截断防护：errors 保留最近 10 条、msg 200 字符）、`skill_stats_clear`
+- [x] **Step 2:** 单元测试：截断、环形上限、roundtrip
+- [x] **Step 3:** main.rs 注册
+- [x] 提交：`git commit -m "feat(skill): backend skill stats storage"`
 
 ### Task 2: 采集层
 
 **文件:** `src/api/skills.ts`、`src/stores/skillStats.ts`、`src/agent/statsHooks.ts`、`src/stores/aiChat.ts`、`src/stores/agentPool.ts`
 
-- [ ] **Step 1:** api 封装三命令
-- [ ] **Step 2:** stats store：`loadStats`（幂等）、`recordToolEnd`（增量 + 防抖调度）、`flush`、`clearAll`、`statsFor` + 成功率/均耗时 computed
-- [ ] **Step 3:** `withStatsHooks` 包装器（onToolStart/onToolEnd 透传原 hooks 再记账）
-- [ ] **Step 4:** aiChat / agentPool 接线；AiChat onMounted 调 `loadStats()`
-- [ ] 提交：`git commit -m "feat(skill): per-skill execution stats collection"`
+- [x] **Step 1:** api 封装三命令
+- [x] **Step 2:** stats store：`loadStats`（幂等）、`recordToolEnd`（增量 + 防抖调度）、`flush`、`clearAll`、`statsFor` + 成功率/均耗时 computed
+- [x] **Step 3:** `withStatsHooks` 包装器（onToolStart/onToolEnd 透传原 hooks 再记账）
+- [x] **Step 4:** aiChat / agentPool 接线；AiChat onMounted 调 `loadStats()`
+- [x] 提交：`git commit -m "feat(skill): per-skill execution stats collection"`
 
 ### Task 3: UI 层
 
 **文件:** `src/views/AiChat/SkillsManagerDialog.vue`、`src/i18n/locales/zh.ts`、`en.ts`
 
-- [ ] **Step 1:** 技能行统计徽章（calls>0 才显示）；展开面板统计详情 + 最近错误列表
-- [ ] **Step 2:** 头部"按使用排序"开关（组内 calls 降序）与"清零统计"按钮（两段式确认）
-- [ ] **Step 3:** zh/en 文案
-- [ ] 提交：`git commit -m "feat(skill): skill stats UI in manager"`
+- [x] **Step 1:** 技能行统计徽章（calls>0 才显示）；展开面板统计详情 + 最近错误列表
+- [x] **Step 2:** 头部"按使用排序"开关（组内 calls 降序）与"清零统计"按钮（两段式确认）
+- [x] **Step 3:** zh/en 文案
+- [x] 提交：`git commit -m "feat(skill): skill stats UI in manager"`
 
 ## 验证清单
 
-- [ ] `pnpm lint`、`pnpm exec vue-tsc --noEmit`、`pnpm build` 通过
-- [ ] `cargo test` 通过（含新增测试）
+- [x] `pnpm lint`、`pnpm exec vue-tsc --noEmit`、`pnpm build` 通过（已完成）
+- [x] `cargo test` 通过（96 passed，含新增 3 个统计测试）
 - [ ] 对话触发工具调用 → 3s 后 `~/.jedi/skill_stats.json` 出现计数（待运行时人工验证）
 - [ ] 徽章/详情/排序/清零生效；后台 worker 调用计入（待运行时人工验证）

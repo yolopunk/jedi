@@ -109,6 +109,17 @@
                     <span class="knob"></span>
                   </button>
                 </div>
+                <div v-if="(skill.risk ?? 'read') !== 'read'" class="skl-toggle-row">
+                  <span class="skl-toggle-label">{{ $t('skills.alwaysAllow') }}</span>
+                  <button
+                    class="skl-toggle warn"
+                    :class="{ on: skillsStore.isAlwaysAllowed(skill.id) }"
+                    :title="$t('skills.alwaysAllowHint')"
+                    @click="skillsStore.setAlwaysAllowed(skill.id, !skillsStore.isAlwaysAllowed(skill.id))"
+                  >
+                    <span class="knob"></span>
+                  </button>
+                </div>
                 <div class="skl-toggle-row">
                   <span class="skl-toggle-label">{{ $t('skills.enabled') }}</span>
                   <button
@@ -530,6 +541,14 @@ async function handleDelete(id: string): Promise<void> {
 .skl-toggle.on .knob {
   left: 15px;
   background: #4ade80;
+}
+
+.skl-toggle.warn.on {
+  background: rgba(251, 191, 36, 0.35);
+}
+
+.skl-toggle.warn.on .knob {
+  background: #fbbf24;
 }
 
 .skl-mini {

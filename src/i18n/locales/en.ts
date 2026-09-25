@@ -350,6 +350,19 @@ export default {
     emptyMcp: 'Tools from connected MCP servers appear here',
     enabled: 'Enabled',
     autoCall: 'Auto-call',
+    alwaysAllow: 'Always allow',
+    alwaysAllowHint: 'Whitelisted write/system tools run without a confirmation prompt',
+    confirm: {
+      riskSystem: 'System-level',
+      riskWrite: 'Write',
+      riskDefault: 'Action',
+      desc: 'The AI requests to run the following operation. Confirm to continue:',
+      deny: 'Deny',
+      approve: 'Approve',
+      alwaysApprove: 'Approve always',
+      systemWarning:
+        'System-level tools on the whitelist will no longer prompt for confirmation. Grant with care.',
+    },
     noParams: 'No parameters',
     risk: {
       read: 'Read',

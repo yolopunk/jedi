@@ -8,11 +8,19 @@
           </span>
           <span class="confirm-title">{{ store.pendingConfirmation?.skillName }}</span>
         </div>
-        <p class="confirm-desc">AI 请求执行以下操作，请确认后继续：</p>
+        <p class="confirm-desc">{{ $t('skills.confirm.desc') }}</p>
         <pre class="confirm-args">{{ prettyArgs }}</pre>
+        <p v-if="isSystemRisk" class="confirm-warning">{{ $t('skills.confirm.systemWarning') }}</p>
         <div class="confirm-actions">
-          <button class="btn btn-deny" @click="store.resolveConfirmation(false)">拒绝</button>
-          <button class="btn btn-approve" @click="store.resolveConfirmation(true)">批准执行</button>
+          <button class="btn btn-deny" @click="store.resolveConfirmation(false)">
+            {{ $t('skills.confirm.deny') }}
+          </button>
+          <button class="btn btn-approve" @click="store.resolveConfirmation(true)">
+            {{ $t('skills.confirm.approve') }}
+          </button>
+          <button class="btn btn-always" @click="store.resolveConfirmation(true, true)">
+            {{ $t('skills.confirm.alwaysApprove') }}
+          </button>
         </div>
       </div>
     </div>
@@ -21,18 +29,22 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAiChatStore } from '@/stores/aiChat'
 
 const store = useAiChatStore()
+const { t } = useI18n()
+
+const isSystemRisk = computed(() => store.pendingConfirmation?.risk === 'system')
 
 const riskLabel = computed(() => {
   switch (store.pendingConfirmation?.risk) {
     case 'system':
-      return '系统级操作'
+      return t('skills.confirm.riskSystem')
     case 'write':
-      return '写操作'
+      return t('skills.confirm.riskWrite')
     default:
-      return '操作'
+      return t('skills.confirm.riskDefault')
   }
 })
 
@@ -125,6 +137,16 @@ const prettyArgs = computed(() => {
   word-break: break-word;
 }
 
+.confirm-warning {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  background: rgba(255, 86, 86, 0.1);
+  border: 1px solid rgba(255, 86, 86, 0.25);
+  color: #ff9a9a;
+}
+
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
@@ -153,6 +175,12 @@ const prettyArgs = computed(() => {
 .btn-approve {
   background: linear-gradient(135deg, #5b8cff, #6a5bff);
   color: #fff;
+}
+
+.btn-always {
+  background: rgba(251, 191, 36, 0.16);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.35);
 }
 
 .confirm-fade-enter-active,

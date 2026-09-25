@@ -351,6 +351,18 @@ export default {
     emptyMcp: '连接 MCP 服务器后，其工具会出现在这里',
     enabled: '启用',
     autoCall: '自动调用',
+    alwaysAllow: '始终允许',
+    alwaysAllowHint: '加入白名单后，写/系统级操作不再弹确认卡',
+    confirm: {
+      riskSystem: '系统级操作',
+      riskWrite: '写操作',
+      riskDefault: '操作',
+      desc: 'AI 请求执行以下操作，请确认后继续：',
+      deny: '拒绝',
+      approve: '批准执行',
+      alwaysApprove: '批准并始终允许',
+      systemWarning: '系统级操作加入白名单后将不再弹出确认，请谨慎授权。',
+    },
     noParams: '无参数',
     risk: {
       read: '只读',

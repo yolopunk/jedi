@@ -54,7 +54,10 @@ use crate::api::podcast::{
   fetch_episodes, fetch_rss_channel, get_subscriptions, import_opml, refresh_subscription,
   remove_subscription, resolve_xiaoyuzhou_podcast, save_subscription,
 };
-use crate::api::skills::{skills_delete, skills_list_custom, skills_save};
+use crate::api::skills::{
+  skill_stats_clear, skill_stats_list, skill_stats_save, skills_delete, skills_list_custom,
+  skills_save,
+};
 use crate::api::terminal::execute_command;
 use crate::api::wallpapers::{
   get_current_wallpaper, get_wallpapers, set_desktop_wallpaper, show_in_folder, sync_wallpapers,
@@ -259,7 +262,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       // Custom skill management commands
       skills_list_custom,
       skills_save,
-      skills_delete
+      skills_delete,
+      // Skill execution stats commands
+      skill_stats_list,
+      skill_stats_save,
+      skill_stats_clear
     ])
     .build(tauri::generate_context!())?;
 

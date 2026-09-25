@@ -7,6 +7,7 @@
 // prompt and returns it as the tool result for the model to act on.
 
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 /// 单个提示词正文的大小上限（64KB），防止误写超大文件
@@ -179,6 +180,93 @@ pub fn skills_delete(id: String) -> Result<bool, String> {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Skill execution stats
+//
+// Aggregated in the frontend (stores/skillStats.ts) and flushed in batches;
+// the backend only persists the map and enforces hard caps (recent_errors
+// kept to the newest 10, message truncated to 200 chars) so a hand-edited
+// file cannot grow unbounded.
+
+const MAX_RECENT_ERRORS: usize = 10;
+const MAX_ERROR_MSG_CHARS: usize = 200;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillStatError {
+  pub ts: u64,
+  pub msg: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillStatEntry {
+  pub calls: u64,
+  pub failures: u64,
+  pub total_ms: u64,
+  pub last_used_at: u64,
+  #[serde(default)]
+  pub recent_errors: Vec<SkillStatError>,
+}
+
+/// 统计文件路径（~/.jedi/skill_stats.json），必要时创建目录
+fn stats_path() -> Result<PathBuf, String> {
+  let home = dirs::home_dir().ok_or_else(|| "无法获取用户主目录".to_string())?;
+  let dir = home.join(".jedi");
+  if !dir.exists() {
+    std::fs::create_dir_all(&dir).map_err(|e| format!("创建 .jedi 目录失败: {}", e))?;
+  }
+  Ok(dir.join("skill_stats.json"))
+}
+
+fn load_stats() -> Result<BTreeMap<String, SkillStatEntry>, String> {
+  let path = stats_path()?;
+  Ok(
+    std::fs::read_to_string(&path)
+      .ok()
+      .and_then(|s| serde_json::from_str(&s).ok())
+      .unwrap_or_default(),
+  )
+}
+
+/// 落盘前强制截断：错误只保留最近 N 条、单条消息截断到上限字符
+fn clamp_entry(entry: &mut SkillStatEntry) {
+  if entry.recent_errors.len() > MAX_RECENT_ERRORS {
+    let keep_from = entry.recent_errors.len() - MAX_RECENT_ERRORS;
+    entry.recent_errors.drain(0..keep_from);
+  }
+  for err in &mut entry.recent_errors {
+    if err.msg.chars().count() > MAX_ERROR_MSG_CHARS {
+      err.msg = err.msg.chars().take(MAX_ERROR_MSG_CHARS).collect();
+    }
+  }
+}
+
+/// 列出全部技能执行统计
+#[tauri::command]
+pub fn skill_stats_list() -> Result<BTreeMap<String, SkillStatEntry>, String> {
+  load_stats()
+}
+
+/// 整表保存（前端防抖批量写），保存前强制截断
+#[tauri::command]
+pub fn skill_stats_save(stats: BTreeMap<String, SkillStatEntry>) -> Result<(), String> {
+  let mut stats = stats;
+  for entry in stats.values_mut() {
+    clamp_entry(entry);
+  }
+  let path = stats_path()?;
+  let s = serde_json::to_string_pretty(&stats).map_err(|e| e.to_string())?;
+  std::fs::write(&path, s).map_err(|e| format!("写入统计文件失败: {}", e))
+}
+
+/// 清零全部统计
+#[tauri::command]
+pub fn skill_stats_clear() -> Result<(), String> {
+  let path = stats_path()?;
+  std::fs::write(&path, "{}").map_err(|e| format!("清空统计文件失败: {}", e))
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -268,5 +356,45 @@ mod tests {
     assert!(validate_risk("write").is_ok());
     assert!(validate_risk("system").is_ok());
     assert!(validate_risk("other").is_err());
+  }
+
+  fn stat_entry(errors: Vec<SkillStatError>) -> SkillStatEntry {
+    SkillStatEntry {
+      calls: 5,
+      failures: errors.len() as u64,
+      total_ms: 100,
+      last_used_at: 1,
+      recent_errors: errors,
+    }
+  }
+
+  #[test]
+  fn stats_clamp_keeps_newest_ten_errors() {
+    let errors: Vec<SkillStatError> = (0..15)
+      .map(|i| SkillStatError { ts: i, msg: format!("err-{}", i) })
+      .collect();
+    let mut entry = stat_entry(errors);
+    clamp_entry(&mut entry);
+    assert_eq!(entry.recent_errors.len(), 10);
+    // 保留最近 10 条（ts 5..=14），丢最早的
+    assert_eq!(entry.recent_errors[0].ts, 5);
+    assert_eq!(entry.recent_errors[9].ts, 14);
+  }
+
+  #[test]
+  fn stats_clamp_truncates_long_messages() {
+    let errors = vec![SkillStatError { ts: 1, msg: "x".repeat(500) }];
+    let mut entry = stat_entry(errors);
+    clamp_entry(&mut entry);
+    assert_eq!(entry.recent_errors[0].msg.chars().count(), 200);
+  }
+
+  #[test]
+  fn stats_clamp_noop_on_small_entries() {
+    let errors = vec![SkillStatError { ts: 1, msg: "boom".to_string() }];
+    let mut entry = stat_entry(errors);
+    let before = entry.clone();
+    clamp_entry(&mut entry);
+    assert_eq!(entry, before);
   }
 }

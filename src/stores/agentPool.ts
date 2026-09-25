@@ -13,6 +13,7 @@ import type { TaskSpec, WorkerStatus } from '@/agent/poolTypes'
 import { type ChatTurn, runAgent } from '@/agent/runAgent'
 import { useModelsDevStore } from './modelsDev'
 import { useProviderConfigStore } from './providerConfig'
+import { useSkillsStore } from './skills'
 
 export const useAgentPoolStore = defineStore('agentPool', () => {
   const maxWorkers = ref(4)
@@ -77,6 +78,7 @@ export const useAgentPoolStore = defineStore('agentPool', () => {
     try {
       const modelsDevStore = useModelsDevStore()
       const providerConfigStore = useProviderConfigStore()
+      const skillsStore = useSkillsStore()
       const provider = modelsDevStore.selectedProviderId || 'openai'
       const model = spec.model || modelsDevStore.selectedModelId || 'gpt-4o-mini'
 
@@ -95,6 +97,10 @@ export const useAgentPoolStore = defineStore('agentPool', () => {
           messages,
           sessionId: worker.id,
           signal: controller.signal,
+          // 后台任务无人值守：只有用户显式加入"始终允许"白名单的写/系统级
+          // 操作放行，其余直接拒绝——denial 作为工具结果返回，模型可据此
+          // 调整方案，而不是挂起等一个可能无人应答的确认。
+          confirmTool: ({ skillId }) => Promise.resolve(skillsStore.isAlwaysAllowed(skillId)),
         },
         {
           onToolStart: ({ skillName }) => {

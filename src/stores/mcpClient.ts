@@ -11,6 +11,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { skillRegistry } from '@/skills/registry'
 import type { ParameterSchema, Skill } from '@/skills/types'
+import { useSkillsStore } from '@/stores/skills'
 
 export interface McpServerConfig {
   id: string
@@ -99,6 +100,7 @@ export const useMcpClientStore = defineStore('mcpClient', () => {
         autoCallable: true,
         // Third-party tools are untrusted → confirm before running.
         risk: 'write',
+        source: 'mcp',
         parameters,
         execute: (args: unknown) =>
           invoke<string>('mcp_call_tool', { id: server.id, tool: tool.name, args }),
@@ -107,6 +109,8 @@ export const useMcpClientStore = defineStore('mcpClient', () => {
       ids.push(id)
     }
     registeredSkills.set(server.id, ids)
+    // 应用用户持久化的开关（如曾在此会话中禁用/限制过该工具）
+    useSkillsStore().syncRegistryFromConfig()
   }
 
   function unbridgeTools(serverId: string): void {

@@ -642,7 +642,7 @@ watch(
 )
 
 onMounted(async () => {
-  skillsStore.loadFromStorage()
+  skillsStore.loadConfig()
   mcpClientStore.loadFromStorage()
   await Promise.all([
     modelsDevStore.fetchProviders(),

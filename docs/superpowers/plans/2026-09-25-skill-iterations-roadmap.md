@@ -21,10 +21,11 @@
 - `stores/agent.ts` 移除 AgentLoop 包装（initLoop/run/executeSkill/abort），保留被 trace 系统真实使用的手动 step API、`runWithPool`、`reset`
 - `runAgent`（risk 门禁）成为唯一执行路径；类型检查/lint/构建全绿
 
-## 迭代 4：独立 `/skills` 管理页（按需触发）
+## 迭代 4：独立 `/skills` 管理页（✅ 已完成，见 `2026-09-25-skills-page.md`）
 
-- **触发条件**：迭代 2 的统计面板 + 自定义技能编辑器让 640px 对话框超载时再动，避免为升级而升级
-- 做法：`/skills` 路由 + `AppSidebar.navItems` 入口 + i18n `sidebar.skills`（可选托盘菜单项）；技能行/编辑器先抽成 `components/skills/` 共享组件；页面按 HostsManager 编排模式，工具栏用 console-header-bar 风格；聊天页入口保留（仍可弹轻量版）
+- 与 UI/UX 审查的 P0/P1 设计债合并实施：三个对话框主题令牌迁移、z-index 层级体系、MCP 对话框/附件菜单 i18n
+- 抽取 `SkillRow`/`SkillEditor` 共享组件（令牌化 + a11y 从诞生起）；确认卡键盘支持
+- `/skills` 路由 + 侧边栏 + 托盘入口；console 工具栏（搜索/来源筛选/使用排序/清零）+ 平铺列表；聊天页对话框保留为轻量入口
 
 ## 更远方向（暂不排期）
 

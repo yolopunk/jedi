@@ -1,7 +1,7 @@
 <template>
   <Transition name="confirm-fade">
-    <div v-if="store.pendingConfirmation" class="confirm-overlay">
-      <div class="confirm-card">
+    <div v-if="store.pendingConfirmation" class="confirm-overlay" @keydown="handleKeydown">
+      <div class="confirm-card" role="dialog" aria-modal="true">
         <div class="confirm-head">
           <span class="confirm-risk" :class="`risk-${store.pendingConfirmation?.risk}`">
             {{ riskLabel }}
@@ -15,7 +15,7 @@
           <button class="btn btn-deny" @click="store.resolveConfirmation(false)">
             {{ $t('skills.confirm.deny') }}
           </button>
-          <button class="btn btn-approve" @click="store.resolveConfirmation(true)">
+          <button ref="approveBtn" class="btn btn-approve" @click="store.resolveConfirmation(true)">
             {{ $t('skills.confirm.approve') }}
           </button>
           <button class="btn btn-always" @click="store.resolveConfirmation(true, true)">
@@ -28,14 +28,35 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAiChatStore } from '@/stores/aiChat'
 
 const store = useAiChatStore()
 const { t } = useI18n()
 
+const approveBtn = ref<HTMLButtonElement | null>(null)
+
 const isSystemRisk = computed(() => store.pendingConfirmation?.risk === 'system')
+
+// 确认卡出现时把焦点移到"批准执行"，保证键盘用户能立刻操作
+watch(
+  () => store.pendingConfirmation,
+  req => {
+    if (req) nextTick(() => approveBtn.value?.focus())
+  }
+)
+
+/** Esc 拒绝、Enter 批准；resolveConfirmation 幂等，重复触发无害 */
+function handleKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape') {
+    e.preventDefault()
+    store.resolveConfirmation(false)
+  } else if (e.key === 'Enter') {
+    e.preventDefault()
+    store.resolveConfirmation(true)
+  }
+}
 
 const riskLabel = computed(() => {
   switch (store.pendingConfirmation?.risk) {

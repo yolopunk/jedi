@@ -63,12 +63,12 @@ const prettyArgs = computed(() => {
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: var(--z-confirm);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding: 0 0 32px;
-  background: rgba(0, 0, 0, 0.32);
+  background: rgb(var(--ink-rgb) / 0.32);
   backdrop-filter: blur(2px);
 }
 
@@ -76,10 +76,10 @@ const prettyArgs = computed(() => {
   width: min(560px, calc(100vw - 32px));
   border-radius: 14px;
   padding: 18px 20px 16px;
-  background: rgba(24, 26, 32, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
-  color: #e8e8ec;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
 }
 
 .confirm-head {
@@ -99,21 +99,21 @@ const prettyArgs = computed(() => {
 }
 
 .risk-system {
-  background: rgba(255, 86, 86, 0.16);
-  color: #ff7a7a;
-  border: 1px solid rgba(255, 86, 86, 0.35);
+  background: rgb(var(--danger-rgb) / 0.16);
+  color: var(--danger);
+  border: 1px solid rgb(var(--danger-rgb) / 0.35);
 }
 
 .risk-write {
-  background: rgba(255, 176, 32, 0.14);
-  color: #ffc451;
-  border: 1px solid rgba(255, 176, 32, 0.32);
+  background: rgb(var(--warning-rgb) / 0.14);
+  color: var(--warning);
+  border: 1px solid rgb(var(--warning-rgb) / 0.32);
 }
 
 .confirm-title {
   font-size: 15px;
   font-weight: 600;
-  font-family: var(--mono-font, monospace);
+  font-family: var(--jedi-font-mono);
 }
 
 .confirm-desc {
@@ -128,9 +128,9 @@ const prettyArgs = computed(() => {
   overflow: auto;
   padding: 10px 12px;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  font-family: var(--mono-font, monospace);
+  background: rgb(var(--ink-rgb) / 0.12);
+  border: 1px solid var(--border);
+  font-family: var(--jedi-font-mono);
   font-size: 12px;
   line-height: 1.5;
   white-space: pre-wrap;
@@ -142,9 +142,9 @@ const prettyArgs = computed(() => {
   padding: 8px 10px;
   border-radius: 8px;
   font-size: 12px;
-  background: rgba(255, 86, 86, 0.1);
-  border: 1px solid rgba(255, 86, 86, 0.25);
-  color: #ff9a9a;
+  background: rgb(var(--danger-rgb) / 0.1);
+  border: 1px solid rgb(var(--danger-rgb) / 0.25);
+  color: var(--danger);
 }
 
 .confirm-actions {
@@ -168,19 +168,20 @@ const prettyArgs = computed(() => {
 }
 
 .btn-deny {
-  background: rgba(255, 255, 255, 0.08);
-  color: #d6d6da;
+  background: rgb(var(--text-rgb) / 0.08);
+  color: var(--text);
 }
 
 .btn-approve {
-  background: linear-gradient(135deg, #5b8cff, #6a5bff);
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .btn-always {
-  background: rgba(251, 191, 36, 0.16);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.35);
+  /* 次级操作用描边样式：主操作"批准执行"保持品牌色，避免视觉权重倒挂 */
+  background: transparent;
+  color: var(--warning);
+  border: 1px solid rgb(var(--warning-rgb) / 0.45);
 }
 
 .confirm-fade-enter-active,

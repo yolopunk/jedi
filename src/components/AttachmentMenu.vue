@@ -1,6 +1,6 @@
 <template>
   <div class="attachment-menu">
-    <div class="menu-title">Skills · 启用后 agent 可调用</div>
+    <div class="menu-title">{{ $t('skills.menuTitle') }}</div>
     <div
       v-for="skill in skillsStore.allSkills"
       :key="skill.id"

@@ -35,6 +35,13 @@
   --accent: #38bdf8;
   --accent-rgb: 56 189 248;
   --text-rgb: 244 244 245;
+
+  /* Overlay stacking order (theme-independent):
+     scrim < management panels < blocking confirmations < toasts. */
+  --z-scrim: 3000;
+  --z-panel: 3100;
+  --z-confirm: 3200;
+  --z-toast: 3300;
 }
 
 /* =========================================================

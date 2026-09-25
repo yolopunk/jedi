@@ -3,13 +3,11 @@
     <div v-if="modelValue" class="mcp-overlay" @click.self="close">
       <div class="mcp-dialog">
         <div class="mcp-head">
-          <h3>第三方 MCP 服务器</h3>
-          <button class="mcp-close" @click="close">✕</button>
+          <h3>{{ $t('mcp.title') }}</h3>
+          <button class="mcp-close" :aria-label="$t('common.close')" @click="close">✕</button>
         </div>
 
-        <p class="mcp-hint">
-          连接外部 MCP 服务器（stdio），其工具会自动加入 AI 的可用工具集。第三方工具默认需要确认后执行。
-        </p>
+        <p class="mcp-hint">{{ $t('mcp.hint') }}</p>
 
         <div v-if="store.error" class="mcp-error">{{ store.error }}</div>
 
@@ -29,41 +27,45 @@
                 :disabled="store.isConnecting(s.id)"
                 @click="store.connect(s.id)"
               >
-                {{ store.isConnecting(s.id) ? '连接中…' : '连接' }}
+                {{ store.isConnecting(s.id) ? $t('mcp.connecting') : $t('mcp.connect') }}
               </button>
-              <button v-else class="mcp-btn ghost" @click="store.disconnect(s.id)">断开</button>
-              <button class="mcp-btn danger" @click="store.removeServer(s.id)">删除</button>
+              <button v-else class="mcp-btn ghost" @click="store.disconnect(s.id)">
+                {{ $t('mcp.disconnect') }}
+              </button>
+              <button class="mcp-btn danger" @click="store.removeServer(s.id)">
+                {{ $t('mcp.remove') }}
+              </button>
             </div>
           </div>
-          <div v-if="store.servers.length === 0" class="mcp-empty">还没有配置 MCP 服务器</div>
+          <div v-if="store.servers.length === 0" class="mcp-empty">{{ $t('mcp.empty') }}</div>
         </div>
 
         <div class="mcp-add">
-          <div class="mcp-add-title">添加服务器</div>
+          <div class="mcp-add-title">{{ $t('mcp.addTitle') }}</div>
           <div class="mcp-mode">
             <button class="mcp-tab" :class="{ on: form.mode === 'stdio' }" @click="form.mode = 'stdio'">
-              本地 (stdio)
+              {{ $t('mcp.modeLocal') }}
             </button>
             <button class="mcp-tab" :class="{ on: form.mode === 'sse' }" @click="form.mode = 'sse'">
-              远程 (SSE)
+              {{ $t('mcp.modeRemote') }}
             </button>
           </div>
-          <input v-model="form.name" class="mcp-input" placeholder="名称，如 Filesystem" />
+          <input v-model="form.name" class="mcp-input" :placeholder="$t('mcp.namePlaceholder')" />
           <template v-if="form.mode === 'stdio'">
-            <input v-model="form.command" class="mcp-input" placeholder="命令，如 npx" />
-            <input v-model="form.argsText" class="mcp-input" placeholder="参数（空格分隔），如 -y @modelcontextprotocol/server-filesystem /tmp" />
+            <input v-model="form.command" class="mcp-input" :placeholder="$t('mcp.commandPlaceholder')" />
+            <input v-model="form.argsText" class="mcp-input" :placeholder="$t('mcp.argsPlaceholder')" />
           </template>
           <template v-else>
-            <input v-model="form.url" class="mcp-input" placeholder="URL，如 http://localhost:3000/sse" />
+            <input v-model="form.url" class="mcp-input" :placeholder="$t('mcp.urlPlaceholder')" />
           </template>
-          <button class="mcp-btn primary" :disabled="!canAdd" @click="add">添加</button>
+          <button class="mcp-btn primary" :disabled="!canAdd" @click="add">
+            {{ $t('mcp.add') }}
+          </button>
         </div>
 
         <div class="mcp-export">
-          <div class="mcp-add-title">把 Jedi 作为 MCP server</div>
-          <p class="mcp-hint">
-            在其他 MCP 客户端（如 Claude Desktop）中，将 Jedi 配置为以下命令，即可使用 Jedi 的只读工具（记忆 / 网页）：
-          </p>
+          <div class="mcp-add-title">{{ $t('mcp.exportTitle') }}</div>
+          <p class="mcp-hint">{{ $t('mcp.exportHint') }}</p>
           <code class="mcp-code">jedi --mcp-server</code>
         </div>
       </div>
@@ -114,7 +116,13 @@ function add(): void {
     })
   } else {
     const args = form.argsText.trim() ? form.argsText.trim().split(/\s+/) : []
-    store.addServer({ id, name: form.name.trim(), command: form.command.trim(), args, env: [] })
+    store.addServer({
+      id,
+      name: form.name.trim(),
+      command: form.command.trim(),
+      args,
+      env: [],
+    })
   }
   form.name = ''
   form.command = ''
@@ -127,11 +135,11 @@ function add(): void {
 .mcp-overlay {
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: var(--z-panel);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgb(var(--ink-rgb) / 0.4);
   backdrop-filter: blur(2px);
 }
 
@@ -141,10 +149,10 @@ function add(): void {
   overflow: auto;
   border-radius: 14px;
   padding: 20px 22px;
-  background: rgba(24, 26, 32, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
-  color: #e8e8ec;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
 }
 
 .mcp-head {
@@ -162,7 +170,7 @@ function add(): void {
 .mcp-close {
   background: none;
   border: none;
-  color: #aaa;
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 15px;
 }
@@ -179,8 +187,8 @@ function add(): void {
   padding: 8px 10px;
   border-radius: 8px;
   font-size: 12px;
-  background: rgba(255, 86, 86, 0.14);
-  color: #ff7a7a;
+  background: rgb(var(--danger-rgb) / 0.14);
+  color: var(--danger);
 }
 
 .mcp-list {
@@ -197,8 +205,8 @@ function add(): void {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgb(var(--text-rgb) / 0.04);
+  border: 1px solid rgb(var(--text-rgb) / 0.06);
 }
 
 .mcp-item-main {
@@ -218,19 +226,19 @@ function add(): void {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #666;
+  background: var(--text-subtle);
 }
 
 .mcp-dot.on {
-  background: #4ade80;
-  box-shadow: 0 0 6px #4ade80;
+  background: var(--success);
+  box-shadow: var(--glow-success);
 }
 
 .mcp-item-cmd {
   margin-top: 2px;
   font-size: 11px;
   opacity: 0.55;
-  font-family: var(--mono-font, monospace);
+  font-family: var(--jedi-font-mono);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -247,7 +255,7 @@ function add(): void {
   flex-direction: column;
   gap: 8px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border);
 }
 
 .mcp-add-title {
@@ -264,24 +272,24 @@ function add(): void {
 .mcp-tab {
   flex: 1;
   cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
   border-radius: 7px;
   padding: 6px 10px;
   font-size: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #bdbdc2;
+  background: rgb(var(--text-rgb) / 0.04);
+  color: var(--text-muted);
 }
 
 .mcp-tab.on {
-  background: rgba(91, 140, 255, 0.18);
-  border-color: rgba(91, 140, 255, 0.5);
-  color: #fff;
+  background: rgb(var(--accent-rgb) / 0.18);
+  border-color: rgb(var(--accent-rgb) / 0.5);
+  color: var(--accent);
 }
 
 .mcp-export {
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border);
 }
 
 .mcp-code {
@@ -289,25 +297,25 @@ function add(): void {
   margin-top: 4px;
   padding: 6px 10px;
   border-radius: 7px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-family: var(--mono-font, monospace);
+  background: rgb(var(--ink-rgb) / 0.15);
+  border: 1px solid var(--border);
+  font-family: var(--jedi-font-mono);
   font-size: 12px;
-  color: #9ecbff;
+  color: var(--accent);
 }
 
 .mcp-input {
   padding: 8px 10px;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #e8e8ec;
+  background: var(--bg-terminal);
+  border: 1px solid var(--border);
+  color: var(--text);
   font-size: 13px;
   outline: none;
 }
 
 .mcp-input:focus {
-  border-color: rgba(91, 140, 255, 0.6);
+  border-color: rgb(var(--accent-rgb) / 0.6);
 }
 
 .mcp-empty {
@@ -324,8 +332,8 @@ function add(): void {
   padding: 6px 12px;
   font-size: 12px;
   font-weight: 600;
-  background: rgba(255, 255, 255, 0.08);
-  color: #d6d6da;
+  background: rgb(var(--text-rgb) / 0.08);
+  color: var(--text);
   transition: filter 0.15s ease;
 }
 
@@ -339,17 +347,17 @@ function add(): void {
 }
 
 .mcp-btn.primary {
-  background: linear-gradient(135deg, #5b8cff, #6a5bff);
-  color: #fff;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 .mcp-btn.ghost {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgb(var(--text-rgb) / 0.06);
 }
 
 .mcp-btn.danger {
-  background: rgba(255, 86, 86, 0.16);
-  color: #ff7a7a;
+  background: rgb(var(--danger-rgb) / 0.16);
+  color: var(--danger);
 }
 
 .mcp-fade-enter-active,

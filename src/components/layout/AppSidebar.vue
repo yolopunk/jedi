@@ -119,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { mdiDns, mdiPodcast, mdiRobot, mdiWallpaper } from '@mdi/js'
+import { mdiDns, mdiPodcast, mdiRobot, mdiToolboxOutline, mdiWallpaper } from '@mdi/js'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import LogoShaderBg from '@/components/common/LogoShaderBg.vue'
 
@@ -134,6 +134,7 @@ const emit = defineEmits<{
 
 const navItems = [
   { to: '/chat', icon: mdiRobot, label: 'CHAT', tooltipKey: 'sidebar.chat' },
+  { to: '/skills', icon: mdiToolboxOutline, label: 'SKILLS', tooltipKey: 'sidebar.skills' },
   { to: '/hosts', icon: mdiDns, label: 'HOSTS', tooltipKey: 'sidebar.hostsManager' },
   { to: '/wallpapers', icon: mdiWallpaper, label: 'WALLPAPER', tooltipKey: 'sidebar.wallpapers' },
   { to: '/podcast', icon: mdiPodcast, label: 'PODCAST', tooltipKey: 'sidebar.podcast' },

@@ -8,6 +8,7 @@ export default {
     wallpapers: '知识壁纸',
     podcast: '小宇宙',
     chat: '对话',
+    skills: '技能',
     models: '模型',
     system: '系统',
     online: '在线',
@@ -375,6 +376,12 @@ export default {
       avgMs: '平均耗时',
       lastUsed: '最近使用',
     },
+    page: {
+      searchPlaceholder: '搜索技能（名称/描述/ID）',
+      filterAll: '全部',
+      filterLabel: '按来源筛选',
+      empty: '没有匹配的技能',
+    },
     risk: {
       read: '只读',
       write: '写入',
@@ -410,6 +417,7 @@ export default {
     urlPlaceholder: 'URL，如 http://localhost:3000/sse',
     add: '添加',
     exportTitle: '把 Jedi 作为 MCP server',
-    exportHint: '在其他 MCP 客户端（如 Claude Desktop）中，将 Jedi 配置为以下命令，即可使用 Jedi 的只读工具（记忆 / 网页）：',
+    exportHint:
+      '在其他 MCP 客户端（如 Claude Desktop）中，将 Jedi 配置为以下命令，即可使用 Jedi 的只读工具（记忆 / 网页）：',
   },
 }

@@ -40,6 +40,14 @@ pub fn load_tray_config(app: &App) {
     }
   };
 
+  let nav_skills = match MenuItem::with_id(app, "nav_skills", "🧩 Skills", true, None::<&str>) {
+    Ok(item) => item,
+    Err(e) => {
+      eprintln!("failed to create nav_skills menu item: {}", e);
+      return;
+    }
+  };
+
   let separator = match PredefinedMenuItem::separator(app) {
     Ok(s) => s,
     Err(e) => {
@@ -70,6 +78,7 @@ pub fn load_tray_config(app: &App) {
       &nav_hosts,
       &nav_wallpapers,
       &nav_podcast,
+      &nav_skills,
       &separator,
       &show,
       &quit,
@@ -118,12 +127,13 @@ pub fn load_tray_config(app: &App) {
       "quit" => {
         app.exit(-1);
       }
-      "nav_chat" | "nav_hosts" | "nav_wallpapers" | "nav_podcast" => {
+      "nav_chat" | "nav_hosts" | "nav_wallpapers" | "nav_podcast" | "nav_skills" => {
         let route = match event.id.as_ref() {
           "nav_chat" => "/chat",
           "nav_hosts" => "/hosts",
           "nav_wallpapers" => "/wallpapers",
           "nav_podcast" => "/podcast",
+          "nav_skills" => "/skills",
           _ => "",
         };
         if let Some(window) = app.get_webview_window("main") {

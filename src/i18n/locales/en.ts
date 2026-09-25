@@ -8,6 +8,7 @@ export default {
     wallpapers: 'Knowledge Wall',
     podcast: 'Xiaoyuzhou',
     chat: 'Chat',
+    skills: 'Skills',
     models: 'Models',
     system: 'SYSTEM',
     online: 'ONLINE',
@@ -374,6 +375,12 @@ export default {
       avgMs: 'Avg time',
       lastUsed: 'Last used',
     },
+    page: {
+      searchPlaceholder: 'Search skills (name/description/id)',
+      filterAll: 'All',
+      filterLabel: 'Filter by source',
+      empty: 'No matching skills',
+    },
     risk: {
       read: 'Read',
       write: 'Write',
@@ -409,6 +416,7 @@ export default {
     urlPlaceholder: 'URL, e.g. http://localhost:3000/sse',
     add: 'Add',
     exportTitle: 'Run Jedi as an MCP server',
-    exportHint: 'In other MCP clients (e.g. Claude Desktop), configure Jedi with this command to expose its read-only tools (memory / web):',
+    exportHint:
+      'In other MCP clients (e.g. Claude Desktop), configure Jedi with this command to expose its read-only tools (memory / web):',
   },
 }

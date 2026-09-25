@@ -4,6 +4,7 @@ pub(crate) mod hosts;
 pub(crate) mod memory;
 pub(crate) mod os;
 pub(crate) mod podcast;
+pub(crate) mod skills;
 pub(crate) mod terminal;
 pub(crate) mod wallpapers;
 pub(crate) mod web;

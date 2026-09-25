@@ -15,12 +15,11 @@
 - UI：管理对话框技能行指标徽章（`N 次 · 成功率 · 均耗时`）、展开详情、按使用频率排序、清零入口
 - 开工前需细化：防抖窗口大小、并发 worker 写入合并策略
 
-## 迭代 3：`loop.ts` / `runAgent` 双执行路径清理
+## 迭代 3：`loop.ts` / `runAgent` 双执行路径清理（✅ 已完成，156f6af）
 
-- 先 grep 确认 `AgentLoop` / `AgentStep` / `AgentEvent` 的真实消费方（`stores/agent.ts` 待查）
-- 删除 `loop.ts` 与无人消费的类型/死状态；确认语义统一收敛到 runAgent 的 risk 门禁（废弃 `confirmationMode`）
-- 已知陷阱：`AgentLoop.executeSkill` 的 `confirmationMode: 'always'` 路径 emit 后直接 return，无 resolve 通路会悬死——删除即修复
-- 配一次全链路回归：对话 / 后台 worker / trace 面板
+- 已删除 `loop.ts`（`AgentLoop` 类）与 `AgentConfig`/`ConfirmationMode` 类型、`confirmation_needed` 事件（悬死路径随之消除）、`AgentState.confirmationRequired` 字段
+- `stores/agent.ts` 移除 AgentLoop 包装（initLoop/run/executeSkill/abort），保留被 trace 系统真实使用的手动 step API、`runWithPool`、`reset`
+- `runAgent`（risk 门禁）成为唯一执行路径；类型检查/lint/构建全绿
 
 ## 迭代 4：独立 `/skills` 管理页（按需触发）
 

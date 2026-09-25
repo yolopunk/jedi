@@ -115,7 +115,9 @@ export const useMcpClientStore = defineStore('mcpClient', () => {
 
   function unbridgeTools(serverId: string): void {
     const ids = registeredSkills.get(serverId) ?? []
-    ids.forEach(id => skillRegistry.unregister(id))
+    ids.forEach(id => {
+      skillRegistry.unregister(id)
+    })
     registeredSkills.delete(serverId)
   }
 

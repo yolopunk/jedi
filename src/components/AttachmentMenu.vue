@@ -14,6 +14,10 @@
         {{ skillsStore.isSkillEnabled(skill.id) ? 'ON' : 'OFF' }}
       </span>
     </div>
+    <div class="manage-item" @click.stop="emit('manage')">
+      <span class="manage-icon">⚙</span>
+      <span class="manage-text">{{ $t('skills.manageEntry') }}</span>
+    </div>
   </div>
 </template>
 
@@ -21,9 +25,10 @@
 import type { Skill } from '@/skills/types'
 import { useSkillsStore } from '@/stores/skills'
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'close'): void
   (e: 'select', action: string): void
+  (e: 'manage'): void
 }>()
 
 const skillsStore = useSkillsStore()
@@ -97,5 +102,23 @@ function handleSkillClick(skill: Skill) {
 .submenu-item .skill-badge.on {
   background: var(--success);
   color: var(--text-inverse);
+}
+
+.manage-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-top: 4px;
+  border-top: 1px solid rgb(var(--text-rgb) / 0.08);
+  border-radius: 0 0 6px 6px;
+  cursor: pointer;
+  color: rgb(var(--text-rgb) / 0.5);
+  font-size: 12px;
+  transition: all 0.1s;
+}
+
+.manage-item:hover {
+  color: var(--text);
 }
 </style>

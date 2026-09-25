@@ -9,13 +9,13 @@
 //  2. Custom markdown skills from ~/.jedi/skills/ — loaded via backend
 //     commands and bridged into the same skillRegistry.
 
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
 import { deleteCustomSkill, listCustomSkills, saveCustomSkill } from '@/api/skills'
 import { useStorage } from '@/composables/useStorage'
 import { createCustomSkill } from '@/skills/custom'
 import { skillRegistry } from '@/skills/registry'
 import type { CustomSkillDef, SkillSource } from '@/skills/types'
-import { defineStore } from 'pinia'
-import { computed, ref } from 'vue'
 
 /** 单个技能的持久化开关配置 */
 export interface SkillFlags {

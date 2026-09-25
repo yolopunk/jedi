@@ -46,7 +46,7 @@ export function createCustomSkill(def: CustomSkillDef): Skill {
     parameters: {
       type: 'object',
       properties: Object.fromEntries(
-        params.map(p => [p, { type: 'string' as const, description: p, required: true }]),
+        params.map(p => [p, { type: 'string' as const, description: p, required: true }])
       ),
     },
     execute: async (args: Record<string, unknown>) => ({

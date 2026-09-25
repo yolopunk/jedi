@@ -34,6 +34,12 @@
               </svg>
               <span v-if="mcpClientStore.connectedIds.length > 0" class="workers-count">{{ mcpClientStore.connectedIds.length }}</span>
             </button>
+            <button class="workers-btn" @click="showSkillsManager = true" :title="$t('skills.title')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+              </svg>
+              <span v-if="skillsStore.enabledCount > 0" class="workers-count">{{ skillsStore.enabledCount }}</span>
+            </button>
           </div>
         </div>
 
@@ -220,6 +226,7 @@
             v-if="showAttachmentMenu"
             @close="showAttachmentMenu = false"
             @select="handleAttachmentSelect"
+            @manage="openSkillsManager"
           />
         </div>
       </div>
@@ -281,6 +288,9 @@
 
     <!-- Third-party MCP servers management -->
     <McpServersDialog v-model="showMcpServers" />
+
+    <!-- Skills management -->
+    <SkillsManagerDialog v-model="showSkillsManager" />
   </div>
 </template>
 
@@ -293,14 +303,15 @@ import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
 import CommandPalette from '@/components/CommandPalette.vue'
 import { useAgentStore } from '@/stores/agent'
 import { useAiChatStore } from '@/stores/aiChat'
+import { useMcpClientStore } from '@/stores/mcpClient'
 import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
 import { useSkillsStore } from '@/stores/skills'
 import { renderSafe, sharedMd } from '@/utils/markdown'
-import { useMcpClientStore } from '@/stores/mcpClient'
 import AgentTrace from './AgentTrace.vue'
 import McpServersDialog from './McpServersDialog.vue'
 import ModelSettings from './ModelSettings.vue'
+import SkillsManagerDialog from './SkillsManagerDialog.vue'
 import ToolConfirmCard from './ToolConfirmCard.vue'
 
 const store = useAiChatStore()
@@ -334,6 +345,7 @@ watch(inputText, value => {
 })
 const showModelSettings = ref(false)
 const showMcpServers = ref(false)
+const showSkillsManager = ref(false)
 const showAttachmentMenu = ref(false)
 const showModelDropdown = ref(false)
 const isHistoryCollapsed = ref(true)
@@ -371,6 +383,11 @@ function selectModelFromDropdown(model: any) {
 function handleAttachmentSelect(_action: string) {
   showAttachmentMenu.value = false
   // Handle: attachment, skills, web-search - can be implemented later
+}
+
+function openSkillsManager() {
+  showAttachmentMenu.value = false
+  showSkillsManager.value = true
 }
 
 function formatContextShort(len?: number): string {

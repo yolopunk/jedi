@@ -364,6 +364,16 @@ export default {
       systemWarning: '系统级操作加入白名单后将不再弹出确认，请谨慎授权。',
     },
     noParams: '无参数',
+    stats: {
+      badge: '{calls} 次 · {rate}% · 均 {avg}ms',
+      sortByUsage: '按使用排序',
+      clear: '清零统计',
+      confirmClear: '确认清零',
+      calls: '调用',
+      failures: '失败',
+      avgMs: '平均耗时',
+      lastUsed: '最近使用',
+    },
     risk: {
       read: '只读',
       write: '写入',

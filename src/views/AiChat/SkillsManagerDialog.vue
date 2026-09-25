@@ -12,6 +12,15 @@
 
         <p class="skl-hint">{{ $t('skills.hint') }}</p>
 
+        <div class="skl-toolbar">
+          <button class="skl-mini" :class="{ on: sortByUsage }" @click="sortByUsage = !sortByUsage">
+            ⇅ {{ $t('skills.stats.sortByUsage') }}
+          </button>
+          <button class="skl-mini danger" @click="handleClearStats">
+            {{ pendingClearStats ? $t('skills.stats.confirmClear') : $t('skills.stats.clear') }}
+          </button>
+        </div>
+
         <div v-if="skillsStore.error" class="skl-error">{{ skillsStore.error }}</div>
 
         <!-- 自定义技能编辑器（新建/编辑） -->
@@ -77,6 +86,7 @@
                   <div class="skl-item-name">
                     {{ skill.name }}
                     <span class="skl-risk" :class="skill.risk ?? 'read'">{{ $t(`skills.risk.${skill.risk ?? 'read'}`) }}</span>
+                    <span v-if="statBadge(skill)" class="skl-stat-badge">{{ statBadge(skill) }}</span>
                   </div>
                   <div class="skl-item-desc">{{ skill.description }}</div>
                   <div v-if="expandedId === skill.id" class="skl-params">
@@ -87,6 +97,17 @@
                       <code>{{ name }}</code>
                       <span class="skl-param-type">{{ schema.type }}</span>
                       <span class="skl-param-desc">{{ schema.description }}{{ schema.required ? ' *' : '' }}</span>
+                    </div>
+                  </div>
+                  <div v-if="expandedId === skill.id && statLines(skill).length" class="skl-stats-detail">
+                    <div class="skl-stats-line">
+                      <span v-for="line in statLines(skill)" :key="line.label" class="skl-stat-item">
+                        <b>{{ line.label }}</b> {{ line.value }}
+                      </span>
+                    </div>
+                    <div v-for="(err, i) in statErrors(skill)" :key="i" class="skl-stat-err">
+                      <span class="skl-err-ts">{{ new Date(err.ts).toLocaleTimeString() }}</span>
+                      <span class="skl-err-msg">{{ err.msg }}</span>
                     </div>
                   </div>
                 </div>
@@ -143,7 +164,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Skill } from '@/skills/types'
+import type { Skill, SkillSource } from '@/skills/types'
+import { useSkillStatsStore } from '@/stores/skillStats'
 import { useSkillsStore } from '@/stores/skills'
 
 defineProps<{ modelValue: boolean }>()
@@ -151,6 +173,7 @@ const emit = defineEmits<{ 'update:modelValue': [boolean] }>()
 
 const { t } = useI18n()
 const skillsStore = useSkillsStore()
+const statsStore = useSkillStatsStore()
 
 const RISKS = ['read', 'write', 'system'] as const
 const ID_RE = /^[a-z0-9-_]{1,64}$/
@@ -161,6 +184,8 @@ const editorOpen = ref(false)
 const editingId = ref<string | null>(null)
 const saving = ref(false)
 const formError = ref<string | null>(null)
+const sortByUsage = ref(false)
+const pendingClearStats = ref(false)
 const form = reactive({
   id: '',
   name: '',
@@ -170,14 +195,24 @@ const form = reactive({
   prompt: '',
 })
 
+function groupSkills(source: SkillSource) {
+  const list = [...skillsStore.skillsBySource(source)]
+  if (sortByUsage.value) {
+    list.sort(
+      (a, b) => (statsStore.statsFor(b.id)?.calls ?? 0) - (statsStore.statsFor(a.id)?.calls ?? 0)
+    )
+  }
+  return list
+}
+
 const groups = computed(() => [
   {
     key: 'builtin',
     label: t('skills.groupBuiltin'),
-    skills: skillsStore.skillsBySource('builtin'),
+    skills: groupSkills('builtin'),
   },
-  { key: 'custom', label: t('skills.groupCustom'), skills: skillsStore.skillsBySource('custom') },
-  { key: 'mcp', label: t('skills.groupMcp'), skills: skillsStore.skillsBySource('mcp') },
+  { key: 'custom', label: t('skills.groupCustom'), skills: groupSkills('custom') },
+  { key: 'mcp', label: t('skills.groupMcp'), skills: groupSkills('mcp') },
 ])
 
 const canSave = computed(() => {
@@ -198,6 +233,46 @@ function paramEntries(
   skill: Skill
 ): [string, { type: string; description: string; required?: boolean }][] {
   return Object.entries(skill.parameters?.properties ?? {})
+}
+
+/** 技能行统计徽章文案；无记录返回 null（不显示） */
+function statBadge(skill: Skill): string | null {
+  const s = statsStore.statsFor(skill.id)
+  if (!s || s.calls === 0) return null
+  const rate = Math.round(((s.calls - s.failures) / s.calls) * 100)
+  const avg = Math.round(s.totalMs / s.calls)
+  return t('skills.stats.badge', { calls: s.calls, rate, avg })
+}
+
+/** 展开面板统计详情行 */
+function statLines(skill: Skill): { label: string; value: string }[] {
+  const s = statsStore.statsFor(skill.id)
+  if (!s) return []
+  const avg = s.calls ? Math.round(s.totalMs / s.calls) : 0
+  return [
+    { label: t('skills.stats.calls'), value: String(s.calls) },
+    { label: t('skills.stats.failures'), value: String(s.failures) },
+    { label: t('skills.stats.avgMs'), value: `${avg}ms` },
+    {
+      label: t('skills.stats.lastUsed'),
+      value: s.lastUsedAt ? new Date(s.lastUsedAt).toLocaleString() : '—',
+    },
+  ]
+}
+
+/** 最近错误（新→旧） */
+function statErrors(skill: Skill) {
+  return (statsStore.statsFor(skill.id)?.recentErrors ?? []).slice().reverse()
+}
+
+async function handleClearStats(): Promise<void> {
+  // 两段式确认：第一次点击进入确认态，再点一次才真正清零
+  if (!pendingClearStats.value) {
+    pendingClearStats.value = true
+    return
+  }
+  pendingClearStats.value = false
+  await statsStore.clearAll()
 }
 
 function startCreate(): void {
@@ -490,6 +565,67 @@ async function handleDelete(id: string): Promise<void> {
 .skl-param-empty {
   font-size: 11px;
   opacity: 0.4;
+}
+
+.skl-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.skl-mini.on {
+  border-color: rgba(91, 140, 255, 0.5);
+  color: #9ecbff;
+}
+
+.skl-stat-badge {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(158, 203, 255, 0.12);
+  color: #9ecbff;
+  font-family: var(--mono-font, monospace);
+  font-weight: 600;
+}
+
+.skl-stats-detail {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skl-stats-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 11px;
+}
+
+.skl-stat-item b {
+  opacity: 0.55;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.skl-stat-err {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  align-items: baseline;
+}
+
+.skl-err-ts {
+  opacity: 0.45;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.skl-err-msg {
+  color: #ff9a9a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .skl-item-actions {

@@ -6,10 +6,10 @@
 // (~/.jedi/skill_stats.json) in whole-map batches, debounced by 3s — the
 // data is small and bounded, so at most the last 3s of counters can be lost.
 
-import { clearSkillStats, listSkillStats, saveSkillStats } from '@/api/skills'
-import type { SkillStatEntry } from '@/api/skills'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { SkillStatEntry } from '@/api/skills'
+import { clearSkillStats, listSkillStats, saveSkillStats } from '@/api/skills'
 
 const FLUSH_DELAY_MS = 3000
 

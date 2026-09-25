@@ -364,6 +364,16 @@ export default {
         'System-level tools on the whitelist will no longer prompt for confirmation. Grant with care.',
     },
     noParams: 'No parameters',
+    stats: {
+      badge: '{calls} calls · {rate}% · {avg}ms avg',
+      sortByUsage: 'Sort by usage',
+      clear: 'Reset stats',
+      confirmClear: 'Confirm reset',
+      calls: 'Calls',
+      failures: 'Failures',
+      avgMs: 'Avg time',
+      lastUsed: 'Last used',
+    },
     risk: {
       read: 'Read',
       write: 'Write',

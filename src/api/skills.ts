@@ -20,3 +20,38 @@ export function saveCustomSkill(skill: CustomSkillDef): Promise<CustomSkillDef> 
 export function deleteCustomSkill(id: string): Promise<boolean> {
   return invoke('skills_delete', { id })
 }
+
+// ========== 技能执行统计 API ==========
+
+/** 单条最近错误记录（msg 已截断，不含 args） */
+export interface SkillStatError {
+  ts: number
+  msg: string
+}
+
+/** 单个技能的累计执行统计 */
+export interface SkillStatEntry {
+  calls: number
+  failures: number
+  totalMs: number
+  lastUsedAt: number
+  recentErrors: SkillStatError[]
+}
+
+/** skillId → 统计条目 */
+export type SkillStatsMap = Record<string, SkillStatEntry>
+
+/** 列出全部技能执行统计 */
+export function listSkillStats(): Promise<SkillStatsMap> {
+  return invoke('skill_stats_list')
+}
+
+/** 整表保存统计（前端防抖批量写；后端保存前强制截断防护） */
+export function saveSkillStats(stats: SkillStatsMap): Promise<void> {
+  return invoke('skill_stats_save', { stats })
+}
+
+/** 清零全部统计 */
+export function clearSkillStats(): Promise<void> {
+  return invoke('skill_stats_clear')
+}

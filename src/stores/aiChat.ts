@@ -10,6 +10,7 @@ import {
   summarizeValue,
 } from '@/agent/runAgent'
 import { skillRegistry } from '@/skills/registry'
+import { withStatsHooks } from '@/agent/statsHooks'
 import { useAgentStore } from './agent'
 import { useModelsDevStore } from './modelsDev'
 import { useProviderConfigStore } from './providerConfig'
@@ -476,7 +477,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
           stepLimit,
           confirmTool: requestConfirmation,
         },
-        {
+        withStatsHooks({
           onToolStart: ({ skillId, skillName, skillDescription, args, startedAt }) => {
             const relatedDecisionTrace = [...toolDecisionTraces.values()]
               .reverse()
@@ -637,7 +638,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
               assistantMessage.metadata.run.finishReason = finishReason
             }
           },
-        }
+        }),
       )
 
       ensurePlanCompleted('Answered directly.')

@@ -307,6 +307,7 @@ import { useMcpClientStore } from '@/stores/mcpClient'
 import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
 import { useSkillsStore } from '@/stores/skills'
+import { useSkillStatsStore } from '@/stores/skillStats'
 import { renderSafe, sharedMd } from '@/utils/markdown'
 import AgentTrace from './AgentTrace.vue'
 import McpServersDialog from './McpServersDialog.vue'
@@ -317,6 +318,7 @@ import ToolConfirmCard from './ToolConfirmCard.vue'
 const store = useAiChatStore()
 const mcpClientStore = useMcpClientStore()
 const skillsStore = useSkillsStore()
+const skillStatsStore = useSkillStatsStore()
 const agentStore = useAgentStore()
 const modelsDevStore = useModelsDevStore()
 const providerConfigStore = useProviderConfigStore()
@@ -660,6 +662,7 @@ watch(
 
 onMounted(async () => {
   skillsStore.loadConfig()
+  skillStatsStore.loadStats()
   mcpClientStore.loadFromStorage()
   await Promise.all([
     modelsDevStore.fetchProviders(),

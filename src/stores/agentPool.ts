@@ -11,6 +11,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import type { TaskSpec, WorkerStatus } from '@/agent/poolTypes'
 import { type ChatTurn, runAgent } from '@/agent/runAgent'
+import { withStatsHooks } from '@/agent/statsHooks'
 import { useModelsDevStore } from './modelsDev'
 import { useProviderConfigStore } from './providerConfig'
 import { useSkillsStore } from './skills'
@@ -102,14 +103,14 @@ export const useAgentPoolStore = defineStore('agentPool', () => {
           // 调整方案，而不是挂起等一个可能无人应答的确认。
           confirmTool: ({ skillId }) => Promise.resolve(skillsStore.isAlwaysAllowed(skillId)),
         },
-        {
+        withStatsHooks({
           onToolStart: ({ skillName }) => {
             worker.progress = `Using ${skillName}…`
           },
           onTextDelta: ({ fullContent }) => {
             worker.progress = fullContent.slice(-160)
           },
-        }
+        })
       )
 
       if (controller.signal.aborted) return

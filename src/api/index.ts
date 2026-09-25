@@ -12,5 +12,7 @@ export * from './hosts'
 
 // 导出播客API
 export * from './podcast'
+// 导出自定义技能API
+export * from './skills'
 // 导出壁纸管理API
 export * from './wallpaper'

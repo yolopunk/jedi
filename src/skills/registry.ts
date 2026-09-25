@@ -14,6 +14,7 @@ export class SkillRegistry {
   private skills: Map<string, Skill> = new Map()
 
   register(skill: Skill): void {
+    if (!skill.source) skill.source = 'builtin'
     this.skills.set(skill.id, skill)
   }
 
@@ -41,6 +42,13 @@ export class SkillRegistry {
     const skill = this.skills.get(id)
     if (skill) {
       skill.enabled = enabled
+    }
+  }
+
+  setAutoCallable(id: string, value: boolean): void {
+    const skill = this.skills.get(id)
+    if (skill) {
+      skill.autoCallable = value
     }
   }
 }

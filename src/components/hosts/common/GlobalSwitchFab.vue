@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { mdiPowerPlugOutline, mdiPowerPlugOffOutline } from '@mdi/js'
+import { mdiPowerPlugOffOutline, mdiPowerPlugOutline } from '@mdi/js'
 
 // 定义组件属性
 defineProps<{

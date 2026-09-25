@@ -72,24 +72,24 @@
 </template>
 
 <script setup lang="ts">
-import { open } from '@tauri-apps/plugin-shell'
+import { mdiMenu, mdiMenuOpen } from '@mdi/js'
 import { listen } from '@tauri-apps/api/event'
+import { open } from '@tauri-apps/plugin-shell'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { mdiMenu, mdiMenuOpen } from '@mdi/js'
+import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
+import AboutDialog from '@/components/dialogs/AboutDialog.vue'
+import HelpDialog from '@/components/dialogs/HelpDialog.vue'
+import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
+import AppHeader from '@/components/layout/AppHeader.vue'
+import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useStorage } from '@/composables/useStorage'
 import { initTheme } from '@/composables/useTheme'
 import { useUpdate } from '@/composables/useUpdate'
 import { useWallpaper } from '@/composables/useWallpaper'
-import AppSidebar from '@/components/layout/AppSidebar.vue'
-import AppHeader from '@/components/layout/AppHeader.vue'
 import { TITLE_BAR_TOTAL_HEIGHT } from '@/utils/platform'
-import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
-import HelpDialog from '@/components/dialogs/HelpDialog.vue'
-import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
-import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 
 const { locale } = useI18n()
 const { getItem, setItem } = useStorage()

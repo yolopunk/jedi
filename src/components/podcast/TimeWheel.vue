@@ -127,8 +127,8 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
-import { formatTime } from '@/utils/timestampParser'
 import type { TimestampMarker } from '@/utils/timestampParser'
+import { formatTime } from '@/utils/timestampParser'
 
 const props = defineProps<{
   duration: number
@@ -136,9 +136,7 @@ const props = defineProps<{
   markers: TimestampMarker[]
 }>()
 
-const emit = defineEmits<{
-  (e: 'seek', time: number): void
-}>()
+const emit = defineEmits<(e: 'seek', time: number) => void>()
 
 const svgRef = ref<SVGElement | null>(null)
 

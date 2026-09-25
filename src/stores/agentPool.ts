@@ -9,8 +9,8 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { type ChatTurn, runAgent } from '@/agent/runAgent'
 import type { TaskSpec, WorkerStatus } from '@/agent/poolTypes'
+import { type ChatTurn, runAgent } from '@/agent/runAgent'
 import { useModelsDevStore } from './modelsDev'
 import { useProviderConfigStore } from './providerConfig'
 

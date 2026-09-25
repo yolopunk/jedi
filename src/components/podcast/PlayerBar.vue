@@ -69,10 +69,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
 import { mdiPause, mdiPlay } from '@mdi/js'
+import { computed, ref } from 'vue'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
-import { parseTimestamps, formatTime } from '@/utils/timestampParser'
+import { formatTime, parseTimestamps } from '@/utils/timestampParser'
 import TimeWheel from './TimeWheel.vue'
 
 const { currentPlaying, isPaused, currentTime, duration, togglePlay, seek, stop } = useAudioPlayer()

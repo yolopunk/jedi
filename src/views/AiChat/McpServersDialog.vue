@@ -80,7 +80,13 @@ const emit = defineEmits<{ 'update:modelValue': [boolean] }>()
 
 const store = useMcpClientStore()
 
-const form = reactive({ mode: 'stdio' as 'stdio' | 'sse', name: '', command: '', argsText: '', url: '' })
+const form = reactive({
+  mode: 'stdio' as 'stdio' | 'sse',
+  name: '',
+  command: '',
+  argsText: '',
+  url: '',
+})
 
 const canAdd = computed(() => {
   if (form.name.trim() === '') return false
@@ -93,9 +99,19 @@ function close(): void {
 
 function add(): void {
   if (!canAdd.value) return
-  const id = `${form.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`
+  const id = `${form.name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`
   if (form.mode === 'sse') {
-    store.addServer({ id, name: form.name.trim(), command: '', args: [], env: [], url: form.url.trim() })
+    store.addServer({
+      id,
+      name: form.name.trim(),
+      command: '',
+      args: [],
+      env: [],
+      url: form.url.trim(),
+    })
   } else {
     const args = form.argsText.trim() ? form.argsText.trim().split(/\s+/) : []
     store.addServer({ id, name: form.name.trim(), command: form.command.trim(), args, env: [] })

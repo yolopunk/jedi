@@ -222,13 +222,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
 import { mdiCpu64Bit, mdiDownload, mdiEthernet, mdiMemory, mdiServer, mdiUpload } from '@mdi/js'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { getOsInfo } from '@/api/hosts'
-import { useAudioPlayer } from '@/composables/useAudioPlayer'
-import { useUpdate } from '@/composables/useUpdate'
 import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
 import PlayerBar from '@/components/podcast/PlayerBar.vue'
+import { useAudioPlayer } from '@/composables/useAudioPlayer'
+import { useUpdate } from '@/composables/useUpdate'
 import type { OsInfo } from '@/types/os'
 import pkg from '../../../package.json'
 

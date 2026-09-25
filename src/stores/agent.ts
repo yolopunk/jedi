@@ -1,27 +1,21 @@
 // src/stores/agent.ts
+//
+// Trace/step bookkeeping for the chat UI. The manual step API
+// (startStep/completeStep/failStep/setStatus) is driven by aiChat's runAgent
+// hooks; runWithPool schedules background workers. The old AgentLoop wrapper
+// was removed — runAgent (risk-based gating) is the single execution path.
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { AgentLoop } from '@/agent/loop'
-import type { AgentConfig, AgentEvent, AgentState, AgentStep, AgentStepType } from '@/agent/types'
+import type { AgentEvent, AgentState, AgentStep, AgentStepType } from '@/agent/types'
 import { useAgentPoolStore } from './agentPool'
 import type { MessageMetadata } from './aiChat'
 
-const defaultConfig: AgentConfig = {
-  model: '',
-  provider: '',
-  confirmationMode: 'dangerous',
-  maxIterations: 10,
-  temperature: 0.7,
-}
-
 export const useAgentStore = defineStore('agent', () => {
-  const config = ref<AgentConfig>({ ...defaultConfig })
   const state = ref<AgentState>({
     status: 'idle',
     currentStep: null,
     history: [],
-    confirmationRequired: false,
   })
   const traceLog = ref<AgentEvent[]>([])
   const tracePanelOpen = ref(false)
@@ -29,7 +23,6 @@ export const useAgentStore = defineStore('agent', () => {
   // "follow the latest assistant turn" (live streaming view).
   const selectedTrace = ref<MessageMetadata | null>(null)
 
-  let loop: AgentLoop | null = null
   let manualStepCounter = 0
 
   const isRunning = computed(
@@ -37,20 +30,6 @@ export const useAgentStore = defineStore('agent', () => {
   )
   const history = computed(() => state.value.history)
   const currentStatus = computed(() => state.value.status)
-
-  function initLoop(): AgentLoop {
-    loop = new AgentLoop(config.value)
-    loop.onEvent((event: AgentEvent) => {
-      traceLog.value.push(event)
-      state.value = loop?.getState() ?? state.value
-    })
-    return loop
-  }
-
-  async function run(message: string): Promise<void> {
-    if (!loop) initLoop()
-    await loop?.run(message)
-  }
 
   function runWithPool(prompt: string, description: string): string {
     const pool = useAgentPoolStore()
@@ -63,23 +42,12 @@ export const useAgentStore = defineStore('agent', () => {
     })
   }
 
-  async function executeSkill(skillId: string, args: any): Promise<any> {
-    if (!loop) initLoop()
-    return await loop?.executeSkill(skillId, args)
-  }
-
-  function abort(): void {
-    loop?.abort()
-  }
-
   function reset(): void {
-    loop?.reset()
     traceLog.value = []
     state.value = {
       status: 'idle',
       currentStep: null,
       history: [],
-      confirmationRequired: false,
     }
   }
 
@@ -142,7 +110,6 @@ export const useAgentStore = defineStore('agent', () => {
   }
 
   return {
-    config,
     state,
     traceLog,
     tracePanelOpen,
@@ -150,11 +117,7 @@ export const useAgentStore = defineStore('agent', () => {
     isRunning,
     history,
     currentStatus,
-    initLoop,
-    run,
     runWithPool,
-    executeSkill,
-    abort,
     reset,
     setStatus,
     startStep,

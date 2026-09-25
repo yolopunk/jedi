@@ -262,8 +262,6 @@ function getIcon(event: AgentEvent): string {
       return '!'
     case 'status_change':
       return '~'
-    case 'confirmation_needed':
-      return '?'
     default:
       return '-'
   }
@@ -523,7 +521,6 @@ watch(
 .trace-entry.step_done .trace-icon { color: var(--success); }
 .trace-entry.step_error .trace-icon { color: var(--danger); }
 .trace-entry.status_change .trace-icon { color: var(--warning); }
-.trace-entry.confirmation_needed .trace-icon { color: var(--accent-2); }
 
 .trace-entry.raw {
   opacity: 0.82;

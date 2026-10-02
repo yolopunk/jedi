@@ -1,32 +1,3 @@
-/* ========== CRT Effects ========== */
-.scanlines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 100;
-  background:repeating-linear-gradient(
-    0deg,
-    rgb(var(--ink-rgb) / 0.12),
-    rgb(var(--ink-rgb) / 0.12) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-}
-
-.crt-vignette {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 99;
-  background:radial-gradient(ellipse at center, transparent 0%, rgb(var(--ink-rgb) / 0.35) 100%);
-}
-
 /* ========== Console Buttons ========== */
 /* Clean Int UI buttons: bordered neutral (secondary) / filled accent (primary) / filled danger */
 .console-btn {
@@ -120,13 +91,6 @@
   min-width: 200px;
 }
 
-.input-prompt {
-  color: var(--success);
-  font-size: 12px;
-  margin-right: 8px;
-  text-shadow: 0 0 8px rgb(var(--success-rgb) / 0.4);
-}
-
 .console-input {
   flex: 1;
   background: transparent;
@@ -138,59 +102,7 @@
 }
 
 .console-input::placeholder {
-  color: var(--border);
-}
-
-/* ========== Status Indicators ========== */
-.status-indicators {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.status-light {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  position: relative;
-}
-
-.status-light.online {
-  background: var(--success);
-  box-shadow: 0 0 10px var(--success), 0 0 20px rgb(var(--success-rgb) / 0.33);
-  animation: pulse-online 2s ease-in-out infinite;
-}
-
-.status-light.standby {
-  background: var(--warning);
-  box-shadow: 0 0 10px var(--warning), 0 0 20px rgb(var(--warning-rgb) / 0.33);
-  animation: pulse-standby 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse-online {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-@keyframes pulse-standby {
-  0%, 100% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.2); }
-}
-
-/* ========== Grid Background ========== */
-.grid-bg-layer,
-.grid-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-  z-index: 0;
-  background-image:
-    linear-gradient(rgb(var(--accent-rgb) / 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(var(--accent-rgb) / 0.03) 1px, transparent 1px);
-  background-size: 40px 40px;
+  color: var(--text-subtle);
 }
 
 /* ========== Empty State ========== */

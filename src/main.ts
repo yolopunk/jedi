@@ -1,4 +1,3 @@
-import Tres from '@tresjs/core'
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 import App from './App.vue'
@@ -16,5 +15,5 @@ import './views/podcast/podcast.css'
 const pinia = createPinia()
 const app = createApp(App)
 
-app.use(pinia).use(router).use(vuetify).use(Tres).use(i18n)
+app.use(pinia).use(router).use(vuetify).use(i18n)
 app.mount('#app')

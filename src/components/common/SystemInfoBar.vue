@@ -123,7 +123,6 @@
                         <v-tooltip
                             activator="parent"
                             location="top"
-                            content-class="jedi-tooltip"
                         >
                             <div class="d-flex flex-column align-center">
                                 <span class="font-weight-bold mb-1">{{
@@ -156,7 +155,6 @@
                         <v-tooltip
                             activator="parent"
                             location="top"
-                            content-class="jedi-tooltip"
                         >
                             <div class="d-flex flex-column align-center">
                                 <span class="font-weight-bold mb-1">{{

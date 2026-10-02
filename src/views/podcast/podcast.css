@@ -83,7 +83,6 @@
 .title-prefix, .title-suffix {
   color: var(--accent);
   font-size: 11px;
-  text-shadow: 0 0 10px rgb(var(--accent-rgb) / 0.5);
 }
 
 .title-text {
@@ -91,7 +90,6 @@
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--success);
-  text-shadow: 0 0 10px rgb(var(--success-rgb) / 0.5);
 }
 
 .metric-item {
@@ -110,7 +108,6 @@
   color: var(--accent);
   font-size: 12px;
   font-weight: 700;
-  text-shadow: 0 0 8px rgb(var(--accent-rgb) / 0.4);
 }
 
 /* Podcast Grid */
@@ -138,25 +135,12 @@
   overflow: hidden;
   background: rgb(var(--bg-rgb) / 0.8);
   border: 1px solid rgb(var(--accent-rgb) / 0.1);
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
 .podcast-card:hover {
   border-color: rgb(var(--accent-rgb) / 0.4);
   transform: translateY(-2px);
-}
-
-.podcast-card:hover .card-glow {
-  opacity: 1;
-}
-
-.card-glow {
-  position: absolute;
-  inset: -2px;
-  background: radial-gradient(circle at center, rgb(var(--accent-rgb) / 0.15) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
 }
 
 .image-wrapper {
@@ -217,7 +201,7 @@
 .card-title {
   font-size: 12px;
   font-weight: 700;
-  color: var(--border);
+  color: var(--text);
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -258,14 +242,12 @@
   font-size: 20px;
   font-weight: 700;
   color: var(--success);
-  text-shadow: 0 0 10px rgb(var(--success-rgb) / 0.3);
   margin: 0 0 8px 0;
 }
 
 .podcast-author {
   font-size: 12px;
   color: var(--accent);
-  text-shadow: 0 0 8px rgb(var(--accent-rgb) / 0.3);
 }
 
 .podcast-categories {
@@ -294,7 +276,6 @@
   font-size: 36px;
   font-weight: 900;
   color: var(--accent);
-  text-shadow: 0 0 15px rgb(var(--accent-rgb) / 0.4);
   line-height: 1;
 }
 
@@ -317,7 +298,6 @@
 .desc-prefix {
   color: var(--success);
   font-size: 14px;
-  text-shadow: 0 0 8px rgb(var(--success-rgb) / 0.4);
 }
 
 .desc-text {
@@ -527,7 +507,7 @@
 .episode-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--border);
+  color: var(--text);
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -536,7 +516,6 @@
 
 .episode-item.active .episode-title {
   color: var(--accent);
-  text-shadow: 0 0 8px rgb(var(--accent-rgb) / 0.3);
 }
 
 .episode-desc {
@@ -593,7 +572,6 @@
 .play-icon {
   font-size: 12px;
   color: var(--success);
-  text-shadow: 0 0 8px rgb(var(--success-rgb) / 0.4);
   opacity: 0;
   transition: opacity 0.15s ease;
 }
@@ -639,20 +617,6 @@
   border-bottom: 1px solid rgb(var(--accent-rgb) / 0.15);
 }
 
-.show-notes-bg-text {
-  position: absolute;
-  top: 65%;
-  left: 65%;
-  transform: translate(-50%, -50%);
-  font-size: 120px;
-  font-weight: 900;
-  color: rgb(var(--accent-rgb) / 0.03);
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 0;
-  letter-spacing: 8px;
-}
-
 .notes-header-content {
   position: relative;
   z-index: 1;
@@ -672,7 +636,6 @@
   font-size: 20px;
   font-weight: 700;
   color: var(--success);
-  text-shadow: 0 0 10px rgb(var(--success-rgb) / 0.3);
   margin: 0 0 12px 0;
 }
 

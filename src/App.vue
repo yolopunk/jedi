@@ -38,7 +38,7 @@
           >
             <v-icon :icon="sidebarCollapsed ? mdiMenu : mdiMenuOpen" size="16" />
             <v-tooltip activator="parent" location="top">
-              {{ sidebarCollapsed ? '展开侧边栏' : '收起侧边栏' }}
+              {{ sidebarCollapsed ? t('sidebar.expand') : t('sidebar.collapse') }}
             </v-tooltip>
           </v-btn>
         </div>
@@ -46,7 +46,12 @@
           <system-info-bar></system-info-bar>
         </div>
         <div class="status-bar-right" data-tauri-no-drag>
-          <span class="status-text clickable" @click="toggleLanguage" :title="localeTooltip">{{ currentLocale }}</span>
+          <button
+            class="status-text clickable"
+            :title="localeTooltip"
+            :aria-label="localeTooltip"
+            @click="toggleLanguage"
+          >{{ currentLocale }}</button>
         </div>
       </div>
     </div>
@@ -91,7 +96,7 @@ import { useUpdate } from '@/composables/useUpdate'
 import { useWallpaper } from '@/composables/useWallpaper'
 import { TITLE_BAR_TOTAL_HEIGHT } from '@/utils/platform'
 
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 const { getItem, setItem } = useStorage()
 const { currentPlaying, setAudioRef } = useAudioPlayer()
 const { startAutoCheck } = useUpdate()
@@ -110,12 +115,8 @@ const showAboutDialog = ref(false)
 // Sidebar state
 const sidebarCollapsed = ref(false)
 
-// Current locale display
-const currentLocale = computed(() => {
-  const flag = locale.value === 'zh' ? '🇨🇳 ' : '🇺🇸 '
-  const text = locale.value === 'zh' ? 'zh-CN' : 'en-US'
-  return flag + text
-})
+// Current locale display (text only: flag emojis render as "CH"/"US" letters on Windows)
+const currentLocale = computed(() => (locale.value === 'zh' ? 'zh-CN' : 'en-US'))
 
 const localeTooltip = computed(() => {
   return locale.value === 'zh' ? 'Switch to English' : '切换到中文'
@@ -331,6 +332,9 @@ onUnmounted(() => {
   font-size: 0.75rem;
   color: rgba(var(--v-theme-on-surface), 0.5);
   padding: 0 8px;
+  background: none;
+  border: none;
+  font-family: inherit;
 }
 
 .status-text.clickable {
@@ -340,5 +344,11 @@ onUnmounted(() => {
 
 .status-text.clickable:hover {
   color: rgb(var(--v-theme-primary));
+}
+
+.status-text.clickable:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-primary));
+  outline-offset: 1px;
+  border-radius: 3px;
 }
 </style>

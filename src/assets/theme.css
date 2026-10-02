@@ -18,7 +18,11 @@
    Fonts
    ========================================================= */
 :root {
-  --jedi-font-ui: 'CangErJinKai', '苍耳今楷', '仓耳今楷05-W04', '仓耳今楷05 W04', '仓耳今楷', 'Kaiti SC', 'STKaiti', 'KaiTi', 'Songti SC', ui-serif, serif;
+  /* UI 主字体：系统中性 sans（中文回退苹方/雅黑），保证小字号可读性 */
+  --jedi-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', Roboto, sans-serif;
+  /* 品牌展示字体（楷体）：仅用于 logo/大标题等少数签名位置 */
+  --jedi-font-display: 'CangErJinKai', '苍耳今楷', '仓耳今楷05-W04', '仓耳今楷05 W04', '仓耳今楷', 'Kaiti SC', 'STKaiti', 'KaiTi', 'Songti SC', ui-serif, serif;
   --jedi-font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
 
   /* Dark fallback before the .light-theme/.dark-theme class is applied.
@@ -108,11 +112,6 @@
   --glow-text-accent: none;
   --glow-text-success: none;
   --glow-text-accent-2: none;
-
-  /* Decorative overlays (CRT effects) — neutralized */
-  --grid-line: rgba(39, 40, 46, 0.035);
-  --scanline: rgba(39, 40, 46, 0.012);
-  --vignette: rgba(39, 40, 46, 0.03);
 }
 
 /* =========================================================
@@ -167,23 +166,19 @@
   --info: #38bdf8;
   --info-rgb: 56 189 248;
 
+  /* Glow — flattened to match light theme; identity lives in color, not glow */
+  --glow-accent: none;
+  --glow-accent-hover: var(--shadow-md);
+  --glow-success: none;
+  --glow-text-accent: none;
+  --glow-text-success: none;
+  --glow-text-accent-2: none;
+
   /* Elevation — matte, minimal shadow */
   --shadow-sm: none;
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
 
-  /* Glow — the sci-fi identity */
-  --glow-accent: 0 0 8px rgb(var(--accent-rgb) / 0.4);
-  --glow-accent-hover: 0 0 12px rgb(var(--accent-rgb) / 0.5);
-  --glow-success: 0 0 10px rgb(var(--success-rgb) / 0.5);
-  --glow-text-accent: 0 0 8px rgb(var(--accent-rgb) / 0.35);
-  --glow-text-success: 0 0 8px rgb(var(--success-rgb) / 0.35);
-  --glow-text-accent-2: 0 0 8px rgb(var(--accent-2-rgb) / 0.35);
-
-  /* Decorative overlays (CRT effects) */
-  --grid-line: rgb(var(--accent-rgb) / 0.03);
-  --scanline: rgba(0, 0, 0, 0.15);
-  --vignette: rgba(0, 0, 0, 0.4);
 }
 
 /* =========================================================
@@ -311,6 +306,19 @@ body {
   scrollbar-color: rgb(var(--text-rgb) / 0.22) transparent;
 }
 
+/* Reduced motion: collapse decorative animation/transitions app-wide.
+   Status indicators keep their color; only the motion is dropped. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* =========================================================
    Global Typography Overrides for Vuetify
    ========================================================= */
@@ -332,80 +340,12 @@ body {
   font-family: var(--jedi-font-ui) !important;
 }
 
-/* =========================================================
-   Glow / Saber accents (token-driven; auto-flat in light)
-   ========================================================= */
-.glow-saber {
-  box-shadow: var(--glow-accent);
-  will-change: box-shadow;
-}
-
-.glow-hover:hover {
-  box-shadow: var(--glow-accent-hover);
-}
-
-.neon-glow-cyan { text-shadow: var(--glow-text-accent); }
-.neon-glow-green { text-shadow: var(--glow-text-success); }
-.neon-glow-magenta { text-shadow: var(--glow-text-accent-2); }
-
-.neon-box-cyan {
-  box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / 0.18), var(--glow-accent);
-}
-.neon-box-green {
-  box-shadow: 0 0 0 1px rgb(var(--success-rgb) / 0.18), var(--glow-success);
-}
-
 /* Focus ring — accessibility */
 .glow-focus:focus-visible,
 .btn:focus-visible,
 .sidebar-item:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-}
-
-/* =========================================================
-   Sci-Fi Console Utility Classes (token-driven)
-   ========================================================= */
-
-/* CRT Scanlines Overlay */
-.scanlines {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  background: repeating-linear-gradient(
-    0deg,
-    var(--scanline),
-    var(--scanline) 1px,
-    transparent 1px,
-    transparent 2px
-  );
-}
-
-/* CRT Vignette Effect */
-.crt-vignette {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 99;
-  background: radial-gradient(ellipse at center, transparent 0%, var(--vignette) 100%);
-}
-
-/* Grid Background */
-.grid-bg {
-  position: relative;
-}
-
-.grid-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: 40px 40px;
-  pointer-events: none;
-  z-index: 0;
 }
 
 /* Terminal Font */
@@ -433,51 +373,6 @@ body {
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
   opacity: 0.5;
-}
-
-/* Status Light */
-.status-light {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  position: relative;
-}
-
-.status-light.online {
-  background: var(--success);
-  box-shadow: var(--glow-success);
-  animation: pulse-online 2s ease-in-out infinite;
-}
-
-.status-light.standby {
-  background: var(--warning);
-  box-shadow: 0 0 10px rgb(var(--warning-rgb) / 0.5);
-  animation: pulse-standby 1.5s ease-in-out infinite;
-}
-
-.status-light.offline {
-  background: var(--danger);
-  box-shadow: 0 0 10px rgb(var(--danger-rgb) / 0.4);
-}
-
-@keyframes pulse-online {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-@keyframes pulse-standby {
-  0%, 100% { opacity: 0.8; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.2); }
-}
-
-/* Blinking Cursor */
-.blink-cursor {
-  animation: cursor-blink 1s step-end infinite;
-}
-
-@keyframes cursor-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
 }
 
 /* Console Button — clean Int UI (secondary / primary / danger) */
@@ -733,20 +628,6 @@ body {
   color: var(--text-muted);
   margin-bottom: 16px;
   font-family: var(--jedi-font-mono);
-}
-
-/* =========================================================
-   Light mode: drop CRT/sci-fi decoration for a clean IDE look
-   (these effects only read well on dark surfaces)
-   ========================================================= */
-.light-theme .scanlines,
-.light-theme .crt-vignette {
-  display: none !important;
-}
-
-.light-theme .grid-background,
-.light-theme .grid-bg::before {
-  background-image: none !important;
 }
 
 /* Top accent hairline on consoles/cards — keep but very subtle in light */

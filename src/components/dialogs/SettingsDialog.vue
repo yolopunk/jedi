@@ -15,8 +15,8 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h2>Settings</h2>
-            <p>Configure application preferences</p>
+            <h2>{{ $t('dialogs.settings.title') }}</h2>
+            <p>{{ $t('dialogs.settings.subtitle') }}</p>
           </div>
         </div>
         <button class="close-btn" @click="$emit('update:modelValue', false)">

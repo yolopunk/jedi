@@ -221,7 +221,7 @@ function onTrackMouseDown(e: MouseEvent) {
 .wheel-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: var(--z-scrim);
   background:rgb(var(--ink-rgb) / 0.3);
   display: flex;
   align-items: flex-end;

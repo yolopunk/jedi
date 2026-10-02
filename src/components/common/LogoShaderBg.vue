@@ -1,7 +1,6 @@
 <template>
   <div class="logo-shader-wrap" :class="{ collapsed: isCollapsed }">
     <canvas v-if="!isCollapsed" ref="canvasRef" class="logo-shader-bg" />
-    <div v-if="showFps && !isCollapsed" class="shader-fps">{{ fps }} fps</div>
   </div>
 </template>
 
@@ -16,8 +15,6 @@ const props = defineProps<{
 }>()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
-const fps = ref(0)
-const showFps = ref(true)
 
 let gl: WebGLRenderingContext | null = null
 let prog: WebGLProgram | null = null
@@ -25,10 +22,6 @@ let animId = 0
 let running = true
 let needsResize = true
 let resizeHandler: (() => void) | null = null
-
-// FPS tracking
-let frameCount = 0
-let lastFpsTime = 0
 
 // Shader params (official defaults)
 const rotationSpeed = 0.3
@@ -395,14 +388,6 @@ function render(now: number) {
   if (!running || !canvasRef.value) return
   if (needsResize) resize()
 
-  // FPS
-  frameCount++
-  if (now - lastFpsTime >= 1000) {
-    fps.value = frameCount
-    frameCount = 0
-    lastFpsTime = now
-  }
-
   if (gl && prog) {
     gl.uniform1f(uTime, now * 0.001)
     gl.uniform2f(uRes, canvasRef.value?.width, canvasRef.value?.height)
@@ -470,7 +455,6 @@ function onVisibilityChange() {
   } else {
     running = true
     needsResize = true
-    lastFpsTime = performance.now()
     animId = requestAnimationFrame(render)
   }
 }
@@ -481,12 +465,10 @@ onMounted(() => {
 
   if (!initWebGL(canvas)) {
     console.warn('[LogoShader] WebGL not available')
-    showFps.value = false
     return
   }
 
   resize()
-  lastFpsTime = performance.now()
   animId = requestAnimationFrame(render)
 
   resizeHandler = () => {
@@ -523,7 +505,6 @@ watch(
     } else {
       running = true
       needsResize = true
-      lastFpsTime = performance.now()
       animId = requestAnimationFrame(render)
     }
   }
@@ -552,18 +533,5 @@ watch(
 
 .logo-shader-wrap.collapsed .logo-shader-bg {
   opacity: 0.25;
-}
-
-.shader-fps {
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  font-family: 'SF Mono', 'Fira Code', monospace;
-  font-size: 9px;
-  color: rgb(var(--accent-rgb) / 0.6);
-  letter-spacing: 0.5px;
-  pointer-events: none;
-  z-index: 10;
-  text-shadow: 0 0 4px rgb(var(--accent-rgb) / 0.3);
 }
 </style>

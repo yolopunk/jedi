@@ -16,8 +16,8 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h2>Edit Host Entry</h2>
-            <p>Modify IP and domain</p>
+            <h2>{{ $t('hosts.dialog.editTitle') }}</h2>
+            <p>{{ $t('hosts.dialog.editSubtitle') }}</p>
           </div>
         </div>
         <button class="close-btn" @click="closeDialog">
@@ -37,7 +37,7 @@
               <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2"/>
               <line x1="12" y1="12" x2="14" y2="14" stroke="currentColor" stroke-width="2"/>
             </svg>
-            IP Address
+            {{ $t('hosts.dialog.ipLabel') }}
           </label>
           <div class="input-wrapper">
             <span class="input-prefix">IP</span>
@@ -57,7 +57,7 @@
               <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
               <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10" stroke="currentColor" stroke-width="1.5"/>
             </svg>
-            Domain
+            {{ $t('hosts.dialog.domainLabel') }}
           </label>
           <div class="input-wrapper">
             <span class="input-prefix">URL</span>
@@ -74,9 +74,9 @@
 
       <!-- Footer -->
       <div class="card-footer">
-        <v-btn variant="text" @click="closeDialog">Cancel</v-btn>
+        <v-btn variant="text" @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
         <v-spacer />
-        <v-btn variant="tonal" color="primary" @click="confirmEdit">Save Changes</v-btn>
+        <v-btn variant="tonal" color="primary" @click="confirmEdit">{{ $t('common.save') }}</v-btn>
       </div>
     </v-card>
   </v-dialog>
@@ -84,8 +84,11 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { HostEntry } from '@/types/hosts'
 import { validateHostInput } from '@/utils/hostsUtils'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: boolean
@@ -118,11 +121,11 @@ function closeDialog() {
 
 function confirmEdit() {
   if (!validateHostInput(hostIp.value, hostDomain.value)) {
-    emit('error', 'IP and domain cannot be empty')
+    emit('error', t('hosts.dialog.ipDomainRequired'))
     return
   }
   if (!props.host) {
-    emit('error', 'Host data lost')
+    emit('error', t('hosts.dialog.hostDataLost'))
     return
   }
   emit('edit', {

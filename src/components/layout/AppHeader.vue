@@ -208,15 +208,8 @@ const checkMaximized = async () => {
 let unlisten: (() => void) | null = null
 
 onMounted(async () => {
-  console.log(
-    '[Jedi TitleBar] onMounted, isMac:',
-    isMac(),
-    'SHOW_WINDOW_CONTROLS:',
-    SHOW_WINDOW_CONTROLS
-  )
   try {
     appWindow = getCurrentWindow()
-    console.log('[Jedi TitleBar] appWindow obtained:', appWindow.label)
   } catch (err) {
     console.error('[Jedi TitleBar] Failed to getCurrentWindow:', err)
     return
@@ -236,23 +229,13 @@ onUnmounted(() => {
 })
 
 const onDragMouseDown = async (e: MouseEvent) => {
-  console.log('[Jedi TitleBar] onDragMouseDown fired', {
-    button: e.button,
-    target: e.target,
-    className: (e.target as HTMLElement)?.className,
-  })
-  if (!appWindow) {
-    console.warn('[Jedi TitleBar] No appWindow')
-    return
-  }
+  if (!appWindow) return
   if (e.button !== 0) return
   const target = e.target as HTMLElement
   if (target.closest('.header-right, .global-actions')) {
-    console.log('[Jedi TitleBar] Clicked on action area, skipping drag')
     return
   }
   try {
-    console.log('[Jedi TitleBar] Calling startDragging()')
     await appWindow.startDragging()
   } catch (err) {
     console.error('[Jedi TitleBar] startDragging failed:', err)
@@ -262,19 +245,13 @@ const onDragMouseDown = async (e: MouseEvent) => {
 const onDragDoubleClick = async (e: MouseEvent) => {
   if (isMac()) return
 
-  console.log('[Jedi TitleBar] onDragDoubleClick fired', { target: e.target, detail: e.detail })
   e.preventDefault()
-  if (!appWindow) {
-    console.warn('[Jedi TitleBar] No appWindow for dblclick')
-    return
-  }
+  if (!appWindow) return
   const target = e.target as HTMLElement
   if (target.closest('.header-right, .global-actions')) {
-    console.log('[Jedi TitleBar] Double-clicked on action area, skipping maximize')
     return
   }
   try {
-    console.log('[Jedi TitleBar] Calling toggleMaximize()')
     await appWindow.toggleMaximize()
   } catch (err) {
     console.error('[Jedi TitleBar] toggleMaximize failed:', err)
@@ -429,11 +406,11 @@ const handleClose = async () => {
 }
 
 .window-btn-close:hover {
-  background: rgba(224, 67, 58, 0.9) !important;
+  background: rgb(var(--danger-rgb) / 0.9) !important;
 }
 
 .window-btn-close:hover .v-icon {
-  color: white !important;
+  color: var(--text-inverse) !important;
   opacity: 1;
 }
 </style>

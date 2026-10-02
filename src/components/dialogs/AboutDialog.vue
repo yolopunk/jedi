@@ -19,8 +19,8 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h2>About</h2>
-            <p>Application info</p>
+            <h2>{{ $t('dialogs.about.title') }}</h2>
+            <p>{{ $t('dialogs.about.subtitle') }}</p>
           </div>
         </div>
         <button class="close-btn" @click="$emit('update:modelValue', false)">
@@ -211,18 +211,13 @@ onMounted(async () => {
   z-index: 2;
 }
 
+/* logo 光晕：静态单层，不做呼吸动画 */
 .logo-glow {
   position: absolute;
   inset: -8px;
   border-radius: 50%;
   background: radial-gradient(circle, rgb(var(--accent-rgb) / 0.3) 0%, transparent 70%);
-  animation: logoPulse 2s ease-in-out infinite;
   z-index: 0;
-}
-
-@keyframes logoPulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.1); }
 }
 
 .app-name {

@@ -1,20 +1,10 @@
 <template>
   <div class="wallpaper-manager scifi-page">
-    <!-- CRT Effects -->
-    <div class="scanlines"></div>
-    <div class="crt-vignette"></div>
-    <!-- Grid Background -->
-    <div class="grid-bg-layer"></div>
-
     <div class="content-wrapper">
       <!-- Top Toolbar -->
       <div class="console-header-bar">
         <div class="header-row">
           <div class="header-left">
-            <div class="status-indicators">
-              <div class="status-light online"></div>
-              <div class="status-light standby"></div>
-            </div>
             <div class="console-title">
               <span class="title-prefix">[</span>
               <span class="title-text">WALLPAPER_ARCHIVE</span>
@@ -126,7 +116,6 @@
               @click="previewWallpaper(wp)"
             >
               <div class="wallpaper-card">
-                <div class="card-glow"></div>
                 <div class="image-wrapper">
                   <v-img
                     :src="wp.url"
@@ -148,15 +137,17 @@
                       @click.stop="setWallpaper(wp)"
                       :disabled="settingId === wp.id"
                       :title="$t('wallpapers.setDesktop')"
+                      :aria-label="$t('wallpapers.setDesktop')"
                     >
-                      <span class="btn-icon">{{ settingId === wp.id ? '⟳' : '⬡' }}</span>
+                      <span class="btn-icon" aria-hidden="true">{{ settingId === wp.id ? '⟳' : '⬡' }}</span>
                     </button>
                     <button
                       class="overlay-btn secondary"
                       @click.stop="previewWallpaper(wp)"
                       :title="$t('wallpapers.viewDetails')"
+                      :aria-label="$t('wallpapers.viewDetails')"
                     >
-                      <span class="btn-icon">ℹ</span>
+                      <span class="btn-icon" aria-hidden="true">ℹ</span>
                     </button>
                   </div>
                 </div>
@@ -173,10 +164,10 @@
           </div>
 
           <div v-else class="empty-state">
-            <div class="empty-icon">◇</div>
-            <div class="empty-text">NO_WALLPAPERS_FOUND</div>
+            <div class="empty-icon" aria-hidden="true">◇</div>
+            <div class="empty-text">{{ t('wallpapers.notFound') }}</div>
             <button class="console-btn primary mt-4" @click="loadWallpapers" :disabled="loading">
-              <span class="btn-text">{{ loading ? 'LOADING...' : t('common.refresh') }}</span>
+              <span class="btn-text">{{ loading ? t('common.loading') : t('common.refresh') }}</span>
             </button>
           </div>
         </div>
@@ -254,7 +245,7 @@
     </v-navigation-drawer>
 
     <!-- Image Viewer Dialog -->
-    <v-dialog v-model="showImageViewer" fullscreen z-index="2500" class="image-viewer-dialog">
+    <v-dialog v-model="showImageViewer" fullscreen :z-index="3000" class="image-viewer-dialog">
       <div class="image-viewer">
         <button class="viewer-close" @click="showImageViewer = false">
           <span class="close-icon">✕</span>
@@ -593,7 +584,6 @@ onUnmounted(() => {
 .title-prefix, .title-suffix {
   color: var(--accent);
   font-size: 11px;
-  text-shadow: 0 0 10px rgb(var(--accent-rgb) / 0.5);
 }
 
 .title-text {
@@ -601,7 +591,6 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 2px;
   color: var(--success);
-  text-shadow: 0 0 10px rgb(var(--success-rgb) / 0.5);
 }
 
 .header-metrics {
@@ -625,7 +614,6 @@ onUnmounted(() => {
   color: var(--accent);
   font-size: 12px;
   font-weight: 700;
-  text-shadow: 0 0 8px rgb(var(--accent-rgb) / 0.4);
 }
 
 .header-right {
@@ -794,7 +782,7 @@ onUnmounted(() => {
 }
 
 .wallpaper-item {
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .wallpaper-card {
@@ -803,26 +791,13 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, border-color 0.3s ease;
 }
 
+/* 卡片 hover 只保留两层强调：上浮 + 遮罩 */
 .wallpaper-card:hover {
   transform: translateY(-4px);
   border-color: rgb(var(--accent-rgb) / 0.3);
-}
-
-.card-glow {
-  position: absolute;
-  inset: -2px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.3), transparent);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
-}
-
-.wallpaper-card:hover .card-glow {
-  opacity: 1;
 }
 
 .image-wrapper {
@@ -837,11 +812,6 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s ease;
-}
-
-.wallpaper-card:hover .wallpaper-image {
-  transform: scale(1.05);
 }
 
 .overlay {
@@ -859,7 +829,8 @@ onUnmounted(() => {
   gap: 12px;
 }
 
-.wallpaper-card:hover .overlay {
+.wallpaper-card:hover .overlay,
+.wallpaper-card:focus-within .overlay {
   opacity: 1;
 }
 
@@ -879,7 +850,7 @@ onUnmounted(() => {
 
 .overlay-btn:hover {
   background: rgb(var(--accent-rgb) / 0.3);
-  box-shadow: 0 0 20px rgb(var(--accent-rgb) / 0.4);
+  border-color: rgb(var(--accent-rgb) / 0.6);
 }
 
 .overlay-btn.secondary {
@@ -899,7 +870,7 @@ onUnmounted(() => {
 .card-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--border);
+  color: var(--text);
   margin-bottom: 6px;
 }
 
@@ -988,7 +959,6 @@ onUnmounted(() => {
   color: var(--success);
   margin-bottom: 16px;
   letter-spacing: 1px;
-  text-shadow: 0 0 10px rgb(var(--success-rgb) / 0.5);
 }
 
 .drawer-tags {
@@ -1114,7 +1084,7 @@ onUnmounted(() => {
 .snackbar-text {
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
-  color: var(--border);
+  color: var(--text);
 }
 
 /* Markdown */

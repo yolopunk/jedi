@@ -1,10 +1,5 @@
 <template>
   <div class="podcast-manager scifi-page">
-    <!-- CRT Effects -->
-    <CrtOverlay />
-    <!-- Grid Background -->
-    <div class="grid-bg-layer"></div>
-
     <div class="content-wrapper">
       <!-- Main Content -->
       <div class="main-content d-flex flex-column h-100 overflow-hidden">
@@ -24,10 +19,6 @@
                 </div>
               </template>
               <template v-else>
-                <div class="status-indicators">
-                  <div class="status-light online"></div>
-                  <div class="status-light standby"></div>
-                </div>
                 <div class="console-title">
                   <span class="title-prefix">[</span>
                   <span class="title-text">PODCAST_ARCHIVE</span>
@@ -126,11 +117,11 @@
         <v-card-actions class="console-card-actions">
           <v-spacer></v-spacer>
           <button class="console-btn" @click="closeAddDialog" :disabled="addLoading">
-            <span class="btn-text">CANCEL</span>
+            <span class="btn-text">{{ $t('common.cancel') }}</span>
           </button>
           <button class="console-btn primary" @click="importOpmlFile" :disabled="addLoading">
             <span class="btn-text" v-if="!addLoading">{{ $t('podcast.import') }}</span>
-            <span class="btn-text" v-else>IMPORTING...</span>
+            <span class="btn-text" v-else>{{ $t('podcast.importing') }}</span>
           </button>
         </v-card-actions>
       </v-card>
@@ -148,8 +139,6 @@
         v-if="currentShowNotesEpisode"
         class="position-relative d-flex flex-column fill-height w-100 overflow-hidden show-notes-container"
       >
-        <CrtOverlay />
-
         <!-- Fixed Top Bar -->
         <div class="notes-header-bar position-absolute top-0 right-0 w-100 d-flex justify-end pa-4" style="z-index: 20;">
           <button class="console-btn icon-only" @click="showShowNotesDialog = false">
@@ -159,8 +148,6 @@
 
         <!-- Header Area -->
         <div class="notes-header flex-shrink-0 position-relative" style="z-index: 10;">
-          <div class="show-notes-bg-text">SHOW NOTES</div>
-
           <div class="d-flex align-end px-6 pt-12 pb-4 notes-header-content">
             <div class="notes-cover mr-4 flex-shrink-0">
               <v-img
@@ -223,7 +210,6 @@
 
 <script setup lang="ts">
 import { mdiMagnify } from '@mdi/js'
-import CrtOverlay from '@/components/common/CrtOverlay.vue'
 import EpisodeShowNotes from '@/components/podcast/EpisodeShowNotes.vue'
 import OpmlExportGuide from '@/components/podcast/OpmlExportGuide.vue'
 import { usePodcastManager } from '@/composables/usePodcastManager'

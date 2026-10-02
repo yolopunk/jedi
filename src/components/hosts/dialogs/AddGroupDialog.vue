@@ -17,8 +17,8 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h2>Add Group</h2>
-            <p>Create a new host group</p>
+            <h2>{{ $t('hosts.dialog.addGroupTitle') }}</h2>
+            <p>{{ $t('hosts.dialog.createGroupSubtitle') }}</p>
           </div>
         </div>
         <button class="close-btn" @click="closeDialog">
@@ -37,7 +37,7 @@
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2"/>
               <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
             </svg>
-            Group Name
+            {{ $t('hosts.dialog.groupNameLabel') }}
           </label>
           <div class="input-wrapper">
             <span class="input-prefix">NAME</span>
@@ -45,7 +45,7 @@
               v-model="groupName"
               type="text"
               class="form-input with-prefix"
-              placeholder="My Server Group"
+              :placeholder="$t('hosts.dialog.groupNamePlaceholder')"
               @keyup.enter="confirmAdd"
             />
           </div>
@@ -53,12 +53,15 @@
 
         <div class="toggle-row">
           <div class="toggle-info">
-            <span class="toggle-label">Use Remote Config</span>
-            <span class="toggle-hint">Load hosts from a remote URL</span>
+            <span class="toggle-label">{{ $t('hosts.dialog.useRemote') }}</span>
+            <span class="toggle-hint">{{ $t('hosts.dialog.remoteToggleHint') }}</span>
           </div>
           <button
             class="toggle-switch"
             :class="{ active: isRemote }"
+            role="switch"
+            :aria-checked="isRemote"
+            :aria-label="$t('hosts.dialog.useRemote')"
             @click="isRemote = !isRemote"
           >
             <span class="toggle-handle"></span>
@@ -72,7 +75,7 @@
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2"/>
                 <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2"/>
               </svg>
-              Remote URL
+              {{ $t('hosts.dialog.remoteUrlLabel') }}
             </label>
             <div class="input-wrapper">
               <span class="input-prefix">URL</span>
@@ -80,7 +83,7 @@
                 v-model="remoteUrl"
                 type="text"
                 class="form-input with-prefix"
-                placeholder="https://example.com/hosts.json"
+                :placeholder="$t('hosts.dialog.remoteUrlPlaceholder')"
                 @keyup.enter="confirmAdd"
               />
             </div>
@@ -94,24 +97,25 @@
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5"/>
                 <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.5"/>
               </svg>
-              Hosts Content
+              {{ $t('hosts.dialog.hostsContentLabel') }}
             </label>
             <textarea
               v-model="hostsContent"
               class="form-textarea"
               rows="4"
-              placeholder="192.168.1.1 example.com&#10;10.0.0.1 api.example.com"
+              :placeholder="$t('hosts.dialog.hostsListPlaceholder')"
+              :aria-label="$t('hosts.dialog.hostsContentLabel')"
             ></textarea>
-            <div class="input-hint">One entry per line: IP followed by domain, separated by space</div>
+            <div class="input-hint">{{ $t('hosts.dialog.onePerLineHint') }}</div>
           </div>
         </v-expand-transition>
       </div>
 
       <!-- Footer -->
       <div class="card-footer">
-        <v-btn variant="text" @click="closeDialog">Cancel</v-btn>
+        <v-btn variant="text" @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
         <v-spacer />
-        <v-btn variant="tonal" color="primary" @click="confirmAdd">Add Group</v-btn>
+        <v-btn variant="tonal" color="primary" @click="confirmAdd">{{ $t('hosts.groups.add') }}</v-btn>
       </div>
     </v-card>
   </v-dialog>
@@ -119,8 +123,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { fetchRemoteConfig } from '@/api/hosts'
 import type { HostEntry } from '@/types/hosts'
+
+const { t } = useI18n()
 
 defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{
@@ -148,19 +155,19 @@ function resetForm() {
 
 async function confirmAdd() {
   if (!groupName.value) {
-    emit('error', 'Group name cannot be empty')
+    emit('error', t('hosts.validation.groupNameRequired'))
     return
   }
 
   if (isRemote.value) {
     if (!remoteUrl.value) {
-      emit('error', 'Remote URL cannot be empty')
+      emit('error', t('hosts.dialog.remoteUrlRequired'))
       return
     }
     try {
       const result = await fetchRemoteConfig(remoteUrl.value)
       if (!Array.isArray(result)) {
-        emit('error', 'Invalid remote config format')
+        emit('error', t('hosts.dialog.remoteInvalid'))
         return
       }
       const matchedGroup = result.find((g: any) => g.name === groupName.value)
@@ -173,10 +180,10 @@ async function confirmAdd() {
         })
         closeDialog()
       } else {
-        emit('error', 'Group not found in remote config')
+        emit('error', t('hosts.dialog.remoteGroupNotFound'))
       }
     } catch (error) {
-      emit('error', `Fetch failed: ${(error as Error).message}`)
+      emit('error', t('hosts.dialog.remoteFetchFailed', { message: (error as Error).message }))
     }
   } else {
     const parsedLines = hostsContent.value

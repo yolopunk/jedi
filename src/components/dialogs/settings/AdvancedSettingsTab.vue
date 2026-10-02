@@ -1,7 +1,7 @@
 <template>
   <div class="settings-section">
     <div class="setting-item">
-      <div class="setting-icon">📄</div>
+      <div class="setting-icon"><v-icon :icon="mdiFileDocumentOutline" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ t('settings.hostsPath') }}</div>
       </div>
@@ -10,13 +10,13 @@
           <input type="text" readonly :value="hostsPath" class="console-input" />
         </div>
         <button class="console-btn small ml-2" @click="openHostsFile" :title="t('wallpapers.openFolder')">
-          <span>📂</span>
+          <v-icon :icon="mdiFolderOpenOutline" size="16" />
         </button>
       </div>
     </div>
 
     <div class="setting-item">
-      <div class="setting-icon">↩</div>
+      <div class="setting-icon"><v-icon :icon="mdiBackupRestore" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ t('settings.backup') }}</div>
       </div>
@@ -26,7 +26,7 @@
     </div>
 
     <div class="setting-item">
-      <div class="setting-icon">🔄</div>
+      <div class="setting-icon"><v-icon :icon="mdiAutorenew" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ t('settings.reset') }}</div>
       </div>
@@ -38,6 +38,12 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiAutorenew,
+  mdiBackupRestore,
+  mdiFileDocumentOutline,
+  mdiFolderOpenOutline,
+} from '@mdi/js'
 import { useI18n } from 'vue-i18n'
 import { showInFolder } from '@/api/wallpaper'
 
@@ -70,8 +76,10 @@ async function openHostsFile() {
 
 .setting-icon {
   width: 24px;
-  text-align: center;
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
 }
 
 .setting-info {
@@ -82,7 +90,7 @@ async function openHostsFile() {
 .setting-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--border);
+  color: var(--text);
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 

@@ -16,8 +16,8 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h2>User Guide</h2>
-            <p>Quick start instructions</p>
+            <h2>{{ $t('dialogs.help.title') }}</h2>
+            <p>{{ $t('dialogs.help.subtitle') }}</p>
           </div>
         </div>
         <button class="close-btn" @click="$emit('update:modelValue', false)">
@@ -47,7 +47,7 @@
       <!-- Footer -->
       <div class="card-footer">
         <v-btn variant="tonal" color="primary" @click="$emit('update:modelValue', false)">
-          Got it
+          {{ $t('dialogs.help.gotIt') }}
         </v-btn>
       </div>
     </v-card>
@@ -55,15 +55,20 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
 defineProps<{ modelValue: boolean }>()
 defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 
-const helpItems = [
-  { icon: 'add-group', text: 'Add group to organize hosts entries' },
-  { icon: 'add-entry', text: 'Add host entries with IP and domain' },
-  { icon: 'toggle', text: 'Toggle entries on/off individually' },
-  { icon: 'global', text: 'Use global switch to enable/disable all' },
-]
+const { t } = useI18n()
+
+const helpItems = computed(() => [
+  { icon: 'add-group', text: t('dialogs.help.itemGroup') },
+  { icon: 'add-entry', text: t('dialogs.help.itemEntry') },
+  { icon: 'toggle', text: t('dialogs.help.itemToggle') },
+  { icon: 'global', text: t('dialogs.help.itemGlobal') },
+])
 </script>
 
 <style scoped>

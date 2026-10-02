@@ -30,3 +30,6 @@ dist-ssr
 # Playwright MCP
 .playwright-mcp/
 .gstack/
+
+# ZCode agent session artifacts
+.zcode/

@@ -16,9 +16,9 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h2>Update Available</h2>
-            <p v-if="!isInstalling">New version ready to install</p>
-            <p v-else>Downloading...</p>
+            <h2>{{ $t('dialogs.update.title') }}</h2>
+            <p v-if="!isInstalling">{{ $t('dialogs.update.ready') }}</p>
+            <p v-else>{{ $t('dialogs.update.downloading') }}</p>
           </div>
         </div>
         <button class="close-btn" @click="$emit('update:modelValue', false)">
@@ -33,7 +33,7 @@
       <div class="card-body">
         <div class="version-info">
           <div class="version-row">
-            <span class="version-label">Current</span>
+            <span class="version-label">{{ $t('dialogs.update.current') }}</span>
             <span class="version-value current">v{{ currentVersion }}</span>
           </div>
           <div class="version-arrow">
@@ -43,7 +43,7 @@
             </svg>
           </div>
           <div class="version-row">
-            <span class="version-label">New</span>
+            <span class="version-label">{{ $t('dialogs.update.new') }}</span>
             <span class="version-value new">v{{ updateInfo.version }}</span>
           </div>
         </div>
@@ -54,7 +54,7 @@
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5"/>
               <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.5"/>
             </svg>
-            Release Notes
+            {{ $t('dialogs.update.releaseNotes') }}
           </div>
           <div class="release-notes-box">
             <div class="release-notes" v-html="formattedReleaseNotes"></div>
@@ -65,14 +65,14 @@
           <div class="progress-bar">
             <div class="progress-fill"></div>
           </div>
-          <span class="progress-text">Installing update...</span>
+          <span class="progress-text">{{ $t('dialogs.update.installing') }}</span>
         </div>
       </div>
 
       <!-- Footer -->
       <div class="card-footer">
         <v-btn variant="text" @click="$emit('update:modelValue', false)" :disabled="isInstalling">
-          Cancel
+          {{ $t('common.cancel') }}
         </v-btn>
         <v-spacer />
         <v-btn variant="tonal" color="primary" @click="$emit('install')" :loading="isInstalling">
@@ -81,7 +81,7 @@
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          Download & Install
+          {{ $t('dialogs.update.install') }}
         </v-btn>
       </div>
     </v-card>

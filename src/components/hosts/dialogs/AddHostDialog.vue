@@ -17,8 +17,8 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h2>Add Host Entry</h2>
-            <p>to: {{ groupName }}</p>
+            <h2>{{ $t('hosts.dialog.addHostTitle') }}</h2>
+            <p>{{ $t('hosts.dialog.addToGroup', { group: groupName }) }}</p>
           </div>
         </div>
         <button class="close-btn" @click="closeDialog">
@@ -38,7 +38,7 @@
               <line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2"/>
               <line x1="12" y1="12" x2="14" y2="14" stroke="currentColor" stroke-width="2"/>
             </svg>
-            IP Address
+            {{ $t('hosts.dialog.ipLabel') }}
           </label>
           <div class="input-wrapper">
             <span class="input-prefix">IP</span>
@@ -58,7 +58,7 @@
               <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
               <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10" stroke="currentColor" stroke-width="1.5"/>
             </svg>
-            Domain
+            {{ $t('hosts.dialog.domainLabel') }}
           </label>
           <div class="input-wrapper">
             <span class="input-prefix">URL</span>
@@ -77,11 +77,11 @@
       <div class="card-footer">
         <div class="footer-hint">
           <span class="hint-dot"></span>
-          Adding to: {{ groupName }}
+          {{ $t('hosts.dialog.addToGroup', { group: groupName }) }}
         </div>
         <v-spacer />
-        <v-btn variant="text" @click="closeDialog">Cancel</v-btn>
-        <v-btn variant="tonal" color="primary" @click="confirmAdd">Add</v-btn>
+        <v-btn variant="text" @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
+        <v-btn variant="tonal" color="primary" @click="confirmAdd">{{ $t('common.add') }}</v-btn>
       </div>
     </v-card>
   </v-dialog>
@@ -89,7 +89,10 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { validateHostInput } from '@/utils/hostsUtils'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   modelValue: boolean
@@ -121,7 +124,7 @@ function closeDialog() {
 
 function confirmAdd() {
   if (!validateHostInput(hostIp.value, hostDomain.value)) {
-    emit('error', 'IP and domain cannot be empty')
+    emit('error', t('hosts.dialog.ipDomainRequired'))
     return
   }
   emit('add', {

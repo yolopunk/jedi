@@ -10,7 +10,7 @@
       ></v-icon>
     </div>
     <h2 class="text-h5 font-weight-bold mb-2" style="color: var(--text);">{{ $t('hosts.empty.title') }}</h2>
-    <p class="text-body-1 text-secondary mb-8 text-center" style="max-width: 500px;">
+    <p class="text-body-1 mb-8 text-center" style="max-width: 500px; color: var(--text-muted);">
       {{ $t('hosts.empty.description') }}
     </p>
     <div class="d-flex justify-center gap-4">

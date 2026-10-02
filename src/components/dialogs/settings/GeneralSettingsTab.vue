@@ -1,7 +1,7 @@
 <template>
   <div class="settings-section">
     <div class="setting-item">
-      <div class="setting-icon">🌐</div>
+      <div class="setting-icon"><v-icon :icon="mdiTranslate" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ t('settings.language') }}</div>
       </div>
@@ -30,7 +30,7 @@
 
     <!-- Theme Setting -->
     <div class="setting-item">
-      <div class="setting-icon">🎨</div>
+      <div class="setting-icon"><v-icon :icon="mdiPaletteOutline" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ t('settings.theme') }}</div>
       </div>
@@ -49,7 +49,7 @@
               :class="{ active: themeMode === theme.value }"
               @click="setTheme(theme.value as 'light' | 'dark' | 'system')"
             >
-              <span class="menu-icon">{{ theme.icon }}</span>
+              <span class="menu-icon"><v-icon :icon="theme.icon" size="14" /></span>
               <span class="menu-text">{{ theme.label }}</span>
             </div>
           </div>
@@ -58,51 +58,53 @@
     </div>
 
     <div class="setting-item">
-      <div class="setting-icon">🚀</div>
+      <div class="setting-icon"><v-icon :icon="mdiRocketLaunchOutline" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ t('settings.autostart') }}</div>
       </div>
       <div class="setting-action">
-        <div
+        <button
           class="toggle-switch"
           :class="{ active: autostartEnabled }"
-          @click="!autostartLoading && toggleAutostart(!autostartEnabled)"
+          role="switch"
+          :aria-checked="autostartEnabled"
+          :aria-label="t('settings.autostart')"
+          :disabled="autostartLoading"
+          @click="toggleAutostart(!autostartEnabled)"
         >
           <div class="toggle-handle"></div>
-        </div>
+        </button>
       </div>
     </div>
 
     <div class="setting-item">
-      <div class="setting-icon">📥</div>
+      <div class="setting-icon"><v-icon :icon="mdiTrayArrowDown" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ t('settings.minimizeToTray') }}</div>
       </div>
-      <div class="setting-action">
-        <div class="toggle-switch">
-          <div class="toggle-handle"></div>
-        </div>
-      </div>
     </div>
 
     <div class="setting-item">
-      <div class="setting-icon">🔄</div>
+      <div class="setting-icon"><v-icon :icon="mdiAutorenew" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ t('settings.autoUpdate') }}</div>
       </div>
       <div class="setting-action">
-        <div
+        <button
           class="toggle-switch"
           :class="{ active: autoUpdateEnabled }"
+          role="switch"
+          :aria-checked="autoUpdateEnabled"
+          :aria-label="t('settings.autoUpdate')"
           @click="handleAutoUpdateChange(!autoUpdateEnabled)"
         >
           <div class="toggle-handle"></div>
-        </div>
+        </button>
       </div>
     </div>
 
     <div class="setting-item">
-      <div class="setting-icon">↻</div>
+      <div class="setting-icon"><v-icon :icon="mdiRefresh" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ $t('settings.checkUpdate') }}</div>
         <div class="setting-subtitle" v-if="hasUpdate">
@@ -135,6 +137,17 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiAutorenew,
+  mdiMonitor,
+  mdiPaletteOutline,
+  mdiRefresh,
+  mdiRocketLaunchOutline,
+  mdiTranslate,
+  mdiTrayArrowDown,
+  mdiWeatherNight,
+  mdiWeatherSunny,
+} from '@mdi/js'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { disableAutostart, enableAutostart, isAutostartEnabled } from '@/api/app'
@@ -152,9 +165,9 @@ const languages = computed(() => [
 ])
 
 const themeModes = computed(() => [
-  { label: t('settings.themeDark'), value: 'dark', icon: '🌙' },
-  { label: t('settings.themeLight'), value: 'light', icon: '☀️' },
-  { label: t('settings.themeSystem'), value: 'system', icon: '💻' },
+  { label: t('settings.themeDark'), value: 'dark', icon: mdiWeatherNight },
+  { label: t('settings.themeLight'), value: 'light', icon: mdiWeatherSunny },
+  { label: t('settings.themeSystem'), value: 'system', icon: mdiMonitor },
 ])
 
 const currentThemeLabel = computed(() => {
@@ -261,8 +274,10 @@ onMounted(async () => {
 
 .setting-icon {
   width: 24px;
-  text-align: center;
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
 }
 
 .setting-info {
@@ -273,7 +288,7 @@ onMounted(async () => {
 .setting-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--border);
+  color: var(--text);
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 
@@ -306,12 +321,24 @@ onMounted(async () => {
 .toggle-switch {
   width: 40px;
   height: 22px;
-  background:rgb(var(--ink-rgb) / 0.5);
+  background: rgb(var(--ink-rgb) / 0.5);
   border-radius: 12px;
   position: relative;
   cursor: pointer;
   transition: all 0.2s ease;
   border: 1px solid rgb(var(--text-rgb) / 0.5);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.toggle-switch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.toggle-switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .toggle-switch.active {

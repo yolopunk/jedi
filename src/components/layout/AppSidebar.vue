@@ -63,7 +63,7 @@
                     <v-list-item-title
                         v-if="!isCollapsed"
                         class="font-weight-medium nav-text"
-                        >{{ item.label }}</v-list-item-title
+                        >{{ $t(item.tooltipKey) }}</v-list-item-title
                     >
                     <v-tooltip
                         v-if="isCollapsed"
@@ -75,34 +75,8 @@
                 </v-list-item>
             </v-list>
 
-            <!-- Footer Status -->
+            <!-- Footer Clock -->
             <div v-if="!isCollapsed" class="sidebar-footer">
-                <div class="hud-panel">
-                    <div class="hud-scanline"></div>
-                    <div class="hud-item">
-                        <span class="hud-dot online"></span>
-                        <span class="hud-label">SYS</span>
-                        <v-tooltip activator="parent" location="top">{{
-                            $t("header.systemOnline")
-                        }}</v-tooltip>
-                    </div>
-                    <div class="hud-divider"></div>
-                    <div class="hud-item">
-                        <span class="hud-dot standby"></span>
-                        <span class="hud-label">MOD</span>
-                        <v-tooltip activator="parent" location="top">{{
-                            $t("header.modulesActive")
-                        }}</v-tooltip>
-                    </div>
-                    <div class="hud-divider"></div>
-                    <div class="hud-item">
-                        <span class="hud-dot scanning"></span>
-                        <span class="hud-label">MON</span>
-                        <v-tooltip activator="parent" location="top">{{
-                            $t("header.monitoring")
-                        }}</v-tooltip>
-                    </div>
-                </div>
                 <div class="footer-time">{{ currentTime }}</div>
             </div>
         </aside>
@@ -133,11 +107,11 @@ const emit = defineEmits<{
 }>()
 
 const navItems = [
-  { to: '/chat', icon: mdiRobot, label: 'CHAT', tooltipKey: 'sidebar.chat' },
-  { to: '/skills', icon: mdiToolboxOutline, label: 'SKILLS', tooltipKey: 'sidebar.skills' },
-  { to: '/hosts', icon: mdiDns, label: 'HOSTS', tooltipKey: 'sidebar.hostsManager' },
-  { to: '/wallpapers', icon: mdiWallpaper, label: 'WALLPAPER', tooltipKey: 'sidebar.wallpapers' },
-  { to: '/podcast', icon: mdiPodcast, label: 'PODCAST', tooltipKey: 'sidebar.podcast' },
+  { to: '/chat', icon: mdiRobot, tooltipKey: 'sidebar.chat' },
+  { to: '/skills', icon: mdiToolboxOutline, tooltipKey: 'sidebar.skills' },
+  { to: '/hosts', icon: mdiDns, tooltipKey: 'sidebar.hostsManager' },
+  { to: '/wallpapers', icon: mdiWallpaper, tooltipKey: 'sidebar.wallpapers' },
+  { to: '/podcast', icon: mdiPodcast, tooltipKey: 'sidebar.podcast' },
 ]
 
 // Sidebar width and resize
@@ -304,6 +278,7 @@ onUnmounted(() => {
     margin-bottom: 4px !important;
 }
 
+/* logo 光晕：静态单层（着色器背景已提供动态，这里不再叠加呼吸动画） */
 .logo-glow {
     position: absolute;
     inset: -4px;
@@ -313,20 +288,7 @@ onUnmounted(() => {
         rgb(var(--accent-rgb) / 0.3) 0%,
         transparent 70%
     );
-    animation: logoPulse 2s ease-in-out infinite;
     z-index: 0;
-}
-
-@keyframes logoPulse {
-    0%,
-    100% {
-        opacity: 0.5;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1.1);
-    }
 }
 
 .app-logo {
@@ -349,7 +311,7 @@ onUnmounted(() => {
     font-weight: 700 !important;
     letter-spacing: 2px;
     color: var(--success) !important;
-    text-shadow: 0 0 10px rgb(var(--success-rgb) / 0.5);
+    font-family: var(--jedi-font-display);
 }
 
 .title-bracket {
@@ -533,103 +495,10 @@ onUnmounted(() => {
     color: var(--accent) !important;
 }
 
-/* HUD Status Panel */
-.hud-panel {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    height: 22px;
-    padding: 0 8px;
-    background: rgb(var(--accent-rgb) / 0.04);
-    border: 1px solid rgb(var(--accent-rgb) / 0.2);
-    border-radius: 3px;
-    position: relative;
-    overflow: hidden;
-    font-size: 9px;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-}
-
-.hud-scanline {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgb(var(--accent-rgb) / 0.03) 2px,
-        rgb(var(--accent-rgb) / 0.03) 4px
-    );
-    pointer-events: none;
-    animation: scanline-move 3s linear infinite;
-}
-
-@keyframes scanline-move {
-    0% {
-        background-position: 0 0;
-    }
-    100% {
-        background-position: 0 4px;
-    }
-}
-
-.hud-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 0 5px;
-}
-
-.hud-dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.hud-dot.online {
-    background: var(--success);
-    box-shadow: 0 0 4px var(--success);
-}
-
-.hud-dot.standby {
-    background: var(--warning);
-    box-shadow: 0 0 4px var(--warning);
-}
-
-.hud-dot.scanning {
-    background: var(--accent);
-    box-shadow: 0 0 4px var(--accent);
-    animation: hud-blink 1.5s ease-in-out infinite;
-}
-
-@keyframes hud-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-}
-
-.hud-label {
-    color: rgb(var(--accent-rgb) / 0.5);
-    font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.hud-divider {
-    width: 1px;
-    height: 12px;
-    background: rgb(var(--accent-rgb) / 0.15);
-    flex-shrink: 0;
-}
-
 .footer-time {
     font-size: 10px;
-    color: var(--accent);
+    color: var(--text-muted);
     font-family: "JetBrains Mono", monospace;
-    text-shadow: 0 0 6px rgb(var(--accent-rgb) / 0.4);
     text-align: center;
 }
 

@@ -22,49 +22,15 @@ body,
   font-family: var(--jedi-font-ui) !important;
 }
 
-/* Text Utilities */
-.text-primary {
-  color: var(--jedi-text-primary) !important;
-}
+/*
+ * Text/background color utilities were removed: .text-primary/.text-secondary/
+ * .bg-surface/.text-success collide with Vuetify's own utility classes of the
+ * same name and hijacked them app-wide (!important). Components must use the
+ * semantic tokens (var(--text-muted), var(--accent), …) or Vuetify's utilities,
+ * which theme.css already feeds from the same palette.
+ */
 
-.text-secondary {
-  color: var(--jedi-text-secondary) !important;
-}
-
-.text-tertiary {
-  color: var(--jedi-text-tertiary) !important;
-}
-
-.text-success {
-  color: var(--jedi-success) !important;
-}
-
-.text-danger {
-  color: var(--jedi-danger) !important;
-}
-
-/* Background Utilities */
-.bg-app {
-  background-color: var(--jedi-bg-app) !important;
-}
-
-.bg-surface {
-  background-color: var(--jedi-bg-surface) !important;
-}
-
-.bg-sidebar {
-  background-color: var(--jedi-bg-sidebar) !important;
-}
-
-/* Border Utilities */
-.border-base {
-  border: 1px solid var(--jedi-border) !important;
-}
-
-.border-top {
-  border-top: 1px solid var(--jedi-border) !important;
-}
-
+/* Border Utilities (jedi-specific names; .border-bottom is used by AppSidebar) */
 .border-bottom {
   border-bottom: 1px solid var(--jedi-border) !important;
 }

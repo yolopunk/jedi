@@ -16,8 +16,8 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h2>Confirm Delete</h2>
-            <p>This action cannot be undone</p>
+            <h2>{{ $t('hosts.dialog.deleteTitle') }}</h2>
+            <p>{{ $t('hosts.dialog.deleteSubtitle') }}</p>
           </div>
         </div>
         <button class="close-btn" @click="$emit('update:modelValue', false)">
@@ -38,7 +38,7 @@
           </svg>
         </div>
 
-        <p class="confirm-text">Are you sure you want to delete this host entry?</p>
+        <p class="confirm-text">{{ $t('hosts.dialog.deleteConfirm') }}</p>
 
         <div v-if="host" class="host-info">
           <div class="info-row">
@@ -46,25 +46,25 @@
             <span class="info-value">{{ host.ip }}</span>
           </div>
           <div class="info-row">
-            <span class="info-label">Domain</span>
+            <span class="info-label">{{ $t('hosts.dialog.domainLabel') }}</span>
             <span class="info-value">{{ host.domain }}</span>
           </div>
         </div>
 
-        <p class="danger-hint">This operation is irreversible.</p>
+        <p class="danger-hint">{{ $t('hosts.dialog.deleteWarning') }}</p>
       </div>
 
       <!-- Footer -->
       <div class="card-footer">
         <v-btn variant="text" @click="$emit('update:modelValue', false)">
-          Cancel
+          {{ $t('common.cancel') }}
         </v-btn>
         <v-btn variant="tonal" color="error" @click="confirmDelete">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"/>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
-          Delete
+          {{ $t('hosts.dialog.deleteBtn') }}
         </v-btn>
       </div>
     </v-card>

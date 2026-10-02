@@ -26,6 +26,8 @@
           size="x-small"
           variant="text"
           class="ml-1 group-rename-btn"
+          :aria-label="$t('hosts.dialog.renameGroupTitle')"
+          :title="$t('hosts.dialog.renameGroupTitle')"
           @click.stop="$emit('rename-group', group.name)"
         >
           <v-icon :icon="mdiPencil" size="x-small"></v-icon>
@@ -112,7 +114,8 @@ const selectedTab = computed({
   opacity: 0;
 }
 
-.group-tab:hover .group-rename-btn {
+.group-tab:hover .group-rename-btn,
+.group-tab:focus-within .group-rename-btn {
   opacity: 1;
 }
 

@@ -15,7 +15,6 @@
         @click="$emit('select', sub)"
       >
         <div class="podcast-card">
-          <div class="card-glow"></div>
           <div class="image-wrapper">
             <v-img
               :src="sub.image_url"
@@ -50,8 +49,8 @@
     </div>
 
     <div v-else class="empty-state">
-      <div class="empty-icon">◇</div>
-      <div class="empty-text">NO_PODCASTS_FOUND</div>
+      <div class="empty-icon" aria-hidden="true">◇</div>
+      <div class="empty-text">{{ $t('podcast.notFound') }}</div>
       <button class="console-btn primary mt-4" @click="$emit('add')">
         <span class="btn-text">{{ $t('podcast.addShow') }}</span>
       </button>

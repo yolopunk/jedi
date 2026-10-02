@@ -1,18 +1,21 @@
 <template>
   <div class="settings-section">
     <div class="setting-item">
-      <div class="setting-icon">🖼</div>
+      <div class="setting-icon"><v-icon :icon="mdiImageMultipleOutline" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ t('settings.wpAutoUpdate') }}</div>
       </div>
       <div class="setting-action">
-        <div
+        <button
           class="toggle-switch"
           :class="{ active: wallpaperSettings.autoUpdate }"
+          role="switch"
+          :aria-checked="wallpaperSettings.autoUpdate"
+          :aria-label="t('settings.wpAutoUpdate')"
           @click="wallpaperSettings.autoUpdate = !wallpaperSettings.autoUpdate; saveWallpaperSettings(wallpaperSettings)"
         >
           <div class="toggle-handle"></div>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -74,6 +77,7 @@
 </template>
 
 <script setup lang="ts">
+import { mdiImageMultipleOutline } from '@mdi/js'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getWallpapers } from '@/api/wallpaper'
@@ -129,8 +133,10 @@ onMounted(async () => {
 
 .setting-icon {
   width: 24px;
-  text-align: center;
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
 }
 
 .setting-info {
@@ -141,7 +147,7 @@ onMounted(async () => {
 .setting-label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--border);
+  color: var(--text);
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
 }
 
@@ -158,6 +164,8 @@ onMounted(async () => {
 }
 
 .toggle-switch {
+  padding: 0;
+  flex-shrink: 0;
   width: 40px;
   height: 22px;
   background:rgb(var(--ink-rgb) / 0.5);

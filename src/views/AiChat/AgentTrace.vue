@@ -567,7 +567,7 @@ watch(
 .empty-text {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
-  color: var(--border-strong);
+  color: var(--text-subtle);
   letter-spacing: 1px;
 }
 

@@ -1,7 +1,7 @@
-// src/skills/filesystem.ts
+// src/agent/tools/filesystem.ts
 
 import { invoke } from '@tauri-apps/api/core'
-import type { ParameterSchema, Skill } from './types'
+import type { ParameterSchema, Tool } from './types'
 
 const parameters: ParameterSchema = {
   type: 'object',
@@ -27,13 +27,12 @@ async function executeFilesystem(args: any): Promise<any> {
   }
 }
 
-export const filesystemSkill: Skill = {
+export const filesystemTool: Tool = {
   id: 'filesystem',
   name: 'FILESYS',
   description: 'Read and write files',
   icon: '📁',
   enabled: true,
-  autoCallable: true,
   risk: 'write',
   parameters,
   execute: executeFilesystem,

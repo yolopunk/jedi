@@ -1,210 +1,154 @@
 // src/stores/skills.ts
 //
-// Skill management store. Owns two concerns:
-//  1. Persisted per-skill flags (enabled / autoCallable) — stored via
-//     useStorage (Tauri Store settings.json) and applied to the registry
-//     in BOTH directions, so disabling a skill survives restarts (the old
-//     localStorage 'skills-enabled' scheme only re-enabled and is migrated
-//     away on first load).
-//  2. Custom markdown skills from ~/.jedi/skills/ — loaded via backend
-//     commands and bridged into the same skillRegistry.
+// Skill management store. Skills are SKILL.md instruction packages (no
+// executable body — tools live in stores/tools.ts). This store owns:
+//  1. The skill manifests (builtin, registered at module load; user skills
+//     pulled from ~/.jedi/skills/ via backend commands) mirrored into
+//     skillRegistry.
+//  2. The persisted per-skill enabled flag ('skills-flags' storage key).
+//  3. The one-time legacy migration: the old combined 'skills-config'
+//     ({id: {enabled, autoCallable, alwaysAllow}}) is split — tool entries
+//     move into the tools store ('tools-config'), the rest is dropped.
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { logSecurityEvent } from '@/api/ai-chat'
-import { deleteCustomSkill, listCustomSkills, saveCustomSkill } from '@/api/skills'
+import { toolRegistry } from '@/agent/tools/registry'
+import type { SkillSaveDef } from '@/api/skills'
+import { deleteSkill, listSkills, saveSkill } from '@/api/skills'
 import { useStorage } from '@/composables/useStorage'
-import { createCustomSkill } from '@/skills/custom'
+import { invalidateSkill } from '@/skills/loader'
 import { skillRegistry } from '@/skills/registry'
-import type { CustomSkillDef, SkillSource } from '@/skills/types'
+import type { SkillManifest, SkillSource } from '@/skills/types'
+import { type ToolFlags, useToolsStore } from './tools'
 
-/** 单个技能的持久化开关配置 */
-export interface SkillFlags {
-  enabled: boolean
-  autoCallable: boolean
-  /** write/system 技能的"始终允许"白名单标志，read 技能无意义 */
-  alwaysAllow?: boolean
-}
-
-type SkillFlagMap = Record<string, SkillFlags>
-
-const CONFIG_KEY = 'skills-config'
-const LEGACY_KEY = 'skills-enabled'
+const CONFIG_KEY = 'skills-flags'
+const LEGACY_KEY = 'skills-config'
 
 export const useSkillsStore = defineStore('skills', () => {
-  const { getItem, setItem } = useStorage()
+  const { getItem, setItem, removeItem } = useStorage()
 
-  const flagMap = ref<SkillFlagMap>({})
-  const customDefs = ref<CustomSkillDef[]>([])
+  const flagMap = ref<Record<string, { enabled: boolean }>>({})
+  const userSkills = ref<SkillManifest[]>([])
   const loaded = ref(false)
   const error = ref<string | null>(null)
 
   const allSkills = computed(() => skillRegistry.list())
   const enabledSkillsList = computed(() => skillRegistry.listEnabled())
-  const autoCallableSkills = computed(() => skillRegistry.listAutoCallable())
   const enabledCount = computed(() => enabledSkillsList.value.length)
 
   function skillsBySource(source: SkillSource) {
     return allSkills.value.filter(s => s.source === source)
   }
 
-  function isSkillEnabled(id: string): boolean {
-    return skillRegistry.get(id)?.enabled ?? false
-  }
-
-  function isSkillAutoCallable(id: string): boolean {
-    return skillRegistry.get(id)?.autoCallable ?? false
+  function isSkillEnabled(name: string): boolean {
+    return skillRegistry.get(name)?.enabled ?? false
   }
 
   /** 把持久化配置应用到 registry（有配置的技能双向覆盖，无配置的沿用默认） */
   function syncRegistryFromConfig(): void {
     for (const skill of skillRegistry.list()) {
-      const flags = flagMap.value[skill.id]
+      const flags = flagMap.value[skill.name]
       if (!flags) continue
-      skillRegistry.setEnabled(skill.id, flags.enabled)
-      skillRegistry.setAutoCallable(skill.id, flags.autoCallable)
+      skillRegistry.setEnabled(skill.name, flags.enabled)
     }
   }
 
-  function persistFlags(id: string): void {
-    const skill = skillRegistry.get(id)
+  function persistFlags(name: string): void {
+    const skill = skillRegistry.get(name)
     if (!skill) return
-    // 展开保留 alwaysAllow 等不在本函数管理内的标志
-    flagMap.value[id] = {
-      ...flagMap.value[id],
-      enabled: skill.enabled,
-      autoCallable: skill.autoCallable,
-    }
+    flagMap.value[name] = { enabled: skill.enabled }
     void setItem(CONFIG_KEY, flagMap.value)
   }
 
-  function toggleSkill(id: string, enabled: boolean): void {
-    skillRegistry.setEnabled(id, enabled)
-    persistFlags(id)
+  function toggleSkill(name: string, enabled: boolean): void {
+    skillRegistry.setEnabled(name, enabled)
+    persistFlags(name)
   }
 
-  function toggleAutoCallable(id: string, value: boolean): void {
-    skillRegistry.setAutoCallable(id, value)
-    persistFlags(id)
-  }
-
-  /** 该技能是否在"始终允许"白名单内（write/system 确认门免弹卡） */
-  function isAlwaysAllowed(id: string): boolean {
-    return flagMap.value[id]?.alwaysAllow ?? false
-  }
-
-  /** 白名单变更写入审计日志（fire-and-forget，失败不阻塞主流程） */
-  function auditWhitelistChange(id: string, value: boolean): void {
-    logSecurityEvent({
-      event_type: 'skill_whitelist_change',
-      result: value ? 'granted' : 'revoked',
-      resource: id,
-      action: value ? 'always-allow' : 'revoke-always-allow',
-    }).catch(e => console.error('Failed to log whitelist change:', e))
-  }
-
-  function setAlwaysAllowed(id: string, value: boolean): void {
-    if (isAlwaysAllowed(id) === value) return
-    flagMap.value[id] = {
-      ...flagMap.value[id],
-      enabled: skillRegistry.get(id)?.enabled ?? true,
-      autoCallable: skillRegistry.get(id)?.autoCallable ?? true,
-      alwaysAllow: value,
+  /**
+   * 一次性迁移：旧版合并配置 'skills-config' 拆分为 tools-config（工具开关 +
+   * 白名单）与 skills-flags（技能开关）。工具 id 以 toolRegistry 当前注册项
+   * 为准，无法识别的条目（旧自定义技能等）直接丢弃。
+   */
+  async function migrateLegacyConfig(): Promise<void> {
+    const legacy = await getItem<Record<string, ToolFlags>>(LEGACY_KEY)
+    if (!legacy) return
+    const toolFlags: Record<string, ToolFlags> = {}
+    for (const [id, flags] of Object.entries(legacy)) {
+      if (toolRegistry.get(id)) toolFlags[id] = flags
     }
-    void setItem(CONFIG_KEY, flagMap.value)
-    auditWhitelistChange(id, value)
-  }
-
-  /** 旧版 localStorage 'skills-enabled'（仅启用名单）一次性迁移为双向配置 */
-  async function migrateLegacyFlags(): Promise<SkillFlagMap> {
-    const existing = (await getItem<SkillFlagMap>(CONFIG_KEY)) ?? {}
-    const legacy = localStorage.getItem(LEGACY_KEY)
-    if (!legacy) return existing
-    try {
-      const enabledIds = JSON.parse(legacy) as string[]
-      for (const skill of skillRegistry.list()) {
-        if (existing[skill.id]) continue
-        existing[skill.id] = {
-          enabled: enabledIds.includes(skill.id),
-          autoCallable: skill.autoCallable,
-        }
-      }
-      await setItem(CONFIG_KEY, existing)
-      localStorage.removeItem(LEGACY_KEY)
-    } catch (e) {
-      console.error('Failed to migrate legacy skills config:', e)
+    if (Object.keys(toolFlags).length > 0) {
+      await useToolsStore().importMigratedFlags(toolFlags)
     }
-    return existing
+    await removeItem(LEGACY_KEY)
   }
 
-  /** 启动时加载：迁移旧数据 → 读配置 → 应用到 registry → 加载自定义技能 */
+  /** 启动时加载：迁移旧数据 → 读配置 → 拉取用户技能 → 应用到 registry → 加载工具配置 */
   async function loadConfig(): Promise<void> {
     if (loaded.value) return
     loaded.value = true
     error.value = null
     try {
-      flagMap.value = await migrateLegacyFlags()
+      await migrateLegacyConfig()
+      flagMap.value = (await getItem<Record<string, { enabled: boolean }>>(CONFIG_KEY)) ?? {}
+      await loadUserSkills()
       syncRegistryFromConfig()
-      await loadCustomSkills()
+      await useToolsStore().loadToolsConfig()
     } catch (e) {
       console.error('Failed to load skills config:', e)
       error.value = e instanceof Error ? e.message : String(e)
     }
   }
 
-  /** 拉取 ~/.jedi/skills/ 下的自定义技能并重建 registry 中的 custom 条目 */
-  async function loadCustomSkills(): Promise<void> {
+  /** 拉取 ~/.jedi/skills/ 下的用户技能并重建 registry 中的 user 条目 */
+  async function loadUserSkills(): Promise<void> {
     try {
-      const defs = await listCustomSkills()
-      customDefs.value = defs
+      const manifests = await listSkills()
+      userSkills.value = manifests.map(m => ({ ...m, source: 'user' as const, enabled: true }))
       for (const skill of skillRegistry.list()) {
-        if (skill.source === 'custom') skillRegistry.unregister(skill.id)
+        if (skill.source === 'user') skillRegistry.unregister(skill.name)
       }
-      for (const def of defs) skillRegistry.register(createCustomSkill(def))
-      syncRegistryFromConfig()
+      for (const manifest of userSkills.value) skillRegistry.register(manifest)
     } catch (e) {
-      console.error('Failed to load custom skills:', e)
+      console.error('Failed to load user skills:', e)
       error.value = e instanceof Error ? e.message : String(e)
     }
   }
 
-  /** 新建或更新一个自定义技能（落盘后同步 registry） */
-  async function saveCustom(def: CustomSkillDef): Promise<CustomSkillDef> {
-    const saved = await saveCustomSkill(def)
-    await loadCustomSkills()
-    return saved
+  /** 新建或更新一个用户技能（落盘后同步 registry 与正文缓存） */
+  async function saveUserSkill(def: SkillSaveDef): Promise<void> {
+    await saveSkill(def)
+    invalidateSkill(def.name)
+    await loadUserSkills()
+    syncRegistryFromConfig()
   }
 
-  /** 删除一个自定义技能（落盘 + 清配置 + 同步 registry） */
-  async function removeCustom(id: string): Promise<void> {
-    await deleteCustomSkill(id)
-    if (flagMap.value[id]) {
-      delete flagMap.value[id]
+  /** 删除一个用户技能（落盘 + 清配置 + 同步 registry） */
+  async function removeUserSkill(name: string): Promise<void> {
+    await deleteSkill(name)
+    invalidateSkill(name)
+    if (flagMap.value[name]) {
+      delete flagMap.value[name]
       await setItem(CONFIG_KEY, flagMap.value)
     }
-    skillRegistry.unregister(id)
-    await loadCustomSkills()
+    skillRegistry.unregister(name)
+    await loadUserSkills()
   }
 
   return {
-    customDefs,
+    userSkills,
     loaded,
     error,
     allSkills,
     enabledSkillsList,
-    autoCallableSkills,
     enabledCount,
     skillsBySource,
     isSkillEnabled,
-    isSkillAutoCallable,
-    isAlwaysAllowed,
-    setAlwaysAllowed,
     toggleSkill,
-    toggleAutoCallable,
     syncRegistryFromConfig,
     loadConfig,
-    loadCustomSkills,
-    saveCustom,
-    removeCustom,
+    loadUserSkills,
+    saveUserSkill,
+    removeUserSkill,
   }
 })

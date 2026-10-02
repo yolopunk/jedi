@@ -10,11 +10,13 @@ import {
   summarizeValue,
 } from '@/agent/runAgent'
 import { withStatsHooks } from '@/agent/statsHooks'
+import { toolRegistry } from '@/agent/tools/registry'
+import { loadSkill } from '@/skills/loader'
 import { skillRegistry } from '@/skills/registry'
 import { useAgentStore } from './agent'
 import { useModelsDevStore } from './modelsDev'
 import { useProviderConfigStore } from './providerConfig'
-import { useSkillsStore } from './skills'
+import { useToolsStore } from './tools'
 
 // MCP Server 接口
 export interface McpServer {
@@ -73,6 +75,8 @@ export interface AgentRunMetadata {
   stepLimit: number
   enabledTools: string[]
   toolCount: number
+  /** 本轮通过 / 技能名 强制加载的技能 */
+  skillsUsed?: string[]
   finishReason?: string
   usage?: unknown
 }
@@ -120,6 +124,38 @@ function nextTraceId(prefix: string): string {
   return `${prefix}-${Date.now()}-${traceCounter}`
 }
 
+// ========== /skill 斜杠调用 ==========
+
+const SLASH_SKILL_RE = /^\/([a-z0-9][a-z0-9-]*)(?:\s|$)/
+
+/**
+ * 解析消息开头的 /技能名：命中已启用技能时，把 SKILL.md 正文包装为 system
+ * 消息注入本轮对话（对齐 Claude Code 的 /skill 强制加载语义）。未命中返回
+ * null，消息按普通文本处理。
+ */
+async function resolveSlashSkill(
+  content: string
+): Promise<{ name: string; turn: ChatTurn } | null> {
+  const match = SLASH_SKILL_RE.exec(content.trim())
+  if (!match) return null
+  const name = match[1]
+  const manifest = skillRegistry.get(name)
+  if (!manifest || !manifest.enabled) return null
+  try {
+    const loaded = await loadSkill(name)
+    return {
+      name,
+      turn: {
+        role: 'system',
+        content: `用户通过 /${name} 调用了技能。请阅读并遵循以下技能指令完成本轮任务：\n\n<skill name="${name}">\n${loaded.body}\n</skill>`,
+      },
+    }
+  } catch (e) {
+    console.error(`Failed to load skill ${name}:`, e)
+    return null
+  }
+}
+
 // ========== Store ==========
 
 export const useAiChatStore = defineStore('aiChat', () => {
@@ -130,6 +166,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const error = ref<string | null>(null)
   const streamingContent = ref<string>('')
 
+  // Abort controller of the in-flight run, if any; stopGeneration() aborts it.
+  const activeRunAbort = ref<AbortController | null>(null)
+
   // MCP State
   const enabledMcpServers = ref<string[]>([])
   const mcpServers = ref<McpServer[]>([...DEFAULT_MCP_SERVERS])
@@ -138,21 +177,21 @@ export const useAiChatStore = defineStore('aiChat', () => {
   // approval. The chat view renders a card bound to this and calls
   // resolveConfirmation() when the user clicks approve/deny.
   const pendingConfirmation = ref<{
-    skillId: string
-    skillName: string
+    toolId: string
+    toolName: string
     risk: 'read' | 'write' | 'system'
     args: unknown
   } | null>(null)
   let confirmationResolver: ((approved: boolean) => void) | null = null
 
   function requestConfirmation(req: {
-    skillId: string
-    skillName: string
+    toolId: string
+    toolName: string
     risk: 'read' | 'write' | 'system'
     args: unknown
   }): Promise<boolean> {
-    // "始终允许"白名单命中的技能直接放行，不再弹卡。
-    if (useSkillsStore().isAlwaysAllowed(req.skillId)) return Promise.resolve(true)
+    // "始终允许"白名单命中的工具直接放行，不再弹卡。
+    if (useToolsStore().isAlwaysAllowed(req.toolId)) return Promise.resolve(true)
     // Only one confirmation is in flight at a time (the agent loop is sequential).
     return new Promise<boolean>(resolve => {
       pendingConfirmation.value = req
@@ -163,7 +202,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
   function resolveConfirmation(approved: boolean, alwaysAllow = false): void {
     const pending = pendingConfirmation.value
     if (approved && alwaysAllow && pending) {
-      useSkillsStore().setAlwaysAllowed(pending.skillId, true)
+      useToolsStore().setAlwaysAllowed(pending.toolId, true)
     }
     confirmationResolver?.(approved)
     confirmationResolver = null
@@ -287,6 +326,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
     const runStartedAt = Date.now()
     const stepLimit = DEFAULT_STEP_LIMIT
 
+    // /技能名 强制加载：命中已启用技能时正文注入本轮上下文
+    const slashSkill = await resolveSlashSkill(content)
+
     // Create session if needed
     if (!currentSession.value) {
       await createSession('新对话', provider, model)
@@ -328,6 +370,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
     isLoading.value = true
     streamingContent.value = ''
     error.value = null
+    const abortController = new AbortController()
+    activeRunAbort.value = abortController
     agentStore.reset()
     agentStore.setStatus('planning')
     let planTrace: AgentTraceDetail | null = null
@@ -392,9 +436,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
         throw new Error(`API key not configured for provider: ${provider}`)
       }
 
-      const enabledToolNames = skillRegistry.listAutoCallable().map(skill => skill.name)
+      const enabledToolNames = toolRegistry.listEnabled().map(t => t.name)
       if (assistantMessage.metadata?.run) {
         assistantMessage.metadata.run.enabledTools = enabledToolNames
+        if (slashSkill) assistantMessage.metadata.run.skillsUsed = [slashSkill.name]
       }
 
       pushTrace({
@@ -412,6 +457,21 @@ export const useAiChatStore = defineStore('aiChat', () => {
         timestamp: Date.now(),
         durationMs: 0,
       })
+
+      // 斜杠技能加载在 trace 中留痕
+      if (slashSkill) {
+        pushTrace({
+          id: nextTraceId('skill'),
+          type: 'tool',
+          status: 'done',
+          title: `Skill loaded: /${slashSkill.name}`,
+          content: `/${slashSkill.name} 的技能指令已注入本轮对话上下文。`,
+          output: { skill: slashSkill.name },
+          timestamp: Date.now(),
+          durationMs: 0,
+          toolName: slashSkill.name,
+        })
+      }
 
       // Correlate per-tool execution between runAgent's onToolStart / onToolEnd hooks.
       const toolStepMap = new Map<
@@ -452,6 +512,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
           role: m.role as ChatTurn['role'],
           content: m.content,
         }))
+      // 斜杠技能正文注入本轮上下文头部
+      if (slashSkill) aiMessages.unshift(slashSkill.turn)
 
       let planCompleted = false
       let streamingHasText = false
@@ -476,21 +538,22 @@ export const useAiChatStore = defineStore('aiChat', () => {
           sessionId: session.id,
           stepLimit,
           confirmTool: requestConfirmation,
+          signal: abortController.signal,
         },
         withStatsHooks({
-          onToolStart: ({ skillId, skillName, skillDescription, args, startedAt }) => {
+          onToolStart: ({ toolId, toolName, toolDescription, args, startedAt }) => {
             const relatedDecisionTrace = [...toolDecisionTraces.values()]
               .reverse()
-              .find(trace => trace.toolName === skillName && trace.status === 'running')
+              .find(trace => trace.toolName === toolName && trace.status === 'running')
             const traceEntry = pushTrace({
-              id: `${skillId}-${startedAt}`,
+              id: `${toolId}-${startedAt}`,
               type: 'tool',
               status: 'running',
-              title: `Executing ${skillName}`,
-              content: `Executing ${skillName}. ${skillDescription}`,
+              title: `Executing ${toolName}`,
+              content: `Executing ${toolName}. ${toolDescription}`,
               input: args,
               timestamp: startedAt,
-              toolName: skillName,
+              toolName,
               toolCallId: relatedDecisionTrace?.toolCallId,
             })
             if (relatedDecisionTrace?.toolCallId) {
@@ -500,17 +563,17 @@ export const useAiChatStore = defineStore('aiChat', () => {
             }
             const step = agentStore.startStep(
               'tool',
-              `Calling ${skillName}`,
+              `Calling ${toolName}`,
               summarizeValue(args, 600)
             )
-            toolStepMap.set(`${skillId}-${startedAt}`, { traceEntry, step })
+            toolStepMap.set(`${toolId}-${startedAt}`, { traceEntry, step })
             agentStore.setStatus('executing')
             if (assistantMessage.metadata?.run) {
               assistantMessage.metadata.run.toolCount += 1
             }
           },
-          onToolEnd: ({ skillId, startedAt, output, error: toolError }) => {
-            const rec = toolStepMap.get(`${skillId}-${startedAt}`)
+          onToolEnd: ({ toolId, startedAt, output, error: toolError }) => {
+            const rec = toolStepMap.get(`${toolId}-${startedAt}`)
             if (!rec) return
             if (toolError) {
               failTrace(rec.traceEntry, toolError)
@@ -716,6 +779,41 @@ export const useAiChatStore = defineStore('aiChat', () => {
           .catch(e => console.warn('Session title distillation failed:', e))
       }
     } catch (e: any) {
+      // User-initiated stop: keep whatever streamed so far instead of surfacing
+      // the abort as an error, and record it in the trace.
+      if (abortController.signal.aborted) {
+        assistantMessage.isStreaming = false
+        if (!assistantMessage.content.trim()) assistantMessage.content = '（已停止生成）'
+        if (assistantMessage.metadata?.run) {
+          assistantMessage.metadata.run.completedAt = Date.now()
+          assistantMessage.metadata.run.totalDurationMs =
+            assistantMessage.metadata.run.completedAt - runStartedAt
+        }
+        pushTrace({
+          id: nextTraceId('finish'),
+          type: 'finish',
+          status: 'done',
+          title: 'Stopped by user',
+          content: 'Generation stopped before completion; partial output kept.',
+          timestamp: Date.now(),
+          durationMs: Date.now() - runStartedAt,
+        })
+        agentStore.setStatus('done')
+        try {
+          const metadataJson = assistantMessage.metadata
+            ? JSON.stringify(assistantMessage.metadata)
+            : undefined
+          await invoke('append_message', {
+            request: {
+              session_id: session.id,
+              role: 'assistant',
+              content: assistantMessage.content,
+              metadata: metadataJson,
+            },
+          })
+        } catch {}
+        return
+      }
       error.value = `发送消息失败: ${e}`
       console.error('Failed to send message:', e)
       assistantMessage.isStreaming = false
@@ -762,10 +860,16 @@ export const useAiChatStore = defineStore('aiChat', () => {
     } finally {
       isLoading.value = false
       streamingContent.value = ''
+      activeRunAbort.value = null
       // If the run ended (error/abort) while a confirmation was still pending,
       // resolve it as denied so no promise is left dangling.
       if (pendingConfirmation.value) resolveConfirmation(false)
     }
+  }
+
+  /** Abort the in-flight generation run, keeping partial output. */
+  function stopGeneration() {
+    activeRunAbort.value?.abort()
   }
 
   // Toggle MCP server
@@ -841,6 +945,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
     deleteSession,
     updateSessionTitle,
     sendMessage,
+    stopGeneration,
     toggleMcpServer,
     loadSettings,
     saveSettings,

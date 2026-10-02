@@ -1,7 +1,7 @@
-// src/skills/terminal.ts
+// src/agent/tools/terminal.ts
 
 import { invoke } from '@tauri-apps/api/core'
-import type { ParameterSchema, Skill } from './types'
+import type { ParameterSchema, Tool } from './types'
 
 const parameters: ParameterSchema = {
   type: 'object',
@@ -23,13 +23,12 @@ async function executeTerminal(args: { command: string; cwd?: string }): Promise
   }
 }
 
-export const terminalSkill: Skill = {
+export const terminalTool: Tool = {
   id: 'terminal',
   name: 'TERMINAL',
   description: 'Execute system commands in the shell',
   icon: '⌘',
   enabled: true,
-  autoCallable: true,
   risk: 'system',
   parameters,
   execute: executeTerminal,

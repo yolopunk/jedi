@@ -12,8 +12,11 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { generateText, isLoopFinished, jsonSchema, stepCountIs, streamText, tool } from 'ai'
+import { toolRegistry } from '@/agent/tools/registry'
+import type { ToolRisk } from '@/agent/tools/types'
+import { loadSkill } from '@/skills/loader'
 import { skillRegistry } from '@/skills/registry'
-import type { SkillRisk } from '@/skills/types'
+import type { SkillManifest } from '@/skills/types'
 
 export const DEFAULT_STEP_LIMIT = 8
 
@@ -23,9 +26,9 @@ export interface ChatTurn {
 }
 
 export interface ConfirmToolRequest {
-  skillId: string
-  skillName: string
-  risk: SkillRisk
+  toolId: string
+  toolName: string
+  risk: ToolRisk
   args: unknown
 }
 
@@ -45,15 +48,15 @@ export interface RunAgentSpec {
 
 export interface RunAgentHooks {
   onToolStart?: (e: {
-    skillId: string
-    skillName: string
-    skillDescription: string
+    toolId: string
+    toolName: string
+    toolDescription: string
     args: unknown
     startedAt: number
   }) => void
   onToolEnd?: (e: {
-    skillId: string
-    skillName: string
+    toolId: string
+    toolName: string
     args: unknown
     startedAt: number
     output?: unknown
@@ -132,11 +135,25 @@ export function createProviderClient(
   }
 }
 
-export function createAgentSystemPrompt(enabledToolNames: string[]): string {
+export function createAgentSystemPrompt(
+  enabledToolNames: string[],
+  skillManifests: SkillManifest[] = []
+): string {
   const toolHint =
     enabledToolNames.length > 0
       ? `Available tools: ${enabledToolNames.join(', ')}. Use tools when they materially improve accuracy or can verify the user's request.`
       : 'No tools are currently enabled.'
+
+  const skillHint =
+    skillManifests.length > 0
+      ? [
+          '',
+          '## Skills',
+          'Instruction packages you can load by calling the `skill` tool with the skill name:',
+          ...skillManifests.map(s => `- ${s.name}: ${s.description}`),
+          'When the user asks `/skillname ...`, load that skill first. When a skill matches the task, load it before acting; it returns step-by-step instructions to follow with the tools above.',
+        ].join('\n')
+      : ''
 
   return [
     'You are Jedi, a desktop AI agent for developers.',
@@ -145,7 +162,10 @@ export function createAgentSystemPrompt(enabledToolNames: string[]): string {
     'When a tool result is relevant, incorporate it into the final answer. If a tool fails, recover when possible and explain the useful part.',
     'For anything time-sensitive, real-time, or that you are not certain about (weather, prices, news, current events, library docs), prefer web_search / web_fetch over guessing or claiming you cannot access it.',
     toolHint,
-  ].join('\n')
+    skillHint,
+  ]
+    .join('\n')
+    .trim()
 }
 
 // ========== Shared formatting helpers ==========
@@ -307,68 +327,138 @@ export async function runAgent(
     baseURL: spec.endpoint,
   })
 
-  const enabledSkills = skillRegistry.listAutoCallable()
-  const enabledToolNames = enabledSkills.map(skill => skill.name)
+  const enabledTools = toolRegistry.listEnabled()
+  const enabledSkillManifests = skillRegistry.listEnabled()
+  const enabledToolNames = enabledTools.map(t => t.name)
   let toolCount = 0
 
-  const tools = Object.fromEntries(
-    enabledSkills.map(skill => [
-      skill.id,
-      tool({
-        description: `${skill.name}: ${skill.description}`,
-        inputSchema: jsonSchema(sanitizeJsonSchema(skill.parameters)),
-        execute: async args => {
-          const startedAt = Date.now()
-          hooks.onToolStart?.({
-            skillId: skill.id,
-            skillName: skill.name,
-            skillDescription: skill.description,
-            args,
-            startedAt,
-          })
-          // Gate write/system-risk tools behind the caller's confirmation.
-          const risk: SkillRisk = skill.risk ?? 'read'
-          if (risk !== 'read' && spec.confirmTool) {
-            const approved = await spec.confirmTool({
-              skillId: skill.id,
-              skillName: skill.name,
-              risk,
-              args,
-            })
-            if (!approved) {
-              const denial = `用户拒绝了 ${skill.name} 操作。`
-              hooks.onToolEnd?.({
-                skillId: skill.id,
-                skillName: skill.name,
-                args,
-                startedAt,
-                error: denial,
-              })
-              // Return (not throw) so the model sees the denial and can adjust
-              // instead of the whole run failing.
-              return { denied: true, message: denial }
-            }
-          }
-          try {
-            toolCount += 1
-            const output = await skill.execute(args, { sessionId: spec.sessionId })
-            hooks.onToolEnd?.({ skillId: skill.id, skillName: skill.name, args, startedAt, output })
-            return output
-          } catch (e) {
-            const message = e instanceof Error ? e.message : String(e)
-            hooks.onToolEnd?.({
-              skillId: skill.id,
-              skillName: skill.name,
+  const tools = {
+    ...Object.fromEntries(
+      enabledTools.map(t => [
+        t.id,
+        tool({
+          description: `${t.name}: ${t.description}`,
+          inputSchema: jsonSchema(sanitizeJsonSchema(t.parameters)),
+          execute: async args => {
+            const startedAt = Date.now()
+            hooks.onToolStart?.({
+              toolId: t.id,
+              toolName: t.name,
+              toolDescription: t.description,
               args,
               startedAt,
-              error: message,
             })
-            throw e
-          }
-        },
-      }),
-    ])
-  )
+            // Gate write/system-risk tools behind the caller's confirmation.
+            const risk: ToolRisk = t.risk ?? 'read'
+            if (risk !== 'read' && spec.confirmTool) {
+              const approved = await spec.confirmTool({
+                toolId: t.id,
+                toolName: t.name,
+                risk,
+                args,
+              })
+              if (!approved) {
+                const denial = `用户拒绝了 ${t.name} 操作。`
+                hooks.onToolEnd?.({
+                  toolId: t.id,
+                  toolName: t.name,
+                  args,
+                  startedAt,
+                  error: denial,
+                })
+                // Return (not throw) so the model sees the denial and can adjust
+                // instead of the whole run failing.
+                return { denied: true, message: denial }
+              }
+            }
+            try {
+              toolCount += 1
+              const output = await t.execute(args, { sessionId: spec.sessionId })
+              hooks.onToolEnd?.({ toolId: t.id, toolName: t.name, args, startedAt, output })
+              return output
+            } catch (e) {
+              const message = e instanceof Error ? e.message : String(e)
+              hooks.onToolEnd?.({
+                toolId: t.id,
+                toolName: t.name,
+                args,
+                startedAt,
+                error: message,
+              })
+              throw e
+            }
+          },
+        }),
+      ])
+    ),
+    // Skills use progressive disclosure: only name+description live in the
+    // system prompt; the full SKILL.md body loads on demand through this tool.
+    ...(enabledSkillManifests.length > 0
+      ? {
+          skill: tool({
+            description:
+              'Load a skill instruction package by name. Returns step-by-step instructions to follow with the other tools. Call this before performing a task that matches a listed skill.',
+            inputSchema: jsonSchema<{ name: string }>({
+              type: 'object',
+              properties: {
+                name: { type: 'string', description: 'Name of the skill to load' },
+              },
+              required: ['name'],
+            }),
+            execute: async args => {
+              const name = String(args?.name ?? '').trim()
+              const manifest = enabledSkillManifests.find(s => s.name === name)
+              if (!manifest) {
+                return {
+                  error: `未找到技能 ${name}`,
+                  availableSkills: enabledSkillManifests.map(s => s.name),
+                }
+              }
+              const startedAt = Date.now()
+              const hookToolId = `skill:${name}`
+              const hookToolName = `Skill: ${manifest.name}`
+              hooks.onToolStart?.({
+                toolId: hookToolId,
+                toolName: hookToolName,
+                toolDescription: manifest.description,
+                args,
+                startedAt,
+              })
+              try {
+                toolCount += 1
+                const loaded = await loadSkill(name)
+                const output: Record<string, unknown> = {
+                  skill: name,
+                  instructions: loaded.body,
+                }
+                if (loaded.files.length > 0) {
+                  output.bundledFiles = loaded.files
+                  output.fileHint = `附属文件位于 ${loaded.dir} 目录下，可用 FILESYS 工具按相对路径读取，或用 TERMINAL 执行其中的脚本。`
+                }
+                hooks.onToolEnd?.({
+                  toolId: hookToolId,
+                  toolName: hookToolName,
+                  args,
+                  startedAt,
+                  output,
+                })
+                return output
+              } catch (e) {
+                const message = e instanceof Error ? e.message : String(e)
+                hooks.onToolEnd?.({
+                  toolId: hookToolId,
+                  toolName: hookToolName,
+                  args,
+                  startedAt,
+                  error: message,
+                })
+                throw e
+              }
+            },
+          }),
+        }
+      : {}),
+  }
 
   let fullContent = ''
   let reasoningSummary = ''
@@ -383,7 +473,7 @@ export async function runAgent(
 
   const result = streamText({
     model: providerClient.languageModel(spec.model),
-    system: createAgentSystemPrompt(enabledToolNames),
+    system: createAgentSystemPrompt(enabledToolNames, enabledSkillManifests),
     messages: spec.messages,
     tools,
     abortSignal: spec.signal,

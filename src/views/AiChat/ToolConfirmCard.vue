@@ -6,7 +6,7 @@
           <span class="confirm-risk" :class="`risk-${store.pendingConfirmation?.risk}`">
             {{ riskLabel }}
           </span>
-          <span class="confirm-title">{{ store.pendingConfirmation?.skillName }}</span>
+          <span class="confirm-title">{{ store.pendingConfirmation?.toolName }}</span>
         </div>
         <p class="confirm-desc">{{ $t('skills.confirm.desc') }}</p>
         <pre class="confirm-args">{{ prettyArgs }}</pre>

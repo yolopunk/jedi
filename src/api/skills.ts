@@ -1,24 +1,42 @@
 /**
- * 自定义技能 API
+ * 技能（SKILL.md 指令包）API
  * 与后端 src-tauri/src/api/skills.rs 中的命令一一对应
  */
 
 import { invoke } from '@tauri-apps/api/core'
-import type { CustomSkillDef } from '@/skills/types'
+import type { SkillDetail, SkillManifest } from '@/skills/types'
 
-/** 列出 ~/.jedi/skills/ 下的所有自定义技能（格式非法的文件会被后端跳过） */
-export function listCustomSkills(): Promise<CustomSkillDef[]> {
-  return invoke('skills_list_custom')
+/** 编辑器保存载荷 */
+export interface SkillSaveDef {
+  name: string
+  description: string
+  icon: string
+  body: string
 }
 
-/** 保存（新建或覆盖）一个自定义技能，返回规范化后的定义 */
-export function saveCustomSkill(skill: CustomSkillDef): Promise<CustomSkillDef> {
-  return invoke('skills_save', { skill })
+/** 列出 ~/.jedi/skills/ 下所有用户技能（格式非法的目录会被后端跳过） */
+export function listSkills(): Promise<SkillManifest[]> {
+  return invoke('skills_list')
 }
 
-/** 删除一个自定义技能；返回文件原本是否存在 */
-export function deleteCustomSkill(id: string): Promise<boolean> {
-  return invoke('skills_delete', { id })
+/** 读取一个技能的完整内容（正文 + 附属文件清单） */
+export function readSkill(name: string): Promise<SkillDetail> {
+  return invoke('skills_read', { name })
+}
+
+/** 读取技能的附属文件（rel_path 相对技能目录，禁止穿越） */
+export function readSkillFile(name: string, relPath: string): Promise<string> {
+  return invoke('skills_read_file', { name, relPath })
+}
+
+/** 保存（新建或覆盖）一个用户技能，返回规范化后的 manifest */
+export function saveSkill(def: SkillSaveDef): Promise<SkillManifest> {
+  return invoke('skills_save', { def })
+}
+
+/** 删除一个用户技能目录；返回原本是否存在 */
+export function deleteSkill(name: string): Promise<boolean> {
+  return invoke('skills_delete', { name })
 }
 
 // ========== 技能执行统计 API ==========

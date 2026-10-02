@@ -1,17 +1,17 @@
 // src/stores/mcpClient.ts
 //
 // Third-party MCP client store. Manages user-configured external MCP servers
-// (stdio), connects to them through the Rust `mcp_*` commands, and bridges each
-// discovered remote tool into the agent's skillRegistry so runAgent exposes it
-// to the model. Remote tools are marked write-risk so they go through the
-// confirmation gate before running.
+// (stdio / HTTP+SSE), connects to them through the Rust `mcp_*` commands, and
+// bridges each discovered remote tool into the agent's toolRegistry so runAgent
+// exposes it to the model. Remote tools are marked write-risk so they go
+// through the confirmation gate before running.
 
 import { invoke } from '@tauri-apps/api/core'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { skillRegistry } from '@/skills/registry'
-import type { ParameterSchema, Skill } from '@/skills/types'
-import { useSkillsStore } from '@/stores/skills'
+import { toolRegistry } from '@/agent/tools/registry'
+import type { ParameterSchema, Tool } from '@/agent/tools/types'
+import { useToolsStore } from '@/stores/tools'
 
 export interface McpServerConfig {
   id: string
@@ -39,8 +39,8 @@ export interface McpConnectedServer {
 
 const STORAGE_KEY = 'mcp-servers'
 
-// AI-SDK tool names (and our skill ids) must match ^[a-zA-Z0-9_-]{1,64}$.
-function skillIdFor(serverId: string, toolName: string): string {
+// AI-SDK tool names (and our tool ids) must match ^[a-zA-Z0-9_-]{1,64}$.
+function toolIdFor(serverId: string, toolName: string): string {
   const raw = `mcp__${serverId}__${toolName}`
   return raw.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64)
 }
@@ -50,8 +50,8 @@ export const useMcpClientStore = defineStore('mcpClient', () => {
   const connectedIds = ref<string[]>([])
   const connectingIds = ref<string[]>([])
   const error = ref<string | null>(null)
-  // serverId -> skill ids registered for it, so we can unregister on disconnect.
-  const registeredSkills = new Map<string, string[]>()
+  // serverId -> tool ids registered for it, so we can unregister on disconnect.
+  const registeredTools = new Map<string, string[]>()
 
   function loadFromStorage(): void {
     try {
@@ -85,40 +85,39 @@ export const useMcpClientStore = defineStore('mcpClient', () => {
 
   function bridgeTools(server: McpConnectedServer): void {
     const ids: string[] = []
-    for (const tool of server.tools) {
-      const id = skillIdFor(server.id, tool.name)
-      const parameters = (tool.input_schema ?? {
+    for (const remote of server.tools) {
+      const id = toolIdFor(server.id, remote.name)
+      const parameters = (remote.input_schema ?? {
         type: 'object',
         properties: {},
       }) as ParameterSchema
-      const skill: Skill = {
+      const bridged: Tool = {
         id,
-        name: tool.name,
-        description: `[MCP:${server.name}] ${tool.description || tool.name}`,
+        name: remote.name,
+        description: `[MCP:${server.name}] ${remote.description || remote.name}`,
         icon: '🔌',
         enabled: true,
-        autoCallable: true,
         // Third-party tools are untrusted → confirm before running.
         risk: 'write',
         source: 'mcp',
         parameters,
         execute: (args: unknown) =>
-          invoke<string>('mcp_call_tool', { id: server.id, tool: tool.name, args }),
+          invoke<string>('mcp_call_tool', { id: server.id, tool: remote.name, args }),
       }
-      skillRegistry.register(skill)
+      toolRegistry.register(bridged)
       ids.push(id)
     }
-    registeredSkills.set(server.id, ids)
+    registeredTools.set(server.id, ids)
     // 应用用户持久化的开关（如曾在此会话中禁用/限制过该工具）
-    useSkillsStore().syncRegistryFromConfig()
+    useToolsStore().syncRegistryFromConfig()
   }
 
   function unbridgeTools(serverId: string): void {
-    const ids = registeredSkills.get(serverId) ?? []
+    const ids = registeredTools.get(serverId) ?? []
     ids.forEach(id => {
-      skillRegistry.unregister(id)
+      toolRegistry.unregister(id)
     })
-    registeredSkills.delete(serverId)
+    registeredTools.delete(serverId)
   }
 
   async function connect(id: string): Promise<void> {

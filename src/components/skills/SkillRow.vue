@@ -1,88 +1,56 @@
 <template>
   <div class="skill-row" :class="{ open: expanded }">
-    <div class="row-main" @click="emit('expand')">
+    <div
+      class="row-main"
+      role="button"
+      tabindex="0"
+      :aria-expanded="expanded"
+      @click="emit('expand')"
+      @keydown.enter.prevent="emit('expand')"
+      @keydown.space.prevent="emit('expand')"
+    >
       <span class="row-icon">{{ skill.icon }}</span>
       <div class="row-info">
         <div class="row-name">
-          {{ skill.name }}
-          <span class="row-risk" :class="skill.risk ?? 'read'">
-            {{ $t(`skills.risk.${skill.risk ?? 'read'}`) }}
+          <span class="row-slash">/{{ skill.name }}</span>
+          <span class="row-source" :class="skill.source">
+            {{ skill.source === 'builtin' ? $t('skills.sourceBuiltin') : $t('skills.sourceUser') }}
           </span>
-          <span v-if="statBadge" class="row-stat-badge">{{ statBadge }}</span>
         </div>
         <div class="row-desc">{{ skill.description }}</div>
-        <div v-if="expanded" class="row-params">
-          <div v-if="paramEntries.length === 0" class="row-param-empty">
-            {{ $t('skills.noParams') }}
-          </div>
-          <div v-for="[name, schema] in paramEntries" :key="name" class="row-param">
-            <code>{{ name }}</code>
-            <span class="row-param-type">{{ schema.type }}</span>
-            <span class="row-param-desc">{{ schema.description }}{{ schema.required ? ' *' : '' }}</span>
-          </div>
-        </div>
-        <div v-if="expanded && statLines.length" class="row-stats-detail">
-          <div class="row-stats-line">
-            <span v-for="line in statLines" :key="line.label" class="row-stat-item">
-              <b>{{ line.label }}</b> {{ line.value }}
-            </span>
-          </div>
-          <div v-for="(err, i) in statErrors" :key="i" class="row-stat-err">
-            <span class="row-err-ts">{{ new Date(err.ts).toLocaleTimeString() }}</span>
-            <span class="row-err-msg">{{ err.msg }}</span>
-          </div>
+        <div v-if="expanded" class="row-detail">
+          <div v-if="loadingBody" class="row-body-loading">{{ $t('skills.loadingBody') }}</div>
+          <template v-else-if="detail">
+            <pre class="row-body">{{ detail.body }}</pre>
+            <div v-if="detail.files.length" class="row-files">
+              <span class="row-files-label">{{ $t('skills.bundledFiles') }}</span>
+              <code v-for="f in detail.files" :key="f" class="row-file">{{ f }}</code>
+            </div>
+          </template>
         </div>
       </div>
     </div>
     <div class="row-actions" @click.stop>
-      <template v-if="skill.source === 'custom'">
+      <template v-if="skill.source === 'user'">
         <button class="row-mini" :aria-label="$t('skills.editSkill')" @click="emit('edit', skill)">✎</button>
         <button
           class="row-mini danger"
           :aria-label="$t('skills.delete')"
           @click="handleDelete"
         >
-          {{ armedId === skill.id ? $t('skills.confirmDelete') : $t('skills.delete') }}
+          {{ armedId === skill.name ? $t('skills.confirmDelete') : $t('skills.delete') }}
         </button>
       </template>
-      <div class="row-toggle-row">
-        <span class="row-toggle-label">{{ $t('skills.autoCall') }}</span>
-        <button
-          class="row-toggle"
-          :class="{ on: skill.autoCallable }"
-          role="switch"
-          :aria-checked="skill.autoCallable"
-          :aria-label="$t('skills.autoCall')"
-          :title="$t('skills.autoCall')"
-          @click="skillsStore.toggleAutoCallable(skill.id, !skill.autoCallable)"
-        >
-          <span class="knob"></span>
-        </button>
-      </div>
-      <div v-if="(skill.risk ?? 'read') !== 'read'" class="row-toggle-row">
-        <span class="row-toggle-label">{{ $t('skills.alwaysAllow') }}</span>
-        <button
-          class="row-toggle warn"
-          :class="{ on: skillsStore.isAlwaysAllowed(skill.id) }"
-          role="switch"
-          :aria-checked="skillsStore.isAlwaysAllowed(skill.id)"
-          :aria-label="$t('skills.alwaysAllow')"
-          :title="$t('skills.alwaysAllowHint')"
-          @click="skillsStore.setAlwaysAllowed(skill.id, !skillsStore.isAlwaysAllowed(skill.id))"
-        >
-          <span class="knob"></span>
-        </button>
-      </div>
       <div class="row-toggle-row">
         <span class="row-toggle-label">{{ $t('skills.enabled') }}</span>
         <button
           class="row-toggle"
-          :class="{ on: skill.enabled }"
+          :class="{ on: skillsStore.isSkillEnabled(skill.name) }"
           role="switch"
-          :aria-checked="skill.enabled"
+          :aria-checked="skillsStore.isSkillEnabled(skill.name)"
           :aria-label="$t('skills.enabled')"
           :title="$t('skills.enabled')"
-          @click="skillsStore.toggleSkill(skill.id, !skill.enabled)"
+          @click="skillsStore.toggleSkill(skill.name, !skillsStore.isSkillEnabled(skill.name))"
         >
           <span class="knob"></span>
         </button>
@@ -92,58 +60,52 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTwoStepConfirm } from '@/composables/useTwoStepConfirm'
-import type { Skill } from '@/skills/types'
-import { useSkillStatsStore } from '@/stores/skillStats'
+import { loadSkill } from '@/skills/loader'
+import type { SkillManifest } from '@/skills/types'
 import { useSkillsStore } from '@/stores/skills'
 
-const props = defineProps<{ skill: Skill; expanded?: boolean }>()
+const props = defineProps<{ skill: SkillManifest; expanded?: boolean }>()
 const emit = defineEmits<{
   expand: []
-  edit: [skill: Skill]
-  remove: [skillId: string]
+  edit: [skill: SkillManifest]
+  remove: [name: string]
 }>()
 
 const { t } = useI18n()
 const skillsStore = useSkillsStore()
-const statsStore = useSkillStatsStore()
 const { armedId, arm } = useTwoStepConfirm()
 
-const paramEntries = computed(() => Object.entries(props.skill.parameters?.properties ?? {}))
+const loadingBody = ref(false)
+const detail = ref<{ body: string; files: string[] } | null>(null)
 
-const statBadge = computed<string | null>(() => {
-  const s = statsStore.statsFor(props.skill.id)
-  if (!s || s.calls === 0) return null
-  const rate = Math.round(((s.calls - s.failures) / s.calls) * 100)
-  const avg = Math.round(s.totalMs / s.calls)
-  return t('skills.stats.badge', { calls: s.calls, rate, avg })
-})
-
-const statLines = computed(() => {
-  const s = statsStore.statsFor(props.skill.id)
-  if (!s) return []
-  const avg = s.calls ? Math.round(s.totalMs / s.calls) : 0
-  return [
-    { label: t('skills.stats.calls'), value: String(s.calls) },
-    { label: t('skills.stats.failures'), value: String(s.failures) },
-    { label: t('skills.stats.avgMs'), value: `${avg}ms` },
-    {
-      label: t('skills.stats.lastUsed'),
-      value: s.lastUsedAt ? new Date(s.lastUsedAt).toLocaleString() : '—',
-    },
-  ]
-})
-
-const statErrors = computed(() =>
-  (statsStore.statsFor(props.skill.id)?.recentErrors ?? []).slice().reverse()
+// 展开时按需加载正文（渐进披露的第三层只在需要时读取）
+watch(
+  () => props.expanded,
+  async open => {
+    if (!open || detail.value || loadingBody.value) return
+    loadingBody.value = true
+    try {
+      detail.value = await loadSkill(props.skill.name)
+    } catch (e) {
+      console.error(`Failed to load skill body ${props.skill.name}:`, e)
+      detail.value = { body: t('skills.loadBodyFailed'), files: [] }
+    } finally {
+      loadingBody.value = false
+    }
+  },
+  { immediate: true }
 )
 
+const canDelete = computed(() => props.skill.source === 'user')
+
 async function handleDelete(): Promise<void> {
+  if (!canDelete.value) return
   // 两段式确认：第一次点击进入确认态（3 秒自动复位），再点一次才真正删除
-  if (!arm(props.skill.id)) return
-  emit('remove', props.skill.id)
+  if (!arm(props.skill.name)) return
+  emit('remove', props.skill.name)
 }
 </script>
 
@@ -157,6 +119,18 @@ async function handleDelete(): Promise<void> {
   border-radius: 10px;
   background: rgb(var(--text-rgb) / 0.04);
   border: 1px solid var(--border);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.skill-row:hover {
+  background: rgb(var(--text-rgb) / 0.07);
+  border-color: var(--border-strong);
+}
+
+.row-main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 .skill-row.open {
@@ -189,42 +163,37 @@ async function handleDelete(): Promise<void> {
   font-weight: 600;
 }
 
-.row-risk {
+.row-slash {
+  font-family: var(--jedi-font-mono);
+  color: var(--accent);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-source {
   font-size: 9px;
   padding: 1px 6px;
   border-radius: 4px;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
-.row-risk.read {
-  background: rgb(var(--success-rgb) / 0.16);
-  color: var(--success);
+.row-source.builtin {
+  background: rgb(var(--text-rgb) / 0.1);
+  color: var(--text-muted);
 }
 
-.row-risk.write {
-  background: rgb(var(--warning-rgb) / 0.16);
-  color: var(--warning);
-}
-
-.row-risk.system {
-  background: rgb(var(--danger-rgb) / 0.16);
-  color: var(--danger);
-}
-
-.row-stat-badge {
-  font-size: 10.5px;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: rgb(var(--accent-rgb) / 0.12);
+.row-source.user {
+  background: rgb(var(--accent-rgb) / 0.14);
   color: var(--accent);
-  font-family: var(--jedi-font-mono);
-  font-weight: 600;
 }
 
 .row-desc {
   margin-top: 2px;
   font-size: 11px;
-  opacity: 0.55;
+  color: var(--text-muted);
   line-height: 1.4;
   overflow: hidden;
   display: -webkit-box;
@@ -232,80 +201,52 @@ async function handleDelete(): Promise<void> {
   -webkit-box-orient: vertical;
 }
 
-.row-params {
-  margin-top: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.row-param {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 11px;
-}
-
-.row-param code {
-  font-family: var(--jedi-font-mono);
-  color: var(--accent);
-}
-
-.row-param-type {
-  opacity: 0.5;
-  font-size: 10px;
-}
-
-.row-param-desc {
-  opacity: 0.6;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.row-param-empty {
-  font-size: 11px;
-  opacity: 0.4;
-}
-
-.row-stats-detail {
+.row-detail {
   margin-top: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.row-stats-line {
+.row-body-loading {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.row-body {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgb(var(--ink-rgb) / 0.12);
+  border: 1px solid var(--border);
+  font-family: var(--jedi-font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.row-files {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  font-size: 11px;
-}
-
-.row-stat-item b {
-  opacity: 0.55;
-  font-weight: 600;
-  margin-right: 4px;
-}
-
-.row-stat-err {
-  display: flex;
-  gap: 8px;
-  font-size: 11px;
   align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
 }
 
-.row-err-ts {
-  opacity: 0.45;
-  font-size: 10px;
-  flex-shrink: 0;
+.row-files-label {
+  color: var(--text-muted);
 }
 
-.row-err-msg {
-  color: var(--danger);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.row-file {
+  font-family: var(--jedi-font-mono);
+  font-size: 10.5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgb(var(--text-rgb) / 0.08);
+  color: var(--text-muted);
 }
 
 .row-actions {
@@ -324,7 +265,7 @@ async function handleDelete(): Promise<void> {
 
 .row-toggle-label {
   font-size: 10px;
-  opacity: 0.55;
+  color: var(--text-muted);
 }
 
 .row-toggle {
@@ -357,14 +298,6 @@ async function handleDelete(): Promise<void> {
 .row-toggle.on .knob {
   left: 15px;
   background: var(--success);
-}
-
-.row-toggle.warn.on {
-  background: rgb(var(--warning-rgb) / 0.35);
-}
-
-.row-toggle.warn.on .knob {
-  background: var(--warning);
 }
 
 .row-mini {

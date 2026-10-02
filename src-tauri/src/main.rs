@@ -55,8 +55,8 @@ use crate::api::podcast::{
   remove_subscription, resolve_xiaoyuzhou_podcast, save_subscription,
 };
 use crate::api::skills::{
-  skill_stats_clear, skill_stats_list, skill_stats_save, skills_delete, skills_list_custom,
-  skills_save,
+  skill_stats_clear, skill_stats_list, skill_stats_save, skills_delete, skills_list, skills_read,
+  skills_read_file, skills_save,
 };
 use crate::api::terminal::execute_command;
 use crate::api::wallpapers::{
@@ -259,8 +259,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       mcp_disconnect,
       mcp_list_connected,
       mcp_call_tool,
-      // Custom skill management commands
-      skills_list_custom,
+      // Skill package management commands (SKILL.md directories)
+      skills_list,
+      skills_read,
+      skills_read_file,
       skills_save,
       skills_delete,
       // Skill execution stats commands

@@ -1,6 +1,6 @@
-// src/skills/podcast.ts
+// src/agent/tools/podcast.ts
 
-import type { ParameterSchema, Skill } from './types'
+import type { ParameterSchema, Tool } from './types'
 
 const parameters: ParameterSchema = {
   type: 'object',
@@ -11,16 +11,15 @@ const parameters: ParameterSchema = {
 }
 
 async function executePodcast(args: any): Promise<any> {
-  return { message: 'Podcast skill coming soon', args }
+  return { message: 'Podcast tool coming soon', args }
 }
 
-export const podcastSkill: Skill = {
+export const podcastTool: Tool = {
   id: 'podcast',
   name: 'PODCAST',
   description: 'Manage and play podcasts',
   icon: '🎙',
   enabled: false,
-  autoCallable: false,
   parameters,
   execute: executePodcast,
 }

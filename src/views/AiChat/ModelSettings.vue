@@ -23,7 +23,7 @@
             <p v-if="!selectedProvider">Select a provider to configure</p>
           </div>
         </div>
-        <button class="close-btn" @click="$emit('update:modelValue', false)">
+        <button class="close-btn" aria-label="Close" @click="$emit('update:modelValue', false)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
             <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -81,7 +81,14 @@
               class="provider-item"
               :class="{ configured: isConfigured(provider.id) }"
             >
-              <div class="provider-main" @click="handleProviderClick(provider)">
+              <div
+                class="provider-main"
+                role="button"
+                tabindex="0"
+                @click="handleProviderClick(provider)"
+                @keydown.enter.prevent="handleProviderClick(provider)"
+                @keydown.space.prevent="handleProviderClick(provider)"
+              >
                 <div class="provider-logo">
                   <img
                     v-if="provider.id !== '__custom__'"
@@ -187,7 +194,11 @@
                   placeholder="sk-..."
                   class="api-input"
                 />
-                <button class="toggle-btn" @click="showKey = !showKey">
+                <button
+                  class="toggle-btn"
+                  :aria-label="showKey ? 'Hide API key' : 'Show API key'"
+                  @click="showKey = !showKey"
+                >
                   <svg v-if="showKey" width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="2"/>
                     <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2"/>
@@ -288,7 +299,7 @@
                 placeholder="Search models..."
                 class="search-input"
               />
-              <button v-if="modelSearch" class="clear-search" @click="modelSearch = ''">
+              <button v-if="modelSearch" class="clear-search" aria-label="Clear search" @click="modelSearch = ''">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                   <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
                   <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -302,7 +313,11 @@
                 :key="model.id"
                 class="model-item"
                 :class="{ selected: model.id === modelsDevStore.selectedModelId }"
+                role="button"
+                tabindex="0"
                 @click="selectModel(model)"
+                @keydown.enter.prevent="selectModel(model)"
+                @keydown.space.prevent="selectModel(model)"
               >
                 <div class="model-info">
                   <div class="model-name-row">
@@ -352,15 +367,14 @@
 </template>
 
 <script setup lang="ts">
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { computed, ref, watch } from 'vue'
 import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
 import type { ModelsDevModel, ModelsDevProvider } from '@/types/modelsDev'
 
 const props = defineProps<{ modelValue: boolean }>()
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean | string): void
-}>()
+const emit = defineEmits<(e: 'update:modelValue', value: boolean | string) => void>()
 
 const modelsDevStore = useModelsDevStore()
 const providerConfigStore = useProviderConfigStore()
@@ -550,14 +564,53 @@ async function deleteKey() {
 }
 
 async function testConnection() {
+  const provider = selectedProvider.value
+  if (!provider || !configApiKey.value) return
   testing.value = true
   testResult.value = null
   try {
-    // Simulate test - in real impl, this would call backend
-    await new Promise(r => setTimeout(r, 1500))
-    testResult.value = { type: 'success', message: 'Connection successful!' }
-  } catch (_e) {
-    testResult.value = { type: 'error', message: 'Connection failed. Check your credentials.' }
+    // Same routing as runAgent's createProviderClient: stored endpoint is the
+    // baseURL, and requests go through the Tauri HTTP plugin to bypass CORS.
+    const defaultBase =
+      provider.id === 'openai'
+        ? 'https://api.openai.com/v1'
+        : provider.id === 'anthropic'
+          ? 'https://api.anthropic.com'
+          : ''
+    const baseURL = (
+      provider.isCustom ? configBaseUrl.value : configEndpoint.value || defaultBase
+    ).replace(/\/+$/, '')
+    if (!baseURL) {
+      testResult.value = {
+        type: 'error',
+        message: 'This provider requires a base URL endpoint to be configured.',
+      }
+      return
+    }
+    const isAnthropic = baseURL.includes('anthropic') || provider.id === 'anthropic'
+    const url = isAnthropic ? `${baseURL}/v1/models` : `${baseURL}/models`
+    const headers: Record<string, string> = isAnthropic
+      ? { 'x-api-key': configApiKey.value, 'anthropic-version': '2023-06-01' }
+      : { authorization: `Bearer ${configApiKey.value}` }
+    const res = await tauriFetch(url, { headers })
+    if (res.ok) {
+      testResult.value = {
+        type: 'success',
+        message: 'Connection successful — credentials verified.',
+      }
+    } else if (res.status === 401 || res.status === 403) {
+      testResult.value = {
+        type: 'error',
+        message: `Authentication failed (HTTP ${res.status}). Check your API key.`,
+      }
+    } else {
+      testResult.value = { type: 'error', message: `Provider responded with HTTP ${res.status}.` }
+    }
+  } catch (e) {
+    testResult.value = {
+      type: 'error',
+      message: `Connection failed: ${e instanceof Error ? e.message : String(e)}`,
+    }
   } finally {
     testing.value = false
   }
@@ -658,7 +711,7 @@ function isUrl(str: string): boolean {
 .brand-text p {
   margin: 2px 0 0;
   font-size: 12px;
-  color: rgb(var(--text-rgb) / 0.4);
+  color: var(--text-muted);
 }
 
 .close-btn {
@@ -747,7 +800,7 @@ function isUrl(str: string): boolean {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;
-  color: rgb(var(--text-rgb) / 0.3);
+  color: var(--text-muted);
   margin-bottom: 10px;
 }
 
@@ -774,7 +827,7 @@ function isUrl(str: string): boolean {
 }
 
 .provider-search::placeholder {
-  color: rgb(var(--text-rgb) / 0.3);
+  color: var(--text-subtle);
 }
 
 .pill {
@@ -891,7 +944,6 @@ function isUrl(str: string): boolean {
     0 0 16px rgb(var(--accent-rgb) / 0.25),
     0 0 32px rgb(var(--accent-rgb) / 0.1),
     inset 0 0 12px rgb(var(--accent-rgb) / 0.1);
-  animation: logo-pulse 3s ease-in-out infinite;
 }
 
 @keyframes logo-pulse {
@@ -938,7 +990,7 @@ function isUrl(str: string): boolean {
 
 .provider-models {
   font-size: 11px;
-  color: rgb(var(--text-rgb) / 0.35);
+  color: var(--text-muted);
 }
 
 .provider-meta {
@@ -957,12 +1009,11 @@ function isUrl(str: string): boolean {
   background: rgb(var(--accent-rgb) / 0.05);
   border: 1px solid rgb(var(--accent-rgb) / 0.15);
   border-radius: 4px;
-  color: rgb(var(--text-rgb) / 0.4);
-  font-family: 'JetBrains Mono', monospace;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--text-muted);
 }
 
 .endpoint-tag svg {
@@ -997,7 +1048,7 @@ function isUrl(str: string): boolean {
   font-size: 10px;
   border-radius: 4px;
   background:rgb(var(--ink-rgb) / 0.05);
-  color: rgb(var(--text-rgb) / 0.4);
+  color: var(--text-muted);
 }
 
 .status-badge.configured {
@@ -1010,7 +1061,7 @@ function isUrl(str: string): boolean {
 }
 
 .chevron {
-  color: rgb(var(--text-rgb) / 0.2);
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -1019,7 +1070,7 @@ function isUrl(str: string): boolean {
   align-items: center;
   justify-content: center;
   padding: 32px;
-  color: rgb(var(--text-rgb) / 0.25);
+  color: var(--text-muted);
   font-size: 13px;
 }
 
@@ -1078,7 +1129,7 @@ function isUrl(str: string): boolean {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: rgb(var(--text-rgb) / 0.4);
+  color: var(--text-muted);
 }
 
 .endpoint-value {
@@ -1137,7 +1188,7 @@ function isUrl(str: string): boolean {
 }
 
 .api-input::placeholder {
-  color: rgb(var(--text-rgb) / 0.2);
+  color: var(--text-subtle);
 }
 
 .toggle-btn {
@@ -1145,7 +1196,7 @@ function isUrl(str: string): boolean {
   background:rgb(var(--ink-rgb) / 0.03);
   border: 1px solid rgb(var(--text-rgb) / 0.1);
   border-radius: 8px;
-  color: rgb(var(--text-rgb) / 0.4);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1229,12 +1280,12 @@ function isUrl(str: string): boolean {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1.5px;
-  color: rgb(var(--text-rgb) / 0.3);
+  color: var(--text-muted);
 }
 
 .model-count {
   font-size: 11px;
-  color: rgb(var(--text-rgb) / 0.35);
+  color: var(--text-muted);
 }
 
 /* Model Search */
@@ -1264,7 +1315,7 @@ function isUrl(str: string): boolean {
 }
 
 .search-input::placeholder {
-  color: rgb(var(--text-rgb) / 0.3);
+  color: var(--text-subtle);
 }
 
 .clear-search {
@@ -1331,7 +1382,7 @@ function isUrl(str: string): boolean {
 
 .model-id {
   font-size: 10px;
-  color: rgb(var(--text-rgb) / 0.3);
+  color: var(--text-muted);
   font-family: 'JetBrains Mono', monospace;
   white-space: nowrap;
   overflow: hidden;
@@ -1392,7 +1443,7 @@ function isUrl(str: string): boolean {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  color: rgb(var(--text-rgb) / 0.25);
+  color: var(--text-muted);
   font-size: 12px;
 }
 

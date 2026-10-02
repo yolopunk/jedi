@@ -1,6 +1,6 @@
-// src/skills/browser.ts
+// src/agent/tools/browser.ts
 
-import type { ParameterSchema, Skill } from './types'
+import type { ParameterSchema, Tool } from './types'
 
 const parameters: ParameterSchema = {
   type: 'object',
@@ -12,16 +12,15 @@ const parameters: ParameterSchema = {
 }
 
 async function executeBrowser(args: any): Promise<any> {
-  return { message: 'Browser skill coming soon', args }
+  return { message: 'Browser tool coming soon', args }
 }
 
-export const browserSkill: Skill = {
+export const browserTool: Tool = {
   id: 'browser',
   name: 'BROWSER',
   description: 'Web browsing and search',
   icon: '🌍',
   enabled: false,
-  autoCallable: true,
   parameters,
   execute: executeBrowser,
 }

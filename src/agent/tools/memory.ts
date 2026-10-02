@@ -1,4 +1,4 @@
-// src/skills/memory.ts
+// src/agent/tools/memory.ts
 //
 // Cross-session memory tool for the AI agent. Lets the model remember long-term
 // user preferences and configuration and recall them in later chats. Backed by a
@@ -6,7 +6,7 @@
 // commands. Only touches Jedi's own private storage, so it is friction-free.
 
 import { invoke } from '@tauri-apps/api/core'
-import type { ParameterSchema, Skill } from './types'
+import type { ParameterSchema, Tool } from './types'
 
 const memoryParameters: ParameterSchema = {
   type: 'object',
@@ -64,7 +64,7 @@ async function executeMemory(args: {
   }
 }
 
-export const memorySkill: Skill = {
+export const memoryTool: Tool = {
   id: 'memory',
   name: 'MEMORY',
   description:
@@ -74,7 +74,6 @@ export const memorySkill: Skill = {
     'Use this whenever the user asks you to remember something for later.',
   icon: '🧠',
   enabled: true,
-  autoCallable: true,
   parameters: memoryParameters,
   execute: executeMemory,
 }

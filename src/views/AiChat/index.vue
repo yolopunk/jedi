@@ -15,11 +15,19 @@
               <span class="status-dot"></span>
               <span class="status-text">{{ connectionStatus }}</span>
             </div>
-            <div class="provider-display" @click="showModelSettings = true">
+            <div
+              class="provider-display"
+              role="button"
+              tabindex="0"
+              :title="$t('models.selectProvider')"
+              @click="showModelSettings = true"
+              @keydown.enter.prevent="showModelSettings = true"
+              @keydown.space.prevent="showModelSettings = true"
+            >
               <span class="provider-label">PROVIDER:</span>
               <span class="provider-name">{{ currentProviderName }}</span>
             </div>
-            <button class="workers-btn" @click="showWorkersPanel = true" title="Show workers">
+            <button class="workers-btn" @click="showWorkersPanel = true" title="Show workers" aria-label="Show workers">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <rect x="2" y="7" width="20" height="10" rx="2"/>
                 <path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/>
@@ -27,14 +35,14 @@
               </svg>
               <span v-if="workers.length > 0" class="workers-count">{{ workers.length }}</span>
             </button>
-            <button class="workers-btn" @click="showMcpServers = true" title="MCP 服务器">
+            <button class="workers-btn" @click="showMcpServers = true" title="MCP 服务器" aria-label="MCP 服务器">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M9 2v6M15 2v6M9 8h6M12 8v6a4 4 0 0 1-4 4H7"/>
                 <circle cx="6" cy="20" r="2"/>
               </svg>
               <span v-if="mcpClientStore.connectedIds.length > 0" class="workers-count">{{ mcpClientStore.connectedIds.length }}</span>
             </button>
-            <button class="workers-btn" @click="showSkillsManager = true" :title="$t('skills.title')">
+            <button class="workers-btn" @click="showSkillsManager = true" :title="$t('skills.title')" :aria-label="$t('skills.title')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
               </svg>
@@ -121,7 +129,12 @@
                       </div>
                     </div>
                     <div class="message-actions">
-                      <button class="action-btn" @click="handleCopyMessage(message.content)" title="复制">
+                      <button
+                        class="action-btn"
+                        @click="handleCopyMessage(message.content)"
+                        :title="$t('chat.copy')"
+                        :aria-label="$t('chat.copy')"
+                      >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <rect x="9" y="9" width="13" height="13" rx="2"/>
                           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
@@ -131,7 +144,8 @@
                         v-if="index === displayMessages.length - 1"
                         class="action-btn"
                         @click="handleRegenerate"
-                        title="重新生成"
+                        :title="$t('chat.regenerate')"
+                        :aria-label="$t('chat.regenerate')"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                           <path d="M23 4v6h-6M1 20v-6h6"/>
@@ -144,6 +158,7 @@
                         :class="{ active: isTraceActive(message) }"
                         @click="openTrace(message)"
                         title="查看调用 / 执行链路"
+                        aria-label="查看调用 / 执行链路"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
@@ -158,14 +173,20 @@
         </div>
 
         <!-- 输入区域 -->
-        <div class="input-console" :class="inputConsoleState">
+        <div ref="inputConsoleRef" class="input-console" :class="inputConsoleState">
           <!-- 统一胶囊容器 -->
           <div class="input-bar">
             <!-- 左侧工具栏 -->
-            <button class="toolbar-btn" @click="openCommandPalette" title="Commands (/)">
+            <button class="toolbar-btn" @click="openCommandPalette" title="Commands (/)" aria-label="Commands (/)">
               <span>/</span>
             </button>
-            <button class="toolbar-btn" @click="showAttachmentMenu = !showAttachmentMenu" title="Add">
+            <button
+              class="toolbar-btn"
+              @click="showAttachmentMenu = !showAttachmentMenu"
+              :title="$t('skills.title')"
+              :aria-label="$t('skills.title')"
+              :aria-expanded="showAttachmentMenu"
+            >
               <span>+</span>
             </button>
 
@@ -181,20 +202,29 @@
             ></textarea>
 
             <!-- Model选择器 -->
-            <div class="model-selector">
-              <button class="model-dropdown-btn" @click="showModelDropdown = !showModelDropdown">
+            <div ref="modelSelectorRef" class="model-selector">
+              <button
+                class="model-dropdown-btn"
+                :aria-expanded="showModelDropdown"
+                aria-haspopup="listbox"
+                @click="showModelDropdown = !showModelDropdown"
+              >
                 <span class="model-dropdown-name">{{ currentModelName }}</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                   <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2"/>
                 </svg>
               </button>
-              <div v-if="showModelDropdown" class="model-dropdown-menu">
+              <div v-if="showModelDropdown" class="model-dropdown-menu" role="listbox">
                 <div
                   v-for="model in selectedProviderModels"
                   :key="model.id"
                   class="model-dropdown-item"
                   :class="{ selected: model.id === modelsDevStore.selectedModelId }"
+                  role="option"
+                  :aria-selected="model.id === modelsDevStore.selectedModelId"
+                  tabindex="0"
                   @click="selectModelFromDropdown(model)"
+                  @keydown.enter.prevent="selectModelFromDropdown(model)"
                 >
                   <span class="model-item-name">{{ model.name }}</span>
                   <span class="model-item-context">{{ formatContextShort(model.limit?.context) }}</span>
@@ -202,14 +232,28 @@
               </div>
             </div>
 
-            <!-- 发送按钮 -->
+            <!-- 发送 / 停止按钮 -->
             <button
-              class="send-btn"
-              :class="{ disabled: !inputText.trim() || store.isLoading }"
-              @click="handleSend"
-              :disabled="!inputText.trim() || store.isLoading"
+              v-if="store.isLoading"
+              class="send-btn stop"
+              :title="$t('chat.stop')"
+              :aria-label="$t('chat.stop')"
+              @click="store.stopGeneration()"
             >
-              <span class="send-icon">↑</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <rect x="6" y="6" width="12" height="12" rx="2"/>
+              </svg>
+            </button>
+            <button
+              v-else
+              class="send-btn"
+              :class="{ disabled: !inputText.trim() }"
+              :disabled="!inputText.trim()"
+              :title="$t('chat.send')"
+              :aria-label="$t('chat.send')"
+              @click="handleSend"
+            >
+              <span class="send-icon" aria-hidden="true">↑</span>
             </button>
           </div>
 
@@ -225,7 +269,6 @@
           <AttachmentMenu
             v-if="showAttachmentMenu"
             @close="showAttachmentMenu = false"
-            @select="handleAttachmentSelect"
             @manage="openSkillsManager"
           />
         </div>
@@ -254,7 +297,11 @@
             :key="session.id"
             class="session-item"
             :class="{ active: session.id === store.currentSessionId }"
+            role="button"
+            tabindex="0"
             @click="handleSelectSession(session.id)"
+            @keydown.enter.prevent="handleSelectSession(session.id)"
+            @keydown.space.prevent="handleSelectSession(session.id)"
           >
             <div class="session-dot"></div>
             <div class="session-info">
@@ -262,7 +309,15 @@
               <div class="session-time">{{ formatSessionTime(session.updated_at) }}</div>
             </div>
             <div class="session-menu" @click.stop>
-              <button class="menu-btn" @click="showSessionMenu(session)">⋮</button>
+              <button
+                class="menu-btn"
+                :class="{ armed: armedSessionId === session.id }"
+                :title="armedSessionId === session.id ? $t('chat.confirmDelete') : $t('chat.delete')"
+                :aria-label="armedSessionId === session.id ? $t('chat.confirmDelete') : $t('chat.delete')"
+                @click="handleSessionDelete(session.id)"
+              >
+                {{ armedSessionId === session.id ? '✓' : '⋮' }}
+              </button>
             </div>
           </div>
         </div>
@@ -295,19 +350,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { formatCommandPrompt, SLASH_COMMANDS, type SlashCommand } from '@/agent/slashCommands'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { listSkillCommands, type SlashCommand } from '@/agent/slashCommands'
 import { setOnWorkerCompleteCallback, useAgentPool } from '@/agent/useAgentPool'
 import AttachmentMenu from '@/components/AttachmentMenu.vue'
 import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
 import CommandPalette from '@/components/CommandPalette.vue'
+import { useTwoStepConfirm } from '@/composables/useTwoStepConfirm'
 import { useAgentStore } from '@/stores/agent'
 import { useAiChatStore } from '@/stores/aiChat'
 import { useMcpClientStore } from '@/stores/mcpClient'
 import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
-import { useSkillStatsStore } from '@/stores/skillStats'
 import { useSkillsStore } from '@/stores/skills'
+import { useToolStatsStore } from '@/stores/toolStats'
 import { renderSafe, sharedMd } from '@/utils/markdown'
 import AgentTrace from './AgentTrace.vue'
 import McpServersDialog from './McpServersDialog.vue'
@@ -318,7 +374,7 @@ import ToolConfirmCard from './ToolConfirmCard.vue'
 const store = useAiChatStore()
 const mcpClientStore = useMcpClientStore()
 const skillsStore = useSkillsStore()
-const skillStatsStore = useSkillStatsStore()
+const toolStatsStore = useToolStatsStore()
 const agentStore = useAgentStore()
 const modelsDevStore = useModelsDevStore()
 const providerConfigStore = useProviderConfigStore()
@@ -327,17 +383,23 @@ const providerConfigStore = useProviderConfigStore()
 const inputText = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
+const inputConsoleRef = ref<HTMLElement | null>(null)
+const modelSelectorRef = ref<HTMLElement | null>(null)
 const showCommands = ref(false)
 const commandActiveIndex = ref(0)
 const showScrollButton = ref(false)
+const { armedId: armedSessionId, arm: armSessionDelete } = useTwoStepConfirm()
 
 // Slash-command palette: open when the input is a single leading "/" token,
 // filter by what's typed, and reset the keyboard highlight as the list changes.
+// Palette entries are the enabled agent skills.
 const filteredCommands = computed<SlashCommand[]>(() => {
+  // 依赖技能清单/开关状态驱动重算（registry 本身非响应式）
+  void skillsStore.allSkills
   const text = inputText.value.trimStart()
   if (!text.startsWith('/')) return []
   const token = text.slice(1).split(/\s/)[0].toLowerCase()
-  return SLASH_COMMANDS.filter(cmd => cmd.name.slice(1).toLowerCase().startsWith(token))
+  return listSkillCommands().filter(cmd => cmd.name.slice(1).toLowerCase().startsWith(token))
 })
 
 watch(inputText, value => {
@@ -380,11 +442,6 @@ const currentModelName = computed(() => {
 function selectModelFromDropdown(model: any) {
   modelsDevStore.selectModel(model.id)
   showModelDropdown.value = false
-}
-
-function handleAttachmentSelect(_action: string) {
-  showAttachmentMenu.value = false
-  // Handle: attachment, skills, web-search - can be implemented later
 }
 
 function openSkillsManager() {
@@ -498,8 +555,10 @@ function handleSelectSession(sessionId: string) {
   })
 }
 
-function showSessionMenu(session: any) {
-  console.log('Session menu:', session)
+// 两段式删除：第一次点击进入确认态（3 秒自动复位），再点一次才真正删除
+function handleSessionDelete(sessionId: string) {
+  if (!armSessionDelete(sessionId)) return
+  store.deleteSession(sessionId)
 }
 
 // Actions
@@ -574,14 +633,13 @@ async function handleSend() {
   if (!inputText.value.trim() || store.isLoading) return
 
   const content = inputText.value.trim()
-  const prompt = formatCommandPrompt(content)
 
   if (content.startsWith('/agent')) {
     const desc = content.slice(6).trim() || 'Worker task'
     inputText.value = ''
     autoResize()
     try {
-      await agentStore.runWithPool(prompt, desc)
+      await agentStore.runWithPool(content, desc)
       scrollToBottom()
     } catch (e) {
       console.error('Failed to run with pool:', e)
@@ -660,9 +718,33 @@ watch(
   }
 )
 
+// 关闭弹出层：点击目标不在对应容器内时收起模型下拉/技能快捷菜单；Esc 同理
+function onDocPointerDown(e: PointerEvent) {
+  const target = e.target as Node
+  if (showModelDropdown.value && !modelSelectorRef.value?.contains(target)) {
+    showModelDropdown.value = false
+  }
+  if (showAttachmentMenu.value && !inputConsoleRef.value?.contains(target)) {
+    showAttachmentMenu.value = false
+  }
+}
+
+function onDocKeydown(e: KeyboardEvent) {
+  if (e.key !== 'Escape') return
+  if (showModelDropdown.value) showModelDropdown.value = false
+  if (showAttachmentMenu.value) showAttachmentMenu.value = false
+}
+
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', onDocPointerDown, true)
+  document.removeEventListener('keydown', onDocKeydown, true)
+})
+
 onMounted(async () => {
+  document.addEventListener('pointerdown', onDocPointerDown, true)
+  document.addEventListener('keydown', onDocKeydown, true)
   skillsStore.loadConfig()
-  skillStatsStore.loadStats()
+  toolStatsStore.loadStats()
   mcpClientStore.loadFromStorage()
   await Promise.all([
     modelsDevStore.fetchProviders(),
@@ -692,8 +774,7 @@ onMounted(async () => {
 -->
 <style>
 .markdown-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei', Roboto, sans-serif;
+  font-family: var(--jedi-font-ui);
   font-size: 14.5px;
   line-height: 1.72;
   color: var(--text-muted);

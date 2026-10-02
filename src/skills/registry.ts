@@ -1,72 +1,48 @@
 // src/skills/registry.ts
+//
+// In-memory registry of skill manifests (SKILL.md metadata, no executable
+// body). Builtin skills register at module load; user skills register when
+// stores/skills.ts pulls them from the backend. The enabled flag is applied
+// in both directions by stores/skills.ts.
 
-import { browserSkill } from './browser'
-import { filesystemSkill } from './filesystem'
-import { hostsSkill } from './hosts'
-import { memorySkill } from './memory'
-import { podcastSkill } from './podcast'
-import { terminalSkill } from './terminal'
-import type { Skill } from './types'
-import { wallpaperSkill } from './wallpaper'
-import { webFetchSkill, webSearchSkill } from './web'
+import { BUILTIN_SKILLS } from './builtin'
+import type { SkillManifest } from './types'
 
 export class SkillRegistry {
-  private skills: Map<string, Skill> = new Map()
+  private skills: Map<string, SkillManifest> = new Map()
 
-  register(skill: Skill): void {
-    if (!skill.source) skill.source = 'builtin'
-    this.skills.set(skill.id, skill)
+  register(manifest: SkillManifest): void {
+    this.skills.set(manifest.name, manifest)
   }
 
-  unregister(id: string): void {
-    this.skills.delete(id)
+  unregister(name: string): void {
+    this.skills.delete(name)
   }
 
-  get(id: string): Skill | undefined {
-    return this.skills.get(id)
+  get(name: string): SkillManifest | undefined {
+    return this.skills.get(name)
   }
 
-  list(): Skill[] {
+  list(): SkillManifest[] {
     return Array.from(this.skills.values())
   }
 
-  listEnabled(): Skill[] {
+  listEnabled(): SkillManifest[] {
     return this.list().filter(s => s.enabled)
   }
 
-  listAutoCallable(): Skill[] {
-    return this.listEnabled().filter(s => s.autoCallable)
-  }
-
-  setEnabled(id: string, enabled: boolean): void {
-    const skill = this.skills.get(id)
+  setEnabled(name: string, enabled: boolean): void {
+    const skill = this.skills.get(name)
     if (skill) {
       skill.enabled = enabled
-    }
-  }
-
-  setAutoCallable(id: string, value: boolean): void {
-    const skill = this.skills.get(id)
-    if (skill) {
-      skill.autoCallable = value
     }
   }
 }
 
 export const skillRegistry = new SkillRegistry()
 
-// Register built-in skills
-skillRegistry.register(terminalSkill)
-skillRegistry.register(filesystemSkill)
-skillRegistry.register(hostsSkill)
-skillRegistry.register(browserSkill)
-skillRegistry.register(podcastSkill)
-skillRegistry.register(wallpaperSkill)
-skillRegistry.register(webSearchSkill)
-skillRegistry.register(webFetchSkill)
-skillRegistry.register(memorySkill)
-
-// Set initial enabled states
-skillRegistry.setEnabled('browser', false)
-skillRegistry.setEnabled('podcast', false)
-skillRegistry.setEnabled('wallpaper', false)
+// Register builtin skills (user skills are registered by stores/skills.ts)
+for (const doc of BUILTIN_SKILLS) {
+  const { body: _body, ...manifest } = doc
+  skillRegistry.register(manifest)
+}

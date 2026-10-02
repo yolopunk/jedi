@@ -4,43 +4,45 @@
       {{ editing ? $t('skills.editSkill') : $t('skills.newSkill') }}
     </div>
     <div class="editor-form-row">
-      <input v-model="form.name" class="editor-input grow" :placeholder="$t('skills.fieldName')" />
+      <input
+        v-model="form.name"
+        class="editor-input grow"
+        :placeholder="$t('skills.fieldName')"
+        :aria-label="$t('skills.fieldName')"
+        :disabled="!!editing"
+      />
       <input
         v-model="form.icon"
         class="editor-input icon"
         :placeholder="$t('skills.fieldIcon')"
+        :aria-label="$t('skills.fieldIcon')"
         maxlength="4"
       />
     </div>
     <input
-      v-if="!editing"
-      v-model="form.id"
+      v-model="form.description"
       class="editor-input"
-      :placeholder="$t('skills.fieldId')"
+      :placeholder="$t('skills.fieldDesc')"
+      :aria-label="$t('skills.fieldDesc')"
     />
-    <input v-model="form.description" class="editor-input" :placeholder="$t('skills.fieldDesc')" />
-    <div class="editor-risk-picker">
-      <button
-        v-for="r in RISKS"
-        :key="r"
-        class="editor-tab"
-        :class="{ on: form.risk === r }"
-        @click="form.risk = r"
-      >
-        {{ $t(`skills.risk.${r}`) }}
-      </button>
-    </div>
     <textarea
-      v-model="form.prompt"
+      v-model="form.body"
       class="editor-input editor-textarea"
-      :placeholder="$t('skills.fieldPrompt')"
-      rows="6"
+      :placeholder="$t('skills.fieldBody')"
+      :aria-label="$t('skills.fieldBody')"
+      rows="10"
     ></textarea>
-    <div v-if="error" class="editor-error">{{ error }}</div>
+    <p class="editor-note">{{ $t('skills.editorNote') }}</p>
+    <div v-if="error" class="editor-error" role="alert">{{ error }}</div>
     <div class="editor-actions">
       <button class="editor-btn" @click="emit('cancel')">{{ $t('skills.cancel') }}</button>
-      <button class="editor-btn primary" :disabled="!canSave || saving" @click="handleSave">
-        {{ saving ? '…' : $t('skills.save') }}
+      <button
+        class="editor-btn primary"
+        :disabled="!canSave || saving"
+        :aria-busy="saving"
+        @click="handleSave"
+      >
+        {{ saving ? $t('skills.saving') : $t('skills.save') }}
       </button>
     </div>
   </div>
@@ -49,10 +51,11 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CustomSkillDef } from '@/skills/types'
+import { BUILTIN_SKILLS } from '@/skills/builtin'
+import type { SkillDetail } from '@/skills/types'
 import { useSkillsStore } from '@/stores/skills'
 
-const props = defineProps<{ editing: CustomSkillDef | null }>()
+const props = defineProps<{ editing: SkillDetail | null }>()
 const emit = defineEmits<{
   saved: []
   cancel: []
@@ -61,57 +64,52 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const skillsStore = useSkillsStore()
 
-const RISKS = ['read', 'write', 'system'] as const
-const ID_RE = /^[a-z0-9-_]{1,64}$/
+const NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/
 
 const saving = ref(false)
 const error = ref<string | null>(null)
 const form = reactive({
-  id: '',
   name: '',
   icon: '🧩',
   description: '',
-  risk: 'read' as string,
-  prompt: '',
+  body: '',
 })
 
 watch(
   () => props.editing,
   def => {
-    form.id = def?.id ?? ''
     form.name = def?.name ?? ''
     form.icon = def?.icon ?? '🧩'
     form.description = def?.description ?? ''
-    form.risk = def?.risk ?? 'read'
-    form.prompt = def?.prompt ?? ''
+    form.body = def?.body ?? ''
     error.value = null
   },
   { immediate: true }
 )
 
-const canSave = computed(() => {
-  if (form.name.trim() === '' || form.description.trim() === '' || form.prompt.trim() === '')
-    return false
-  return props.editing !== null || ID_RE.test(form.id.trim())
-})
+const canSave = computed(
+  () => form.name.trim() !== '' && form.description.trim() !== '' && form.body.trim() !== ''
+)
 
 async function handleSave(): Promise<void> {
   if (!canSave.value || saving.value) return
   error.value = null
-  const id = props.editing?.id ?? form.id.trim()
-  if (!ID_RE.test(id)) {
-    error.value = t('skills.invalidId')
+  const name = form.name.trim()
+  if (!NAME_RE.test(name)) {
+    error.value = t('skills.invalidName')
+    return
+  }
+  if (!props.editing && (skillExists(name) || BUILTIN_SKILLS.some(s => s.name === name))) {
+    error.value = t('skills.duplicateName', { name })
     return
   }
   saving.value = true
   try {
-    await skillsStore.saveCustom({
-      id,
-      name: form.name.trim(),
+    await skillsStore.saveUserSkill({
+      name,
       icon: form.icon.trim() || '🧩',
       description: form.description.trim(),
-      risk: form.risk,
-      prompt: form.prompt,
+      body: form.body,
     })
     emit('saved')
   } catch (e) {
@@ -119,6 +117,11 @@ async function handleSave(): Promise<void> {
   } finally {
     saving.value = false
   }
+}
+
+/** 已存在（含旧版迁移遗留）的用户技能名视为占用 */
+function skillExists(name: string): boolean {
+  return skillsStore.allSkills.some(s => s.name === name && s.source === 'user')
 }
 </script>
 
@@ -136,7 +139,7 @@ async function handleSave(): Promise<void> {
 .editor-title {
   font-size: 12px;
   font-weight: 600;
-  opacity: 0.72;
+  color: var(--text-muted);
 }
 
 .editor-form-row {
@@ -166,36 +169,27 @@ async function handleSave(): Promise<void> {
 }
 
 .editor-input:focus {
-  border-color: rgb(var(--accent-rgb) / 0.6);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgb(var(--accent-rgb) / 0.3);
+}
+
+.editor-input:disabled {
+  opacity: 0.6;
 }
 
 .editor-textarea {
   font-family: var(--jedi-font-mono);
   font-size: 12px;
   resize: vertical;
-  min-height: 100px;
+  min-height: 160px;
+  line-height: 1.5;
 }
 
-.editor-risk-picker {
-  display: flex;
-  gap: 6px;
-}
-
-.editor-tab {
-  flex: 1;
-  cursor: pointer;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 6px 10px;
-  font-size: 12px;
-  background: rgb(var(--text-rgb) / 0.04);
+.editor-note {
+  margin: 0;
+  font-size: 11px;
   color: var(--text-muted);
-}
-
-.editor-tab.on {
-  background: rgb(var(--accent-rgb) / 0.18);
-  border-color: rgb(var(--accent-rgb) / 0.5);
-  color: var(--accent);
+  line-height: 1.5;
 }
 
 .editor-error {

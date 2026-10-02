@@ -1,6 +1,6 @@
-// src/skills/wallpaper.ts
+// src/agent/tools/wallpaper.ts
 
-import type { ParameterSchema, Skill } from './types'
+import type { ParameterSchema, Tool } from './types'
 
 const parameters: ParameterSchema = {
   type: 'object',
@@ -12,16 +12,15 @@ const parameters: ParameterSchema = {
 }
 
 async function executeWallpaper(args: any): Promise<any> {
-  return { message: 'Wallpaper skill coming soon', args }
+  return { message: 'Wallpaper tool coming soon', args }
 }
 
-export const wallpaperSkill: Skill = {
+export const wallpaperTool: Tool = {
   id: 'wallpaper',
   name: 'WALLPAPER',
   description: 'Browse and set wallpapers',
   icon: '🖼',
   enabled: false,
-  autoCallable: false,
   parameters,
   execute: executeWallpaper,
 }

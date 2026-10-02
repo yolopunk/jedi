@@ -1,7 +1,7 @@
-// src/skills/hosts.ts
+// src/agent/tools/hosts.ts
 
 import { invoke } from '@tauri-apps/api/core'
-import type { ParameterSchema, Skill } from './types'
+import type { ParameterSchema, Tool } from './types'
 
 const parameters: ParameterSchema = {
   type: 'object',
@@ -36,13 +36,12 @@ async function executeHosts(args: any): Promise<any> {
   }
 }
 
-export const hostsSkill: Skill = {
+export const hostsTool: Tool = {
   id: 'hosts',
   name: 'HOSTS_MGR',
   description: 'Manage system hosts file',
   icon: '🌐',
   enabled: true,
-  autoCallable: true,
   risk: 'write',
   parameters,
   execute: executeHosts,

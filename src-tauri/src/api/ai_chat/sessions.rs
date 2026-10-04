@@ -64,6 +64,7 @@ impl ChatSession {
   }
 
   /// 添加消息（仅用于内存场景与测试）
+  #[allow(dead_code)]
   pub fn add_message(&mut self, role: String, content: String) {
     let message = ChatMessage {
       id: uuid::Uuid::new_v4().to_string(),
@@ -105,6 +106,7 @@ impl ChatSessionManager {
   }
 
   /// 使用自定义数据库路径创建（用于测试）
+  #[allow(dead_code)]
   pub fn new_with_path(db_path: impl Into<PathBuf>, audit_logger: AuditLogger) -> Self {
     let manager = Self {
       db_path: db_path.into(),

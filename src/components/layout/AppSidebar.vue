@@ -18,7 +18,7 @@
                     class="grogu-pod-container mb-1"
                     :class="{ 'mini-pod': isCollapsed }"
                 >
-                    <img src="/icon.png" alt="Jedi Logo" class="app-logo" />
+                    <img src="/icon.png?v=jedi-koala-20261003" alt="Jedi Logo" class="app-logo" />
                     <div class="logo-glow"></div>
                 </div>
 
@@ -280,6 +280,7 @@ onUnmounted(() => {
 
 /* logo 光晕：静态单层（着色器背景已提供动态，这里不再叠加呼吸动画） */
 .logo-glow {
+  display: none;
     position: absolute;
     inset: -4px;
     border-radius: 50%;
@@ -297,7 +298,7 @@ onUnmounted(() => {
     object-fit: contain;
     transition: all 0.3s ease;
     z-index: 2;
-    border-radius: 50%;
+    border-radius: 0;
     position: relative;
 }
 

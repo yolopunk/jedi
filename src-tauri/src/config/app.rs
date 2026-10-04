@@ -105,7 +105,12 @@ pub fn load_tray_config(app: &App) {
     app_info.name, app_info.version, os_name, os_version
   );
 
-  let icon = match Image::from_bytes(include_bytes!("../../icons/icon.png")) {
+  // Monochrome template on macOS; opaque contrast tile on Windows/Linux.
+  #[cfg(target_os = "macos")]
+  let logo_bytes: &[u8] = include_bytes!("../../icons/tray-template.png");
+  #[cfg(not(target_os = "macos"))]
+  let logo_bytes: &[u8] = include_bytes!("../../icons/tray-icon.png");
+  let icon = match Image::from_bytes(logo_bytes) {
     Ok(icon) => icon,
     Err(e) => {
       eprintln!("failed to load tray icon: {}", e);
@@ -157,6 +162,6 @@ pub fn load_tray_config(app: &App) {
         }
       }
     })
-    .icon_as_template(true)
+    .icon_as_template(cfg!(target_os = "macos"))
     .build(app);
 }

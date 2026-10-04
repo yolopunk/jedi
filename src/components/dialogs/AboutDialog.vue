@@ -34,7 +34,7 @@
       <!-- Content -->
       <div class="card-body">
         <div class="about-logo">
-          <img src="/icon.png" alt="Jedi Logo" class="app-logo" />
+          <img src="/icon.png?v=jedi-koala-20261003" alt="Jedi Logo" class="app-logo" />
           <div class="logo-glow"></div>
         </div>
 
@@ -206,13 +206,14 @@ onMounted(async () => {
   width: 72px;
   height: 72px;
   object-fit: contain;
-  border-radius: 50%;
+  border-radius: 0;
   position: relative;
   z-index: 2;
 }
 
 /* logo 光晕：静态单层，不做呼吸动画 */
 .logo-glow {
+  display: none;
   position: absolute;
   inset: -8px;
   border-radius: 50%;

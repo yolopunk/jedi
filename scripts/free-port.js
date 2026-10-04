@@ -21,7 +21,11 @@ function killByPid(pid) {
 function findPids() {
   try {
     if (process.platform === 'win32') {
-      const output = execSync(`netstat -ano -p tcp | findstr :${port}`, { encoding: 'utf8' });
+      // plain `netstat -ano` (no `-p tcp`) is required: `-p tcp` omits
+      // IPv6-only listeners like [::1]:31420, which vite binds on Windows
+      const output = execSync(`netstat -ano | findstr LISTENING | findstr :${port}`, {
+        encoding: 'utf8',
+      });
       return Array.from(
         new Set(
           output

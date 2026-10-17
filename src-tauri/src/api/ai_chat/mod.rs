@@ -21,8 +21,8 @@ pub use models::{send_chat_message, send_chat_message_stream, ModelProviderManag
 
 // 重新导出会话相关类型和 commands
 pub use sessions::{
-  append_message, create_session, delete_session, get_session, list_sessions,
-  update_session_title, ChatSessionManagerState,
+  append_message, create_session, delete_session, get_session, list_sessions, update_session_title,
+  ChatSessionManagerState,
 };
 
 // 重新导出 models.dev 相关类型和 commands

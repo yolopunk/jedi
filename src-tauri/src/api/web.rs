@@ -14,8 +14,7 @@ const DEFAULT_MAX_CHARS: usize = 8000;
 const REQUEST_TIMEOUT_SECS: u64 = 20;
 // A real browser-ish UA: some sites (and DuckDuckGo's HTML endpoint) serve empty
 // or blocked responses to obvious bots.
-const USER_AGENT: &str =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 \
+const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 \
    (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
 fn http_client() -> Result<Client, String> {
@@ -118,9 +117,8 @@ pub async fn web_search(
   let link_re =
     regex::Regex::new(r#"(?is)<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>"#)
       .map_err(|e| e.to_string())?;
-  let snippet_re =
-    regex::Regex::new(r#"(?is)<a[^>]*class="result__snippet"[^>]*>(.*?)</a>"#)
-      .map_err(|e| e.to_string())?;
+  let snippet_re = regex::Regex::new(r#"(?is)<a[^>]*class="result__snippet"[^>]*>(.*?)</a>"#)
+    .map_err(|e| e.to_string())?;
 
   let snippets: Vec<String> = snippet_re
     .captures_iter(&html)
@@ -206,18 +204,16 @@ fn percent_decode(s: &str) -> String {
   let mut i = 0;
   while i < bytes.len() {
     match bytes[i] {
-      b'%' if i + 2 < bytes.len() => {
-        match (hex_val(bytes[i + 1]), hex_val(bytes[i + 2])) {
-          (Some(hi), Some(lo)) => {
-            out.push(hi * 16 + lo);
-            i += 3;
-          }
-          _ => {
-            out.push(bytes[i]);
-            i += 1;
-          }
+      b'%' if i + 2 < bytes.len() => match (hex_val(bytes[i + 1]), hex_val(bytes[i + 2])) {
+        (Some(hi), Some(lo)) => {
+          out.push(hi * 16 + lo);
+          i += 3;
         }
-      }
+        _ => {
+          out.push(bytes[i]);
+          i += 1;
+        }
+      },
       b'+' => {
         out.push(b' ');
         i += 1;

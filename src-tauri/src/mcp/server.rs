@@ -83,7 +83,10 @@ fn call_tool(name: &str, args: &Value, rt: &tokio::runtime::Runtime) -> Result<S
         .and_then(|v| v.as_str())
         .ok_or("缺少参数: query")?
         .to_string();
-      let max = args.get("max_results").and_then(|v| v.as_u64()).map(|n| n as usize);
+      let max = args
+        .get("max_results")
+        .and_then(|v| v.as_u64())
+        .map(|n| n as usize);
       let hits = rt.block_on(web::web_search(query, max))?;
       Ok(
         hits
@@ -99,7 +102,10 @@ fn call_tool(name: &str, args: &Value, rt: &tokio::runtime::Runtime) -> Result<S
         .and_then(|v| v.as_str())
         .ok_or("缺少参数: url")?
         .to_string();
-      let max = args.get("max_chars").and_then(|v| v.as_u64()).map(|n| n as usize);
+      let max = args
+        .get("max_chars")
+        .and_then(|v| v.as_u64())
+        .map(|n| n as usize);
       let result = rt.block_on(web::web_fetch(url, max))?;
       Ok(result.text)
     }
@@ -144,7 +150,10 @@ pub fn run_stdio_server() {
       "tools/call" => {
         let params = req.get("params").cloned().unwrap_or_else(|| json!({}));
         let name = params.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        let args = params.get("arguments").cloned().unwrap_or_else(|| json!({}));
+        let args = params
+          .get("arguments")
+          .cloned()
+          .unwrap_or_else(|| json!({}));
         Some(Ok(match call_tool(name, &args, &rt) {
           Ok(text) => json!({ "content": [{ "type": "text", "text": text }], "isError": false }),
           Err(e) => json!({ "content": [{ "type": "text", "text": e }], "isError": true }),

@@ -132,7 +132,9 @@ impl SseClient {
         }),
       )
       .await?;
-    client.notify("notifications/initialized", json!({})).await?;
+    client
+      .notify("notifications/initialized", json!({}))
+      .await?;
 
     let tools = client.list_tools().await?;
     Ok((client, tools))
@@ -194,7 +196,11 @@ impl SseClient {
       tools
         .into_iter()
         .map(|t| McpToolInfo {
-          name: t.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+          name: t
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string(),
           description: t
             .get("description")
             .and_then(|v| v.as_str())
@@ -214,7 +220,10 @@ impl SseClient {
       )
       .await?;
 
-    let is_error = result.get("isError").and_then(|v| v.as_bool()).unwrap_or(false);
+    let is_error = result
+      .get("isError")
+      .and_then(|v| v.as_bool())
+      .unwrap_or(false);
     let text = result
       .get("content")
       .and_then(|v| v.as_array())
@@ -222,7 +231,11 @@ impl SseClient {
         arr
           .iter()
           .map(|c| match c.get("type").and_then(|v| v.as_str()) {
-            Some("text") => c.get("text").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+            Some("text") => c
+              .get("text")
+              .and_then(|v| v.as_str())
+              .unwrap_or("")
+              .to_string(),
             Some("image") => "[image]".to_string(),
             Some("resource") => "[resource]".to_string(),
             _ => String::new(),
@@ -233,7 +246,11 @@ impl SseClient {
       .unwrap_or_default();
 
     if is_error {
-      Err(if text.is_empty() { "工具返回错误".into() } else { text })
+      Err(if text.is_empty() {
+        "工具返回错误".into()
+      } else {
+        text
+      })
     } else {
       Ok(text)
     }

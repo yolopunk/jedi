@@ -15,6 +15,13 @@ export default {
     system: '系统',
     online: '在线',
   },
+  splash: {
+    loading: '正在启动…',
+    stepHosts: '载入 Hosts 策略',
+    stepWallpaper: '就绪知识壁纸',
+    stepPodcast: '连接播客客户端',
+    stepChat: '唤醒 AI 助手',
+  },
   header: {
     systemOnline: '系统在线',
     modulesActive: '模块活跃',

@@ -15,6 +15,13 @@ export default {
     system: 'SYSTEM',
     online: 'ONLINE',
   },
+  splash: {
+    loading: 'Starting…',
+    stepHosts: 'Loading Hosts policy',
+    stepWallpaper: 'Preparing Knowledge Wall',
+    stepPodcast: 'Connecting podcast client',
+    stepChat: 'Waking AI assistant',
+  },
   header: {
     systemOnline: 'System Online',
     modulesActive: 'Modules Active',

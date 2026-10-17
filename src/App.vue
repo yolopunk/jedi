@@ -73,6 +73,9 @@
       :src="currentPlaying?.audio_url || ''"
       autoplay
     ></audio>
+
+    <!-- Splash Screen (fades out once app init completes) -->
+    <SplashScreen v-if="!splashDone" :leaving="splashLeaving" @ready="handleSplashReady" />
   </v-app>
 </template>
 
@@ -83,6 +86,7 @@ import { open } from '@tauri-apps/plugin-shell'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
+import SplashScreen from '@/components/common/SplashScreen.vue'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 import HelpDialog from '@/components/dialogs/HelpDialog.vue'
@@ -114,6 +118,32 @@ const showAboutDialog = ref(false)
 
 // Sidebar state
 const sidebarCollapsed = ref(false)
+
+// Splash state
+const SPLASH_MIN_MS = 1800
+const SPLASH_FADE_MS = 600
+// 初始化耗时过长时，完成后仍保证启动页至少完整展示这一段，避免闪现即淡出
+const SPLASH_LEAVE_FLOOR_MS = 400
+const splashLeaving = ref(false)
+const splashDone = ref(false)
+
+// 计时起点 = 启动页组件实际渲染完成（@ready），与初始化 await 耗时无关
+let splashStartedAt = 0
+const handleSplashReady = () => {
+  splashStartedAt = Date.now()
+}
+
+// 初始化完成后补足最短停留，再淡出并卸载
+const scheduleSplashLeave = () => {
+  const start = splashStartedAt || Date.now()
+  const remain = Math.max(SPLASH_LEAVE_FLOOR_MS, SPLASH_MIN_MS - (Date.now() - start))
+  window.setTimeout(() => {
+    splashLeaving.value = true
+    window.setTimeout(() => {
+      splashDone.value = true
+    }, SPLASH_FADE_MS)
+  }, remain)
+}
 
 // Current locale display (text only: flag emojis render as "CH"/"US" letters on Windows)
 const currentLocale = computed(() => (locale.value === 'zh' ? 'zh-CN' : 'en-US'))
@@ -211,6 +241,8 @@ onMounted(async () => {
   } catch {
     // ignore if listen fails (e.g. non-Tauri env)
   }
+
+  scheduleSplashLeave()
 })
 
 onUnmounted(() => {

@@ -1,12 +1,14 @@
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import readline from 'readline';
 import { fileURLToPath } from 'url';
 
 // ESM dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..');
+const VERSION_RE = /^[0-9]+\.[0-9]+\.[0-9]+$/;
 
 const filesToUpdate = [
   {
@@ -27,13 +29,17 @@ const filesToUpdate = [
 ];
 
 function getCurrentVersion() {
-  const content = fs.readFileSync('package.json', 'utf8');
+  const content = fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf8');
   const match = content.match(/"version":\s*"([0-9.]+)"/);
   return match ? match[1] : null;
 }
 
 function updateFile(filePath, regex, replacement, newVersion) {
-  const absolutePath = path.resolve(process.cwd(), filePath);
+  const absolutePath = path.resolve(projectRoot, filePath);
+  if (!absolutePath.startsWith(projectRoot + path.sep)) {
+    console.error(`Refusing to update file outside the project: ${filePath}`);
+    return false;
+  }
   if (!fs.existsSync(absolutePath)) {
     console.error(`File not found: ${filePath}`);
     return false;
@@ -121,6 +127,11 @@ if (newVersion) {
 }
 
 function runRelease(version) {
+  if (!VERSION_RE.test(version)) {
+    console.error(`Invalid version: ${version}`);
+    process.exit(1);
+  }
+
   console.log(`\nReleasing version: v${version}...\n`);
   
   try {
@@ -131,19 +142,31 @@ function runRelease(version) {
   
     // 2. Sync Cargo.lock
     console.log('Syncing Cargo.lock...');
-    execSync('cd src-tauri && cargo update -p Jedi', { stdio: 'inherit' });
+    execFileSync('cargo', ['update', '-p', 'Jedi'], {
+      cwd: path.join(projectRoot, 'src-tauri'),
+      stdio: 'inherit'
+    });
     
     // 3. Git commit and tag
     console.log('Committing and tagging...');
-    execSync('git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock', { stdio: 'inherit' });
-    execSync(`git commit -m "chore: release v${version}"`, { stdio: 'inherit' });
+    execFileSync('git', [
+      'add',
+      'package.json',
+      'src-tauri/tauri.conf.json',
+      'src-tauri/Cargo.toml',
+      'src-tauri/Cargo.lock'
+    ], { cwd: projectRoot, stdio: 'inherit' });
+    execFileSync('git', ['commit', '-m', `chore: release v${version}`], {
+      cwd: projectRoot,
+      stdio: 'inherit'
+    });
     
     // Check if tag exists locally and delete it if so (for retries)
     try {
-      execSync(`git tag -d v${version}`, { stdio: 'ignore' });
+      execFileSync('git', ['tag', '-d', `v${version}`], { cwd: projectRoot, stdio: 'ignore' });
     } catch (e) {}
     
-    execSync(`git tag v${version}`, { stdio: 'inherit' });
+    execFileSync('git', ['tag', `v${version}`], { cwd: projectRoot, stdio: 'inherit' });
     
     console.log(`\nSuccess! Version v${version} created.`);
     console.log('Run the following command to push to GitHub and trigger release workflow:');

@@ -31,12 +31,17 @@ const DEFAULT_OPTIONS: ValidationOptions = {
     'vbscript:',
     'livescript:',
     'mocha:',
-    'eval(',
-    'expression(',
     'document.cookie',
     'localStorage',
     'sessionStorage',
   ],
+}
+
+// 带左括号的调用片段用正则匹配：作为字面量传给 new RegExp() 时括号未转义会直接抛异常
+const DANGEROUS_PATTERNS = [/eval\s*\(/i, /expression\s*\(/i]
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 // 危险的 HTML 标签和属性
@@ -87,9 +92,16 @@ export function validateUserInput(input: string, options?: ValidationOptions): V
     for (const pattern of opts.blocklist) {
       if (sanitized.toLowerCase().includes(pattern.toLowerCase())) {
         warnings.push(`检测到潜在危险内容: ${pattern}`)
-        const regex = new RegExp(pattern, 'gi')
+        const regex = new RegExp(escapeRegExp(pattern), 'gi')
         sanitized = sanitized.replace(regex, '[REDACTED]')
       }
+    }
+  }
+
+  for (const pattern of DANGEROUS_PATTERNS) {
+    if (pattern.test(sanitized)) {
+      warnings.push(`检测到潜在危险内容: ${pattern.source}`)
+      sanitized = sanitized.replace(new RegExp(pattern.source, 'gi'), '[REDACTED]')
     }
   }
 

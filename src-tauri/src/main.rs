@@ -10,7 +10,6 @@ use crate::api::ai_chat::{
   create_session,
   delete_api_key,
   delete_session,
-  update_session_title,
   encode_html_entities,
   // Phase 3: Models.dev 集成
   fetch_models_dev,
@@ -31,6 +30,7 @@ use crate::api::ai_chat::{
   send_chat_message,
   send_chat_message_stream,
   store_api_key,
+  update_session_title,
   validate_input,
   validate_key,
   validate_message,
@@ -47,9 +47,6 @@ use crate::api::app::{
 use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
 use crate::api::memory::{memory_delete, memory_list, memory_recall, memory_save};
 use crate::api::os::{get_os_info, SystemState};
-use crate::mcp::manager::{
-  mcp_call_tool, mcp_connect, mcp_disconnect, mcp_list_connected, McpManager,
-};
 use crate::api::podcast::{
   fetch_episodes, fetch_rss_channel, get_subscriptions, import_opml, refresh_subscription,
   remove_subscription, resolve_xiaoyuzhou_podcast, save_subscription,
@@ -63,6 +60,9 @@ use crate::api::wallpapers::{
   get_current_wallpaper, get_wallpapers, set_desktop_wallpaper, show_in_folder, sync_wallpapers,
 };
 use crate::api::web::{web_fetch, web_search};
+use crate::mcp::manager::{
+  mcp_call_tool, mcp_connect, mcp_disconnect, mcp_list_connected, McpManager,
+};
 use crate::utils::logger;
 use std::sync::Mutex;
 use sysinfo::{Networks, System};
@@ -108,6 +108,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let models_dev_manager_state = ModelsDevManagerState::new();
 
   let app = tauri::Builder::default()
+    // 必须最先注册：第二个实例在此退出并聚焦已有窗口。
+    // WebView2 的用户数据目录被进程独占，多实例会让后启动者
+    // 在创建 webview 时 panic（HRESULT 0x8007139F），窗口永远白屏。
+    .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+      if let Some(window) = app.get_webview_window("main") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+      }
+    }))
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_shell::init())
     .plugin(tauri_plugin_autostart::Builder::new().build())
@@ -158,6 +168,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       let _window = win_builder.center().build()?;
 
       config::app::load_tray_config(app);
+
+      // 壁纸启动自愈：数据目录被外部清空后，注册表会指向已消失的壁纸文件，
+      // explorer 重读时把桌面落成纯黑。按 备份→缓存重下→内置兜底 恢复。
+      tauri::async_runtime::spawn(crate::api::wallpapers::ensure_wallpaper_health(
+        app.handle().clone(),
+      ));
 
       #[cfg(desktop)]
       {
@@ -280,14 +296,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       label,
       ..
     } => {
-      api.prevent_close();
-      if let Some(window) = _app_handle.get_webview_window(label) {
-        if let Err(e) = window.hide() {
-          eprintln!("failed to hide window: {}", e);
+      // release 隐藏到托盘；dev 直接退出——隐藏实例会锁住 WebView2 用户
+      // 数据目录，让下一次 `tauri dev` 的新实例 panic 成白屏僵尸
+      #[cfg(not(debug_assertions))]
+      {
+        api.prevent_close();
+        if let Some(window) = _app_handle.get_webview_window(label) {
+          if let Err(e) = window.hide() {
+            eprintln!("failed to hide window: {}", e);
+          }
         }
       }
+      #[cfg(debug_assertions)]
+      let _ = (&api, label);
     }
     RunEvent::ExitRequested { api, code, .. } => {
+      #[cfg(debug_assertions)]
+      let _ = (&api, &code);
+      // release：无退出码的退出请求（关闭最后一个窗口）同样拦下，常驻托盘
+      #[cfg(not(debug_assertions))]
       if code.is_none() {
         api.prevent_exit();
       }

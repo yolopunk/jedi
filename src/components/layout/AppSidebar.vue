@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { mdiDns, mdiPodcast, mdiRobot, mdiToolboxOutline, mdiWallpaper } from '@mdi/js'
+import { mdiCrop, mdiDns, mdiPodcast, mdiRobot, mdiToolboxOutline, mdiWallpaper } from '@mdi/js'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import LogoShaderBg from '@/components/common/LogoShaderBg.vue'
 
@@ -112,6 +112,7 @@ const navItems = [
   { to: '/hosts', icon: mdiDns, tooltipKey: 'sidebar.hostsManager' },
   { to: '/wallpapers', icon: mdiWallpaper, tooltipKey: 'sidebar.wallpapers' },
   { to: '/podcast', icon: mdiPodcast, tooltipKey: 'sidebar.podcast' },
+  { to: '/screenshot', icon: mdiCrop, tooltipKey: 'sidebar.screenshot' },
 ]
 
 // Sidebar width and resize

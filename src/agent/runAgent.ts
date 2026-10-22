@@ -11,7 +11,15 @@ import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
-import { generateText, isLoopFinished, jsonSchema, stepCountIs, streamText, tool } from 'ai'
+import {
+  generateText,
+  isLoopFinished,
+  jsonSchema,
+  type ModelMessage,
+  stepCountIs,
+  streamText,
+  tool,
+} from 'ai'
 import { toolRegistry } from '@/agent/tools/registry'
 import type { ToolRisk } from '@/agent/tools/types'
 import { loadSkill } from '@/skills/loader'
@@ -20,9 +28,37 @@ import type { SkillManifest } from '@/skills/types'
 
 export const DEFAULT_STEP_LIMIT = 8
 
+/** 多模态消息分段：文本或图片（data URL，发送时由文件路径读取） */
+export type ChatContentPart = { type: 'text'; text: string } | { type: 'image'; image: string }
+
 export interface ChatTurn {
   role: 'user' | 'assistant' | 'system'
-  content: string
+  content: string | ChatContentPart[]
+}
+
+/**
+ * ChatTurn -> AI SDK ModelMessage。ChatTurn 的 role/content 是宽联合，
+ * 不能直接赋值给 SDK 的判别联合，这里按角色显式收敛；图片分段只对
+ * user 角色有意义，其余角色出现分段时退化为拼接文本。
+ */
+function toModelMessage(turn: ChatTurn): ModelMessage {
+  if (typeof turn.content === 'string') {
+    return { role: turn.role, content: turn.content } as ModelMessage
+  }
+  if (turn.role === 'user') {
+    return {
+      role: 'user',
+      content: turn.content.map(part =>
+        part.type === 'text'
+          ? { type: 'text' as const, text: part.text }
+          : { type: 'image' as const, image: part.image }
+      ),
+    } as ModelMessage
+  }
+  return {
+    role: turn.role,
+    content: turn.content.map(part => (part.type === 'text' ? part.text : '[图片]')).join('\n'),
+  } as ModelMessage
 }
 
 export interface ConfirmToolRequest {
@@ -474,7 +510,7 @@ export async function runAgent(
   const result = streamText({
     model: providerClient.languageModel(spec.model),
     system: createAgentSystemPrompt(enabledToolNames, enabledSkillManifests),
-    messages: spec.messages,
+    messages: spec.messages.map(toModelMessage),
     tools,
     abortSignal: spec.signal,
     stopWhen: [stepCountIs(stepLimit), isLoopFinished()],

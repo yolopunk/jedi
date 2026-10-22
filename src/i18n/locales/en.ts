@@ -9,6 +9,7 @@ export default {
     podcast: 'Xiaoyuzhou',
     chat: 'Chat',
     skills: 'Skills',
+    screenshot: 'Screenshot',
     expand: 'Expand sidebar',
     collapse: 'Collapse sidebar',
     models: 'Models',
@@ -479,5 +480,30 @@ export default {
     exportTitle: 'Run Jedi as an MCP server',
     exportHint:
       'In other MCP clients (e.g. Claude Desktop), configure Jedi with this command to expose its read-only tools (memory / web):',
+  },
+  screenshot: {
+    galleryDescription: 'A home for your ideas, snippets and captured moments.',
+    preview: 'Preview',
+    closePreview: 'Close preview',
+    loadFailed: 'Could not load captures: {message}',
+    folderFailed: 'Could not open folder: {message}',
+
+    title: 'Screenshot',
+    description:
+      'Freeze the screen, drag to select a region, then copy, save or send it to AI chat.',
+    start: 'Start Capture',
+    shortcutHint: 'Global shortcut Ctrl+Alt+S, also available from the tray menu',
+    overlayHint: 'Drag to select · Arrow keys nudge (Shift = 10px) · Enter copies · Esc cancels',
+    copy: 'Copy',
+    save: 'Save',
+    sendToChat: 'Send to AI',
+    cancel: 'Cancel',
+    copied: 'Copied to clipboard',
+    saved: 'Saved: {path}',
+    sentToChat: 'Screenshot added to chat input',
+    captureFailed: 'Capture failed: {message}',
+    recent: 'Recent Captures',
+    recentEmpty: 'No captures yet — take one first',
+    openFolder: 'Open in folder',
   },
 }

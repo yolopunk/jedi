@@ -12,6 +12,8 @@ export * from './hosts'
 
 // 导出播客API
 export * from './podcast'
+// 导出截图API
+export * from './screenshot'
 // 导出自定义技能API
 export * from './skills'
 // 导出壁纸管理API

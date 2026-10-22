@@ -705,6 +705,70 @@
   padding: 0 20px;
 }
 
+/* 待发送图片附件（截图 -> 发送到 AI） */
+.attachment-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 12px 8px;
+}
+
+.attachment-chip {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgb(var(--text-rgb) / 0.15);
+  background: rgb(var(--ink-rgb) / 0.1);
+}
+
+.attachment-chip img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.chip-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chip-remove:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* 用户消息内的图片附件 */
+.message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.message-attachments img {
+  max-width: 260px;
+  max-height: 180px;
+  border-radius: 8px;
+  border: 1px solid rgb(var(--text-rgb) / 0.12);
+  object-fit: contain;
+  display: block;
+}
+
 /* 统一胶囊容器 - 参考图1风格 */
 .input-bar {
   display: flex;

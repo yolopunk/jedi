@@ -93,6 +93,15 @@
                     <span class="avatar-monogram">YOU</span>
                   </div>
                   <div class="message-content user-message">
+                    <div v-if="message.metadata?.attachments?.length" class="message-attachments">
+                      <img
+                        v-for="path in message.metadata.attachments"
+                        :key="path"
+                        :src="convertFileSrc(path)"
+                        :alt="path"
+                        draggable="false"
+                      />
+                    </div>
                     <div class="message-body">
                       <div class="markdown-body" v-html="renderMessage(message.content)"></div>
                     </div>
@@ -174,6 +183,22 @@
 
         <!-- 输入区域 -->
         <div ref="inputConsoleRef" class="input-console" :class="inputConsoleState">
+          <!-- 待发送图片附件（截图 -> 发送到 AI） -->
+          <div v-if="store.pendingAttachments.length" class="attachment-chips">
+            <div v-for="path in store.pendingAttachments" :key="path" class="attachment-chip">
+              <img :src="convertFileSrc(path)" alt="" draggable="false" />
+              <button
+                class="chip-remove"
+                type="button"
+                :title="$t('screenshot.cancel')"
+                :aria-label="$t('screenshot.cancel')"
+                @click="store.removePendingAttachment(path)"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+
           <!-- 统一胶囊容器 -->
           <div class="input-bar">
             <!-- 左侧工具栏 -->
@@ -247,8 +272,8 @@
             <button
               v-else
               class="send-btn"
-              :class="{ disabled: !inputText.trim() }"
-              :disabled="!inputText.trim()"
+              :class="{ disabled: !inputText.trim() && !store.pendingAttachments.length }"
+              :disabled="!inputText.trim() && !store.pendingAttachments.length"
               :title="$t('chat.send')"
               :aria-label="$t('chat.send')"
               @click="handleSend"
@@ -350,6 +375,7 @@
 </template>
 
 <script setup lang="ts">
+import { convertFileSrc } from '@tauri-apps/api/core'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { listSkillCommands, type SlashCommand } from '@/agent/slashCommands'
 import { setOnWorkerCompleteCallback, useAgentPool } from '@/agent/useAgentPool'
@@ -630,7 +656,8 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 async function handleSend() {
-  if (!inputText.value.trim() || store.isLoading) return
+  // 图片附件允许无文本直接发送
+  if ((!inputText.value.trim() && !store.pendingAttachments.length) || store.isLoading) return
 
   const content = inputText.value.trim()
 

@@ -1,5 +1,7 @@
 <template>
-  <v-app>
+  <!-- 截图覆盖窗口等无框架路由：跳过主应用布局，只渲染页面本身 -->
+  <router-view v-if="isBareLayout" />
+  <v-app v-else>
     <div class="app-layout" :style="{ '--title-bar-height': `${TITLE_BAR_TOTAL_HEIGHT}px` }">
       <AppHeader
         @open-github="openGithubRepo"
@@ -82,7 +84,7 @@ import { listen } from '@tauri-apps/api/event'
 import { open } from '@tauri-apps/plugin-shell'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import SystemInfoBar from '@/components/common/SystemInfoBar.vue'
 import AboutDialog from '@/components/dialogs/AboutDialog.vue'
 import HelpDialog from '@/components/dialogs/HelpDialog.vue'
@@ -101,9 +103,14 @@ const { getItem, setItem } = useStorage()
 const { currentPlaying, setAudioRef } = useAudioPlayer()
 const { startAutoCheck } = useUpdate()
 const router = useRouter()
+const route = useRoute()
+
+// 覆盖窗口等独立路由不渲染主布局
+const isBareLayout = computed(() => route.meta.bare === true)
 
 // Tray navigation listener
 let unlistenTray: (() => void) | null = null
+let unlistenScreenshot: (() => void) | null = null
 
 const audioEl = ref<HTMLAudioElement | null>(null)
 
@@ -211,10 +218,29 @@ onMounted(async () => {
   } catch {
     // ignore if listen fails (e.g. non-Tauri env)
   }
+
+  // Listen for screenshots captured with the "send to AI" action: bring the
+  // window up, land on the chat view and queue the image as an attachment.
+  try {
+    unlistenScreenshot = await listen<string>('screenshot-captured', async event => {
+      const path = event.payload
+      if (!path) return
+      const { getCurrentWindow } = await import('@tauri-apps/api/window')
+      const win = getCurrentWindow()
+      await win.show()
+      await win.setFocus()
+      await router.push('/chat')
+      const { useAiChatStore } = await import('@/stores/aiChat')
+      useAiChatStore().addPendingAttachment(path)
+    })
+  } catch {
+    // ignore if listen fails (e.g. non-Tauri env)
+  }
 })
 
 onUnmounted(() => {
   unlistenTray?.()
+  unlistenScreenshot?.()
 })
 </script>
 

@@ -48,6 +48,15 @@ pub fn load_tray_config(app: &App) {
     }
   };
 
+  let screenshot_capture =
+    match MenuItem::with_id(app, "screenshot_capture", "📷 截图 (Ctrl+Alt+S)", true, None::<&str>) {
+      Ok(item) => item,
+      Err(e) => {
+        eprintln!("failed to create screenshot_capture menu item: {}", e);
+        return;
+      }
+    };
+
   let separator = match PredefinedMenuItem::separator(app) {
     Ok(s) => s,
     Err(e) => {
@@ -79,6 +88,7 @@ pub fn load_tray_config(app: &App) {
       &nav_wallpapers,
       &nav_podcast,
       &nav_skills,
+      &screenshot_capture,
       &separator,
       &show,
       &quit,
@@ -131,6 +141,14 @@ pub fn load_tray_config(app: &App) {
       }
       "quit" => {
         app.exit(-1);
+      }
+      "screenshot_capture" => {
+        let app = app.clone();
+        tauri::async_runtime::spawn(async move {
+          if let Err(e) = crate::api::screenshot::begin_capture(app.clone()).await {
+            eprintln!("screenshot begin failed: {}", e);
+          }
+        });
       }
       "nav_chat" | "nav_hosts" | "nav_wallpapers" | "nav_podcast" | "nav_skills" => {
         let route = match event.id.as_ref() {

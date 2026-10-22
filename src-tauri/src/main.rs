@@ -54,6 +54,10 @@ use crate::api::podcast::{
   fetch_episodes, fetch_rss_channel, get_subscriptions, import_opml, refresh_subscription,
   remove_subscription, resolve_xiaoyuzhou_podcast, save_subscription,
 };
+use crate::api::screenshot::{
+  list_screenshots, read_image_data_url, screenshot_begin, screenshot_cancel, screenshot_finish,
+  screenshot_frame_info, ScreenshotState,
+};
 use crate::api::skills::{
   skill_stats_clear, skill_stats_list, skill_stats_save, skills_delete, skills_list, skills_read,
   skills_read_file, skills_save,
@@ -115,6 +119,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .plugin(tauri_plugin_updater::Builder::new().build())
     .plugin(tauri_plugin_process::init())
     .plugin(tauri_plugin_http::init())
+    .plugin(tauri_plugin_clipboard_manager::init())
+    // 全局快捷键触发截图；具体快捷键在 setup 中注册
+    .plugin(
+      tauri_plugin_global_shortcut::Builder::new()
+        .with_handler(|app, _shortcut, event| {
+          use tauri_plugin_global_shortcut::ShortcutState;
+          if event.state == ShortcutState::Pressed {
+            let app = app.clone();
+            tauri::async_runtime::spawn(async move {
+              if let Err(e) = crate::api::screenshot::begin_capture(app.clone()).await {
+                eprintln!("screenshot begin failed: {}", e);
+              }
+            });
+          }
+        })
+        .build(),
+    )
     .manage(SystemState {
       system: Mutex::new(System::new_all()),
       networks: Mutex::new(Networks::new_with_refreshed_list()),
@@ -130,6 +151,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .manage(PoolState(tokio::sync::Mutex::new(AgentPool::new(4))))
     // Third-party MCP client connections
     .manage(McpManager::new())
+    // Screenshot capture session
+    .manage(ScreenshotState::default())
     .setup(|app| {
       // 创建主窗口
       let mut win_builder =
@@ -158,6 +181,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       let _window = win_builder.center().build()?;
 
       config::app::load_tray_config(app);
+
+      // 注册截图全局快捷键（默认 Ctrl+Alt+S）
+      #[cfg(desktop)]
+      {
+        use tauri_plugin_global_shortcut::GlobalShortcutExt;
+        let app_handle = app.handle().clone();
+        match "ctrl+alt+s".parse::<tauri_plugin_global_shortcut::Shortcut>() {
+          Ok(shortcut) => {
+            if let Err(e) = app_handle.global_shortcut().register(shortcut) {
+              eprintln!("failed to register screenshot shortcut: {}", e);
+            }
+          }
+          Err(e) => eprintln!("failed to parse screenshot shortcut: {}", e),
+        }
+      }
 
       #[cfg(desktop)]
       {
@@ -268,7 +306,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       // Skill execution stats commands
       skill_stats_list,
       skill_stats_save,
-      skill_stats_clear
+      skill_stats_clear,
+      // Screenshot capture commands
+      screenshot_begin,
+      screenshot_frame_info,
+      screenshot_finish,
+      screenshot_cancel,
+      list_screenshots,
+      read_image_data_url
     ])
     .build(tauri::generate_context!())?;
 

@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import {
+  type ChatContentPart,
   type ChatTurn,
   DEFAULT_STEP_LIMIT,
   distillTitle,
@@ -11,6 +12,7 @@ import {
 } from '@/agent/runAgent'
 import { withStatsHooks } from '@/agent/statsHooks'
 import { toolRegistry } from '@/agent/tools/registry'
+import { readImageDataUrl } from '@/api/screenshot'
 import { loadSkill } from '@/skills/loader'
 import { skillRegistry } from '@/skills/registry'
 import { useAgentStore } from './agent'
@@ -88,6 +90,8 @@ export interface MessageMetadata {
   finishReason?: string
   usage?: unknown
   run?: AgentRunMetadata
+  /** 用户消息携带的图片附件（截图落盘路径），重启后从 metadata 恢复 */
+  attachments?: string[]
 }
 
 // 预定义的MCP服务器
@@ -214,6 +218,34 @@ export const useAiChatStore = defineStore('aiChat', () => {
   const modelsDevStore = useModelsDevStore()
   const agentStore = useAgentStore()
 
+  // 输入区待发送的图片附件（截图落盘路径），发送时并入用户消息
+  const pendingAttachments = ref<string[]>([])
+
+  function addPendingAttachment(path: string): void {
+    if (!pendingAttachments.value.includes(path)) {
+      pendingAttachments.value.push(path)
+    }
+  }
+
+  function removePendingAttachment(path: string): void {
+    pendingAttachments.value = pendingAttachments.value.filter(p => p !== path)
+  }
+
+  /** 把带附件的用户消息还原为多模态分段；附件读取失败时跳过并告警。 */
+  async function buildUserTurn(content: string, attachments?: string[]): Promise<ChatTurn> {
+    if (!attachments?.length) return { role: 'user', content }
+    const parts: ChatContentPart[] = []
+    if (content.trim()) parts.push({ type: 'text', text: content })
+    for (const path of attachments) {
+      try {
+        parts.push({ type: 'image', image: await readImageDataUrl(path) })
+      } catch (e) {
+        console.warn('Failed to load image attachment:', path, e)
+      }
+    }
+    return parts.length ? { role: 'user', content: parts } : { role: 'user', content }
+  }
+
   // Computed
   const currentSession = computed(
     () => sessions.value.find(s => s.id === currentSessionId.value) || null
@@ -337,7 +369,17 @@ export const useAiChatStore = defineStore('aiChat', () => {
     const session = currentSession.value!
     // Only auto-name a session whose title is still the placeholder.
     const shouldAutoTitle = DEFAULT_TITLES.has(session.title)
-    const userMessage: ChatMessage = { role: 'user', content, timestamp: Date.now() }
+    const userMessage: ChatMessage = {
+      role: 'user',
+      content,
+      timestamp: Date.now(),
+      metadata: pendingAttachments.value.length
+        ? { attachments: [...pendingAttachments.value] }
+        : undefined,
+    }
+    // 附件随本轮消息带走；失败时不回填，避免重复发送
+    const attachments = [...pendingAttachments.value]
+    pendingAttachments.value = []
     const assistantDraft: ChatMessage = {
       role: 'assistant',
       content: '',
@@ -421,6 +463,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
           session_id: session.id,
           role: 'user',
           content,
+          metadata: attachments.length ? JSON.stringify({ attachments }) : undefined,
         },
       })
 
@@ -505,13 +548,17 @@ export const useAiChatStore = defineStore('aiChat', () => {
       })
       const planStep = agentStore.startStep('think', 'Planning response', content)
 
-      // Convert messages to the shared executor format
-      const aiMessages: ChatTurn[] = session.messages
-        .filter(m => !m.isStreaming)
-        .map(m => ({
-          role: m.role as ChatTurn['role'],
-          content: m.content,
-        }))
+      // Convert messages to the shared executor format; 带图片附件的用户
+      // 消息需要异步读取 data URL，多模态分段进入本轮上下文
+      const aiMessages: ChatTurn[] = []
+      for (const m of session.messages) {
+        if (m.isStreaming) continue
+        if (m.role === 'user' && m.metadata?.attachments?.length) {
+          aiMessages.push(await buildUserTurn(m.content, m.metadata.attachments))
+        } else {
+          aiMessages.push({ role: m.role as ChatTurn['role'], content: m.content })
+        }
+      }
       // 斜杠技能正文注入本轮上下文头部
       if (slashSkill) aiMessages.unshift(slashSkill.turn)
 
@@ -937,6 +984,11 @@ export const useAiChatStore = defineStore('aiChat', () => {
 
     // Computed
     currentSession,
+
+    // Image attachments (screenshot -> chat)
+    pendingAttachments,
+    addPendingAttachment,
+    removePendingAttachment,
 
     // Actions
     resolveConfirmation,

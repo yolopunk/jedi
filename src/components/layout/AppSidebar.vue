@@ -10,16 +10,12 @@
             :style="{ width: isCollapsed ? '64px' : `${width}px` }"
         >
             <!-- Logo Area -->
-            <div
-                class="d-flex flex-column align-center py-2 border-bottom logo-area"
-            >
-                <LogoShaderBg v-if="!isCollapsed" :is-collapsed="isCollapsed" />
+            <div class="d-flex flex-column align-center logo-area">
                 <div
                     class="grogu-pod-container mb-1"
                     :class="{ 'mini-pod': isCollapsed }"
                 >
-                    <img src="/icon.png?v=jedi-koala-20261003" alt="Jedi Logo" class="app-logo" />
-                    <div class="logo-glow"></div>
+                    <img :src="logoSrc" alt="Jedi Logo" class="app-logo" />
                 </div>
 
                 <!-- Title/Subtitle -->
@@ -29,9 +25,7 @@
                     style="max-width: 100%"
                 >
                     <h2 class="text-h6 font-weight-bold sidebar-title">
-                        <span class="title-bracket">[</span>
                         {{ $t("sidebar.title") }}
-                        <span class="title-bracket">]</span>
                     </h2>
                     <div class="text-caption sidebar-subtitle">
                         {{ $t("sidebar.subtitle") }}
@@ -71,7 +65,6 @@
                         location="right"
                         >{{ $t(item.tooltipKey) }}</v-tooltip
                     >
-                    <div v-if="!isCollapsed" class="nav-indicator"></div>
                 </v-list-item>
             </v-list>
 
@@ -94,8 +87,8 @@
 
 <script setup lang="ts">
 import { mdiCrop, mdiDns, mdiPodcast, mdiRobot, mdiToolboxOutline, mdiWallpaper } from '@mdi/js'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import LogoShaderBg from '@/components/common/LogoShaderBg.vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useTheme } from '@/composables/useTheme'
 
 const props = defineProps<{
   collapsed?: boolean
@@ -105,6 +98,15 @@ const emit = defineEmits<{
   (e: 'update:width', width: number): void
   (e: 'toggle-sidebar'): void
 }>()
+
+// Dark theme uses the black-tile koala variant
+const { isDark } = useTheme()
+
+const logoSrc = computed(() =>
+  isDark.value
+    ? '/branding/jedi-app-icon-dark.png?v=jedi-koala-20261003'
+    : '/icon.png?v=jedi-koala-20261003'
+)
 
 const navItems = [
   { to: '/chat', icon: mdiRobot, tooltipKey: 'sidebar.chat' },
@@ -221,12 +223,12 @@ onUnmounted(() => {
 }
 
 .jedi-sidebar {
-    border-right: 1px solid rgb(var(--accent-rgb) / 0.15);
-    background: linear-gradient(180deg, var(--bg-terminal) 0%, var(--bg-terminal) 100%);
+    border-right: 1px solid var(--border);
+    background: var(--bg-sidebar);
     height: 100%;
     overflow-x: hidden;
     overflow-y: auto;
-    font-family: "JetBrains Mono", "Fira Code", "SF Mono", monospace;
+    font-family: var(--jedi-font-ui);
 }
 
 /* Custom Scrollbar for Sidebar */
@@ -237,36 +239,27 @@ onUnmounted(() => {
     background: transparent;
 }
 .jedi-sidebar::-webkit-scrollbar-thumb {
-    background: rgb(var(--accent-rgb) / 0.2);
+    background: rgb(var(--text-rgb) / 0.2);
     border-radius: 2px;
 }
 .jedi-sidebar::-webkit-scrollbar-thumb:hover {
-    background: rgb(var(--accent-rgb) / 0.3);
+    background: rgb(var(--text-rgb) / 0.32);
 }
 
 .logo-area {
-    border-bottom-color: rgb(var(--accent-rgb) / 0.15) !important;
-    padding: 16px 8px !important;
-    position: relative;
-    overflow: hidden;
-    min-height: 160px;
+    border-bottom: 1px solid var(--border);
+    padding: 18px 8px 14px !important;
 }
 
 /* Collapsed logo area */
 .sidebar-collapsed .logo-area {
-    min-height: auto;
-    padding: 10px 8px !important;
-    background: radial-gradient(
-        circle at center,
-        rgb(var(--accent-rgb) / 0.06) 0%,
-        transparent 70%
-    );
+    padding: 12px 8px !important;
 }
 
 .grogu-pod-container {
     position: relative;
-    width: 72px;
-    height: 72px;
+    width: 56px;
+    height: 56px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -274,28 +267,14 @@ onUnmounted(() => {
 }
 
 .grogu-pod-container.mini-pod {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     margin-bottom: 4px !important;
 }
 
-/* logo 光晕：静态单层（着色器背景已提供动态，这里不再叠加呼吸动画） */
-.logo-glow {
-  display: none;
-    position: absolute;
-    inset: -4px;
-    border-radius: 50%;
-    background: radial-gradient(
-        circle,
-        rgb(var(--accent-rgb) / 0.3) 0%,
-        transparent 70%
-    );
-    z-index: 0;
-}
-
 .app-logo {
-    width: 56px;
-    height: 56px;
+    width: 44px;
+    height: 44px;
     object-fit: contain;
     transition: all 0.3s ease;
     z-index: 2;
@@ -304,28 +283,22 @@ onUnmounted(() => {
 }
 
 .mini-pod .app-logo {
-    width: 40px;
-    height: 40px;
+    width: 28px;
+    height: 28px;
 }
 
 .sidebar-title {
     font-size: 13px !important;
-    font-weight: 700 !important;
-    letter-spacing: 2px;
-    color: var(--success) !important;
-    font-family: var(--jedi-font-display);
-}
-
-.title-bracket {
-    color: var(--accent);
-    font-size: 12px;
-    text-shadow: 0 0 10px rgb(var(--accent-rgb) / 0.5);
+    font-weight: 600 !important;
+    letter-spacing: 0.5px;
+    color: var(--text) !important;
+    font-family: var(--jedi-font-ui);
 }
 
 .sidebar-subtitle {
-    font-size: 9px !important;
+    font-size: 10px !important;
     color: var(--text-subtle) !important;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
 }
 
 /* Ensure icons center in collapsed mode */
@@ -367,140 +340,48 @@ onUnmounted(() => {
     align-items: center;
 }
 
-/* Sci-Fi Console Sidebar Item */
+/* Sidebar Item — quiet neutral highlight (ChatGPT/Claude style) */
 .sidebar-item {
-    transition: all 0.15s ease;
+    transition: background 0.15s ease;
     position: relative;
-    border-radius: 4px !important;
+    border-radius: 6px !important;
     overflow: hidden;
 }
 
 .sidebar-item :deep(.v-list-item) {
-    border-radius: 4px !important;
+    border-radius: 6px !important;
     position: relative;
 }
 
-.sidebar-item::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 4px;
-    bottom: 4px;
-    width: 2px;
-    background: var(--accent);
-    opacity: 0;
-    transform: scaleY(0);
-    transition: all 0.15s ease;
-    box-shadow: 0 0 10px rgb(var(--accent-rgb) / 0.8);
-    z-index: 2;
-}
-
-.sidebar-item.v-list-item--active::before {
-    opacity: 1;
-    transform: scaleY(1);
-}
-
 .sidebar-item.v-list-item--active :deep(.v-list-item) {
-    background: rgb(var(--accent-rgb) / 0.08) !important;
-}
-
-.sidebar-item.v-list-item--active .sidebar-icon-container {
-    filter: drop-shadow(0 0 6px rgb(var(--accent-rgb) / 0.8));
+    background: rgb(var(--text-rgb) / 0.08) !important;
 }
 
 .sidebar-item:hover :deep(.v-list-item) {
-    background: rgb(var(--accent-rgb) / 0.05) !important;
+    background: rgb(var(--text-rgb) / 0.05) !important;
 }
 
 .nav-text {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 1px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
     color: var(--text-muted);
 }
 
 .sidebar-item.v-list-item--active .nav-text {
-    color: var(--accent);
-    text-shadow: 0 0 8px rgb(var(--accent-rgb) / 0.5);
-}
-
-.nav-indicator {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 8px rgb(var(--success-rgb) / 0.6);
-    margin-left: auto;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.sidebar-item.v-list-item--active .nav-indicator {
-    opacity: 1;
+    color: var(--text);
 }
 
 /* Sidebar Footer */
 .sidebar-footer {
     padding: 8px 12px 10px;
-    border-top: 1px solid rgb(var(--accent-rgb) / 0.15);
-    background: linear-gradient(0deg, var(--bg-terminal) 0%, transparent 100%);
-}
-
-/* Footer Action Buttons */
-.footer-actions {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    margin-bottom: 6px;
-}
-
-.footer-action-btn {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
-    border-radius: 4px;
-    color: rgb(var(--accent-rgb) / 0.5);
-    opacity: 0.7;
-    transition: all 0.15s ease;
-}
-
-.footer-action-btn:hover {
-    background-color: rgb(var(--accent-rgb) / 0.1);
-    opacity: 1;
-    color: var(--accent) !important;
-}
-
-/* Collapsed Action Icons */
-.collapsed-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    padding: 8px 0;
-    border-top: 1px solid rgb(var(--accent-rgb) / 0.15);
-}
-
-.collapsed-action-btn {
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
-    border-radius: 4px;
-    color: rgb(var(--accent-rgb) / 0.5);
-    opacity: 0.7;
-    transition: all 0.15s ease;
-}
-
-.collapsed-action-btn:hover {
-    background-color: rgb(var(--accent-rgb) / 0.1);
-    opacity: 1;
-    color: var(--accent) !important;
+    border-top: 1px solid var(--border);
 }
 
 .footer-time {
     font-size: 10px;
-    color: var(--text-muted);
-    font-family: "JetBrains Mono", monospace;
+    color: var(--text-subtle);
+    font-family: var(--jedi-font-ui);
     text-align: center;
 }
 
@@ -520,25 +401,24 @@ onUnmounted(() => {
 }
 
 .resize-handle:hover {
-    background-color: rgb(var(--accent-rgb) / 0.1);
+    background-color: rgb(var(--text-rgb) / 0.06);
 }
 
 .resize-handle.is-resizing {
-    background-color: rgb(var(--accent-rgb) / 0.15);
+    background-color: rgb(var(--text-rgb) / 0.1);
 }
 
 .resize-indicator {
     width: 2px;
     height: 32px;
     border-radius: 2px;
-    background-color: rgb(var(--accent-rgb) / 0.2);
+    background-color: rgb(var(--text-rgb) / 0.2);
     transition: background-color 0.15s ease;
 }
 
 .resize-handle:hover .resize-indicator,
 .resize-handle.is-resizing .resize-indicator {
-    background-color: var(--accent);
+    background-color: var(--text-muted);
     width: 3px;
-    box-shadow: 0 0 10px rgb(var(--accent-rgb) / 0.5);
 }
 </style>

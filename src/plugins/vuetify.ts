@@ -42,13 +42,13 @@ export const vuetify = createVuetify({
         colors: {
           background: '#111113', // Zinc near-black
           surface: '#18181b', // Zinc-900
-          primary: '#38bdf8', // Unified sci-fi cyan (was #00ffff)
-          secondary: '#c084fc', // Purple-400
-          accent: '#c084fc', // Purple-400
-          error: '#f87171', // Red-400
-          info: '#38bdf8', // Cyan
-          success: '#4ade80', // Green-400
-          warning: '#fbbf24', // Amber-400
+          primary: '#539bf5', // Primer-dark blue (calm, was sci-fi cyan)
+          secondary: '#8b949e', // Neutral grey
+          accent: '#a371f7', // Muted violet
+          error: '#f85149', // Primer-dark red
+          info: '#539bf5', // Blue
+          success: '#3fb950', // Primer-dark green
+          warning: '#d29922', // Primer-dark yellow
         },
       },
     },

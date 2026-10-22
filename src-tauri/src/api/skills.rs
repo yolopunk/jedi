@@ -116,10 +116,7 @@ pub struct SkillSaveDef {
 
 /// 解析 SKILL.md 内容为（元数据, 正文）。
 /// frontmatter 的 name 若存在必须与目录名一致；缺省时用目录名。
-fn parse_skill_content(
-  dir_name: &str,
-  content: &str,
-) -> Result<(SkillManifest, String), String> {
+fn parse_skill_content(dir_name: &str, content: &str) -> Result<(SkillManifest, String), String> {
   let trimmed = content.trim_start_matches('\u{feff}');
   let rest = match trimmed.strip_prefix("---\n") {
     Some(r) => r,
@@ -130,7 +127,7 @@ fn parse_skill_content(
     .ok_or_else(|| format!("技能 {} 的 frontmatter 未闭合", dir_name))?;
   let header = &rest[..end];
   let mut body = &rest[end + 4..]; // 跳过 "\n---"
-  // 去掉闭合标记后紧跟的换行，正文从下一行开始
+                                   // 去掉闭合标记后紧跟的换行，正文从下一行开始
   if let Some(b) = body.strip_prefix('\n') {
     body = b;
   } else if body.starts_with('\r') {
@@ -172,8 +169,7 @@ fn parse_skill_content(
   Ok((
     SkillManifest {
       name: dir_name.to_string(),
-      description: description
-        .ok_or_else(|| format!("技能 {} 缺少 description", dir_name))?,
+      description: description.ok_or_else(|| format!("技能 {} 缺少 description", dir_name))?,
       icon,
       source: "user".to_string(),
     },
@@ -234,7 +230,9 @@ fn parse_legacy_content(content: &str) -> Result<(SkillManifest, String), String
   let rest = trimmed
     .strip_prefix("---\n")
     .ok_or_else(|| "缺少 frontmatter".to_string())?;
-  let end = rest.find("\n---").ok_or_else(|| "frontmatter 未闭合".to_string())?;
+  let end = rest
+    .find("\n---")
+    .ok_or_else(|| "frontmatter 未闭合".to_string())?;
   let header = &rest[..end];
   let mut body = &rest[end + 4..];
   if let Some(b) = body.strip_prefix('\n') {
@@ -359,11 +357,11 @@ pub fn skills_read_file(name: String, rel_path: String) -> Result<String, String
     return Err("文件路径长度非法".to_string());
   }
   let skill_root = skills_dir()?.join(&name);
-  let canonical_root = std::fs::canonicalize(&skill_root)
-    .map_err(|_| format!("技能 {} 不存在", name))?;
+  let canonical_root =
+    std::fs::canonicalize(&skill_root).map_err(|_| format!("技能 {} 不存在", name))?;
   let target = skill_root.join(&rel_path);
-  let canonical_target = std::fs::canonicalize(&target)
-    .map_err(|_| format!("文件 {} 不存在", rel_path))?;
+  let canonical_target =
+    std::fs::canonicalize(&target).map_err(|_| format!("文件 {} 不存在", rel_path))?;
   if !canonical_target.starts_with(&canonical_root) {
     return Err("文件路径越界".to_string());
   }
@@ -396,7 +394,10 @@ pub fn skills_save(def: SkillSaveDef) -> Result<SkillManifest, String> {
   }
   let skill_dir = skills_dir()?.join(&name);
   std::fs::create_dir_all(&skill_dir).map_err(|e| format!("创建技能目录失败: {}", e))?;
-  let serialized = format!("---\nname: {}\ndescription: {}\nicon: {}\n---\n{}", name, description, icon, def.body);
+  let serialized = format!(
+    "---\nname: {}\ndescription: {}\nicon: {}\n---\n{}",
+    name, description, icon, def.body
+  );
   std::fs::write(skill_dir.join("SKILL.md"), serialized)
     .map_err(|e| format!("写入 SKILL.md 失败: {}", e))?;
   Ok(SkillManifest {
@@ -512,7 +513,8 @@ mod tests {
 
   #[test]
   fn parse_roundtrip() {
-    let content = "---\nname: deploy-frontend\ndescription: 部署前端项目\nicon: 🚀\n---\n# 步骤\n1. 构建";
+    let content =
+      "---\nname: deploy-frontend\ndescription: 部署前端项目\nicon: 🚀\n---\n# 步骤\n1. 构建";
     let (manifest, body) = parse_skill_content("deploy-frontend", content).unwrap();
     assert_eq!(manifest.name, "deploy-frontend");
     assert_eq!(manifest.description, "部署前端项目");
@@ -634,12 +636,12 @@ mod tests {
     let dir = temp_dir("migrate-skip");
     let skill_dir = dir.join("deploy-old");
     std::fs::create_dir_all(&skill_dir).unwrap();
-    std::fs::write(skill_dir.join("SKILL.md"), "---\ndescription: new\n---\nnew").unwrap();
     std::fs::write(
-      dir.join("deploy_old.md"),
-      "---\ndescription: old\n---\nold",
+      skill_dir.join("SKILL.md"),
+      "---\ndescription: new\n---\nnew",
     )
     .unwrap();
+    std::fs::write(dir.join("deploy_old.md"), "---\ndescription: old\n---\nold").unwrap();
     assert_eq!(migrate_legacy_flat_files(&dir), 0);
     assert!(dir.join("deploy_old.md").exists());
     assert_eq!(
@@ -675,7 +677,10 @@ mod tests {
     std::fs::write(dir.join(".hidden").join("x.md"), "x").unwrap();
     let mut out = Vec::new();
     collect_bundled_files(&dir, &dir, &mut out, 0);
-    assert_eq!(out, vec!["references/aws.md", "references/gcp.md", "scripts/run.sh"]);
+    assert_eq!(
+      out,
+      vec!["references/aws.md", "references/gcp.md", "scripts/run.sh"]
+    );
     std::fs::remove_dir_all(&dir).ok();
   }
 
@@ -692,7 +697,10 @@ mod tests {
   #[test]
   fn stats_clamp_keeps_newest_ten_errors() {
     let errors: Vec<SkillStatError> = (0..15)
-      .map(|i| SkillStatError { ts: i, msg: format!("err-{}", i) })
+      .map(|i| SkillStatError {
+        ts: i,
+        msg: format!("err-{}", i),
+      })
       .collect();
     let mut entry = stat_entry(errors);
     clamp_entry(&mut entry);
@@ -704,7 +712,10 @@ mod tests {
 
   #[test]
   fn stats_clamp_truncates_long_messages() {
-    let errors = vec![SkillStatError { ts: 1, msg: "x".repeat(500) }];
+    let errors = vec![SkillStatError {
+      ts: 1,
+      msg: "x".repeat(500),
+    }];
     let mut entry = stat_entry(errors);
     clamp_entry(&mut entry);
     assert_eq!(entry.recent_errors[0].msg.chars().count(), 200);
@@ -712,7 +723,10 @@ mod tests {
 
   #[test]
   fn stats_clamp_noop_on_small_entries() {
-    let errors = vec![SkillStatError { ts: 1, msg: "boom".to_string() }];
+    let errors = vec![SkillStatError {
+      ts: 1,
+      msg: "boom".to_string(),
+    }];
     let mut entry = stat_entry(errors);
     let before = entry.clone();
     clamp_entry(&mut entry);

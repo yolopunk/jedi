@@ -342,7 +342,10 @@ impl ChatSessionManager {
   pub fn delete_session(&mut self, session_id: &str) -> Result<(), String> {
     let conn = self.open()?;
     let affected = conn
-      .execute("DELETE FROM chat_sessions WHERE id = ?1", params![session_id])
+      .execute(
+        "DELETE FROM chat_sessions WHERE id = ?1",
+        params![session_id],
+      )
       .map_err(|e| format!("Failed to delete session: {}", e))?;
     if affected == 0 {
       return Err(format!("Session not found: {}", session_id));

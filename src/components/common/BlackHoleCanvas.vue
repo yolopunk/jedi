@@ -1,18 +1,11 @@
 <template>
-  <div class="logo-shader-wrap" :class="{ collapsed: isCollapsed }">
-    <canvas v-if="!isCollapsed" ref="canvasRef" class="logo-shader-bg" />
+  <div class="black-hole-wrap">
+    <canvas ref="canvasRef" class="black-hole-canvas" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { useTheme } from '@/composables/useTheme'
-
-const { isDark } = useTheme()
-
-const props = defineProps<{
-  isCollapsed?: boolean
-}>()
+import { onMounted, onUnmounted, ref } from 'vue'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
@@ -22,9 +15,12 @@ let animId = 0
 let running = true
 let needsResize = true
 let resizeHandler: (() => void) | null = null
+// Reduced motion：冻结着色器时间轴，仅渲染静态帧
+const prefersReducedMotion =
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 // Shader params (official defaults)
-const rotationSpeed = 0.3
+const rotationSpeed = prefersReducedMotion ? 0 : 0.3
 const diskIntensity = 1.0
 let tiltVal = 0.0
 let rotateVal = 0.0
@@ -45,7 +41,6 @@ let uDiskIntensity: WebGLUniformLocation | null = null
 let uTilt: WebGLUniformLocation | null = null
 let uRotate: WebGLUniformLocation | null = null
 let uChromatic: WebGLUniformLocation | null = null
-let uWarmShift: WebGLUniformLocation | null = null
 
 const vertSrc = `
 attribute vec2 a_pos;
@@ -61,7 +56,6 @@ uniform float u_diskIntensity;
 uniform float u_tilt;
 uniform float u_rotate;
 uniform float u_chromatic;
-uniform float u_warmShift;
 
 const float PI = 3.14159265359;
 const float TAU = 6.28318530718;
@@ -300,16 +294,6 @@ void main() {
     col = smoothstep(0.0, 1.0, col);
     col = pow(max(col, 0.0), vec3(0.92));
 
-    // Warm shift for light theme
-    if (u_warmShift > 0.01) {
-        float lum = dot(col, vec3(0.299, 0.587, 0.114));
-        vec3 warmCol = vec3(0.96, 0.72, 0.42);
-        float bgFactor = smoothstep(0.25, 0.0, lum);
-        col = mix(col, warmCol * max(lum, 0.08), bgFactor * u_warmShift * 0.7);
-        col.r *= 1.0 + u_warmShift * 0.12;
-        col.b *= 1.0 - u_warmShift * 0.18;
-    }
-
     float lum = dot(col, vec3(0.299, 0.587, 0.114));
     float alpha = smoothstep(0.001, 0.05, lum);
 
@@ -365,7 +349,6 @@ function initWebGL(canvas: HTMLCanvasElement): boolean {
   uTilt = gl.getUniformLocation(prog, 'u_tilt')
   uRotate = gl.getUniformLocation(prog, 'u_rotate')
   uChromatic = gl.getUniformLocation(prog, 'u_chromatic')
-  uWarmShift = gl.getUniformLocation(prog, 'u_warmShift')
 
   return true
 }
@@ -389,14 +372,13 @@ function render(now: number) {
   if (needsResize) resize()
 
   if (gl && prog) {
-    gl.uniform1f(uTime, now * 0.001)
+    gl.uniform1f(uTime, prefersReducedMotion ? 0 : now * 0.001)
     gl.uniform2f(uRes, canvasRef.value?.width, canvasRef.value?.height)
     gl.uniform1f(uRotationSpeed, rotationSpeed)
     gl.uniform1f(uDiskIntensity, diskIntensity)
     gl.uniform1f(uTilt, tiltVal)
     gl.uniform1f(uRotate, rotateVal)
     gl.uniform1f(uChromatic, chromatic)
-    gl.uniform1f(uWarmShift, isDark.value ? 0.0 : 0.65)
     gl.drawArrays(gl.TRIANGLES, 0, 3)
   }
 
@@ -495,43 +477,21 @@ onUnmounted(() => {
   }
   prog = null
 })
-
-watch(
-  () => props.isCollapsed,
-  collapsed => {
-    if (collapsed) {
-      running = false
-      cancelAnimationFrame(animId)
-    } else {
-      running = true
-      needsResize = true
-      animId = requestAnimationFrame(render)
-    }
-  }
-)
 </script>
 
 <style scoped>
-.logo-shader-wrap {
+.black-hole-wrap {
   position: absolute;
   inset: 0;
-  z-index: 0;
   overflow: hidden;
-  pointer-events: none;
 }
 
-.logo-shader-bg {
+.black-hole-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  /* 可拖拽微调视角（长按后拖动），不影响宿主布局 */
   pointer-events: auto;
-  opacity: 0.3;
-  filter: hue-rotate(175deg);
-  transition: opacity 0.3s ease;
-}
-
-.logo-shader-wrap.collapsed .logo-shader-bg {
-  opacity: 0.25;
 }
 </style>

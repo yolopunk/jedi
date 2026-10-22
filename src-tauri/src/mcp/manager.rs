@@ -256,7 +256,11 @@ pub async fn mcp_call_tool(
       .join("\n");
 
     if result.is_error.unwrap_or(false) {
-      Err(if text.is_empty() { "工具返回错误".into() } else { text })
+      Err(if text.is_empty() {
+        "工具返回错误".into()
+      } else {
+        text
+      })
     } else {
       Ok(text)
     }

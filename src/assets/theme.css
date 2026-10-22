@@ -1,9 +1,9 @@
 /*
- * Jedi Theme System v3.0 — Single Semantic Token Source
+ * Jedi Theme System v4.0 — Single Semantic Token Source
  * -----------------------------------------------------
- * One vocabulary, two palettes:
- *   - Light : clean neutral (Zinc + single blue accent)
- *   - Dark  : sci-fi console (Zed-matte zinc + cyan accent)
+ * One vocabulary, two palettes, one restrained accent:
+ *   - Light : clean neutral (JetBrains Int UI grey + blue accent)
+ *   - Dark  : quiet zinc (ChatGPT/Claude-style matte surfaces + blue accent)
  *
  * Rules:
  *   1. Components MUST consume semantic tokens, never raw hex.
@@ -36,8 +36,8 @@
   --text-muted: #a1a1aa;
   --text-subtle: #52525b;
   --border: #27272a;
-  --accent: #38bdf8;
-  --accent-rgb: 56 189 248;
+  --accent: #539bf5;
+  --accent-rgb: 83 155 245;
   --text-rgb: 244 244 245;
 
   /* Overlay stacking order (theme-independent):
@@ -115,7 +115,7 @@
 }
 
 /* =========================================================
-   DARK THEME — Sci-Fi Console (Zed matte + cyan)
+   DARK THEME — Quiet Zinc (matte + single blue accent)
    ========================================================= */
 .dark-theme {
   color-scheme: dark;
@@ -143,28 +143,28 @@
   /* Borders */
   --border: #27272a;
   --border-strong: #3f3f46;
-  --border-focus: #38bdf8;
+  --border-focus: #539bf5;
   --border-rgb: 39 39 42;
 
-  /* Accent (primary) — unified cyan, kills #00ffff/#60a5fa split */
-  --accent: #38bdf8;
-  --accent-rgb: 56 189 248;
-  --accent-hover: #7dd3fc;
+  /* Accent (primary) — Primer-dark blue: calm, readable on zinc */
+  --accent: #539bf5;
+  --accent-rgb: 83 155 245;
+  --accent-hover: #6eb1ff;
   --on-accent: #09090b;
 
-  /* Secondary accent (was "magenta") */
-  --accent-2: #c084fc;
-  --accent-2-rgb: 192 132 252;
+  /* Secondary accent — muted violet, kept only for syntax/IP distinction */
+  --accent-2: #a371f7;
+  --accent-2-rgb: 163 113 247;
 
-  /* Functional */
-  --success: #4ade80;
-  --success-rgb: 74 222 128;
-  --warning: #fbbf24;
-  --warning-rgb: 251 191 36;
-  --danger: #f87171;
-  --danger-rgb: 248 113 113;
-  --info: #38bdf8;
-  --info-rgb: 56 189 248;
+  /* Functional — Primer-dark semantics */
+  --success: #3fb950;
+  --success-rgb: 63 185 80;
+  --warning: #d29922;
+  --warning-rgb: 210 153 34;
+  --danger: #f85149;
+  --danger-rgb: 248 81 73;
+  --info: #539bf5;
+  --info-rgb: 83 155 245;
 
   /* Glow — flattened to match light theme; identity lives in color, not glow */
   --glow-accent: none;
@@ -253,14 +253,15 @@
   --v-theme-surface-bright: 39, 39, 42;
   --v-theme-surface-variant: 161, 161, 170;
   --v-theme-on-surface-variant: 9, 9, 11;
-  --v-theme-primary: 56, 189, 248;
-  --v-theme-primary-darken-1: 14, 165, 233;
-  --v-theme-secondary: 192, 132, 252;
-  --v-theme-secondary-darken-1: 168, 85, 247;
-  --v-theme-error: 248, 113, 113;
-  --v-theme-info: 56, 189, 248;
-  --v-theme-success: 74, 222, 128;
-  --v-theme-warning: 251, 191, 36;
+  --v-theme-primary: 83, 155, 245;
+  --v-theme-primary-darken-1: 61, 111, 217;
+  /* secondary = neutral grey so .text-secondary reads muted */
+  --v-theme-secondary: 139, 148, 158;
+  --v-theme-secondary-darken-1: 110, 119, 129;
+  --v-theme-error: 248, 81, 73;
+  --v-theme-info: 83, 155, 245;
+  --v-theme-success: 63, 185, 80;
+  --v-theme-warning: 210, 153, 34;
   --v-theme-on-background: 244, 244, 245;
   --v-theme-on-surface: 244, 244, 245;
   --v-theme-on-primary: 9, 9, 11;
@@ -364,17 +365,6 @@ body {
   box-shadow: var(--shadow-sm);
 }
 
-.console-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.5;
-}
-
 /* Console Button — clean Int UI (secondary / primary / danger) */
 .console-btn {
   display: inline-flex;
@@ -461,7 +451,7 @@ body {
   font-family: var(--jedi-font-mono);
 }
 
-/* Card with Sci-Fi Border */
+/* Card with quiet border */
 .scifi-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -469,17 +459,6 @@ body {
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-}
-
-.scifi-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.5;
 }
 
 /* Console scrollbar */
@@ -628,10 +607,4 @@ body {
   color: var(--text-muted);
   margin-bottom: 16px;
   font-family: var(--jedi-font-mono);
-}
-
-/* Top accent hairline on consoles/cards — keep but very subtle in light */
-.light-theme .console-container::before,
-.light-theme .scifi-card::before {
-  opacity: 0.35;
 }

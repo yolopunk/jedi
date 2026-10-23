@@ -1,13 +1,14 @@
 <template>
     <div
         class="sidebar-wrapper"
-        :class="{ 'sidebar-collapsed': isCollapsed }"
+        :class="{ 'sidebar-collapsed': isCollapsed, 'is-resizing': isResizing }"
         :style="{ width: isCollapsed ? '64px' : `${width}px` }"
     >
         <aside
+            id="app-navigation"
             class="jedi-sidebar d-flex flex-column"
             :class="{ 'sidebar-collapsed': isCollapsed }"
-            :style="{ width: isCollapsed ? '64px' : `${width}px` }"
+            style="width: 100%"
         >
             <!-- Logo Area -->
             <div class="d-flex flex-column align-center logo-area">
@@ -78,7 +79,23 @@
         <div
             class="resize-handle"
             :class="{ 'is-resizing': isResizing }"
-            @mousedown="startResize"
+            role="separator"
+            tabindex="0"
+            aria-orientation="vertical"
+            aria-controls="app-navigation"
+            :aria-label="$t('sidebar.resize')"
+            :aria-valuemin="collapsedWidth"
+            :aria-valuemax="maxWidth"
+            :aria-valuenow="isCollapsed ? collapsedWidth : width"
+            :title="$t('sidebar.resizeHint')"
+            data-tauri-no-drag
+            @pointerdown="startResize"
+            @pointermove="doResize"
+            @pointerup="stopResize"
+            @pointercancel="stopResize"
+            @lostpointercapture="stopResize"
+            @dblclick="resetWidth"
+            @keydown="resizeWithKeyboard"
         >
             <div class="resize-indicator"></div>
         </div>
@@ -96,7 +113,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:width', width: number): void
-  (e: 'toggle-sidebar'): void
+  (e: 'update:collapsed', collapsed: boolean): void
 }>()
 
 // Dark theme uses the black-tile koala variant
@@ -117,66 +134,99 @@ const navItems = [
   { to: '/screenshot', icon: mdiCrop, tooltipKey: 'sidebar.screenshot' },
 ]
 
-// Sidebar width and resize
-const width = ref(200)
-const minWidth = 64
-const expandThreshold = 150
-const maxWidth = 220
+// Width changes are immediate while dragging; collapse remains an explicit action.
+const defaultWidth = 220
+const collapsedWidth = 64
+const minWidth = 176
+const maxWidth = 320
+const width = ref(defaultWidth)
 const isResizing = ref(false)
-const isCollapsed = ref(false)
+const isCollapsed = computed({
+  get: () => props.collapsed ?? false,
+  set: value => emit('update:collapsed', value),
+})
 const currentTime = ref('')
-
 let startX = 0
 let startWidth = 0
+let dragHandle: HTMLElement | null = null
+let activePointer: number | null = null
 let timeInterval: number | null = null
 
-// Watch for external collapse prop changes
 watch(
   () => props.collapsed,
-  newVal => {
-    if (newVal !== undefined) {
-      isCollapsed.value = newVal
-    }
+  collapsed => {
+    if (collapsed) stopResize()
   }
 )
 
-// Resize functions
-function startResize(e: MouseEvent) {
+function startResize(event: PointerEvent) {
+  if (event.button !== 0 || isResizing.value) return
+  event.preventDefault()
+  dragHandle = event.currentTarget as HTMLElement
+  dragHandle.focus({ preventScroll: true })
+  dragHandle.setPointerCapture(event.pointerId)
+  activePointer = event.pointerId
+  startX = event.clientX
+  startWidth = isCollapsed.value ? collapsedWidth : width.value
   isResizing.value = true
-  startX = e.clientX
-  startWidth = isCollapsed.value ? minWidth : width.value
-  document.addEventListener('mousemove', doResize)
-  document.addEventListener('mouseup', stopResize)
-  document.body.style.cursor = 'ew-resize'
-  document.body.style.userSelect = 'none'
-  document.body.classList.add('no-transition')
+  document.body.classList.add('sidebar-resizing')
 }
 
-function doResize(e: MouseEvent) {
-  if (!isResizing.value) return
-  const delta = e.clientX - startX
-  let newWidth = startWidth + delta
-
-  if (newWidth < expandThreshold) {
-    isCollapsed.value = true
-    newWidth = minWidth
-  } else {
+function doResize(event: PointerEvent) {
+  if (!isResizing.value || event.pointerId !== activePointer) return
+  const delta = event.clientX - startX
+  // A collapsed rail only opens after a deliberate outward drag.
+  if (isCollapsed.value && delta <= 12) return
+  if (isCollapsed.value) {
     isCollapsed.value = false
-    newWidth = Math.min(maxWidth, Math.max(expandThreshold, newWidth))
-    width.value = newWidth
+    startX = event.clientX
+    startWidth = minWidth
   }
-
-  emit('update:width', newWidth)
+  width.value = Math.round(
+    Math.min(maxWidth, Math.max(minWidth, startWidth + event.clientX - startX))
+  )
+  emit('update:width', width.value)
 }
 
 function stopResize() {
+  if (!isResizing.value) return
   isResizing.value = false
-  document.removeEventListener('mousemove', doResize)
-  document.removeEventListener('mouseup', stopResize)
-  document.body.style.cursor = ''
-  document.body.style.userSelect = ''
-  document.body.classList.remove('no-transition')
-  saveWidth(width.value)
+  const handle = dragHandle
+  const pointer = activePointer
+  dragHandle = null
+  activePointer = null
+  if (pointer !== null && handle?.hasPointerCapture(pointer)) handle.releasePointerCapture(pointer)
+  document.body.classList.remove('sidebar-resizing')
+  saveWidth()
+}
+
+function resetWidth() {
+  stopResize()
+  width.value = defaultWidth
+  isCollapsed.value = false
+  emit('update:width', width.value)
+  saveWidth()
+}
+
+function resizeWithKeyboard(event: KeyboardEvent) {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'].includes(event.key)) return
+  event.preventDefault()
+  stopResize()
+  if (event.key === 'Enter') {
+    isCollapsed.value = !isCollapsed.value
+    return
+  }
+  const step = event.shiftKey ? 32 : 8
+  const next =
+    event.key === 'Home'
+      ? minWidth
+      : event.key === 'End'
+        ? maxWidth
+        : (isCollapsed.value ? minWidth : width.value) + (event.key === 'ArrowRight' ? step : -step)
+  width.value = Math.min(maxWidth, Math.max(minWidth, next))
+  isCollapsed.value = false
+  emit('update:width', width.value)
+  saveWidth()
 }
 
 function updateTime() {
@@ -185,27 +235,30 @@ function updateTime() {
 }
 
 onMounted(() => {
-  const savedWidth = localStorage.getItem('jedi-sidebar-width')
-  if (savedWidth) {
-    const parsed = parseInt(savedWidth, 10)
-    if (!Number.isNaN(parsed) && parsed >= expandThreshold && parsed <= maxWidth) {
-      width.value = parsed
-      isCollapsed.value = false
-    } else {
-      isCollapsed.value = true
+  try {
+    const savedWidth = Number(localStorage.getItem('jedi-sidebar-width'))
+    if (Number.isFinite(savedWidth) && savedWidth > collapsedWidth) {
+      width.value = Math.min(maxWidth, Math.max(minWidth, savedWidth))
     }
+  } catch {
+    /* Storage may be unavailable; keep the default width. */
   }
+  window.addEventListener('blur', stopResize)
   updateTime()
   timeInterval = window.setInterval(updateTime, 1000)
 })
 
-function saveWidth(newWidth: number) {
-  localStorage.setItem('jedi-sidebar-width', newWidth.toString())
+function saveWidth() {
+  try {
+    localStorage.setItem('jedi-sidebar-width', width.value.toString())
+  } catch {
+    /* Resizing remains usable when storage is unavailable. */
+  }
 }
 
 onUnmounted(() => {
-  document.removeEventListener('mousemove', doResize)
-  document.removeEventListener('mouseup', stopResize)
+  stopResize()
+  window.removeEventListener('blur', stopResize)
   if (timeInterval) {
     clearInterval(timeInterval)
   }
@@ -216,7 +269,7 @@ onUnmounted(() => {
 .sidebar-wrapper {
     position: relative;
     height: 100%;
-    transition: width 0.2s ease;
+    transition: width var(--motion-normal) var(--ease-out);
     overflow: visible;
     flex-shrink: 0;
     z-index: 90;
@@ -385,40 +438,52 @@ onUnmounted(() => {
     text-align: center;
 }
 
-/* Resize Handle */
+/* Wide hit target, quiet hairline and a visible grip in both themes. */
+.sidebar-wrapper.is-resizing { transition: none; }
+:global(body.sidebar-resizing), :global(body.sidebar-resizing *) {
+    cursor: col-resize !important;
+    user-select: none !important;
+}
 .resize-handle {
     position: absolute;
-    top: 0;
-    right: 0;
-    width: 6px;
-    height: 100%;
-    cursor: ew-resize;
-    z-index: 1000;
+    inset: 0 -6px 0 auto;
+    width: 12px;
+    cursor: col-resize;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.15s ease;
+    touch-action: none;
+    outline: none;
 }
-
-.resize-handle:hover {
-    background-color: rgb(var(--text-rgb) / 0.06);
-}
-
-.resize-handle.is-resizing {
-    background-color: rgb(var(--text-rgb) / 0.1);
-}
-
-.resize-indicator {
-    width: 2px;
-    height: 32px;
+.resize-handle::before {
+    content: '';
+    position: absolute;
+    inset: 12px 5px;
     border-radius: 2px;
-    background-color: rgb(var(--text-rgb) / 0.2);
-    transition: background-color 0.15s ease;
+    background: var(--border);
+    transition: background var(--motion-fast), box-shadow var(--motion-fast);
 }
-
-.resize-handle:hover .resize-indicator,
-.resize-handle.is-resizing .resize-indicator {
-    background-color: var(--text-muted);
-    width: 3px;
+.resize-indicator {
+    position: relative;
+    width: 4px;
+    height: 32px;
+    border-radius: 4px;
+    background: var(--text-subtle);
+    opacity: .45;
+    transition: height var(--motion-fast), background var(--motion-fast), opacity var(--motion-fast);
+}
+.resize-handle:is(:hover, :focus-visible, .is-resizing)::before {
+    background: rgb(var(--accent-rgb) / .45);
+    box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .06);
+}
+.resize-handle:is(:hover, :focus-visible, .is-resizing) .resize-indicator {
+    height: 48px;
+    opacity: 1;
+    background: var(--accent);
+}
+.resize-handle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) {
+    .sidebar-wrapper, .resize-handle::before, .resize-indicator { transition: none; }
 }
 </style>

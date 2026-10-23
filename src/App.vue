@@ -12,7 +12,7 @@
       <div class="content-wrapper">
         <!-- Sidebar -->
         <app-sidebar
-          :collapsed="sidebarCollapsed"
+          v-model:collapsed="sidebarCollapsed"
         />
 
         <!-- Main Content Area -->

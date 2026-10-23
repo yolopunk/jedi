@@ -6,6 +6,9 @@ export default {
     info: 'Notice',
   },
   sidebar: {
+    resize: 'Resize sidebar',
+    resizeHint:
+      'Drag to resize · Double-click to reset · Arrow keys to adjust · Enter to collapse/expand',
     title: 'Jedi Command',
     subtitle: 'Force for Developers',
     hostsManager: 'Hosts Manager',

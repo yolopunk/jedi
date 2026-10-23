@@ -6,6 +6,8 @@ export default {
     info: '提示',
   },
   sidebar: {
+    resize: '调整侧边栏宽度',
+    resizeHint: '拖动调整宽度 · 双击恢复默认 · 方向键微调 · Enter 折叠/展开',
     title: 'Jedi Command',
     subtitle: '开发者的原力',
     hostsManager: 'Hosts 管理',

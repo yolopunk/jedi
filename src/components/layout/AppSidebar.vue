@@ -474,15 +474,15 @@ onUnmounted(() => {
     transition: height var(--motion-fast), background var(--motion-fast), opacity var(--motion-fast);
 }
 .resize-handle:is(:hover, :focus-visible, .is-resizing)::before {
-    background: rgb(var(--accent-rgb) / .45);
-    box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / .06);
+    background: var(--border-strong);
 }
 .resize-handle:is(:hover, :focus-visible, .is-resizing) .resize-indicator {
     height: 48px;
     opacity: 1;
     background: var(--accent);
 }
-.resize-handle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
+.resize-handle:focus-visible { outline: none; }
+.resize-handle:focus-visible .resize-indicator { box-shadow: 0 0 0 3px var(--bg-sidebar), 0 0 0 5px var(--accent); }
 @media (prefers-reduced-motion: reduce) {
     .sidebar-wrapper, .resize-handle::before, .resize-indicator { transition: none; }
 }

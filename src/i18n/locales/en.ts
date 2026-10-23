@@ -1,4 +1,20 @@
 export default {
+  chatWorkspace: {
+    workers: 'Background tasks',
+    mcp: 'MCP servers',
+    newChat: 'New chat',
+    history: 'Chat history',
+    subtitle:
+      'Start with a question. Analyze code, manage tools, and work through everyday development tasks with Jedi.',
+    keyboardHint: 'Enter to send · Shift + Enter for a new line',
+    commands: 'Commands (/)',
+    placeholder: 'Describe a question or task…',
+    selectModel: 'Select model',
+    modelSelected: 'Model selected',
+    exampleHosts: 'Find duplicate domain mappings in Hosts',
+    exampleCode: 'Explain some code and identify potential issues',
+    exampleSystem: 'Check current system memory usage',
+  },
   notifications: {
     success: 'Success',
     error: 'Something went wrong',

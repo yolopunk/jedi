@@ -164,11 +164,7 @@
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
-.v-application .chat-console-page .chat-header { box-shadow: none; border-bottom-color: var(--border); }
-.v-application .chat-console-page .panel-title { text-shadow: none; color: var(--text-muted); letter-spacing: 1.2px; }
-.v-application .chat-console-page .chat-console-area::before { opacity: .4; }
 .v-application .chat-console-page .user-message { border-radius: 14px; }
-.v-application .chat-console-page .input-bar { border-radius: 16px; box-shadow: var(--shadow-sm); }
 .v-dialog .beautify-editor .controls { background: var(--surface-raised); border-left: 1px solid var(--border); }
 .v-dialog .beautify-editor .canvas-stage { background: var(--surface-canvas); }
 @media (max-width: 700px) {

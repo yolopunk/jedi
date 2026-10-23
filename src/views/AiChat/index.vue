@@ -3,15 +3,14 @@
     <div class="chat-console-layout">
       <!-- 主聊天区域 -->
       <div class="chat-console-area">
-        <!-- Hologram Header -->
+        <!-- Chat toolbar -->
         <div class="chat-header">
           <div class="header-logo">
-            <span class="menu-icon">☰</span>
-            <span class="holocron">HOLOCRON</span>
-            <span class="path">/chat</span>
+            <v-icon :icon="mdiMessageOutline" size="18" aria-hidden="true" />
+            <span class="workspace-title">{{ t('sidebar.chat') }}</span>
           </div>
           <div class="header-right">
-            <div class="status-badge">
+            <div class="status-badge" :class="{ ready: !!modelsDevStore.selectedModel }">
               <span class="status-dot"></span>
               <span class="status-text">{{ connectionStatus }}</span>
             </div>
@@ -24,10 +23,10 @@
               @keydown.enter.prevent="showModelSettings = true"
               @keydown.space.prevent="showModelSettings = true"
             >
-              <span class="provider-label">PROVIDER:</span>
+
               <span class="provider-name">{{ currentProviderName }}</span>
             </div>
-            <button class="workers-btn" @click="showWorkersPanel = true" title="Show workers" aria-label="Show workers">
+            <button class="workers-btn" @click="showWorkersPanel = true" :title="t('chatWorkspace.workers')" :aria-label="t('chatWorkspace.workers')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <rect x="2" y="7" width="20" height="10" rx="2"/>
                 <path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/>
@@ -35,7 +34,7 @@
               </svg>
               <span v-if="workers.length > 0" class="workers-count">{{ workers.length }}</span>
             </button>
-            <button class="workers-btn" @click="showMcpServers = true" title="MCP 服务器" aria-label="MCP 服务器">
+            <button class="workers-btn" @click="showMcpServers = true" :title="t('chatWorkspace.mcp')" :aria-label="t('chatWorkspace.mcp')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M9 2v6M15 2v6M9 8h6M12 8v6a4 4 0 0 1-4 4H7"/>
                 <circle cx="6" cy="20" r="2"/>
@@ -48,16 +47,19 @@
               </svg>
               <span v-if="skillsStore.enabledCount > 0" class="workers-count">{{ skillsStore.enabledCount }}</span>
             </button>
+            <span class="header-divider" aria-hidden="true"></span>
+            <button class="workers-btn" :title="t('chatWorkspace.newChat')" :aria-label="t('chatWorkspace.newChat')" @click="handleNewSession"><v-icon :icon="mdiPlus" size="18" /></button>
+            <button class="workers-btn" :class="{ active: !isHistoryCollapsed }" :title="t('chatWorkspace.history')" :aria-label="t('chatWorkspace.history')" :aria-expanded="!isHistoryCollapsed" @click="isHistoryCollapsed = !isHistoryCollapsed"><v-icon :icon="mdiHistory" size="18" /></button>
           </div>
         </div>
 
         <!-- 消息容器 -->
         <div ref="messagesContainer" class="messages-container" @scroll="handleScroll" @click="handleMessagesClick">
-          <!-- 空状态（专业版，保留 R2 / HOLOCRON 识别度，去除动画特效） -->
+          <!-- 新会话引导 -->
           <div v-if="!store.currentSession || store.currentSession.messages.length === 0" class="chat-empty">
-            <div class="empty-mark">R2</div>
+            <div class="empty-mark"><v-icon :icon="mdiRobotOutline" size="28" aria-hidden="true" /></div>
             <h1 class="empty-title">Jedi Agent</h1>
-            <p class="empty-subtitle">面向开发者的 AI 助手 · 可调用终端 / 文件系统 / Hosts 等技能</p>
+            <p class="empty-subtitle">{{ t('chatWorkspace.subtitle') }}</p>
             <div class="empty-examples">
               <button
                 v-for="ex in examplePrompts"
@@ -68,9 +70,7 @@
                 {{ ex }}
               </button>
             </div>
-            <div class="empty-hint">
-              <kbd>/</kbd> 命令面板 · <kbd>Enter</kbd> 发送 · <kbd>Shift</kbd>+<kbd>Enter</kbd> 换行
-            </div>
+
           </div>
 
           <!-- 消息列表 -->
@@ -182,7 +182,7 @@
         </div>
 
         <!-- 输入区域 -->
-        <div ref="inputConsoleRef" class="input-console" :class="inputConsoleState">
+        <div ref="inputConsoleRef" class="input-console">
           <!-- 待发送图片附件（截图 -> 发送到 AI） -->
           <div v-if="store.pendingAttachments.length" class="attachment-chips">
             <div v-for="path in store.pendingAttachments" :key="path" class="attachment-chip">
@@ -202,7 +202,7 @@
           <!-- 统一胶囊容器 -->
           <div class="input-bar">
             <!-- 左侧工具栏 -->
-            <button class="toolbar-btn" @click="openCommandPalette" title="Commands (/)" aria-label="Commands (/)">
+            <button class="toolbar-btn" @click="openCommandPalette" :title="t('chatWorkspace.commands')" :aria-label="t('chatWorkspace.commands')">
               <span>/</span>
             </button>
             <button
@@ -220,7 +220,8 @@
               ref="inputRef"
               v-model="inputText"
               class="chat-input"
-              :placeholder="$t('chat.commandPlaceholder')"
+              :placeholder="t('chatWorkspace.placeholder')"
+              :aria-label="t('chatWorkspace.placeholder')"
               rows="1"
               @keydown="handleKeydown"
               @input="autoResize"
@@ -282,6 +283,8 @@
             </button>
           </div>
 
+          <p class="composer-hint">{{ t('chatWorkspace.keyboardHint') }}</p>
+
           <!-- 浮层（独立于胶囊容器） -->
           <CommandPalette
             :visible="showCommands"
@@ -300,10 +303,10 @@
       </div>
 
       <!-- 右侧：会话历史 -->
-      <div class="history-panel" :class="{ collapsed: isHistoryCollapsed }">
+      <div v-if="!isHistoryCollapsed" class="history-panel">
         <div class="panel-header">
-          <span class="panel-title">// SESSION LOG</span>
-          <button class="toggle-btn" @click="isHistoryCollapsed = !isHistoryCollapsed" title="Toggle session panel">
+          <span class="panel-title">{{ t('chatWorkspace.history') }}</span>
+          <button class="toggle-btn" @click="isHistoryCollapsed = !isHistoryCollapsed" :title="t('common.close')" :aria-label="t('common.close')">
             <svg v-if="isHistoryCollapsed" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
@@ -311,9 +314,9 @@
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
           </button>
-          <button class="new-session-btn" @click="handleNewSession">
+          <button class="new-session-btn" :aria-label="t('chatWorkspace.newChat')" @click="handleNewSession">
             <span class="btn-icon">+</span>
-            <span class="btn-text" v-if="!isHistoryCollapsed">NEW</span>
+            <span class="btn-text" v-if="!isHistoryCollapsed">{{ t('chatWorkspace.newChat') }}</span>
           </button>
         </div>
         <div class="session-list" v-if="!isHistoryCollapsed">
@@ -375,8 +378,10 @@
 </template>
 
 <script setup lang="ts">
+import { mdiHistory, mdiMessageOutline, mdiPlus, mdiRobotOutline } from '@mdi/js'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { listSkillCommands, type SlashCommand } from '@/agent/slashCommands'
 import { setOnWorkerCompleteCallback, useAgentPool } from '@/agent/useAgentPool'
 import AttachmentMenu from '@/components/AttachmentMenu.vue'
@@ -397,6 +402,7 @@ import ModelSettings from './ModelSettings.vue'
 import SkillsManagerDialog from './SkillsManagerDialog.vue'
 import ToolConfirmCard from './ToolConfirmCard.vue'
 
+const { t } = useI18n()
 const store = useAiChatStore()
 const mcpClientStore = useMcpClientStore()
 const skillsStore = useSkillsStore()
@@ -445,11 +451,11 @@ const showWorkersPanel = ref(false)
 const { workers } = useAgentPool()
 
 // Empty-state example prompts (developer-facing)
-const examplePrompts = [
-  '帮我排查 hosts 文件里重复的域名映射',
-  '解释这段 Rust 代码并指出潜在 bug',
-  '用一条 Tauri 命令读取当前系统内存占用',
-]
+const examplePrompts = computed(() => [
+  t('chatWorkspace.exampleHosts'),
+  t('chatWorkspace.exampleCode'),
+  t('chatWorkspace.exampleSystem'),
+])
 
 function applyExample(text: string) {
   inputText.value = text
@@ -462,7 +468,7 @@ const selectedProviderModels = computed(() => {
 })
 
 const currentModelName = computed(() => {
-  return modelsDevStore.selectedModel?.name || 'SELECT MODEL'
+  return modelsDevStore.selectedModel?.name || t('chatWorkspace.selectModel')
 })
 
 function selectModelFromDropdown(model: any) {
@@ -484,20 +490,14 @@ function formatContextShort(len?: number): string {
 
 // Computed
 const currentProviderName = computed(() => {
-  return modelsDevStore.selectedProvider?.name?.toUpperCase() || 'SELECT PROVIDER'
+  return modelsDevStore.selectedProvider?.name || t('models.selectProvider')
 })
-const connectionStatus = computed(() => {
-  if (modelsDevStore.selectedModel) return 'CONNECTED'
-  if (modelsDevStore.allProviders.length === 0) return 'OFFLINE'
-  return 'NO MODEL'
-})
+const connectionStatus = computed(() =>
+  modelsDevStore.selectedModel ? t('chatWorkspace.modelSelected') : t('chatWorkspace.selectModel')
+)
 
 const displayMessages = computed(() => {
   return store.currentSession?.messages || []
-})
-
-const inputConsoleState = computed(() => {
-  return displayMessages.value.length > 0 ? 'state-chatting' : 'state-new-session'
 })
 
 function renderMessage(content: string) {

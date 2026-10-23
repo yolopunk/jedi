@@ -1,4 +1,19 @@
 export default {
+  chatWorkspace: {
+    workers: '后台任务',
+    mcp: 'MCP 服务器',
+    newChat: '新对话',
+    history: '历史对话',
+    subtitle: '从一个问题开始，让 Jedi 帮你分析代码、管理工具与处理日常开发任务。',
+    keyboardHint: 'Enter 发送 · Shift + Enter 换行',
+    commands: '命令面板 (/)',
+    placeholder: '描述你的问题或任务…',
+    selectModel: '选择模型',
+    modelSelected: '已选择模型',
+    exampleHosts: '排查 Hosts 中重复的域名映射',
+    exampleCode: '解释一段代码，找出潜在问题',
+    exampleSystem: '查看当前系统的内存占用',
+  },
   notifications: {
     success: '操作成功',
     error: '操作失败',

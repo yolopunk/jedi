@@ -194,6 +194,7 @@ onUnmounted(() => {
   height: 52px;
   border-radius: 12px;
   border: 1px solid rgb(255 255 255 / 0.14);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.3), 0 1px 0 rgb(255 255 255 / 0.08) inset;
   animation: logo-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both;
 }
 
@@ -242,7 +243,7 @@ onUnmounted(() => {
   line-height: 1;
   letter-spacing: 4px;
   text-indent: 4px;
-  color: rgb(244 244 245 / 0.42);
+  color: rgb(244 244 245 / 0.65);
   animation: rise-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.85s both;
 }
 
@@ -358,7 +359,7 @@ onUnmounted(() => {
 }
 
 .splash-version {
-  color: rgb(244 244 245 / 30%);
+  color: rgb(244 244 245 / 55%);
 }
 
 /* ── 退场：坠入奇点 ──────────────────────────────────── */

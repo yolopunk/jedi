@@ -21,7 +21,9 @@
           <v-main class="jedi-main-content">
             <v-container class="py-2 px-2" height="100%" fluid>
               <router-view v-slot="{ Component }">
-                <component :is="Component" @open-settings="showSettingsDialog = true" />
+                <div :key="route.path" class="workspace-page">
+                  <component :is="Component" @open-settings="showSettingsDialog = true" />
+                </div>
               </router-view>
             </v-container>
           </v-main>

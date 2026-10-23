@@ -1,4 +1,10 @@
 export default {
+  notifications: {
+    success: 'Success',
+    error: 'Something went wrong',
+    warning: 'Please note',
+    info: 'Notice',
+  },
   sidebar: {
     title: 'Jedi Command',
     subtitle: 'Force for Developers',
@@ -489,6 +495,10 @@ export default {
       'In other MCP clients (e.g. Claude Desktop), configure Jedi with this command to expose its read-only tools (memory / web):',
   },
   screenshot: {
+    collectionLabel: 'Personal collection',
+    galleryTitle: 'Capture gallery',
+    thumbnailSize: 'Thumbnail size',
+
     original: 'View original',
     beautify: 'Background studio',
     beautifyHint:

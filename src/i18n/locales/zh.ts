@@ -1,4 +1,10 @@
 export default {
+  notifications: {
+    success: '操作成功',
+    error: '操作失败',
+    warning: '请留意',
+    info: '提示',
+  },
   sidebar: {
     title: 'Jedi Command',
     subtitle: '开发者的原力',
@@ -489,6 +495,10 @@ export default {
       '在其他 MCP 客户端（如 Claude Desktop）中，将 Jedi 配置为以下命令，即可使用 Jedi 的只读工具（记忆 / 网页）：',
   },
   screenshot: {
+    collectionLabel: '个人影像库',
+    galleryTitle: '截图库',
+    thumbnailSize: '缩略图大小',
+
     original: '查看原图',
     beautify: '背景美化',
     beautifyHint: '调整背景与画框，另存新图，原图始终保留。超大图片导出最长边为 6000 像素。',

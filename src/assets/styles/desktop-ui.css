@@ -1,0 +1,176 @@
+/* Desktop surfaces shared by the shell, dialogs and feedback. */
+.workspace-page {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  min-width: 0;
+  animation: workspace-reveal var(--motion-enter) var(--ease-out) backwards;
+}
+@keyframes workspace-reveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.v-application .jedi-main-content > .v-container {
+  padding: 12px !important;
+  background: var(--bg-sidebar);
+}
+.v-application .workspace-page {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--bg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.v-application .app-header {
+  background: var(--bg-sidebar);
+  border-bottom-color: var(--border);
+}
+.v-application .jedi-sidebar { border-right-color: transparent; }
+.v-application .sidebar-item {
+  border: 1px solid transparent;
+  border-radius: 10px !important;
+  transition: background var(--motion-fast), border-color var(--motion-fast);
+}
+.v-application .sidebar-item:hover { background: rgb(var(--text-rgb) / 0.04); }
+.v-application .sidebar-item.v-list-item--active {
+  background: rgb(var(--accent-rgb) / 0.09);
+  border-color: rgb(var(--accent-rgb) / 0.17);
+}
+.v-application .sidebar-item.v-list-item--active .nav-text { color: var(--accent); }
+.v-application .sidebar-item.v-list-item--active::after {
+  content: ''; position: absolute; left: 0; top: 12px; bottom: 12px;
+  width: 3px; border-radius: 3px; background: var(--accent);
+}
+.v-application .sidebar-subtitle { color: var(--text-muted) !important; }
+.v-application .logo-area { border-bottom-color: transparent; padding-bottom: 22px !important; }
+.v-application .app-logo { border-radius: 12px; }
+.v-application .bottom-status-bar { background: var(--bg-sidebar); border-top-color: var(--border); }
+
+/* Controls share a restrained rhythm; no layout movement on press. */
+.v-application .v-btn, .v-overlay .v-btn {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 550;
+  border-radius: var(--radius-control);
+}
+.v-application .v-btn--icon, .v-overlay .v-btn--icon { border-radius: 10px; }
+.v-application .console-btn { border-radius: var(--radius-control); }
+.v-application .v-field { border-radius: var(--radius-control); }
+.v-application :is(button, a, input, select, textarea):focus-visible,
+.v-overlay :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.v-application .empty-icon { animation: none; }
+
+/* Vuetify teleports overlays outside the application, so style them explicitly. */
+.v-dialog:not(.v-dialog--fullscreen) > .v-overlay__content > :is(.v-card, .preview-panel) {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-dialog) !important;
+  background: var(--surface-raised) !important;
+  color: var(--text);
+  box-shadow: var(--shadow-dialog) !important;
+  overflow: hidden;
+}
+.v-dialog .v-overlay__scrim { background: var(--scrim-color); opacity: .64; }
+.v-dialog .model-settings-card .card-header,
+.v-dialog .console-title-bar {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgb(var(--accent-rgb) / 0.05), transparent 65%);
+  border-bottom: 1px solid var(--border);
+}
+.v-dialog .brand-text h2, .v-dialog .dialog-title { font-size: 16px; letter-spacing: -.2px; }
+.v-dialog .brand-text p { color: var(--text-muted); line-height: 1.6; }
+.v-dialog .brand-icon:not(.danger) {
+  background: rgb(var(--accent-rgb) / 0.08);
+  border: 1px solid rgb(var(--accent-rgb) / 0.18);
+  border-radius: 12px;
+}
+.v-dialog .model-settings-card .card-footer,
+.v-dialog .console-card-actions {
+  padding: 16px 24px;
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  gap: 8px;
+}
+.v-dialog .settings-tabs { background: var(--bg-elevated); padding: 12px 20px; }
+.v-dialog .tab-btn { border-radius: 8px; }
+.v-dialog .tab-btn.active { background: rgb(var(--accent-rgb) / 0.1); color: var(--accent); }
+.v-dialog .close-btn { color: var(--text-muted); border-radius: 9px; }
+.v-dialog .input-wrapper { border-radius: 8px; }
+.v-dialog .input-wrapper:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.1); }
+.v-dialog .dialog-with-glow { box-shadow: var(--shadow-dialog); }
+.v-dialog .dialog-decorator { opacity: .35; height: 1px; }
+.v-dialog .console-card-text { background: var(--surface-raised); font-family: var(--jedi-font-ui); }
+
+.v-menu .v-overlay__content > .v-list {
+  padding: 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 12px !important;
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+}
+.v-menu .v-list-item { border-radius: 7px; }
+.v-tooltip > .v-overlay__content {
+  background: var(--surface-raised);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+}
+.v-snackbar:not(.console-snackbar-root) .v-snackbar__wrapper {
+  border: 1px solid var(--border-strong);
+  border-radius: 12px !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+.v-application .v-alert, .v-dialog .v-alert {
+  border-radius: 12px;
+  border: 1px solid currentColor;
+  border-color: color-mix(in srgb, currentColor 20%, transparent);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.dialog-transition-enter-active { transition: opacity var(--motion-normal), transform var(--motion-normal) var(--ease-out) !important; }
+.dialog-transition-leave-active { transition: opacity var(--motion-fast), transform var(--motion-fast) !important; }
+.dialog-transition-enter-from, .dialog-transition-leave-to { opacity: 0; transform: translateY(10px) scale(.98) !important; }
+@media (prefers-reduced-motion: reduce) {
+  .workspace-page { animation: none; }
+  .dialog-transition-enter-active, .dialog-transition-leave-active { transition: none !important; }
+}
+
+/* Custom chat panels follow the same surface system as Vuetify dialogs. */
+:root :is(.mcp-overlay, .skl-overlay, .confirm-overlay) {
+  background: color-mix(in srgb, var(--scrim-color) 64%, transparent);
+  backdrop-filter: blur(4px);
+}
+:root :is(.mcp-overlay .mcp-dialog, .skl-overlay .skl-dialog, .confirm-overlay .confirm-card) {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-dialog);
+  box-shadow: var(--shadow-dialog);
+  max-height: calc(100vh - 64px);
+  overflow: auto;
+}
+:root :is(.mcp-dialog .mcp-head, .skl-dialog .skl-head) { border-bottom-color: var(--border); }
+:root :is(.mcp-dialog .mcp-hint, .skl-dialog .skl-hint, .confirm-card .confirm-desc) {
+  color: var(--text-muted);
+  opacity: 1;
+  line-height: 1.6;
+}
+:root .confirm-card .confirm-actions { flex-wrap: wrap; }
+:root :is(.mcp-dialog, .skl-dialog, .confirm-card) :is(button, input):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.v-application .chat-console-page .chat-header { box-shadow: none; border-bottom-color: var(--border); }
+.v-application .chat-console-page .panel-title { text-shadow: none; color: var(--text-muted); letter-spacing: 1.2px; }
+.v-application .chat-console-page .chat-console-area::before { opacity: .4; }
+.v-application .chat-console-page .user-message { border-radius: 14px; }
+.v-application .chat-console-page .input-bar { border-radius: 16px; box-shadow: var(--shadow-sm); }
+.v-dialog .beautify-editor .controls { background: var(--surface-raised); border-left: 1px solid var(--border); }
+.v-dialog .beautify-editor .canvas-stage { background: var(--surface-canvas); }
+@media (max-width: 700px) {
+  .v-application .jedi-main-content > .v-container { padding: 6px !important; }
+}

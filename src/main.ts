@@ -10,6 +10,7 @@ import './assets/css/animations.css'
 import './assets/theme.css'
 import './assets/styles/console-ui.css'
 import './assets/styles/console-dialog.css'
+import './assets/styles/desktop-ui.css'
 import './views/podcast/podcast.css'
 
 const pinia = createPinia()

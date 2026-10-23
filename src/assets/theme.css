@@ -34,7 +34,7 @@
   --bg-terminal: #0a0a0f;
   --text: #f4f4f5;
   --text-muted: #a1a1aa;
-  --text-subtle: #52525b;
+  --text-subtle: #92929e;
   --border: #27272a;
   --accent: #539bf5;
   --accent-rgb: 83 155 245;
@@ -42,6 +42,13 @@
 
   /* Overlay stacking order (theme-independent):
      scrim < management panels < blocking confirmations < toasts. */
+  --radius-control: 8px;
+  --radius-panel: 14px;
+  --radius-dialog: 20px;
+  --motion-fast: 140ms;
+  --motion-normal: 220ms;
+  --motion-enter: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --z-scrim: 3000;
   --z-panel: 3100;
   --z-confirm: 3200;
@@ -68,7 +75,7 @@
   /* Text — Int UI grey ramp */
   --text: #27282e;          /* Grey 2 — primary label */
   --text-muted: #6c707e;    /* Grey 6 — secondary */
-  --text-subtle: #818594;   /* Grey 7 — tertiary / disabled */
+  --text-subtle: #6c707e;   /* Grey 7 — tertiary / disabled */
   --text-inverse: #ffffff;
   --text-rgb: 39 40 46;
   /* Ink overlay — darkens surfaces in BOTH themes (zebra/hover/scrim) */
@@ -103,7 +110,11 @@
   /* Elevation — subtle Int UI popup shadows */
   --shadow-sm: 0 1px 2px rgba(39, 40, 46, 0.05);
   --shadow-md: 0 2px 8px rgba(39, 40, 46, 0.12);
-  --shadow-lg: 0 6px 20px rgba(39, 40, 46, 0.16);
+  --shadow-lg: 0 16px 48px rgba(39, 40, 46, 0.14);
+  --surface-raised: #ffffff;
+  --surface-canvas: #f1f3f7;
+  --shadow-dialog: 0 28px 80px rgba(27, 35, 54, 0.2), 0 2px 8px rgba(27, 35, 54, 0.08);
+  --scrim-color: #172033;
 
   /* Glow disabled in light mode (flat) */
   --glow-accent: none;
@@ -134,7 +145,7 @@
   /* Text */
   --text: #f4f4f5;
   --text-muted: #a1a1aa;
-  --text-subtle: #52525b;
+  --text-subtle: #92929e;
   --text-inverse: #09090b;
   --text-rgb: 244 244 245;
   /* Ink overlay — black so overlays darken on the dark surface (original intent) */
@@ -177,7 +188,11 @@
   /* Elevation — matte, minimal shadow */
   --shadow-sm: none;
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.38);
+  --surface-raised: #1c1d23;
+  --surface-canvas: #14151b;
+  --shadow-dialog: 0 28px 80px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  --scrim-color: #04060c;
 
 }
 

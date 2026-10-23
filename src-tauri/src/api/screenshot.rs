@@ -76,9 +76,9 @@ pub struct ScreenshotState {
 pub fn screenshots_dir(app: &AppHandle) -> Result<PathBuf, String> {
   let dir = app
     .path()
-    .app_data_dir()
+    .picture_dir()
     .map_err(|e| e.to_string())?
-    .join(SCREENSHOTS_DIR_NAME);
+    .join("jedi");
   fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
   Ok(dir)
 }
@@ -197,6 +197,7 @@ pub async fn begin_capture(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, Stri
           WebviewUrl::App("screenshot-overlay".into()),
         )
         .title("Jedi Screenshot")
+        .visible(false)
         .decorations(false)
         .resizable(false)
         .minimizable(false)
@@ -321,7 +322,14 @@ fn cancel_capture(app: AppHandle) -> Result<(), String> {
 pub fn list_recent(app: &AppHandle) -> Result<Vec<ScreenshotItem>, String> {
   let dir = screenshots_dir(app)?;
   let mut items = Vec::new();
-  let entries = fs::read_dir(&dir).map_err(|e| e.to_string())?;
+  let legacy = app
+    .path()
+    .app_data_dir()
+    .map_err(|e| e.to_string())?
+    .join(SCREENSHOTS_DIR_NAME);
+  let entries = fs::read_dir(&dir)
+    .map_err(|e| e.to_string())?
+    .chain(fs::read_dir(legacy).into_iter().flatten());
   for entry in entries.flatten() {
     let path = entry.path();
     if path.extension().and_then(|e| e.to_str()) != Some("png") {
@@ -404,6 +412,35 @@ pub fn screenshot_cancel(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn list_screenshots(app: AppHandle) -> Result<Vec<ScreenshotItem>, String> {
   list_recent(&app)
+}
+
+/// 美化结果另存为新图片，保留原始截图。
+#[tauri::command]
+pub async fn screenshot_save_styled(app: AppHandle, data_url: String) -> Result<String, String> {
+  let dir = screenshots_dir(&app)?;
+  let path = tauri::async_runtime::spawn_blocking(move || -> Result<String, String> {
+    use base64::Engine;
+    if data_url.len() > 64 * 1024 * 1024 {
+      return Err("图片过大".into());
+    }
+    let encoded = data_url
+      .strip_prefix("data:image/png;base64,")
+      .ok_or("仅支持 PNG 图片")?;
+    let bytes = base64::engine::general_purpose::STANDARD
+      .decode(encoded)
+      .map_err(|e| e.to_string())?;
+    let mut reader =
+      image::ImageReader::with_format(std::io::Cursor::new(&bytes), image::ImageFormat::Png);
+    reader.limits(image::Limits::default());
+    reader.decode().map_err(|e| format!("无效图片: {}", e))?;
+    let path = dir.join(format!("Styled_{}", timestamped_filename("png")));
+    fs::write(&path, bytes).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+  })
+  .await
+  .map_err(|e| e.to_string())??;
+  let _ = app.emit_to("main", "screenshot-saved", &path);
+  Ok(path)
 }
 
 /// 读取图片文件为 data URL，供 AI 聊天发送多模态消息使用。

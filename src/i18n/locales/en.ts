@@ -489,6 +489,19 @@ export default {
       'In other MCP clients (e.g. Claude Desktop), configure Jedi with this command to expose its read-only tools (memory / web):',
   },
   screenshot: {
+    original: 'View original',
+    beautify: 'Background studio',
+    beautifyHint:
+      'Customize your frame and save a new image. Originals stay intact. Large exports are limited to 6000 px.',
+    background: 'Background presets',
+    preset: 'Background preset {number}',
+    colorFrom: 'Start color',
+    colorTo: 'End color',
+    padding: 'Padding',
+    radius: 'Corners',
+    shadow: 'Shadow',
+    saveStyled: 'Save styled image',
+
     galleryDescription: 'A home for your ideas, snippets and captured moments.',
     preview: 'Preview',
     closePreview: 'Close preview',

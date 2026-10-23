@@ -8,7 +8,7 @@
     @dblclick="confirmCopy"
   >
     <!-- 冻结帧：窗口物理尺寸 = 显示器物理尺寸，CSS 视口按 scaleFactor 缩放后 1:1 铺满 -->
-    <img v-if="frameSrc" class="frozen-frame" :src="frameSrc" draggable="false" alt="" />
+    <img v-if="frameSrc" class="frozen-frame" :src="frameSrc" @load="revealOverlay" @error="cancel" draggable="false" alt="" />
 
     <!-- 未开始框选时的十字引导线 -->
     <template v-if="!selection && !drag">
@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { screenshotCancel, screenshotFinish, screenshotFrameInfo } from '@/api/screenshot'
 
@@ -330,6 +330,18 @@ function handleStyle(handle: (typeof HANDLES)[number]) {
   }
 }
 
+async function revealOverlay(event: Event) {
+  try {
+    await (event.target as HTMLImageElement).decode()
+    await nextTick()
+    await window_.show()
+    if (monitorIndex === 0) await window_.setFocus()
+  } catch (err) {
+    console.error(err)
+    await cancel()
+  }
+}
+
 onMounted(async () => {
   window.addEventListener('keydown', onKeyDown)
   try {
@@ -340,7 +352,8 @@ onMounted(async () => {
     scaleFactor.value = scale
     frameSrc.value = convertFileSrc(info.framePath)
   } catch (err) {
-    showError(t('screenshot.captureFailed', { message: String(err) }))
+    console.error(err)
+    await cancel()
   }
 })
 

@@ -489,6 +489,18 @@ export default {
       '在其他 MCP 客户端（如 Claude Desktop）中，将 Jedi 配置为以下命令，即可使用 Jedi 的只读工具（记忆 / 网页）：',
   },
   screenshot: {
+    original: '查看原图',
+    beautify: '背景美化',
+    beautifyHint: '调整背景与画框，另存新图，原图始终保留。超大图片导出最长边为 6000 像素。',
+    background: '背景预设',
+    preset: '背景预设 {number}',
+    colorFrom: '起始颜色',
+    colorTo: '结束颜色',
+    padding: '留白',
+    radius: '圆角',
+    shadow: '阴影',
+    saveStyled: '保存美化图片',
+
     galleryDescription: '灵感、片段与重要瞬间，收进你的截图库。',
     preview: '预览',
     closePreview: '关闭预览',

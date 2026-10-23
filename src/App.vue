@@ -227,6 +227,7 @@ watch(sidebarCollapsed, async newVal => {
 })
 
 onMounted(async () => {
+  if (isBareLayout.value) return
   initTheme()
   await initLanguage()
   await loadSidebarState()

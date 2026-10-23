@@ -58,3 +58,7 @@ export function listScreenshots(): Promise<ScreenshotItem[]> {
 export function readImageDataUrl(path: string): Promise<string> {
   return invoke('read_image_data_url', { path })
 }
+
+export function saveStyledScreenshot(dataUrl: string): Promise<string> {
+  return invoke('screenshot_save_styled', { dataUrl })
+}

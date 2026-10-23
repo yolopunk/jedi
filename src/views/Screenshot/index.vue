@@ -9,7 +9,7 @@
     <section class="gallery" :aria-label="t('screenshot.recent')">
       <div class="gallery-header"><div><h2>{{ t('screenshot.recent') }}</h2><span class="count">{{ recent.length }}</span></div><v-btn :icon="mdiRefresh" variant="text" size="small" :loading="loading" :aria-label="t('common.refresh')" @click="loadRecent" /></div>
       <div v-if="recent.length" class="recent-grid">
-        <button v-for="item in recent" :key="item.path" class="capture-card" type="button" @click="selected = item">
+        <button v-for="item in recent" :key="item.path" class="capture-card" type="button" @click="selected = item; beautifying = false">
           <div class="thumbnail"><img :src="convertFileSrc(item.path)" :alt="item.name" loading="lazy" draggable="false" /><span class="preview-hint"><v-icon :icon="mdiMagnifyPlusOutline" size="20" />{{ t('screenshot.preview') }}</span></div>
           <div class="card-info"><span class="capture-name">{{ item.name }}</span><span class="card-meta"><time>{{ formatDate(item.modifiedMs) }}</time><span>{{ formatSize(item.size) }}</span></span></div>
         </button>
@@ -20,7 +20,9 @@
     <v-dialog :model-value="!!selected" max-width="1120" @update:model-value="selected = null">
       <div v-if="selected" class="preview-panel">
         <header class="preview-header"><span>{{ selected.name }}</span><v-btn :icon="mdiClose" variant="text" :aria-label="t('screenshot.closePreview')" @click="selected = null" /></header>
-        <div class="preview-image"><img :src="convertFileSrc(selected.path)" :alt="selected.name" /></div>
+        <BeautifyEditor v-if="beautifying" :path="selected.path" @saved="onStyledSaved" />
+        <div v-else class="preview-image"><img :src="convertFileSrc(selected.path)" :alt="selected.name" /></div>
+        <div class="preview-actions"><v-btn variant="tonal" color="primary" @click="beautifying = !beautifying">{{ t(beautifying ? 'screenshot.original' : 'screenshot.beautify') }}</v-btn></div>
         <footer class="preview-footer"><span>{{ formatDate(selected.modifiedMs) }} · {{ formatSize(selected.size) }}</span><v-btn variant="tonal" :prepend-icon="mdiFolderOpenOutline" @click="openFolder(selected.path)">{{ t('screenshot.openFolder') }}</v-btn></footer>
       </div>
     </v-dialog>
@@ -45,15 +47,22 @@ import { onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { listScreenshots, type ScreenshotItem, screenshotBegin } from '@/api/screenshot'
 import { showInFolder } from '@/api/wallpaper'
+import BeautifyEditor from './BeautifyEditor.vue'
 
 const { t, locale } = useI18n()
 const recent = ref<ScreenshotItem[]>([])
 const selected = ref<ScreenshotItem | null>(null)
+const beautifying = ref(false)
 const capturing = ref(false)
 const loading = ref(false)
 const error = ref('')
 let unlisten: UnlistenFn | undefined
 let disposed = false
+
+async function onStyledSaved() {
+  selected.value = null
+  await loadRecent()
+}
 
 async function startCapture() {
   if (capturing.value) return
@@ -157,6 +166,7 @@ h2 { font-size: 15px; font-weight: 600; }
 .preview-header > span { overflow-wrap: anywhere; }
 .preview-image { padding: 24px; background: var(--bg-elevated-2); display: grid; place-items: center; }
 .preview-image img { max-width: 100%; max-height: 65vh; object-fit: contain; }
+.preview-actions { padding: 12px 20px 0; }
 .preview-footer { flex-wrap: wrap; color: var(--text-muted); }
 @media (max-width: 650px) { .screenshot-page { padding: 20px 16px; } .capture-header { align-items: flex-start; flex-direction: column; } .recent-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; } }
 @media (prefers-reduced-motion: reduce) { .capture-card, .preview-hint { transition: none; } }

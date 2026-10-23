@@ -16,4 +16,4 @@ const pinia = createPinia()
 const app = createApp(App)
 
 app.use(pinia).use(router).use(vuetify).use(i18n)
-app.mount('#app')
+router.isReady().then(() => app.mount('#app'))

@@ -15,7 +15,8 @@
         "enable": true,
         "scope": [
           "$APPCACHE/screenshot-frames/**",
-          "$APPDATA/screenshots/**"
+          "$APPDATA/screenshots/**",
+          "$PICTURE/jedi/**"
         ]
       }
     }

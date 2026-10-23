@@ -53,7 +53,7 @@ use crate::api::podcast::{
 };
 use crate::api::screenshot::{
   list_screenshots, read_image_data_url, screenshot_begin, screenshot_cancel, screenshot_finish,
-  screenshot_frame_info, ScreenshotState,
+  screenshot_frame_info, screenshot_save_styled, ScreenshotState,
 };
 use crate::api::skills::{
   skill_stats_clear, skill_stats_list, skill_stats_save, skills_delete, skills_list, skills_read,
@@ -326,6 +326,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       screenshot_begin,
       screenshot_frame_info,
       screenshot_finish,
+      screenshot_save_styled,
       screenshot_cancel,
       list_screenshots,
       read_image_data_url

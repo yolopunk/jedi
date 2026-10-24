@@ -1,5 +1,7 @@
 export default {
   chatWorkspace: {
+    enabled: '已启用',
+    disabled: '已停用',
     workers: '后台任务',
     mcp: 'MCP 服务器',
     newChat: '新对话',

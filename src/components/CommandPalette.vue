@@ -45,20 +45,21 @@ function selectCommand(cmd: SlashCommand) {
 .command-popup {
   position: absolute;
   bottom: 100%;
-  left: 0;
+  left: 16px;
   margin-bottom: 8px;
-  width: 280px;
-  background: var(--bg-terminal);
-  border: 1px solid rgb(var(--accent-rgb) / 0.2);
+  width: 320px;
+  max-width: calc(100% - 32px);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-lg);
   z-index: 100;
 }
 
 .popup-list {
   padding: 6px;
-  max-height: 280px;
+  max-height: min(280px, 40vh);
   overflow-y: auto;
 }
 
@@ -84,12 +85,13 @@ function selectCommand(cmd: SlashCommand) {
 .item-name {
   font-size: 12px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--text);
   min-width: 70px;
 }
 
 .item-desc {
   font-size: 11px;
-  color: rgb(var(--text-rgb) / 0.5);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 </style>

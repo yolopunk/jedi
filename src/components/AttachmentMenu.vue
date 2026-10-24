@@ -16,7 +16,7 @@
       <span class="skill-icon" aria-hidden="true">{{ skill.icon }}</span>
       <span class="skill-name">/{{ skill.name }}</span>
       <span class="skill-badge" :class="{ on: skillsStore.isSkillEnabled(skill.name) }">
-        {{ skillsStore.isSkillEnabled(skill.name) ? 'ON' : 'OFF' }}
+        {{ skillsStore.isSkillEnabled(skill.name) ? $t('chatWorkspace.enabled') : $t('chatWorkspace.disabled') }}
       </span>
     </div>
     <div
@@ -25,6 +25,7 @@
       tabindex="0"
       @click.stop="emit('manage')"
       @keydown.enter.prevent="emit('manage')"
+      @keydown.space.prevent="emit('manage')"
     >
       <span class="manage-icon" aria-hidden="true">⚙</span>
       <span class="manage-text">{{ $t('skills.manageEntry') }}</span>
@@ -54,13 +55,14 @@ function handleSkillClick(skill: SkillManifest) {
 .attachment-menu {
   position: absolute;
   bottom: 100%;
-  left: 0;
+  left: 16px;
   margin-bottom: 8px;
-  min-width: 200px;
-  max-height: 320px;
+  width: 280px;
+  max-width: calc(100% - 32px);
+  max-height: min(320px, 40vh);
   overflow: auto;
-  background: var(--bg-terminal);
-  border: 1px solid rgb(var(--text-rgb) / 0.1);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
   border-radius: 10px;
   padding: 6px;
   box-shadow: var(--shadow-lg);
@@ -93,7 +95,7 @@ function handleSkillClick(skill: SkillManifest) {
 }
 
 .submenu-item.enabled {
-  color: var(--success);
+  color: var(--text);
 }
 
 .submenu-item .skill-icon {
@@ -116,8 +118,8 @@ function handleSkillClick(skill: SkillManifest) {
 }
 
 .submenu-item .skill-badge.on {
-  background: var(--success);
-  color: var(--text-inverse);
+  background: rgb(var(--success-rgb) / .1);
+  color: var(--success);
 }
 
 .manage-item {

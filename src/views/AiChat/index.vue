@@ -18,7 +18,7 @@
               class="provider-display"
               role="button"
               tabindex="0"
-              :title="$t('models.selectProvider')"
+              :title="$t('chat.selectProvider')"
               @click="showModelSettings = true"
               @keydown.enter.prevent="showModelSettings = true"
               @keydown.space.prevent="showModelSettings = true"
@@ -182,7 +182,7 @@
         </div>
 
         <!-- 输入区域 -->
-        <div ref="inputConsoleRef" class="input-console">
+        <div ref="inputConsoleRef" class="input-console" @keydown.esc="showAttachmentMenu = false; showCommands = false">
           <!-- 待发送图片附件（截图 -> 发送到 AI） -->
           <div v-if="store.pendingAttachments.length" class="attachment-chips">
             <div v-for="path in store.pendingAttachments" :key="path" class="attachment-chip">
@@ -228,12 +228,13 @@
             ></textarea>
 
             <!-- Model选择器 -->
-            <div ref="modelSelectorRef" class="model-selector">
+            <div ref="modelSelectorRef" class="model-selector" @keydown.esc.stop="showModelDropdown = false">
               <button
                 class="model-dropdown-btn"
+                :title="currentModelName"
                 :aria-expanded="showModelDropdown"
                 aria-haspopup="listbox"
-                @click="showModelDropdown = !showModelDropdown"
+                @click="selectedProviderModels.length ? showModelDropdown = !showModelDropdown : showModelSettings = true"
               >
                 <span class="model-dropdown-name">{{ currentModelName }}</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -490,7 +491,7 @@ function formatContextShort(len?: number): string {
 
 // Computed
 const currentProviderName = computed(() => {
-  return modelsDevStore.selectedProvider?.name || t('models.selectProvider')
+  return modelsDevStore.selectedProvider?.name || t('chat.selectProvider')
 })
 const connectionStatus = computed(() =>
   modelsDevStore.selectedModel ? t('chatWorkspace.modelSelected') : t('chatWorkspace.selectModel')

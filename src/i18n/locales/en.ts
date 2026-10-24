@@ -1,5 +1,7 @@
 export default {
   chatWorkspace: {
+    enabled: 'Enabled',
+    disabled: 'Disabled',
     workers: 'Background tasks',
     mcp: 'MCP servers',
     newChat: 'New chat',

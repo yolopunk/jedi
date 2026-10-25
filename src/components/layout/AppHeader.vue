@@ -54,6 +54,7 @@
           size="x-small"
           variant="text"
           class="header-action-btn"
+          :aria-label="$t('help.title')"
           @click="$emit('show-help')"
         >
           <v-icon :icon="mdiHelpCircleOutline" size="16" />
@@ -67,6 +68,7 @@
           size="x-small"
           variant="text"
           class="header-action-btn"
+          :aria-label="$t('about.title')"
           @click="$emit('show-about')"
         >
           <v-icon :icon="mdiInformationOutline" size="16" />
@@ -80,6 +82,7 @@
           size="x-small"
           variant="text"
           class="header-action-btn"
+          :aria-label="$t('sidebar.github')"
           @click="$emit('open-github')"
         >
           <v-icon :icon="mdiGithub" size="16" />
@@ -93,6 +96,7 @@
           size="x-small"
           variant="text"
           class="header-action-btn action-primary"
+          :aria-label="$t('header.settings')"
           @click="$emit('show-settings')"
         >
           <v-icon :icon="mdiCog" size="16" />
@@ -108,6 +112,7 @@
           size="x-small"
           variant="text"
           class="window-btn"
+          :aria-label="$t('windowControls.minimize')"
           @click="handleMinimize"
         >
           <v-icon :icon="mdiWindowMinimize" size="16" />
@@ -117,6 +122,7 @@
           size="x-small"
           variant="text"
           class="window-btn"
+          :aria-label="isMaximized ? $t('windowControls.restore') : $t('windowControls.maximize')"
           @click="handleMaximize"
         >
           <v-icon :icon="isMaximized ? mdiWindowRestore : mdiWindowMaximize" size="16" />
@@ -126,6 +132,7 @@
           size="x-small"
           variant="text"
           class="window-btn window-btn-close"
+          :aria-label="$t('windowControls.close')"
           @click="handleClose"
         >
           <v-icon :icon="mdiClose" size="16" />

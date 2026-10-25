@@ -53,6 +53,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AdvancedSettingsTab from './settings/AdvancedSettingsTab.vue'
+import GeneralSettingsTab from './settings/GeneralSettingsTab.vue'
+import WallpaperSettingsTab from './settings/WallpaperSettingsTab.vue'
 
 const { t } = useI18n()
 

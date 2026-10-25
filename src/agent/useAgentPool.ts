@@ -1,7 +1,7 @@
 import { storeToRefs } from 'pinia'
 import { ref } from 'vue'
 import { useAgentPoolStore } from '@/stores/agentPool'
-import type { WorkerStatus } from './pool'
+import type { WorkerStatus } from './poolTypes'
 
 // The worker pool is now a reactive Pinia store (see `stores/agentPool.ts`).
 // These wrappers preserve the previous composable API so existing components

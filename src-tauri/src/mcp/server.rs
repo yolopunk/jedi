@@ -6,7 +6,7 @@
 // Desktop) can call them by spawning Jedi with this flag. Read-only by design:
 // no writes, no shell, no hosts mutation.
 
-use crate::api::{memory, web};
+use crate::api::{hosts, memory, skills, web};
 use serde_json::{json, Value};
 use std::io::{BufRead, Write};
 
@@ -49,6 +49,22 @@ fn tool_defs() -> Value {
           "max_chars": { "type": "number", "description": "返回正文的最大字符数" }
         },
         "required": ["url"]
+      }
+    },
+    {
+      "name": "hosts_read",
+      "description": "读取系统 Hosts 文件的分组内容（只读，不修改）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "skills_list",
+      "description": "列出 Jedi 已安装的技能包（名称与描述）",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
       }
     }
   ])
@@ -108,6 +124,39 @@ fn call_tool(name: &str, args: &Value, rt: &tokio::runtime::Runtime) -> Result<S
         .map(|n| n as usize);
       let result = rt.block_on(web::web_fetch(url, max))?;
       Ok(result.text)
+    }
+    "hosts_read" => {
+      // Only the read path: the stdio server exposes no mutating hosts ops.
+      let groups = hosts::read_system_hosts()?;
+      Ok(
+        groups
+          .iter()
+          .map(|g| {
+            let entries = g
+              .hosts
+              .iter()
+              .map(|h| format!("{} {}", h.ip, h.domain))
+              .collect::<Vec<_>>()
+              .join("\n");
+            format!("[{}]\n{}", g.name, entries)
+          })
+          .collect::<Vec<_>>()
+          .join("\n\n"),
+      )
+    }
+    "skills_list" => {
+      let manifests = skills::skills_list()?;
+      if manifests.is_empty() {
+        Ok("（暂无已安装技能）".into())
+      } else {
+        Ok(
+          manifests
+            .iter()
+            .map(|m| format!("{}: {}", m.name, m.description))
+            .collect::<Vec<_>>()
+            .join("\n"),
+        )
+      }
     }
     _ => Err(format!("未知工具: {}", name)),
   }
@@ -174,5 +223,33 @@ pub fn run_stdio_server() {
       }
       let _ = out.flush();
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn tool_defs_cover_all_dispatched_tools() {
+    let defs = tool_defs();
+    let names: Vec<&str> = defs
+      .as_array()
+      .unwrap()
+      .iter()
+      .map(|t| t["name"].as_str().unwrap())
+      .collect();
+    for expected in ["memory_recall", "memory_list", "web_search", "web_fetch", "hosts_read", "skills_list"] {
+      assert!(names.contains(&expected), "missing tool: {expected}");
+    }
+  }
+
+  #[test]
+  fn call_tool_rejects_unknown_and_runs_local_tools() {
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    assert!(call_tool("nope", &json!({}), &rt).is_err());
+    // hosts_read and skills_list run without network or app state.
+    assert!(call_tool("hosts_read", &json!({}), &rt).is_ok());
+    assert!(call_tool("skills_list", &json!({}), &rt).is_ok());
   }
 }

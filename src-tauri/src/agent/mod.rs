@@ -1,3 +1,2 @@
-pub mod commands;
-pub mod pool;
-pub mod types;
+pub mod detector;
+pub mod procman;

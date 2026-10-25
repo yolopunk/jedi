@@ -17,7 +17,7 @@ pub use security::{
 };
 
 // 重新导出模型相关类型和 commands
-pub use models::{send_chat_message, send_chat_message_stream, ModelProviderManagerState};
+pub use models::{send_chat_message, ModelProviderManagerState};
 
 // 重新导出会话相关类型和 commands
 pub use sessions::{

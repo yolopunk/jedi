@@ -1,10 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use crate::agent::commands::{
-  get_pool_status, init_pool, remove_worker, schedule_task, stop_worker, PoolState,
-};
-use crate::agent::pool::AgentPool;
+use crate::agent::detector::{detect_agents, DetectorState};
+use crate::agent::procman::{agent_proc_kill, agent_proc_spawn, agent_proc_stdin, ProcManState};
+use crate::api::agent_fs::{file_exists, read_file, write_file};
 use crate::api::ai_chat::{
   append_message,
   create_session,
@@ -28,7 +27,6 @@ use crate::api::ai_chat::{
   search_models_dev,
   // Phase 2: 模型和会话管理
   send_chat_message,
-  send_chat_message_stream,
   store_api_key,
   update_session_title,
   validate_input,
@@ -158,7 +156,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Phase 3: 管理 models.dev 状态
     .manage(models_dev_manager_state)
     // Agent pool state
-    .manage(PoolState(tokio::sync::Mutex::new(AgentPool::new(4))))
+    .manage(DetectorState::new())
+    .manage(ProcManState(std::sync::Arc::new(tokio::sync::Mutex::new(
+      std::collections::HashMap::new(),
+    ))))
     // Third-party MCP client connections
     .manage(McpManager::new())
     // Screenshot capture session
@@ -277,7 +278,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       encode_html_entities,
       // Phase 2: AI Chat 模型和会话管理 commands
       send_chat_message,
-      send_chat_message_stream,
       create_session,
       list_sessions,
       get_session,
@@ -291,17 +291,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       get_models_for_provider,
       get_models_providers,
       search_models_dev,
-      // Agent pool commands
-      init_pool,
-      get_pool_status,
-      schedule_task,
-      stop_worker,
-      remove_worker,
+      // Agent hub: detection + external agent process management
+      detect_agents,
+      agent_proc_spawn,
+      agent_proc_stdin,
+      agent_proc_kill,
       // Web access tools (AI agent)
       web_fetch,
       web_search,
       // Shell execution tool (AI agent)
       execute_command,
+      // Filesystem tool (AI agent)
+      read_file,
+      write_file,
+      file_exists,
       // Cross-session memory tool (AI agent)
       memory_save,
       memory_recall,

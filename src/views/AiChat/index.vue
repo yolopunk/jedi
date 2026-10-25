@@ -227,6 +227,9 @@
               @input="autoResize"
             ></textarea>
 
+            <!-- Agent 引擎选择器 -->
+            <EngineSelector />
+
             <!-- Model选择器 -->
             <div ref="modelSelectorRef" class="model-selector" @keydown.esc.stop="showModelDropdown = false">
               <button
@@ -398,6 +401,7 @@ import { useSkillsStore } from '@/stores/skills'
 import { useToolStatsStore } from '@/stores/toolStats'
 import { renderSafe, sharedMd } from '@/utils/markdown'
 import AgentTrace from './AgentTrace.vue'
+import EngineSelector from './EngineSelector.vue'
 import McpServersDialog from './McpServersDialog.vue'
 import ModelSettings from './ModelSettings.vue'
 import SkillsManagerDialog from './SkillsManagerDialog.vue'
@@ -657,8 +661,18 @@ function handleKeydown(event: KeyboardEvent) {
 }
 
 async function handleSend() {
+  // 生成中：支持 steering 的引擎把输入作为插话注入，而不是开新一轮
+  if (store.isLoading) {
+    const steerText = inputText.value.trim()
+    if (steerText && store.canSteer) {
+      inputText.value = ''
+      autoResize()
+      await store.steerActiveEngine(steerText)
+    }
+    return
+  }
   // 图片附件允许无文本直接发送
-  if ((!inputText.value.trim() && !store.pendingAttachments.length) || store.isLoading) return
+  if (!inputText.value.trim() && !store.pendingAttachments.length) return
 
   const content = inputText.value.trim()
 

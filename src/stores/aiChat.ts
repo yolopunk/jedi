@@ -1,12 +1,13 @@
 import { invoke } from '@tauri-apps/api/core'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { driverFor } from '@/agent/hub/registry'
+import type { DriverHandle } from '@/agent/hub/types'
 import {
   type ChatContentPart,
   type ChatTurn,
   DEFAULT_STEP_LIMIT,
   distillTitle,
-  runAgent,
   summarizeUsage,
   summarizeValue,
 } from '@/agent/runAgent'
@@ -16,6 +17,7 @@ import { readImageDataUrl } from '@/api/screenshot'
 import { loadSkill } from '@/skills/loader'
 import { skillRegistry } from '@/skills/registry'
 import { useAgentStore } from './agent'
+import { useAgentHubStore } from './agentHub'
 import { useModelsDevStore } from './modelsDev'
 import { useProviderConfigStore } from './providerConfig'
 import { useToolsStore } from './tools'
@@ -71,6 +73,10 @@ export interface AgentTraceDetail {
 export interface AgentRunMetadata {
   provider: string
   model: string
+  /** 本轮使用的 agent 引擎（agent hub，"builtin" 或 "<agent>@<host>"） */
+  engine?: string
+  /** 外部引擎的原生会话 id，跨重启恢复续接用 */
+  nativeSessionId?: string
   startedAt: number
   completedAt?: number
   totalDurationMs?: number
@@ -173,12 +179,31 @@ export const useAiChatStore = defineStore('aiChat', () => {
   // Abort controller of the in-flight run, if any; stopGeneration() aborts it.
   const activeRunAbort = ref<AbortController | null>(null)
 
+  // In-flight run's driver handle: enables mid-run steering for engines that
+  // support it (pi steer command / claude-code user message on stdin).
+  const activeDriverHandle = ref<DriverHandle | null>(null)
+  const canSteer = computed(() => !!activeDriverHandle.value?.capabilities.steering)
+
+  /** 插话：注入一条 steering 消息到正在运行的引擎（不产生新气泡）。 */
+  async function steerActiveEngine(text: string): Promise<void> {
+    const clean = text.trim()
+    if (!clean || !activeDriverHandle.value?.steer) return
+    try {
+      await activeDriverHandle.value.steer(clean)
+    } catch (e) {
+      console.warn('Steering failed:', e)
+    }
+  }
+
   // MCP State
   const enabledMcpServers = ref<string[]>([])
   const mcpServers = ref<McpServer[]>([...DEFAULT_MCP_SERVERS])
 
-  // Tool-confirmation State: set while a write/system tool waits for the user's
-  // approval. The chat view renders a card bound to this and calls
+  // Tool-confirmation State: a FIFO queue of pending write/system tool
+  // approvals. AI SDK executes the tool calls of one step in parallel, so
+  // several confirmations can be requested at once — a single slot would let
+  // the second request overwrite the first resolver and hang the whole run.
+  // The chat view renders a card bound to the queue head and calls
   // resolveConfirmation() when the user clicks approve/deny.
   const pendingConfirmation = ref<{
     toolId: string
@@ -186,7 +211,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
     risk: 'read' | 'write' | 'system'
     args: unknown
   } | null>(null)
-  let confirmationResolver: ((approved: boolean) => void) | null = null
+  const confirmationQueue: {
+    req: { toolId: string; toolName: string; risk: 'read' | 'write' | 'system'; args: unknown }
+    resolve: (approved: boolean) => void
+  }[] = []
 
   function requestConfirmation(req: {
     toolId: string
@@ -196,21 +224,21 @@ export const useAiChatStore = defineStore('aiChat', () => {
   }): Promise<boolean> {
     // "始终允许"白名单命中的工具直接放行，不再弹卡。
     if (useToolsStore().isAlwaysAllowed(req.toolId)) return Promise.resolve(true)
-    // Only one confirmation is in flight at a time (the agent loop is sequential).
     return new Promise<boolean>(resolve => {
-      pendingConfirmation.value = req
-      confirmationResolver = resolve
+      confirmationQueue.push({ req, resolve })
+      if (!pendingConfirmation.value) pendingConfirmation.value = req
     })
   }
 
   function resolveConfirmation(approved: boolean, alwaysAllow = false): void {
-    const pending = pendingConfirmation.value
-    if (approved && alwaysAllow && pending) {
-      useToolsStore().setAlwaysAllowed(pending.toolId, true)
+    const head = confirmationQueue.shift()
+    if (head) {
+      if (approved && alwaysAllow) {
+        useToolsStore().setAlwaysAllowed(head.req.toolId, true)
+      }
+      head.resolve(approved)
     }
-    confirmationResolver?.(approved)
-    confirmationResolver = null
-    pendingConfirmation.value = null
+    pendingConfirmation.value = confirmationQueue[0]?.req ?? null
   }
 
   // Stores
@@ -575,18 +603,55 @@ export const useAiChatStore = defineStore('aiChat', () => {
       // Drive the run through the shared executor. All streamText plumbing and the
       // final-answer resolution live in runAgent; here we only map its events onto
       // the trace/agent-store bookkeeping that the chat UI renders.
-      const runResult = await runAgent(
-        {
-          provider,
-          model,
-          apiKey: apiKeyInfo.key,
-          endpoint: apiKeyInfo.endpoint,
-          messages: aiMessages,
-          sessionId: session.id,
-          stepLimit,
-          confirmTool: requestConfirmation,
-          signal: abortController.signal,
-        },
+      //
+      // Engine routing (agent hub, docs §4): the selected engine's driver runs
+      // the turn when available; engines whose driver has not landed yet
+      // (M2-M4 rollout) transparently fall back to the builtin executor and
+      // note the fallback in the trace.
+      const agentHub = useAgentHubStore()
+      const engine = agentHub.selectedEngine
+      const engineDriver = engine.tier === 'builtin' ? null : driverFor(engine)
+      if (assistantMessage.metadata?.run) {
+        assistantMessage.metadata.run.engine = engineDriver ? engine.id : 'builtin'
+      }
+      if (engine.tier !== 'builtin' && !engineDriver) {
+        pushTrace({
+          id: nextTraceId('engine'),
+          type: 'session',
+          status: 'done',
+          title: `Engine ${engine.name}${engine.location ? ` (${engine.location})` : ''}`,
+          content: '该引擎的驱动适配尚未完成（见研发规划 M2-M4），本轮由内置引擎执行。',
+          timestamp: Date.now(),
+          durationMs: 0,
+        })
+      }
+      // Recover the external engine's native session id from the persisted
+      // run metadata so resume survives app restarts (docs §10 遗留收口).
+      const lastNativeSessionId = session.messages
+        .slice()
+        .reverse()
+        .map(m => m.metadata?.run?.nativeSessionId)
+        .find(id => !!id)
+      const runSpec = {
+        provider,
+        model,
+        apiKey: apiKeyInfo.key,
+        endpoint: apiKeyInfo.endpoint,
+        messages: aiMessages,
+        sessionId: session.id,
+        stepLimit,
+        confirmTool: requestConfirmation,
+        signal: abortController.signal,
+        // External drivers resolve their spawn target from the engine.
+        engine,
+        nativeSessionId: lastNativeSessionId,
+      }
+      // Route through the driver registry (agent hub): the builtin driver
+      // wraps the same runAgent executor, external engines translate their
+      // native protocol into the identical hooks.
+      const activeDriver = engineDriver ?? driverFor(agentHub.builtinEngine)!
+      const driverHandle = await activeDriver.start(
+        runSpec,
         withStatsHooks({
           onToolStart: ({ toolId, toolName, toolDescription, args, startedAt }) => {
             const relatedDecisionTrace = [...toolDecisionTraces.values()]
@@ -750,6 +815,13 @@ export const useAiChatStore = defineStore('aiChat', () => {
           },
         })
       )
+      activeDriverHandle.value = driverHandle
+      const runResult = await driverHandle.done
+      // Persist the native session id inside the run metadata (SQLite) so the
+      // next turn — even after an app restart — resumes the same conversation.
+      if (runResult.nativeSessionId && assistantMessage.metadata?.run) {
+        assistantMessage.metadata.run.nativeSessionId = runResult.nativeSessionId
+      }
 
       ensurePlanCompleted('Answered directly.')
       completeTrace(
@@ -908,9 +980,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
       isLoading.value = false
       streamingContent.value = ''
       activeRunAbort.value = null
-      // If the run ended (error/abort) while a confirmation was still pending,
-      // resolve it as denied so no promise is left dangling.
-      if (pendingConfirmation.value) resolveConfirmation(false)
+      activeDriverHandle.value = null
+      // If the run ended (error/abort) while confirmations were still pending,
+      // resolve every queued one as denied so no promise is left dangling.
+      while (confirmationQueue.length) resolveConfirmation(false)
     }
   }
 
@@ -998,6 +1071,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
     updateSessionTitle,
     sendMessage,
     stopGeneration,
+    steerActiveEngine,
+    canSteer,
+    activeDriverHandle,
     toggleMcpServer,
     loadSettings,
     saveSettings,

@@ -1,0 +1,193 @@
+// CodexDriver: drives Codex CLI's `app-server` mode (JSON-RPC 2.0 over stdio,
+// "jsonrpc" header omitted — verified on codex-cli 0.162.1, docs §10).
+//
+// Per-turn flow: spawn → initialize → thread/resume (or thread/start) →
+// turn/start {threadId, input} → stream item/* + turn/* notifications →
+// settle at turn/completed. Auth is Codex's own login (~/.codex/auth.json);
+// no key injection. Approvals: not surfaced by this version in probes —
+// translation is a documented follow-up once shapes are captured.
+
+import { Channel, invoke } from '@tauri-apps/api/core'
+import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
+import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
+import { createCodexTranslator } from './codexProtocol'
+
+// codex threadId per Jedi chat session for thread/resume continuity.
+// In-memory for M4 (persisting in message metadata is a documented follow-up).
+const codexThreadByJediSession = new Map<string, string>()
+
+function lastUserText(messages: DriverStartOpts['messages']): string {
+  const lastUser = [...messages].reverse().find(m => m.role === 'user')
+  if (!lastUser) return ''
+  if (typeof lastUser.content === 'string') return lastUser.content
+  return (lastUser.content as Array<{ type: string; text?: string }>)
+    .map(part => (part.type === 'text' ? (part.text ?? '') : ''))
+    .join('')
+}
+
+export class CodexDriver implements AgentDriver {
+  id = 'codex'
+
+  capabilities = {
+    steering: false, // interrupt/steer methods not yet captured on 0.162.1
+    compaction: true,
+    images: false,
+    resume: true,
+    models: true,
+    approval: 'native',
+  } as const
+
+  supports(engine: EngineDescriptor): boolean {
+    return engine.agentId === 'codex' && !!engine.installation
+  }
+
+  async start(opts: DriverStartOpts, hooks: RunAgentHooks): Promise<DriverHandle> {
+    const engine = opts.engine
+    if (!engine?.installation) {
+      throw new Error('CodexDriver: engine installation missing')
+    }
+
+    const procId = `codex-${opts.sessionId}-${Date.now()}`
+    const translator = createCodexTranslator(hooks)
+    let settled = false
+    let rpcSeq = 0
+    // id-correlated pending requests: turn/start needs the threadId from the
+    // thread/start response, so rpc() must resolve on the matching reply.
+    const pendingRpc = new Map<number, (value: any) => void>()
+
+    let resolveDone: (r: RunAgentResult) => void = () => {}
+    let rejectDone: (e: Error) => void = () => {}
+    const done = new Promise<RunAgentResult>((resolve, reject) => {
+      resolveDone = resolve
+      rejectDone = reject
+    })
+
+    const rpc = (method: string, params: Record<string, unknown>): Promise<any> => {
+      rpcSeq += 1
+      const requestId = rpcSeq
+      return new Promise<any>((resolve, reject) => {
+        pendingRpc.set(requestId, resolve)
+        invoke('agent_proc_stdin', {
+          id: procId,
+          line: JSON.stringify({ id: requestId, method, params }),
+        }).catch(e => {
+          pendingRpc.delete(requestId)
+          reject(new Error(`codex stdin write failed: ${e}`))
+        })
+      })
+    }
+
+    const finish = (failure?: Error) => {
+      if (settled) return
+      settled = true
+      opts.signal?.removeEventListener('abort', onAbort)
+      void invoke('agent_proc_kill', { id: procId }).catch(() => {})
+      const snap = translator.snapshot()
+      if (failure && !snap.fullText.trim()) {
+        rejectDone(failure)
+        return
+      }
+      if (snap.threadId) codexThreadByJediSession.set(opts.sessionId, snap.threadId)
+      hooks.onFinish?.({ finishReason: snap.finishReason, usage: snap.usage })
+      resolveDone({
+        text: snap.fullText,
+        reasoning: snap.reasoning,
+        finishReason: snap.finishReason,
+        usage: snap.usage,
+        toolCount: snap.toolCount,
+        enabledToolNames: [],
+        nativeSessionId: snap.threadId,
+      })
+    }
+
+    function onAbort() {
+      // Interrupt methods not yet captured; terminating keeps partial output.
+      finish()
+    }
+
+    const channel = new Channel<any>()
+    channel.onmessage = (msg: any) => {
+      if (!msg || typeof msg !== 'object') return
+      if (msg.type === 'line') {
+        const line = String(msg.line ?? '').trim()
+        if (!line) return
+        try {
+          const record = JSON.parse(line)
+          if (record && record.id !== undefined && record.id !== null) {
+            const resolve = pendingRpc.get(record.id)
+            if (resolve) {
+              pendingRpc.delete(record.id)
+              resolve(record)
+            }
+          }
+          translator.handleRecord(record)
+        } catch {
+          /* non-JSON line — ignore */
+        }
+        if (translator.snapshot().turnComplete) finish()
+      } else if (msg.type === 'exit') {
+        if (!settled && !translator.snapshot().turnComplete) {
+          finish(new Error(`codex process exited before turn/completed (code ${msg.code ?? '?'})`))
+        }
+      } else if (msg.type === 'stderr') {
+        console.warn('[codex]', msg.line)
+      }
+    }
+
+    try {
+      await invoke('agent_proc_spawn', {
+        id: procId,
+        spec: engine.installation.spawn,
+        args: ['app-server'],
+        cwd: null,
+        env: null,
+        onEvent: channel,
+      })
+    } catch (e) {
+      throw new Error(`failed to spawn codex: ${e}`)
+    }
+
+    if (opts.signal?.aborted) {
+      finish(new Error('aborted'))
+      return { engineId: `codex@${engine.host}`, capabilities: { ...this.capabilities }, done }
+    }
+    opts.signal?.addEventListener('abort', onAbort)
+
+    const promptText = lastUserText(opts.messages)
+    if (!promptText.trim()) {
+      finish(new Error('CodexDriver: no user message to send'))
+      return { engineId: `codex@${engine.host}`, capabilities: { ...this.capabilities }, done }
+    }
+
+    // Handshake, then (re)open the conversation (awaiting its threadId), then
+    // start the turn.
+    await rpc('initialize', {
+      clientInfo: { name: 'jedi', title: 'Jedi', version: '0.3.0' },
+    })
+    const resumed = opts.nativeSessionId ?? codexThreadByJediSession.get(opts.sessionId)
+    const threadResp = await rpc(
+      resumed ? 'thread/resume' : 'thread/start',
+      resumed ? { threadId: resumed } : {}
+    )
+    const threadId: string | undefined = threadResp?.result?.thread?.id ?? resumed
+    if (!threadId) {
+      finish(new Error('codex did not return a thread id'))
+      return { engineId: `codex@${engine.host}`, capabilities: { ...this.capabilities }, done }
+    }
+    await rpc('turn/start', {
+      threadId,
+      input: [{ type: 'text', text: promptText }],
+    })
+
+    return {
+      engineId: `codex@${engine.host}`,
+      capabilities: { ...this.capabilities },
+      done,
+      abort: onAbort,
+      dispose: () => {
+        opts.signal?.removeEventListener('abort', onAbort)
+        void invoke('agent_proc_kill', { id: procId }).catch(() => {})
+      },
+    }
+  }
+}

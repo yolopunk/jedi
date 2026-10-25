@@ -122,6 +122,8 @@ export interface RunAgentResult {
   usage?: unknown
   toolCount: number
   enabledToolNames: string[]
+  /** External engines: the native session id to resume next turn. */
+  nativeSessionId?: string
 }
 
 // ========== Provider factory ==========

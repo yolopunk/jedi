@@ -1,96 +1,92 @@
 <template>
   <div class="wallpaper-manager scifi-page">
     <div class="content-wrapper">
-      <!-- Top Toolbar -->
-      <div class="console-header-bar">
-        <div class="header-row">
-          <div class="header-left">
-            <div class="console-title">
-              <span class="title-prefix">[</span>
-              <span class="title-text">WALLPAPER_ARCHIVE</span>
-              <span class="title-suffix">]</span>
-            </div>
-            <div class="header-metrics">
-              <span class="metric-item">
-                <span class="metric-label">COUNT:</span>
-                <span class="metric-value">{{ wallpapers.length }}</span>
-              </span>
-            </div>
+      <!-- 页头：与聊天/Hosts 页统一 -->
+      <div class="wallpaper-header">
+        <div class="header-left">
+          <div class="header-logo">
+            <v-icon :icon="mdiWallpaper" size="18" aria-hidden="true" />
+            <span class="header-title">{{ t('wallpapers.title') }}</span>
+          </div>
+          <span class="header-count">{{ t('wallpapers.totalCount', { n: wallpapers.length }) }}</span>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="header-right">
+          <div class="input-wrapper">
+            <v-icon :icon="mdiMagnify" size="16" class="search-icon" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              class="console-input"
+              :placeholder="$t('common.search')"
+            />
           </div>
 
-          <!-- Search & Filter -->
-          <div class="header-right">
-            <div class="input-wrapper">
-              <v-icon :icon="mdiMagnify" size="16" class="search-icon" />
-              <input
-                v-model="searchQuery"
-                type="text"
-                class="console-input"
-                :placeholder="$t('common.search')"
-              />
+          <v-menu location="bottom end">
+            <template v-slot:activator="{ props }">
+              <button
+                v-bind="props"
+                class="console-btn small"
+                :aria-label="$t('wallpapers.filterCategories')"
+              >
+                <span class="btn-icon">⬡</span>
+                <span class="btn-text">
+                  {{ selectedCategories.includes('All') ? $t('wallpapers.all') : selectedCategories.join(',') }}
+                </span>
+              </button>
+            </template>
+            <div class="console-menu">
+              <div
+                class="menu-item"
+                :class="{ active: selectedCategories.includes('All') }"
+                @click="toggleCategory('All')"
+              >
+                <span class="menu-check">{{ selectedCategories.includes('All') ? '▣' : '▢' }}</span>
+                <span class="menu-text">{{ $t('wallpapers.all') }}</span>
+              </div>
+              <div class="menu-divider"></div>
+              <div
+                v-for="cat in categories"
+                :key="cat"
+                class="menu-item"
+                :class="{ active: selectedCategories.includes(cat) }"
+                @click="toggleCategory(cat)"
+              >
+                <span class="menu-check">{{ selectedCategories.includes(cat) ? '▣' : '▢' }}</span>
+                <span class="menu-text">{{ cat }}</span>
+              </div>
             </div>
+          </v-menu>
 
-            <v-menu location="bottom end">
-              <template v-slot:activator="{ props }">
-                <button v-bind="props" class="console-btn small">
-                  <span class="btn-icon">⬡</span>
-                  <span class="btn-text">
-                    {{ selectedCategories.includes('All') ? 'ALL' : selectedCategories.join(',') }}
-                  </span>
-                </button>
-              </template>
-              <div class="console-menu">
-                <div
-                  class="menu-item"
-                  :class="{ active: selectedCategories.includes('All') }"
-                  @click="toggleCategory('All')"
-                >
-                  <span class="menu-check">{{ selectedCategories.includes('All') ? '▣' : '▢' }}</span>
-                  <span class="menu-text">{{ $t('wallpapers.all') }}</span>
-                </div>
-                <div class="menu-divider"></div>
-                <div
-                  v-for="cat in categories"
-                  :key="cat"
-                  class="menu-item"
-                  :class="{ active: selectedCategories.includes(cat) }"
-                  @click="toggleCategory(cat)"
-                >
-                  <span class="menu-check">{{ selectedCategories.includes(cat) ? '▣' : '▢' }}</span>
-                  <span class="menu-text">{{ cat }}</span>
-                </div>
+          <v-menu location="bottom end">
+            <template v-slot:activator="{ props }">
+              <button v-bind="props" class="console-btn small">
+                <span class="btn-icon">▢</span>
+                <span class="btn-text">{{ currentModeLabel }}</span>
+              </button>
+            </template>
+            <div class="console-menu">
+              <div class="menu-header">{{ $t('wallpapers.wallpaperMode') }}</div>
+              <div
+                v-for="mode in modeOptions"
+                :key="mode.value"
+                class="menu-item"
+                :class="{ active: selectedMode === mode.value }"
+                @click="selectedMode = mode.value"
+              >
+                <span class="menu-text">{{ mode.label }}</span>
               </div>
-            </v-menu>
+            </div>
+          </v-menu>
 
-            <v-menu location="bottom end">
-              <template v-slot:activator="{ props }">
-                <button v-bind="props" class="console-btn small">
-                  <span class="btn-icon">▢</span>
-                  <span class="btn-text">{{ currentModeLabel }}</span>
-                </button>
-              </template>
-              <div class="console-menu">
-                <div class="menu-header">WALLPAPER_MODE</div>
-                <div
-                  v-for="mode in modeOptions"
-                  :key="mode.value"
-                  class="menu-item"
-                  :class="{ active: selectedMode === mode.value }"
-                  @click="selectedMode = mode.value"
-                >
-                  <span class="menu-text">{{ mode.label }}</span>
-                </div>
-              </div>
-            </v-menu>
+          <button class="console-btn icon-only" @click="checkCurrentWallpaper" :title="$t('wallpapers.getCurrent')">
+            <span class="btn-icon">◉</span>
+          </button>
 
-            <button class="console-btn icon-only" @click="checkCurrentWallpaper" :title="$t('wallpapers.getCurrent')">
-              <span class="btn-icon">◉</span>
-            </button>
-
-            <button class="console-btn icon-only" @click="loadWallpapers" :disabled="loading" :title="$t('common.refresh')">
-              <span class="btn-icon" :class="{ spinning: loading }">↻</span>
-            </button>
-          </div>
+          <button class="console-btn icon-only" @click="loadWallpapers" :disabled="loading" :title="$t('common.refresh')">
+            <span class="btn-icon" :class="{ spinning: loading }">↻</span>
+          </button>
         </div>
       </div>
 
@@ -113,19 +109,35 @@
               v-for="wp in filteredWallpapers"
               :key="wp.id"
               class="wallpaper-item"
+              role="button"
+              tabindex="0"
+              :aria-label="wp.title"
               @click="previewWallpaper(wp)"
+              @keydown.enter.prevent="previewWallpaper(wp)"
+              @keydown.space.prevent="previewWallpaper(wp)"
             >
               <div class="wallpaper-card">
                 <div class="image-wrapper">
                   <v-img
+                    :key="`${wp.id}:${imageRetries[wp.id] || 0}`"
                     :src="wp.url"
                     aspect-ratio="1.6"
                     cover
                     class="wallpaper-image"
                   >
                     <template v-slot:placeholder>
-                      <div class="d-flex align-center justify-center fill-height">
-                        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+                      <div class="image-placeholder"></div>
+                    </template>
+                    <template v-slot:error>
+                      <div class="image-error">
+                        <span class="image-error-text">{{ $t('wallpapers.imageFailed') }}</span>
+                        <button
+                          type="button"
+                          class="image-retry-btn"
+                          @click.stop="retryImage(wp.id)"
+                        >
+                          {{ $t('wallpapers.retryImage') }}
+                        </button>
                       </div>
                     </template>
                   </v-img>
@@ -193,11 +205,11 @@
             class="header-image"
             @click="showImageViewer = true"
           ></v-img>
-          <button class="drawer-close" @click="drawer = false">
-            <span class="close-icon">✕</span>
+          <button class="drawer-close" :aria-label="$t('common.close')" @click="closeDrawer">
+            <span class="close-icon" aria-hidden="true">✕</span>
           </button>
-          <button class="drawer-zoom" @click="showImageViewer = true">
-            <span class="zoom-icon">🔍</span>
+          <button class="drawer-zoom" :aria-label="$t('wallpapers.viewDetails')" @click="showImageViewer = true">
+            <span class="zoom-icon" aria-hidden="true">🔍</span>
           </button>
         </div>
 
@@ -280,10 +292,10 @@
 </template>
 
 <script setup lang="ts">
-import { mdiMagnify } from '@mdi/js'
+import { mdiMagnify, mdiWallpaper } from '@mdi/js'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import MarkdownIt from 'markdown-it'
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   getCurrentWallpaper,
@@ -319,6 +331,7 @@ const selectedCategories = ref<string[]>(['All'])
 const searchQuery = ref('')
 const drawer = ref(false)
 const currentPreview = ref<WallpaperItem | null>(null)
+const imageRetries = ref<Record<string, number>>({})
 const currentSystemWallpaperPath = ref<string | null>(null)
 const selectedMode = ref<WallpaperMode>(WallpaperMode.Crop)
 const snackbar = ref({
@@ -490,9 +503,25 @@ async function openWallpaperFolder() {
   }
 }
 
+let previewTrigger: HTMLElement | null = null
+
 function previewWallpaper(wp: WallpaperItem) {
+  if (document.activeElement instanceof HTMLElement) {
+    previewTrigger = document.activeElement
+  }
   currentPreview.value = wp
   drawer.value = true
+}
+
+function closeDrawer() {
+  drawer.value = false
+  nextTick(() => {
+    previewTrigger?.focus()
+  })
+}
+
+function retryImage(id: string) {
+  imageRetries.value = { ...imageRetries.value, [id]: (imageRetries.value[id] || 0) + 1 }
 }
 
 function showSnackbar(text: string, color: string) {
@@ -538,7 +567,7 @@ onUnmounted(() => {
   min-height: 0;
   overflow: hidden;
   background: linear-gradient(180deg, var(--bg-terminal) 0%, var(--bg-terminal) 50%, var(--bg-terminal) 100%);
-  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-family: var(--jedi-font-ui);
 }
 
 .content-wrapper {
@@ -551,69 +580,46 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-/* Console Header Bar */
-.console-header-bar {
-  background: linear-gradient(180deg, var(--bg-terminal) 0%, var(--bg-terminal) 100%);
-  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.15);
-  padding: 12px 16px;
+/* 页头：与聊天/Hosts 页统一 */
+.wallpaper-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 60px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   position: relative;
   z-index: 10;
 }
 
-.header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 12px;
+  min-width: 0;
 }
 
-.console-title {
+.header-logo {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
+  color: var(--text);
 }
 
-.title-prefix, .title-suffix {
-  color: var(--accent);
-  font-size: 11px;
+.header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--jedi-font-ui);
 }
 
-.title-text {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: var(--success);
-}
-
-.header-metrics {
-  display: flex;
-  gap: 16px;
-}
-
-.metric-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.metric-label {
-  color: var(--text-subtle);
-  font-size: 10px;
-  letter-spacing: 1px;
-}
-
-.metric-value {
-  color: var(--accent);
+.header-count {
   font-size: 12px;
-  font-weight: 700;
+  color: var(--text-subtle);
+  white-space: nowrap;
 }
 
 .header-right {
@@ -785,6 +791,12 @@ onUnmounted(() => {
   transition: transform 0.3s ease;
 }
 
+.wallpaper-item:focus-visible {
+  outline: 2px solid rgb(var(--accent-rgb) / 0.6);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
 .wallpaper-card {
   position: relative;
   background: rgb(var(--bg-rgb) / 0.9);
@@ -814,6 +826,52 @@ onUnmounted(() => {
   object-fit: cover;
 }
 
+/* 低干扰加载占位：静态色块，无动画 */
+.image-placeholder {
+  position: absolute;
+  inset: 0;
+  background: rgb(var(--ink-rgb) / 0.06);
+}
+
+/* 图片加载失败：占位块 + 重试 */
+.image-error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgb(var(--ink-rgb) / 0.06);
+  padding: 12px;
+}
+
+.image-error-text {
+  font-size: 11px;
+  color: var(--text-subtle);
+  text-align: center;
+}
+
+.image-retry-btn {
+  padding: 2px 10px;
+  font-size: 11px;
+  color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.1);
+  border: 1px solid rgb(var(--accent-rgb) / 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.image-retry-btn:hover {
+  background: rgb(var(--accent-rgb) / 0.2);
+}
+
+.image-retry-btn:focus-visible {
+  outline: 2px solid rgb(var(--accent-rgb) / 0.6);
+  outline-offset: 2px;
+}
+
 .overlay {
   position: absolute;
   top: 0;
@@ -822,6 +880,7 @@ onUnmounted(() => {
   bottom: 0;
   background:rgb(var(--ink-rgb) / 0.6);
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.3s ease;
   display: flex;
   align-items: center;
@@ -830,8 +889,11 @@ onUnmounted(() => {
 }
 
 .wallpaper-card:hover .overlay,
-.wallpaper-card:focus-within .overlay {
+.wallpaper-card:focus-within .overlay,
+.image-wrapper:hover .overlay,
+.image-wrapper:focus-within .overlay {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .overlay-btn {
@@ -872,6 +934,12 @@ onUnmounted(() => {
   font-weight: 600;
   color: var(--text);
   margin-bottom: 6px;
+  /* 标题允许两行，超出省略；分类与标签信息层级低于图像 */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .card-meta {
@@ -1082,7 +1150,6 @@ onUnmounted(() => {
 }
 
 .snackbar-text {
-  font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   color: var(--text);
 }
@@ -1122,7 +1189,7 @@ onUnmounted(() => {
 }
 
 .markdown-body :deep(code) {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--jedi-font-mono);
   color: var(--success);
 }
 </style>

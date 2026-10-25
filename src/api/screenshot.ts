@@ -63,7 +63,9 @@ export function saveStyledScreenshot(dataUrl: string): Promise<string> {
   return invoke('screenshot_save_styled', { dataUrl })
 }
 
-export function recognizeScreenshot(path: string): Promise<{ text: string; language: string }> {
+export function recognizeScreenshot(
+  path: string
+): Promise<{ text: string; language: string; engine: string }> {
   return invoke('screenshot_ocr', { path })
 }
 

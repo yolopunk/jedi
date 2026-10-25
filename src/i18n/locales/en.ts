@@ -700,20 +700,24 @@ export default {
   screenshot: {
     ocr: {
       title: 'Recognize text',
-      local: 'Windows local OCR. Images stay on this device. Uses your preferred system language.',
+      local:
+        'On-device OCR. Images are never uploaded. Windows and macOS use system engines; Linux uses local Tesseract.',
+      shortcut: 'Recognize text (Shift+C)',
       loading: 'Recognizing text…',
       result: 'Recognized text (editable)',
       empty: 'No text found. Try a clearer capture.',
       copy: 'Copy text',
       copied: 'Copied',
       errors: {
-        unsupported: 'Local OCR currently requires Windows.',
+        unsupported: 'Local OCR is not supported on this system.',
+        engineUnavailable:
+          'No local OCR engine is available. macOS requires 10.15 or later; on Linux, install Tesseract and the language packs you need.',
         languageUnavailable:
-          'No OCR language pack is available. Install text recognition for your language in Windows language settings.',
+          'No OCR language pack is available. Install the required system or Tesseract language pack.',
         invalidPath: 'Only PNG images in the capture gallery can be recognized.',
         unreadable: 'Cannot read this image. Refresh the gallery and retry.',
         tooLarge: 'This image exceeds local OCR limits. Capture a smaller region and retry.',
-        failed: 'Recognition failed. Retry and check your Windows OCR language pack.',
+        failed: 'Recognition failed. Retry and check the local OCR engine and language packs.',
         copyFailed: 'Copy failed. Retry or select and copy the text manually.',
       },
     },
@@ -746,7 +750,7 @@ export default {
       'Freeze the screen, drag to select a region, then copy, save or send it to AI chat.',
     start: 'Start Capture',
     shortcutHint: 'Global shortcut Ctrl+Alt+S, also available from the tray menu',
-    overlayHint: 'Drag to select · Copy, save, OCR, or send to AI · Enter copies · Esc cancels',
+    overlayHint: 'Drag to select · Shift+C recognizes text · Enter copies · Esc cancels',
     copy: 'Copy',
     save: 'Save',
     sendToChat: 'Send to AI',

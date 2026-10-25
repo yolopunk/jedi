@@ -11,7 +11,7 @@
       <label class="result-label" for="ocr-result">{{ t('screenshot.ocr.result') }}</label>
       <textarea id="ocr-result" v-model="text" spellcheck="false" />
       <footer>
-        <span>{{ language }}</span>
+        <span>{{ engine }}<template v-if="language"> · {{ language }}</template></span>
         <span role="status">{{ copied ? t('screenshot.ocr.copied') : '' }}</span>
         <v-btn variant="tonal" color="primary" :disabled="!text.trim()" :loading="copying" @click="copy">{{ t('screenshot.ocr.copy') }}</v-btn>
       </footer>
@@ -31,6 +31,7 @@ const panel = ref<HTMLElement | null>(null)
 const busy = ref(false)
 const text = ref('')
 const language = ref('')
+const engine = ref('')
 const error = ref('')
 const copied = ref(false)
 const copying = ref(false)
@@ -42,6 +43,8 @@ async function recognize() {
   busy.value = true
   error.value = ''
   text.value = ''
+  language.value = ''
+  engine.value = ''
   copied.value = false
   copyError.value = ''
   try {
@@ -49,6 +52,7 @@ async function recognize() {
     if (version !== request) return
     text.value = result.text
     language.value = result.language
+    engine.value = result.engine
   } catch (cause) {
     if (version !== request) return
     const key = `screenshot.ocr.errors.${String(cause)}`

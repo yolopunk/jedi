@@ -44,19 +44,31 @@
       @mousedown.stop
     >
       <button class="tb-btn" type="button" @click.stop="finish('copy')">
+        <v-icon :icon="mdiContentCopy" size="16" aria-hidden="true" />
         {{ t('screenshot.copy') }}
       </button>
       <button class="tb-btn" type="button" @click.stop="finish('save')">
+        <v-icon :icon="mdiContentSaveOutline" size="16" aria-hidden="true" />
         {{ t('screenshot.save') }}
       </button>
-      <button class="tb-btn" type="button" @click.stop="finish('ocr')">
+      <button
+        class="tb-btn tb-ocr"
+        type="button"
+        :title="t('screenshot.ocr.shortcut')"
+        @click.stop="finish('ocr')"
+      >
+        <v-icon :icon="mdiTextRecognition" size="17" aria-hidden="true" />
         {{ t('screenshot.ocr.title') }}
+        <kbd>⇧C</kbd>
       </button>
       <button class="tb-btn tb-primary" type="button" @click.stop="finish('chat')">
+        <v-icon :icon="mdiRobotOutline" size="16" aria-hidden="true" />
         {{ t('screenshot.sendToChat') }}
       </button>
       <span class="tb-divider"></span>
-      <button class="tb-btn" type="button" @click.stop="cancel">{{ t('screenshot.cancel') }}</button>
+      <button class="tb-btn tb-icon" type="button" :aria-label="t('screenshot.cancel')" @click.stop="cancel">
+        <v-icon :icon="mdiClose" size="18" aria-hidden="true" />
+      </button>
     </div>
 
     <!-- 底部提示（无选区时） -->
@@ -67,6 +79,13 @@
 </template>
 
 <script setup lang="ts">
+import {
+  mdiClose,
+  mdiContentCopy,
+  mdiContentSaveOutline,
+  mdiRobotOutline,
+  mdiTextRecognition,
+} from '@mdi/js'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -322,6 +341,11 @@ function onKeyDown(e: KeyboardEvent) {
     if (selection.value) confirmCopy()
     return
   }
+  if (selection.value && e.shiftKey && e.key.toLowerCase() === 'c') {
+    e.preventDefault()
+    finish('ocr')
+    return
+  }
   if (!selection.value) return
   const step = e.shiftKey ? 10 : 1
   let dx = 0
@@ -498,6 +522,9 @@ onUnmounted(() => {
 }
 
 .tb-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 4px 12px;
   border: none;
   border-radius: 4px;
@@ -506,6 +533,25 @@ onUnmounted(() => {
   font-size: 13px;
   line-height: 1.5;
   cursor: pointer;
+}
+
+.tb-icon {
+  justify-content: center;
+  width: 32px;
+  padding-inline: 6px;
+}
+
+.tb-ocr {
+  color: #9ee4ff;
+}
+
+.tb-ocr kbd {
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.62);
+  font: 10px/1.4 var(--jedi-font-mono, monospace);
 }
 
 .tb-btn:hover {

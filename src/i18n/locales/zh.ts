@@ -697,20 +697,23 @@ export default {
   screenshot: {
     ocr: {
       title: '识别文字',
-      local: '使用 Windows 本地 OCR，图片不会上传。按系统首选语言识别。',
+      local:
+        '使用本机离线 OCR，图片不会上传。Windows 与 macOS 使用系统引擎，Linux 使用本机 Tesseract。',
+      shortcut: '识别文字（Shift+C）',
       loading: '正在识别图片中的文字…',
       result: '识别结果（可编辑）',
       empty: '没有识别到文字，请尝试更清晰的截图。',
       copy: '复制文字',
       copied: '已复制',
       errors: {
-        unsupported: '当前仅支持 Windows 本地 OCR。',
-        languageUnavailable:
-          '没有可用的 OCR 语言包，请在 Windows 语言设置中安装所需语言的文字识别功能。',
+        unsupported: '当前系统暂不支持本地 OCR。',
+        engineUnavailable:
+          '没有找到可用的本地 OCR 引擎。macOS 需要 10.15 或更高版本；Linux 请安装 Tesseract 与所需语言包。',
+        languageUnavailable: '没有可用的 OCR 语言包，请安装系统文字识别语言或 Tesseract 语言包。',
         invalidPath: '只能识别截图库中的 PNG 图片。',
         unreadable: '无法读取图片，请刷新截图库后重试。',
         tooLarge: '图片超出本地识别限制，请缩小截图区域后重试。',
-        failed: '识别失败，请重试并检查 Windows OCR 语言包是否可用。',
+        failed: '识别失败，请重试并检查本机 OCR 引擎和语言包。',
         copyFailed: '复制失败，请重试或手动选择文字复制。',
       },
     },
@@ -741,7 +744,7 @@ export default {
     description: '冻结屏幕后框选区域，确认后可复制、保存或发送给 AI 对话。',
     start: '开始截图',
     shortcutHint: '全局快捷键 Ctrl+Alt+S，也可从托盘菜单触发',
-    overlayHint: '拖拽框选区域 · 可复制、保存、OCR 或发送到 AI · Enter 复制 · Esc 取消',
+    overlayHint: '拖拽框选区域 · Shift+C 识别文字 · Enter 复制 · Esc 取消',
     copy: '复制',
     save: '保存',
     sendToChat: '发送到 AI',

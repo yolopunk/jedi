@@ -12,7 +12,7 @@
         <pre class="confirm-args">{{ prettyArgs }}</pre>
         <p v-if="isSystemRisk" class="confirm-warning">{{ $t('skills.confirm.systemWarning') }}</p>
         <div class="confirm-actions">
-          <button class="btn btn-deny" @click="store.resolveConfirmation(false)">
+          <button ref="denyBtn" class="btn btn-deny" @click="store.resolveConfirmation(false)">
             {{ $t('skills.confirm.deny') }}
           </button>
           <button ref="approveBtn" class="btn btn-approve" @click="store.resolveConfirmation(true)">
@@ -36,25 +36,24 @@ const store = useAiChatStore()
 const { t } = useI18n()
 
 const approveBtn = ref<HTMLButtonElement | null>(null)
+const denyBtn = ref<HTMLButtonElement | null>(null)
 
 const isSystemRisk = computed(() => store.pendingConfirmation?.risk === 'system')
 
-// 确认卡出现时把焦点移到"批准执行"，保证键盘用户能立刻操作
+// 确认卡出现时把焦点移到安全侧：system 级高风险聚焦"拒绝"防止误批准，其余聚焦"批准"保证键盘用户能立刻操作
 watch(
   () => store.pendingConfirmation,
   req => {
-    if (req) nextTick(() => approveBtn.value?.focus())
+    if (!req) return
+    nextTick(() => (req.risk === 'system' ? denyBtn.value?.focus() : approveBtn.value?.focus()))
   }
 )
 
-/** Esc 拒绝、Enter 批准；resolveConfirmation 幂等，重复触发无害 */
+/** 仅 Esc 拒绝；Enter/Space 由聚焦的原生按钮自行激活；resolveConfirmation 幂等，重复触发无害 */
 function handleKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
     e.preventDefault()
     store.resolveConfirmation(false)
-  } else if (e.key === 'Enter') {
-    e.preventDefault()
-    store.resolveConfirmation(true)
   }
 }
 

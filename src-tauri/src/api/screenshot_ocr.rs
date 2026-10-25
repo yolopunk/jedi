@@ -1,6 +1,17 @@
+use rusto::{DetectTextResult, ImageSource, InitializeConfig, OcrRunOptions, RustO};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+use tauri::path::BaseDirectory;
 use tauri::Manager;
+
+static OCR_ENGINE: Mutex<Option<RustO>> = Mutex::new(None);
+
+struct OcrModelPaths {
+  detector: PathBuf,
+  recognizer: PathBuf,
+  dictionary: PathBuf,
+}
 
 #[derive(Serialize)]
 pub struct OcrResult {
@@ -37,9 +48,10 @@ pub async fn screenshot_ocr(app: tauri::AppHandle, path: String) -> Result<OcrRe
       .map_err(|_| "unreadable")?
       .join("screenshots"),
   ];
+  let models = resolve_model_paths(&app)?;
   tauri::async_runtime::spawn_blocking(move || {
     let path = validate_path(Path::new(&path), &roots)?;
-    recognize(&path)
+    recognize(&path, &models)
   })
   .await
   .map_err(|_| "failed".to_string())?
@@ -57,177 +69,70 @@ pub fn screenshot_copy_text(app: tauri::AppHandle, text: String) -> Result<(), S
     .map_err(|_| "copyFailed".into())
 }
 
-#[cfg(target_os = "windows")]
-fn recognize(path: &Path) -> Result<OcrResult, String> {
-  use windows::{
-    Graphics::Imaging::{BitmapAlphaMode, BitmapDecoder, BitmapPixelFormat},
-    Media::Ocr::OcrEngine,
-    Storage::Streams::{DataWriter, InMemoryRandomAccessStream},
-    Win32::System::WinRT::{RoInitialize, RoUninitialize, RO_INIT_MULTITHREADED},
+fn resolve_model_paths(app: &tauri::AppHandle) -> Result<OcrModelPaths, String> {
+  let resolve = |file: &str| {
+    app
+      .path()
+      .resolve(format!("ocr/{file}"), BaseDirectory::Resource)
+      .map_err(|_| "engineUnavailable".to_string())
   };
-  // Each blocking-pool thread owns its WinRT apartment for the duration of OCR.
-  unsafe { RoInitialize(RO_INIT_MULTITHREADED) }.map_err(|_| "failed")?;
-  struct Apartment;
-  impl Drop for Apartment {
-    fn drop(&mut self) {
-      unsafe { RoUninitialize() };
-    }
-  }
-  let _apartment = Apartment;
-  let engine = OcrEngine::TryCreateFromUserProfileLanguages().map_err(|_| "languageUnavailable")?;
-  let max = OcrEngine::MaxImageDimension().map_err(|_| "failed")?;
-  let (w, h) = image::image_dimensions(path).map_err(|_| "unreadable")?;
-  if w == 0 || h == 0 || w > max || h > max {
+  Ok(OcrModelPaths {
+    detector: resolve("det.rten")?,
+    recognizer: resolve("rec.rten")?,
+    dictionary: resolve("dict.txt")?,
+  })
+}
+
+fn recognize(path: &Path, models: &OcrModelPaths) -> Result<OcrResult, String> {
+  let (width, height) = image::image_dimensions(path).map_err(|_| "unreadable")?;
+  let pixels = u64::from(width) * u64::from(height);
+  if width == 0 || height == 0 || width > 16_384 || height > 16_384 || pixels > 64_000_000 {
     return Err("tooLarge".into());
   }
-  let bytes = std::fs::read(path).map_err(|_| "unreadable")?;
-  let run = || -> windows::core::Result<OcrResult> {
-    let stream = InMemoryRandomAccessStream::new()?;
-    let writer = DataWriter::CreateDataWriter(&stream)?;
-    writer.WriteBytes(&bytes)?;
-    writer.StoreAsync()?.join()?;
-    writer.DetachStream()?;
-    stream.Seek(0)?;
-    let decoder = BitmapDecoder::CreateAsync(&stream)?.join()?;
-    let bitmap = decoder
-      .GetSoftwareBitmapConvertedAsync(BitmapPixelFormat::Bgra8, BitmapAlphaMode::Ignore)?
-      .join()?;
-    let recognized = engine.RecognizeAsync(&bitmap)?.join()?;
-    let lines = recognized.Lines()?;
-    let mut text = Vec::new();
-    for line in lines {
-      text.push(line.Text()?.to_string());
-    }
-    Ok(OcrResult {
-      text: text.join("\n"),
-      language: engine.RecognizerLanguage()?.LanguageTag()?.to_string(),
-      engine: "Windows OCR".into(),
-    })
-  };
-  run().map_err(|_| "failed".into())
-}
-
-#[cfg(target_os = "macos")]
-fn recognize(path: &Path) -> Result<OcrResult, String> {
-  use objc2::rc::Retained;
-  use objc2::runtime::AnyObject;
-  use objc2::ClassType;
-  use objc2_foundation::{NSArray, NSData, NSDictionary};
-  use objc2_vision::{
-    VNImageOption, VNImageRequestHandler, VNRecognizeTextRequest, VNRequest,
-    VNRequestTextRecognitionLevel,
-  };
-
-  let version = std::process::Command::new("sw_vers")
-    .arg("-productVersion")
-    .output()
-    .map_err(|_| "engineUnavailable")?;
-  let version_text = String::from_utf8_lossy(&version.stdout);
-  let mut parts = version_text.trim().split('.');
-  let major = parts
-    .next()
-    .and_then(|part| part.parse::<u32>().ok())
-    .unwrap_or(0);
-  let minor = parts
-    .next()
-    .and_then(|part| part.parse::<u32>().ok())
-    .unwrap_or(0);
-  if !version.status.success() || major < 10 || (major == 10 && minor < 15) {
+  if [&models.detector, &models.recognizer, &models.dictionary]
+    .iter()
+    .any(|path| !path.is_file())
+  {
     return Err("engineUnavailable".into());
   }
-
-  let bytes = std::fs::read(path).map_err(|_| "unreadable")?;
-  let data = NSData::with_bytes(&bytes);
-  let options = NSDictionary::<VNImageOption, AnyObject>::new();
-  let handler =
-    VNImageRequestHandler::initWithData_options(VNImageRequestHandler::alloc(), &data, &options);
-  let request = VNRecognizeTextRequest::new();
-  request.setRecognitionLevel(VNRequestTextRecognitionLevel::Accurate);
-  request.setUsesLanguageCorrection(true);
-  if major >= 13 {
-    request.setAutomaticallyDetectsLanguage(true);
+  let mut engine = OCR_ENGINE.lock().map_err(|_| "failed")?;
+  if engine.is_none() {
+    *engine = Some(
+      RustO::initialize(InitializeConfig::ppv6(
+        &models.detector,
+        &models.recognizer,
+        &models.dictionary,
+      ))
+      .map_err(|_| "engineUnavailable")?,
+    );
   }
-  let base: Retained<VNRequest> = request.clone().into_super().into_super();
-  handler
-    .performRequests_error(&NSArray::from_retained_slice(&[base]))
+  let result = engine
+    .as_mut()
+    .ok_or("engineUnavailable")?
+    .detect_text(
+      &ImageSource::Path(path.to_path_buf()),
+      &OcrRunOptions::default(),
+    )
     .map_err(|_| "failed")?;
-
-  let mut lines = Vec::new();
-  if let Some(results) = request.results() {
-    for observation in results.iter() {
-      if let Some(candidate) = observation.topCandidates(1).iter().next() {
-        lines.push(candidate.string().to_string());
-      }
-    }
-  }
-  Ok(OcrResult {
-    text: lines.join("\n"),
-    language: if major >= 13 { "auto" } else { "system" }.into(),
-    engine: "Apple Vision".into(),
-  })
-}
-
-#[cfg(target_os = "linux")]
-fn recognize(path: &Path) -> Result<OcrResult, String> {
-  use std::io::ErrorKind;
-  use std::process::Command;
-
-  let available = Command::new("tesseract").arg("--list-langs").output();
-  let available = match available {
-    Ok(output) if output.status.success() => String::from_utf8_lossy(&output.stdout).into_owned(),
-    Ok(_) => return Err("engineUnavailable".into()),
-    Err(error) if error.kind() == ErrorKind::NotFound => return Err("engineUnavailable".into()),
-    Err(_) => return Err("failed".into()),
+  let text = match result {
+    DetectTextResult::Structured(lines) => lines
+      .into_iter()
+      .map(|line| line.text)
+      .collect::<Vec<_>>()
+      .join("\n"),
+    DetectTextResult::Spatial(text) => text,
   };
-  let languages = choose_tesseract_languages(&available).ok_or("languageUnavailable")?;
-  let output = Command::new("tesseract")
-    .arg(path)
-    .arg("stdout")
-    .arg("--psm")
-    .arg("6")
-    .arg("-l")
-    .arg(&languages)
-    .output()
-    .map_err(|_| "failed")?;
-  if !output.status.success() {
-    return Err("failed".into());
-  }
   Ok(OcrResult {
-    text: String::from_utf8_lossy(&output.stdout).trim().to_string(),
-    language: languages,
-    engine: "Tesseract".into(),
+    text: text.trim().to_string(),
+    language: "auto · multilingual".into(),
+    engine: "RustO · PP-OCRv6 Tiny".into(),
   })
-}
-
-#[cfg(any(test, target_os = "linux"))]
-fn choose_tesseract_languages(output: &str) -> Option<String> {
-  let languages: Vec<&str> = output
-    .lines()
-    .map(str::trim)
-    .filter(|line| !line.is_empty() && !line.starts_with("List of available languages"))
-    .collect();
-  let preferred: Vec<&str> = ["chi_sim", "chi_tra", "eng"]
-    .into_iter()
-    .filter(|candidate| languages.contains(candidate))
-    .collect();
-  if preferred.is_empty() {
-    languages.first().map(|language| (*language).to_string())
-  } else {
-    Some(preferred.join("+"))
-  }
-}
-
-#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-fn recognize(_path: &Path) -> Result<OcrResult, String> {
-  Err("engineUnavailable".into())
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  #[cfg(target_os = "windows")]
   #[test]
-  #[ignore = "requires a Windows OCR language pack"]
   fn recognizes_text_and_blank_images() {
     let root = tempfile::tempdir().unwrap();
     let path = root.path().join("sample.png");
@@ -236,7 +141,15 @@ mod tests {
       include_bytes!("../../tests/fixtures/ocr-english.png"),
     )
     .unwrap();
-    let result = recognize(&path).unwrap();
+    let models = OcrModelPaths {
+      detector: PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../node_modules/@rustors/model-ppocrv6-tiny/models/det.rten"),
+      recognizer: PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../node_modules/@rustors/model-ppocrv6-tiny/models/rec.rten"),
+      dictionary: PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../node_modules/@rustors/model-ppocrv6-tiny/models/dict.txt"),
+    };
+    let result = recognize(&path, &models).unwrap();
     assert!(
       result.text.contains("JEDI"),
       "expected JEDI, got {}",
@@ -247,9 +160,9 @@ mod tests {
     image::RgbaImage::from_pixel(400, 100, image::Rgba([255, 255, 255, 255]))
       .save(&path)
       .unwrap();
-    assert!(recognize(&path).unwrap().text.trim().is_empty());
+    assert!(recognize(&path, &models).unwrap().text.trim().is_empty());
     std::fs::write(&path, b"invalid png").unwrap();
-    assert!(recognize(&path).is_err());
+    assert!(recognize(&path, &models).is_err());
   }
 
   #[test]
@@ -274,17 +187,5 @@ mod tests {
       validate_path(&gallery.join("missing.png"), &[gallery]).unwrap_err(),
       "unreadable"
     );
-  }
-
-  #[test]
-  fn prefers_chinese_and_english_tesseract_languages() {
-    let output =
-      "List of available languages in /usr/share/tessdata/ (4):\nosd\neng\nchi_tra\nchi_sim\n";
-    assert_eq!(
-      choose_tesseract_languages(output).as_deref(),
-      Some("chi_sim+chi_tra+eng")
-    );
-    assert_eq!(choose_tesseract_languages("deu\n").as_deref(), Some("deu"));
-    assert_eq!(choose_tesseract_languages(""), None);
   }
 }

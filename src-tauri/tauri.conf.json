@@ -45,7 +45,12 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [],
+    "resources": {
+      "../node_modules/@rustors/model-ppocrv6-tiny/models/det.rten": "ocr/det.rten",
+      "../node_modules/@rustors/model-ppocrv6-tiny/models/rec.rten": "ocr/rec.rten",
+      "../node_modules/@rustors/model-ppocrv6-tiny/models/dict.txt": "ocr/dict.txt",
+      "../node_modules/@rustors/model-ppocrv6-tiny/LICENSE": "licenses/rusto-model-MIT.txt"
+    },
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico"
@@ -58,10 +63,7 @@
     "linux": {
       "deb": {
         "depends": [
-          "libwebkit2gtk-4.1-0",
-          "tesseract-ocr",
-          "tesseract-ocr-eng",
-          "tesseract-ocr-chi-sim"
+          "libwebkit2gtk-4.1-0"
         ]
       },
       "appimage": {

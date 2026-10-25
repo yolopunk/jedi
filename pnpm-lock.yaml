@@ -78,6 +78,9 @@ importers:
       '@mdi/js':
         specifier: ^7.4.47
         version: 7.4.47
+      '@rustors/model-ppocrv6-tiny':
+        specifier: 0.3.2
+        version: 0.3.2
       '@tauri-apps/cli':
         specifier: ^2.10.1
         version: 2.10.1
@@ -512,6 +515,9 @@ packages:
     resolution: {integrity: sha512-lpPE1cLfP5oPzVjKMx10pgBmKELQnFJXHgvtHCtuJWOv8MxqdEIMNtgHgBFf7Ea2/7EuVwa9fodWUfXAlXZLZQ==}
     cpu: [x64]
     os: [win32]
+
+  '@rustors/model-ppocrv6-tiny@0.3.2':
+    resolution: {integrity: sha512-Yv0yr5XmPcjLTlGC5Yp4WCndLpkbo/6ta6L/Mj+mj09TUWIxEyQkEoLBzNgfbi36FSx95PnUiSaFyzI7DzoZgg==, tarball: https://registry.npmjs.org/@rustors/model-ppocrv6-tiny/-/model-ppocrv6-tiny-0.3.2.tgz}
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -1243,6 +1249,8 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.40.0':
     optional: true
+
+  '@rustors/model-ppocrv6-tiny@0.3.2': {}
 
   '@standard-schema/spec@1.1.0': {}
 

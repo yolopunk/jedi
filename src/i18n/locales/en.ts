@@ -701,7 +701,7 @@ export default {
     ocr: {
       title: 'Recognize text',
       local:
-        'On-device OCR. Images are never uploaded. Windows and macOS use system engines; Linux uses local Tesseract.',
+        'Cross-platform Rust OCR runs offline. Images are never uploaded and no system language pack is required.',
       shortcut: 'Recognize text (Shift+C)',
       loading: 'Recognizing text…',
       result: 'Recognized text (editable)',
@@ -710,14 +710,12 @@ export default {
       copied: 'Copied',
       errors: {
         unsupported: 'Local OCR is not supported on this system.',
-        engineUnavailable:
-          'No local OCR engine is available. macOS requires 10.15 or later; on Linux, install Tesseract and the language packs you need.',
-        languageUnavailable:
-          'No OCR language pack is available. Install the required system or Tesseract language pack.',
+        engineUnavailable: 'The bundled OCR model could not be loaded. Reinstall or update Jedi and retry.',
+        languageUnavailable: 'The bundled OCR model does not support this language.',
         invalidPath: 'Only PNG images in the capture gallery can be recognized.',
         unreadable: 'Cannot read this image. Refresh the gallery and retry.',
         tooLarge: 'This image exceeds local OCR limits. Capture a smaller region and retry.',
-        failed: 'Recognition failed. Retry and check the local OCR engine and language packs.',
+        failed: 'Recognition failed. Try a clearer or smaller capture.',
         copyFailed: 'Copy failed. Retry or select and copy the text manually.',
       },
     },

@@ -6,6 +6,7 @@ pub(crate) mod memory;
 pub(crate) mod os;
 pub(crate) mod podcast;
 pub(crate) mod screenshot;
+pub(crate) mod screenshot_ocr;
 pub(crate) mod skills;
 pub(crate) mod terminal;
 pub(crate) mod wallpapers;

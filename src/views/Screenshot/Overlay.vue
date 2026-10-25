@@ -36,12 +36,21 @@
     </div>
 
     <!-- 操作条：阻止 mousedown 冒泡到根节点，否则按下按钮会先清空选区 -->
-    <div v-if="selection && !busy" class="toolbar" :style="toolbarStyle" @mousedown.stop>
+    <div
+      v-if="selection && !busy"
+      ref="toolbarRef"
+      class="toolbar"
+      :style="toolbarStyle"
+      @mousedown.stop
+    >
       <button class="tb-btn" type="button" @click.stop="finish('copy')">
         {{ t('screenshot.copy') }}
       </button>
       <button class="tb-btn" type="button" @click.stop="finish('save')">
         {{ t('screenshot.save') }}
+      </button>
+      <button class="tb-btn" type="button" @click.stop="finish('ocr')">
+        {{ t('screenshot.ocr.title') }}
       </button>
       <button class="tb-btn tb-primary" type="button" @click.stop="finish('chat')">
         {{ t('screenshot.sendToChat') }}
@@ -60,7 +69,7 @@
 <script setup lang="ts">
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { screenshotCancel, screenshotFinish, screenshotFrameInfo } from '@/api/screenshot'
 
@@ -94,6 +103,9 @@ const HANDLES = [
 
 const TOOLBAR_HEIGHT = 40
 const TOOLBAR_MARGIN = 8
+const toolbarRef = ref<HTMLElement | null>(null)
+const toolbarWidth = ref(360)
+let toolbarObserver: ResizeObserver | null = null
 const MIN_SELECTION = 3
 
 const window_ = getCurrentWindow()
@@ -134,7 +146,8 @@ const toolbarStyle = computed(() => {
   const { x, y, w, h } = selection.value
   const vw = window.innerWidth
   const vh = window.innerHeight
-  const left = Math.min(Math.max(x + w / 2 - 140, 8), vw - 296)
+  const maxLeft = Math.max(8, vw - toolbarWidth.value - 8)
+  const left = Math.min(Math.max(x + w / 2 - toolbarWidth.value / 2, 8), maxLeft)
   const below = y + h + TOOLBAR_MARGIN + TOOLBAR_HEIGHT
   const top =
     below <= vh ? y + h + TOOLBAR_MARGIN : Math.max(y - TOOLBAR_MARGIN - TOOLBAR_HEIGHT, 8)
@@ -257,7 +270,7 @@ function onMouseUp() {
   }
 }
 
-async function finish(action: 'copy' | 'save' | 'chat') {
+async function finish(action: 'copy' | 'save' | 'chat' | 'ocr') {
   if (!selection.value || busy.value) return
   busy.value = true
   const { x, y, w, h } = selection.value
@@ -357,7 +370,19 @@ onMounted(async () => {
   }
 })
 
+watch(toolbarRef, element => {
+  toolbarObserver?.disconnect()
+  toolbarObserver = null
+  if (!element) return
+  toolbarObserver = new ResizeObserver(entries => {
+    const width = entries[0]?.borderBoxSize?.[0]?.inlineSize ?? element.offsetWidth
+    if (width > 0) toolbarWidth.value = width
+  })
+  toolbarObserver.observe(element)
+})
+
 onUnmounted(() => {
+  toolbarObserver?.disconnect()
   window.removeEventListener('keydown', onKeyDown)
   if (errorTimer) window.clearTimeout(errorTimer)
 })
@@ -467,6 +492,9 @@ onUnmounted(() => {
   background: rgba(28, 28, 30, 0.96);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   z-index: 3;
+  max-width: calc(100vw - 16px);
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 .tb-btn {

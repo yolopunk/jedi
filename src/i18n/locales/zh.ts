@@ -695,6 +695,26 @@ export default {
       '在其他 MCP 客户端（如 Claude Desktop）中，将 Jedi 配置为以下命令，即可使用 Jedi 的只读工具（记忆 / 网页）：',
   },
   screenshot: {
+    ocr: {
+      title: '识别文字',
+      local: '使用 Windows 本地 OCR，图片不会上传。按系统首选语言识别。',
+      loading: '正在识别图片中的文字…',
+      result: '识别结果（可编辑）',
+      empty: '没有识别到文字，请尝试更清晰的截图。',
+      copy: '复制文字',
+      copied: '已复制',
+      errors: {
+        unsupported: '当前仅支持 Windows 本地 OCR。',
+        languageUnavailable:
+          '没有可用的 OCR 语言包，请在 Windows 语言设置中安装所需语言的文字识别功能。',
+        invalidPath: '只能识别截图库中的 PNG 图片。',
+        unreadable: '无法读取图片，请刷新截图库后重试。',
+        tooLarge: '图片超出本地识别限制，请缩小截图区域后重试。',
+        failed: '识别失败，请重试并检查 Windows OCR 语言包是否可用。',
+        copyFailed: '复制失败，请重试或手动选择文字复制。',
+      },
+    },
+
     collectionLabel: '个人影像库',
     galleryTitle: '截图库',
     thumbnailSize: '缩略图大小',
@@ -721,7 +741,7 @@ export default {
     description: '冻结屏幕后框选区域，确认后可复制、保存或发送给 AI 对话。',
     start: '开始截图',
     shortcutHint: '全局快捷键 Ctrl+Alt+S，也可从托盘菜单触发',
-    overlayHint: '拖拽框选区域 · 方向键微调（Shift 加速） · Enter 复制 · Esc 取消',
+    overlayHint: '拖拽框选区域 · 可复制、保存、OCR 或发送到 AI · Enter 复制 · Esc 取消',
     copy: '复制',
     save: '保存',
     sendToChat: '发送到 AI',

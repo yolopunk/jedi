@@ -14,7 +14,7 @@ export interface MonitorFrameInfo {
 }
 
 export interface ScreenshotOutcome {
-  action: 'copy' | 'save' | 'chat'
+  action: 'copy' | 'save' | 'chat' | 'ocr'
   savedPath: string | null
 }
 
@@ -39,7 +39,7 @@ export function screenshotFrameInfo(monitorIndex: number): Promise<MonitorFrameI
 export function screenshotFinish(
   monitorIndex: number,
   rect: { x: number; y: number; width: number; height: number },
-  action: 'copy' | 'save' | 'chat'
+  action: 'copy' | 'save' | 'chat' | 'ocr'
 ): Promise<ScreenshotOutcome> {
   return invoke('screenshot_finish', { monitorIndex, ...rect, action })
 }
@@ -61,4 +61,12 @@ export function readImageDataUrl(path: string): Promise<string> {
 
 export function saveStyledScreenshot(dataUrl: string): Promise<string> {
   return invoke('screenshot_save_styled', { dataUrl })
+}
+
+export function recognizeScreenshot(path: string): Promise<{ text: string; language: string }> {
+  return invoke('screenshot_ocr', { path })
+}
+
+export function copyScreenshotText(text: string): Promise<void> {
+  return invoke('screenshot_copy_text', { text })
 }

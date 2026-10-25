@@ -63,6 +63,7 @@
           <div v-if="previewFailed" role="alert" class="thumb-broken"><span>{{ t('screenshot.imageMissing') }}</span><v-btn variant="text" @click="retryThumb(selected.path); previewFailed = false">{{ t('screenshot.retryImage') }}</v-btn></div>
           <img v-else :src="thumbSrc(selected.path)" :alt="selected.name" draggable="false" :style="previewStyle" @load="onPreviewLoad" @error="previewFailed = true" />
         </div>
+        <OcrPanel v-if="showOcr && !beautifying" :path="selected.path" />
         <footer class="preview-footer">
           <span>{{ formatDate(selected.modifiedMs) }} · {{ formatSize(selected.size) }}</span>
           <div>
@@ -70,6 +71,7 @@
               <v-btn size="small" :variant="previewZoom === 'fit' ? 'tonal' : 'text'" :color="previewZoom === 'fit' ? 'primary' : undefined" @click="previewZoom = 'fit'">{{ t('screenshot.fitWindow') }}</v-btn>
               <v-btn size="small" :variant="previewZoom === 'actual' ? 'tonal' : 'text'" :color="previewZoom === 'actual' ? 'primary' : undefined" :disabled="!previewPixels" @click="previewZoom = 'actual'">{{ t('screenshot.actualSize') }}</v-btn>
             </div>
+            <v-btn v-if="!beautifying" variant="tonal" :aria-pressed="showOcr" @click="showOcr = !showOcr">{{ t('screenshot.ocr.title') }}</v-btn>
             <v-btn variant="text" :prepend-icon="mdiFolderOpenOutline" @click="openFolder(selected.path)">{{ t('screenshot.openFolder') }}</v-btn>
             <v-btn variant="tonal" color="primary" :title="beautifying ? t('screenshot.backToOriginalHint') : undefined" @click="beautifying = !beautifying">{{ t(beautifying ? 'screenshot.backToOriginal' : 'screenshot.beautify') }}</v-btn>
           </div>
@@ -94,11 +96,12 @@ import {
 } from '@mdi/js'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { listScreenshots, type ScreenshotItem, screenshotBegin } from '@/api/screenshot'
 import { showInFolder } from '@/api/wallpaper'
 import BeautifyEditor from './BeautifyEditor.vue'
+import OcrPanel from './OcrPanel.vue'
 
 const { t, locale } = useI18n()
 const recent = ref<ScreenshotItem[]>([])
@@ -127,6 +130,7 @@ const groups = computed(() => {
 })
 const selected = ref<ScreenshotItem | null>(null)
 const beautifying = ref(false)
+const showOcr = ref(false)
 const capturing = ref(false)
 const loading = ref(false)
 const error = ref('')
@@ -139,6 +143,26 @@ const imageRetries = ref<Record<string, number>>({})
 const brokenImages = ref(new Set<string>())
 let unlisten: UnlistenFn | undefined
 let disposed = false
+let pendingOcrPath = ''
+
+async function openCapturedOcr(event: Event) {
+  const path = (event as CustomEvent<string>).detail
+  if (!path) return
+  pendingOcrPath = path
+  await loadRecent()
+  await revealPendingOcr()
+}
+
+async function revealPendingOcr() {
+  if (!pendingOcrPath) return
+  const item = recent.value.find(item => item.path === pendingOcrPath)
+  if (!item) return
+  pendingOcrPath = ''
+  selected.value = item
+  beautifying.value = false
+  await nextTick()
+  showOcr.value = true
+}
 
 const previewPixelLabel = computed(() =>
   previewPixels.value ? t('screenshot.pixelSize', previewPixels.value) : ''
@@ -151,6 +175,7 @@ const previewStyle = computed(() => {
 })
 
 watch(selected, () => {
+  showOcr.value = false
   previewFailed.value = false
   previewZoom.value = 'fit'
   previewPixels.value = null
@@ -228,6 +253,7 @@ async function loadRecent() {
     error.value = t('screenshot.loadFailed', { message: String(err) })
   } finally {
     loading.value = false
+    await revealPendingOcr()
   }
 }
 
@@ -255,6 +281,7 @@ function formatDate(ms: number): string {
 
 onMounted(async () => {
   window.addEventListener('focus', loadRecent)
+  window.addEventListener('jedi-screenshot-ocr', openCapturedOcr)
   try {
     const stop = await listen('screenshot-saved', loadRecent)
     if (disposed) stop()
@@ -268,6 +295,7 @@ onUnmounted(() => {
   disposed = true
   unlisten?.()
   window.removeEventListener('focus', loadRecent)
+  window.removeEventListener('jedi-screenshot-ocr', openCapturedOcr)
 })
 </script>
 

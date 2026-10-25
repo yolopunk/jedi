@@ -698,6 +698,26 @@ export default {
       'In other MCP clients (e.g. Claude Desktop), configure Jedi with this command to expose its read-only tools (memory / web):',
   },
   screenshot: {
+    ocr: {
+      title: 'Recognize text',
+      local: 'Windows local OCR. Images stay on this device. Uses your preferred system language.',
+      loading: 'Recognizing text…',
+      result: 'Recognized text (editable)',
+      empty: 'No text found. Try a clearer capture.',
+      copy: 'Copy text',
+      copied: 'Copied',
+      errors: {
+        unsupported: 'Local OCR currently requires Windows.',
+        languageUnavailable:
+          'No OCR language pack is available. Install text recognition for your language in Windows language settings.',
+        invalidPath: 'Only PNG images in the capture gallery can be recognized.',
+        unreadable: 'Cannot read this image. Refresh the gallery and retry.',
+        tooLarge: 'This image exceeds local OCR limits. Capture a smaller region and retry.',
+        failed: 'Recognition failed. Retry and check your Windows OCR language pack.',
+        copyFailed: 'Copy failed. Retry or select and copy the text manually.',
+      },
+    },
+
     collectionLabel: 'Personal collection',
     galleryTitle: 'Capture gallery',
     thumbnailSize: 'Thumbnail size',
@@ -726,7 +746,7 @@ export default {
       'Freeze the screen, drag to select a region, then copy, save or send it to AI chat.',
     start: 'Start Capture',
     shortcutHint: 'Global shortcut Ctrl+Alt+S, also available from the tray menu',
-    overlayHint: 'Drag to select · Arrow keys nudge (Shift = 10px) · Enter copies · Esc cancels',
+    overlayHint: 'Drag to select · Copy, save, OCR, or send to AI · Enter copies · Esc cancels',
     copy: 'Copy',
     save: 'Save',
     sendToChat: 'Send to AI',

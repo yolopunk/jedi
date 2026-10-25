@@ -263,7 +263,7 @@ async fn finish_capture(
     .await
     .map_err(|e| format!("裁剪任务异常: {}", e))??;
 
-    if !matches!(action.as_str(), "copy" | "save" | "chat") {
+    if !matches!(action.as_str(), "copy" | "save" | "chat" | "ocr") {
       return Err(format!("未知输出动作: {}", action));
     }
     let path = screenshots_dir(&app)?.join(timestamped_filename("png"));
@@ -297,6 +297,15 @@ async fn finish_capture(
           .map_err(|e| format!("通知主窗口失败: {}", e))?;
         Ok(ScreenshotOutcome {
           action: "chat".into(),
+          saved_path: Some(path_str),
+        })
+      }
+      "ocr" => {
+        app
+          .emit_to("main", "screenshot-ocr", &path_str)
+          .map_err(|e| format!("通知主窗口失败: {}", e))?;
+        Ok(ScreenshotOutcome {
+          action: "ocr".into(),
           saved_path: Some(path_str),
         })
       }

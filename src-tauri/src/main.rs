@@ -42,7 +42,9 @@ use crate::api::ai_chat::{
 use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
 };
-use crate::api::hosts::{get_hosts_path, read_system_hosts, revert_hosts, update_hosts_with_groups};
+use crate::api::hosts::{
+  get_hosts_path, read_system_hosts, revert_hosts, update_hosts_with_groups,
+};
 use crate::api::memory::{memory_delete, memory_list, memory_recall, memory_save};
 use crate::api::os::{get_os_info, SystemState};
 use crate::api::podcast::{
@@ -53,6 +55,7 @@ use crate::api::screenshot::{
   list_screenshots, read_image_data_url, screenshot_begin, screenshot_cancel, screenshot_finish,
   screenshot_frame_info, screenshot_save_styled, ScreenshotState,
 };
+use crate::api::screenshot_ocr::{screenshot_copy_text, screenshot_ocr};
 use crate::api::skills::{
   skill_stats_clear, skill_stats_list, skill_stats_save, skills_delete, skills_list, skills_read,
   skills_read_file, skills_save,
@@ -328,6 +331,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       skill_stats_clear,
       // Screenshot capture commands
       screenshot_begin,
+      screenshot_ocr,
+      screenshot_copy_text,
       screenshot_frame_info,
       screenshot_finish,
       screenshot_save_styled,

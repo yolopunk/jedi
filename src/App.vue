@@ -117,6 +117,7 @@ const isBareLayout = computed(() => route.meta.bare === true)
 // Tray navigation listener
 let unlistenTray: (() => void) | null = null
 let unlistenScreenshot: (() => void) | null = null
+let unlistenScreenshotOcr: (() => void) | null = null
 
 const audioEl = ref<HTMLAudioElement | null>(null)
 
@@ -269,12 +270,29 @@ onMounted(async () => {
   } catch {
     // ignore if listen fails (e.g. non-Tauri env)
   }
+
+  // OCR from the capture overlay lands directly in the gallery preview.
+  try {
+    unlistenScreenshotOcr = await listen<string>('screenshot-ocr', async event => {
+      const path = event.payload
+      if (!path) return
+      const { getCurrentWindow } = await import('@tauri-apps/api/window')
+      const win = getCurrentWindow()
+      await win.show()
+      await win.setFocus()
+      await router.push('/screenshot')
+      window.dispatchEvent(new CustomEvent('jedi-screenshot-ocr', { detail: path }))
+    })
+  } catch {
+    // ignore if listen fails (e.g. non-Tauri env)
+  }
   scheduleSplashLeave()
 })
 
 onUnmounted(() => {
   unlistenTray?.()
   unlistenScreenshot?.()
+  unlistenScreenshotOcr?.()
 })
 </script>
 

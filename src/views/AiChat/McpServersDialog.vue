@@ -1,10 +1,18 @@
 <template>
-  <Transition name="mcp-fade">
-    <div v-if="modelValue" class="mcp-overlay" @click.self="close">
-      <div class="mcp-dialog">
+  <Transition name="mcp-fade" @after-leave="restoreFocus">
+    <div v-if="modelValue" class="mcp-overlay" @click.self="requestClose">
+      <div
+        ref="dialogRef"
+        class="mcp-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mcp-dialog-title"
+        tabindex="-1"
+        @keydown="onDialogKeydown"
+      >
         <div class="mcp-head">
-          <h3>{{ $t('mcp.title') }}</h3>
-          <button class="mcp-close" :aria-label="$t('common.close')" @click="close">✕</button>
+          <h3 id="mcp-dialog-title">{{ $t('mcp.title') }}</h3>
+          <button class="mcp-close" :aria-label="$t('common.close')" @click="requestClose">✕</button>
         </div>
 
         <p class="mcp-hint">{{ $t('mcp.hint') }}</p>
@@ -50,17 +58,33 @@
               {{ $t('mcp.modeRemote') }}
             </button>
           </div>
-          <input v-model="form.name" class="mcp-input" :placeholder="$t('mcp.namePlaceholder')" />
+          <label class="mcp-field-label" for="mcp-field-name">{{ $t('mcp.fieldName') }}</label>
+          <input id="mcp-field-name" v-model="form.name" class="mcp-input" :placeholder="$t('mcp.namePlaceholder')" />
           <template v-if="form.mode === 'stdio'">
-            <input v-model="form.command" class="mcp-input" :placeholder="$t('mcp.commandPlaceholder')" />
-            <input v-model="form.argsText" class="mcp-input" :placeholder="$t('mcp.argsPlaceholder')" />
+            <label class="mcp-field-label" for="mcp-field-command">{{ $t('mcp.fieldCommand') }}</label>
+            <input id="mcp-field-command" v-model="form.command" class="mcp-input" :placeholder="$t('mcp.commandPlaceholder')" />
+            <label class="mcp-field-label" for="mcp-field-args">{{ $t('mcp.fieldArgs') }}</label>
+            <input id="mcp-field-args" v-model="form.argsText" class="mcp-input" :placeholder="$t('mcp.argsPlaceholder')" />
           </template>
           <template v-else>
-            <input v-model="form.url" class="mcp-input" :placeholder="$t('mcp.urlPlaceholder')" />
+            <label class="mcp-field-label" for="mcp-field-url">{{ $t('mcp.fieldUrl') }}</label>
+            <input id="mcp-field-url" v-model="form.url" class="mcp-input" :placeholder="$t('mcp.urlPlaceholder')" />
           </template>
           <button class="mcp-btn primary" :disabled="!canAdd" @click="add">
             {{ $t('mcp.add') }}
           </button>
+        </div>
+
+        <div v-if="showDirtyConfirm" class="mcp-dirty">
+          <span class="mcp-dirty-title">{{ $t('mcp.dirtyTitle') }}</span>
+          <div class="mcp-dirty-actions">
+            <button ref="dirtyKeepRef" class="mcp-btn" @click="keepEditing">
+              {{ $t('mcp.dirtyKeep') }}
+            </button>
+            <button class="mcp-btn danger" @click="discardAndClose">
+              {{ $t('mcp.dirtyDiscard') }}
+            </button>
+          </div>
         </div>
 
         <div class="mcp-export">
@@ -74,13 +98,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { useMcpClientStore } from '@/stores/mcpClient'
 
-defineProps<{ modelValue: boolean }>()
+const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [boolean] }>()
 
 const store = useMcpClientStore()
+
+const dialogRef = ref<HTMLElement | null>(null)
+const dirtyKeepRef = ref<HTMLElement | null>(null)
+const showDirtyConfirm = ref(false)
+let previouslyFocused: HTMLElement | null = null
 
 const form = reactive({
   mode: 'stdio' as 'stdio' | 'sse',
@@ -90,6 +119,11 @@ const form = reactive({
   url: '',
 })
 
+// 表单里任一字段有未添加的内容即视为脏数据
+const isDirty = computed(() =>
+  [form.name, form.command, form.argsText, form.url].some(v => v.trim() !== '')
+)
+
 const canAdd = computed(() => {
   if (form.name.trim() === '') return false
   return form.mode === 'stdio' ? form.command.trim() !== '' : form.url.trim() !== ''
@@ -98,6 +132,77 @@ const canAdd = computed(() => {
 function close(): void {
   emit('update:modelValue', false)
 }
+
+// 有未保存内容时 ✕ / 遮罩 / Esc 都不直接关闭，先在对话框内显示确认条
+function requestClose(): void {
+  if (!isDirty.value) {
+    close()
+    return
+  }
+  showDirtyConfirm.value = true
+  // 确认条出现后聚焦“继续编辑”，作为安全默认
+  nextTick(() => dirtyKeepRef.value?.focus())
+}
+
+function keepEditing(): void {
+  showDirtyConfirm.value = false
+  dialogRef.value?.querySelector<HTMLElement>('.mcp-input')?.focus()
+}
+
+function discardAndClose(): void {
+  resetForm()
+  showDirtyConfirm.value = false
+  close()
+}
+
+function resetForm(): void {
+  form.name = ''
+  form.command = ''
+  form.argsText = ''
+  form.url = ''
+}
+
+// 对话框内 Tab 循环（焦点陷阱）：到达首/尾可聚焦元素时回绕
+function onDialogKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape') {
+    e.stopPropagation()
+    requestClose()
+    return
+  }
+  if (e.key !== 'Tab' || !dialogRef.value) return
+  const focusables = dialogRef.value.querySelectorAll<HTMLElement>(
+    'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+  )
+  if (focusables.length === 0) return
+  const first = focusables[0]
+  const last = focusables[focusables.length - 1]
+  const active = document.activeElement as HTMLElement | null
+  if (e.shiftKey && (active === first || !dialogRef.value.contains(active))) {
+    e.preventDefault()
+    last.focus()
+  } else if (!e.shiftKey && (active === last || !dialogRef.value.contains(active))) {
+    e.preventDefault()
+    first.focus()
+  }
+}
+
+function restoreFocus(): void {
+  previouslyFocused?.focus()
+  previouslyFocused = null
+}
+
+watch(
+  () => props.modelValue,
+  async open => {
+    if (open) {
+      previouslyFocused = document.activeElement as HTMLElement | null
+      showDirtyConfirm.value = false
+      // 等过渡把节点挂载后再聚焦第一个控件
+      await nextTick()
+      dialogRef.value?.querySelector<HTMLElement>('input, button')?.focus()
+    }
+  }
+)
 
 function add(): void {
   if (!canAdd.value) return
@@ -124,10 +229,7 @@ function add(): void {
       env: [],
     })
   }
-  form.name = ''
-  form.command = ''
-  form.argsText = ''
-  form.url = ''
+  resetForm()
 }
 </script>
 
@@ -262,6 +364,35 @@ function add(): void {
   font-size: 12px;
   font-weight: 600;
   opacity: 0.72;
+}
+
+.mcp-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.72;
+}
+
+.mcp-dirty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgb(var(--warning-rgb) / 0.14);
+  border: 1px solid rgb(var(--warning-rgb) / 0.32);
+}
+
+.mcp-dirty-title {
+  font-size: 12px;
+  color: var(--warning);
+}
+
+.mcp-dirty-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .mcp-mode {

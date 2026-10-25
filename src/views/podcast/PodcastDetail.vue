@@ -20,7 +20,7 @@
         </div>
 
         <div class="flex-grow-1 pt-1 overflow-hidden mr-4">
-          <h1 class="podcast-title">[ {{ currentSub.title }} ]</h1>
+          <h1 class="podcast-title">{{ currentSub.title }}</h1>
           <div class="podcast-author">&gt; {{ currentSub.author || currentSub.owner_name }}</div>
 
           <div class="d-flex align-center mb-3 mt-3">
@@ -52,17 +52,28 @@
         <!-- Right Side Stats & Actions -->
         <div class="d-flex flex-column align-end justify-space-between pl-4 ml-auto stats-panel">
           <div class="d-flex align-center">
-            <button class="console-btn icon-only small" @click="$emit('refresh')" :disabled="refreshLoading" :title="$t('common.refresh')">
+            <button
+              class="console-btn icon-only small"
+              @click="$emit('refresh')"
+              :disabled="refreshLoading"
+              :title="$t('common.refresh')"
+              :aria-label="$t('common.refresh')"
+            >
               <span class="btn-icon" :class="{ spinning: refreshLoading }">↻</span>
-            </button>
-            <button class="console-btn icon-only small danger ml-1" @click="$emit('unsubscribe')" :title="$t('common.delete')">
-              <span class="btn-icon">✕</span>
             </button>
           </div>
 
-          <div class="text-right mt-auto pb-1">
-            <div class="episodes-count">{{ episodes.length }}</div>
-            <div class="episodes-label">EPISODES</div>
+          <div class="stats-footer">
+            <button
+              type="button"
+              class="unsubscribe-btn"
+              @click="$emit('unsubscribe')"
+              :title="$t('podcast.unsubscribeHint')"
+              :aria-label="$t('podcast.unsubscribeHint')"
+            >
+              {{ $t('podcast.unsubscribe') }}
+            </button>
+            <div class="episodes-count">{{ $t('podcast.episodesCount', { count: episodes.length }) }}</div>
           </div>
         </div>
       </div>

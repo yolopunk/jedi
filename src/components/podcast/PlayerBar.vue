@@ -7,9 +7,10 @@
       variant="text"
       color="primary"
       class="player-btn"
+      :aria-label="isPaused ? t('podcast.play') : t('podcast.pause')"
       @click.stop="togglePlayLocal"
     >
-      <v-icon :icon="isPaused ? mdiPlay : mdiPause" size="14" />
+      <v-icon :icon="isPaused ? mdiPlay : mdiPause" size="14" aria-hidden="true" />
     </v-btn>
 
     <!-- Title -->
@@ -18,12 +19,17 @@
     <!-- Time & Progress -->
     <div class="player-progress-area">
       <span class="player-time">{{ formatTime(currentTime) }}</span>
-      <div class="progress-track" ref="progressTrack"
-        @mousedown="onTrackMouseDown"
-        @click="seekByClick">
-        <div class="progress-fill" :style="{ width: progressPercent + '%' }"></div>
-        <div class="progress-thumb" :style="{ left: progressPercent + '%' }"></div>
-      </div>
+      <input
+        type="range"
+        class="progress-track"
+        min="0"
+        :max="duration"
+        :value="currentTime"
+        step="1"
+        :aria-label="`${formatTime(currentTime)} / ${formatTime(duration)}`"
+        :style="{ '--progress-fill': `${progressPercent}%` }"
+        @input="onSeekInput"
+      />
       <span class="player-time">{{ formatTime(duration) }}</span>
     </div>
 
@@ -34,10 +40,11 @@
       variant="text"
       class="wheel-btn"
       :class="{ active: showWheel }"
+      :title="t('podcast.chaptersButton')"
+      :aria-label="t('podcast.chaptersButton')"
       @click.stop="showWheel = !showWheel"
-      :title="'Chapters'"
     >
-      <span class="wheel-icon">◐</span>
+      <span class="wheel-icon" aria-hidden="true">◐</span>
     </v-btn>
 
     <!-- Close player -->
@@ -46,10 +53,11 @@
       size="x-small"
       variant="text"
       class="close-btn"
+      :title="t('podcast.stopPlayer')"
+      :aria-label="t('podcast.stopPlayer')"
       @click.stop="stop"
-      title="Stop"
     >
-      <v-icon icon="mdiClose" size="12" />
+      <v-icon icon="mdiClose" size="12" aria-hidden="true" />
     </v-btn>
 
     <!-- Time Wheel Panel -->
@@ -71,14 +79,15 @@
 <script setup lang="ts">
 import { mdiPause, mdiPlay } from '@mdi/js'
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { formatTime, parseTimestamps } from '@/utils/timestampParser'
 import TimeWheel from './TimeWheel.vue'
 
+const { t } = useI18n()
 const { currentPlaying, isPaused, currentTime, duration, togglePlay, seek, stop } = useAudioPlayer()
 
 const showWheel = ref(false)
-const progressTrack = ref<HTMLElement | null>(null)
 
 const progressPercent = computed(() => {
   if (!duration.value || duration.value <= 0) return 0
@@ -104,22 +113,9 @@ function seekTo(seconds: number) {
   seek(seconds - currentTime.value)
 }
 
-function seekByClick(e: MouseEvent) {
-  if (!progressTrack.value || !duration.value) return
-  const rect = progressTrack.value.getBoundingClientRect()
-  const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-  seek(ratio * duration.value - currentTime.value)
-}
-
-function onTrackMouseDown(e: MouseEvent) {
-  seekByClick(e)
-  const onMove = (ev: MouseEvent) => seekByClick(ev)
-  const onUp = () => {
-    document.removeEventListener('mousemove', onMove)
-    document.removeEventListener('mouseup', onUp)
-  }
-  document.addEventListener('mousemove', onMove)
-  document.addEventListener('mouseup', onUp)
+function onSeekInput(event: Event) {
+  const target = event.target as HTMLInputElement
+  seek(Number(target.value) - currentTime.value)
 }
 </script>
 
@@ -174,38 +170,42 @@ function onTrackMouseDown(e: MouseEvent) {
 .progress-track {
   flex: 1;
   height: 3px;
-  background: rgba(var(--v-theme-on-surface), 0.12);
+  margin: 0;
+  min-width: 30px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(
+    to right,
+    rgb(var(--v-theme-primary)) var(--progress-fill, 0%),
+    rgba(var(--v-theme-on-surface), 0.12) var(--progress-fill, 0%)
+  );
   border-radius: 2px;
   cursor: pointer;
-  position: relative;
-  min-width: 30px;
+  outline-offset: 2px;
 }
 
 .progress-track:hover {
   height: 5px;
 }
 
-.progress-fill {
-  height: 100%;
-  background: rgb(var(--v-theme-primary));
-  border-radius: 2px;
-  transition: width 0.1s linear;
-}
-
-.progress-thumb {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
+.progress-track::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
   width: 8px;
   height: 8px;
-  background: rgb(var(--v-theme-primary));
   border-radius: 50%;
+  background: rgb(var(--v-theme-primary));
   opacity: 0;
   transition: opacity 0.15s;
 }
 
-.progress-track:hover .progress-thumb {
+.progress-track:hover::-webkit-slider-thumb,
+.progress-track:focus-visible::-webkit-slider-thumb {
   opacity: 1;
+}
+
+.progress-track:focus-visible {
+  outline: 1px solid rgb(var(--v-theme-primary) / 0.6);
 }
 
 .wheel-btn .wheel-icon {

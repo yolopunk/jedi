@@ -4,53 +4,52 @@
       <!-- Main Content -->
       <div class="main-content d-flex flex-column h-100 overflow-hidden">
 
-        <!-- Top Bar / Header -->
-        <div class="console-header-bar">
-          <div class="header-row">
-            <div class="header-left">
-              <template v-if="currentView === 'detail'">
-                <button class="console-btn icon-only" @click="goBack">
-                  <span class="btn-icon">◀</span>
-                </button>
-                <div class="console-title">
-                  <span class="title-prefix">[</span>
-                  <span class="title-text">{{ currentSub?.title || 'BACK' }}</span>
-                  <span class="title-suffix">]</span>
-                </div>
-              </template>
-              <template v-else>
-                <div class="console-title">
-                  <span class="title-prefix">[</span>
-                  <span class="title-text">PODCAST_ARCHIVE</span>
-                  <span class="title-suffix">]</span>
-                </div>
-                <div class="header-metrics">
-                  <span class="metric-item">
-                    <span class="metric-label">FEEDS:</span>
-                    <span class="metric-value">{{ subscriptions.length }}</span>
-                  </span>
-                </div>
-              </template>
-            </div>
+        <!-- Page Header: aligned with chat/hosts page header tokens -->
+        <div class="podcast-header">
+          <div class="header-logo">
+            <template v-if="currentView === 'detail'">
+              <button
+                type="button"
+                class="header-back-btn"
+                :aria-label="$t('common.back')"
+                :title="$t('common.back')"
+                @click="goBack"
+              >
+                <v-icon :icon="mdiArrowLeft" size="18" aria-hidden="true" />
+              </button>
+              <span class="header-title">{{ currentSub?.title || $t('common.back') }}</span>
+            </template>
+            <template v-else>
+              <v-icon :icon="mdiPodcast" size="18" aria-hidden="true" />
+              <span class="header-title">{{ $t('sidebar.podcast') }}</span>
+            </template>
+          </div>
 
-            <div class="header-right" v-if="currentView === 'library'">
-              <div class="input-wrapper">
-                <v-icon :icon="mdiMagnify" size="16" class="search-icon" />
-                <input
-                  v-model="searchQuery"
-                  type="text"
-                  class="console-input"
-                  :placeholder="$t('common.search')"
-                />
-              </div>
-              <button class="console-btn icon-only" @click="refreshLibrary" :disabled="libraryRefreshLoading" :title="$t('common.refresh')">
-                <span class="btn-icon" :class="{ spinning: libraryRefreshLoading }">↻</span>
-              </button>
-              <button class="console-btn primary" @click="openAddDialog">
-                <span class="btn-icon">＋</span>
-                <span class="btn-text">{{ $t('podcast.addShow') }}</span>
-              </button>
+          <div v-if="currentView === 'library'" class="header-actions">
+            <div class="input-wrapper">
+              <v-icon :icon="mdiMagnify" size="16" class="search-icon" aria-hidden="true" />
+              <input
+                v-model="searchQuery"
+                type="text"
+                class="console-input"
+                :placeholder="$t('common.search')"
+                :aria-label="$t('common.search')"
+              />
             </div>
+            <button
+              type="button"
+              class="console-btn icon-only"
+              :disabled="libraryRefreshLoading"
+              :title="$t('common.refresh')"
+              :aria-label="$t('common.refresh')"
+              @click="refreshLibrary"
+            >
+              <span class="btn-icon" :class="{ spinning: libraryRefreshLoading }">↻</span>
+            </button>
+            <button type="button" class="header-primary-btn" @click="openAddDialog">
+              <v-icon :icon="mdiPlus" size="16" aria-hidden="true" />
+              <span>{{ $t('podcast.addShow') }}</span>
+            </button>
           </div>
         </div>
 
@@ -205,16 +204,25 @@
         <span class="snackbar-text">{{ snackbarText }}</span>
       </div>
     </v-snackbar>
+
+    <AppNotification />
   </div>
 </template>
 
 <script setup lang="ts">
-import { mdiMagnify } from '@mdi/js'
+import { mdiArrowLeft, mdiMagnify, mdiPlus, mdiPodcast } from '@mdi/js'
+import { useI18n } from 'vue-i18n'
+import { importOpml } from '@/api/podcast'
+import AppNotification from '@/components/common/AppNotification.vue'
 import EpisodeShowNotes from '@/components/podcast/EpisodeShowNotes.vue'
 import OpmlExportGuide from '@/components/podcast/OpmlExportGuide.vue'
+import { useAppNotification } from '@/composables/useAppNotification'
 import { usePodcastManager } from '@/composables/usePodcastManager'
 import PodcastDetail from './PodcastDetail.vue'
 import PodcastLibrary from './PodcastLibrary.vue'
+
+const { t } = useI18n()
+const { notify } = useAppNotification()
 
 // biome-ignore lint/correctness/noUnusedVariables: false positive
 const {
@@ -251,11 +259,54 @@ const {
   refreshLibrary,
   openAddDialog,
   closeAddDialog,
-  importOpmlFile,
   unsubscribe,
   formatMonth,
   formatDay,
 } = usePodcastManager()
+
+async function importOpmlFile() {
+  opmlError.value = ''
+  let file: File | null = null
+
+  if (Array.isArray(opmlFile.value)) {
+    if (opmlFile.value.length > 0) {
+      file = opmlFile.value[0]
+    }
+  } else {
+    file = opmlFile.value
+  }
+
+  if (!file) {
+    opmlError.value = 'Please select a file'
+    return
+  }
+
+  if (!file.name.endsWith('.opml') && !file.name.endsWith('.xml')) {
+    opmlError.value = 'Only .opml or .xml files are supported'
+    return
+  }
+
+  addLoading.value = true
+  const countBefore = subscriptions.value.length
+  try {
+    const text = await file.text()
+    if (text.length === 0) {
+      throw new Error('File is empty')
+    }
+    subscriptions.value = await importOpml(text)
+    const added = Math.max(subscriptions.value.length - countBefore, 0)
+    notify(t('podcast.importAdded', { n: added }), 'success')
+    closeAddDialog()
+  } catch (e: unknown) {
+    console.error('Import failed:', e)
+    notify(
+      t('podcast.importFailed', { message: e instanceof Error ? e.message : String(e) }),
+      'error'
+    )
+  } finally {
+    addLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -288,50 +339,82 @@ const {
   overflow: hidden;
 }
 
-/* Header */
-.console-header-bar {
-  padding: 12px 16px;
-  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.15);
-  background:rgb(var(--ink-rgb) / 0.2);
-  flex-shrink: 0;
-}
-
-.header-row {
+/* Page header: aligned with chat/hosts page header tokens */
+.podcast-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
+  min-height: 60px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
 }
 
-.header-left, .header-right {
+.podcast-header .header-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  min-width: 0;
+  color: var(--text);
 }
 
-.header-metrics {
-  display: flex;
-  gap: 16px;
+.podcast-header .header-title {
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--jedi-font-ui);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.metric-item {
+.header-back-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast);
+}
+
+.header-back-btn:hover {
+  background: var(--bg-elevated-2);
+  color: var(--text);
+}
+
+.header-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 10px;
 }
 
-.metric-label {
-  font-size: 9px;
-  color: var(--text-subtle);
-  font-family: 'JetBrains Mono', monospace;
-  letter-spacing: 1px;
+.header-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--jedi-font-ui);
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--motion-fast), border-color var(--motion-fast);
 }
 
-.metric-value {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--success);
-  font-family: 'JetBrains Mono', monospace;
+.header-primary-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 /* Snackbar */

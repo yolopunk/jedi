@@ -132,6 +132,8 @@
     v-model="showUpdateDialog"
     :update-info="updateInfo"
     :is-installing="isInstalling"
+    :progress="installProgress"
+    :error="installError"
     @install="handleInstallUpdate"
   ></UpdateDialog>
 </template>
@@ -193,6 +195,8 @@ const {
   updateInfo,
   isChecking: updateLoading,
   isInstalling,
+  installProgress,
+  installError,
   autoUpdateEnabled,
   checkForUpdate,
   installUpdate,

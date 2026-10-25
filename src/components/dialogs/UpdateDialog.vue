@@ -3,6 +3,7 @@
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
     max-width="520"
+    :persistent="isInstalling"
   >
     <v-card class="model-settings-card">
       <!-- Header -->
@@ -18,10 +19,10 @@
           <div class="brand-text">
             <h2>{{ $t('dialogs.update.title') }}</h2>
             <p v-if="!isInstalling">{{ $t('dialogs.update.ready') }}</p>
-            <p v-else>{{ $t('dialogs.update.downloading') }}</p>
+            <p v-else>{{ $t('dialogs.update.inProgress') }}</p>
           </div>
         </div>
-        <button class="close-btn" @click="$emit('update:modelValue', false)">
+        <button class="close-btn" type="button" :aria-label="$t('common.close')" :disabled="isInstalling" @click="$emit('update:modelValue', false)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
             <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -56,16 +57,23 @@
             </svg>
             {{ $t('dialogs.update.releaseNotes') }}
           </div>
-          <div class="release-notes-box">
+          <div
+            class="release-notes-box"
+            tabindex="0"
+            role="region"
+            :aria-label="$t('dialogs.update.releaseNotes')"
+          >
             <div class="release-notes" v-html="formattedReleaseNotes"></div>
           </div>
         </div>
 
-        <div v-if="isInstalling" class="install-progress">
-          <div class="progress-bar">
-            <div class="progress-fill"></div>
-          </div>
-          <span class="progress-text">{{ $t('dialogs.update.installing') }}</span>
+        <div v-if="error" class="update-error" role="alert">
+          <strong>{{ $t('dialogs.update.failed') }}</strong>
+          <details><summary>{{ $t('agentTrace.details') }}</summary><p>{{ error }}</p></details>
+        </div>
+        <div v-if="isInstalling" class="install-progress" role="status">
+          <v-progress-linear :model-value="progress ?? 0" :indeterminate="progress == null || progress >= 100" :aria-label="$t('dialogs.update.inProgress')" color="primary" rounded />
+          <span class="progress-text">{{ progress != null && progress < 100 ? `${$t('dialogs.update.downloading')} ${progress}%` : $t('dialogs.update.inProgress') }}</span>
         </div>
       </div>
 
@@ -75,13 +83,19 @@
           {{ $t('common.cancel') }}
         </v-btn>
         <v-spacer />
-        <v-btn variant="tonal" color="primary" @click="$emit('install')" :loading="isInstalling">
+        <v-btn
+          variant="tonal"
+          color="primary"
+          :aria-label="$t(error ? 'common.retry' : 'dialogs.update.install')"
+          @click="$emit('install')"
+          :loading="isInstalling"
+        >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          {{ $t('dialogs.update.install') }}
+          {{ $t(error ? 'common.retry' : 'dialogs.update.install') }}
         </v-btn>
       </div>
     </v-card>
@@ -89,6 +103,7 @@
 </template>
 
 <script setup lang="ts">
+import DOMPurify from 'dompurify'
 import MarkdownIt from 'markdown-it'
 import { computed } from 'vue'
 import type { UpdateInfo } from '@/api/update'
@@ -98,6 +113,8 @@ const props = defineProps<{
   modelValue: boolean
   updateInfo: UpdateInfo
   isInstalling: boolean
+  progress?: number | null
+  error?: string
 }>()
 
 defineEmits<{
@@ -110,11 +127,14 @@ const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
 const formattedReleaseNotes = computed(() => {
   if (!props.updateInfo.body) return ''
-  return md.render(props.updateInfo.body)
+  return DOMPurify.sanitize(md.render(props.updateInfo.body))
 })
 </script>
 
 <style scoped>
+.update-error { margin-top: 16px; padding: 12px; color: var(--danger); background: rgb(var(--danger-rgb) / .08); border-radius: 8px; overflow-wrap: anywhere; }
+.update-error summary { cursor: pointer; margin-top: 8px; }
+.close-btn:disabled { opacity: .4; cursor: default; }
 .model-settings-card {
   background: var(--bg-terminal) !important;
   border-radius: 16px !important;
@@ -267,6 +287,11 @@ const formattedReleaseNotes = computed(() => {
   padding: 14px;
   max-height: 200px;
   overflow-y: auto;
+}
+
+.release-notes-box:focus-visible {
+  outline: 1px solid rgb(var(--accent-rgb) / 0.45);
+  outline-offset: 2px;
 }
 
 .release-notes {

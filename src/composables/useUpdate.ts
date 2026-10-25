@@ -9,6 +9,8 @@ const hasUpdate: Ref<boolean> = ref(false)
 const updateInfo: Ref<UpdateInfo | null> = ref(null)
 const isChecking: Ref<boolean> = ref(false)
 const isInstalling: Ref<boolean> = ref(false)
+const installProgress = ref<number | null>(null)
+const installError = ref('')
 const autoUpdateEnabled: Ref<boolean> = ref(true)
 const lastCheckTime: Ref<number> = ref(0)
 let checkInterval: ReturnType<typeof setInterval> | null = null
@@ -67,12 +69,16 @@ export function useUpdate() {
     if (isInstalling.value) return
 
     isInstalling.value = true
+    installError.value = ''
+    installProgress.value = null
     try {
       // Using progress callback to show download progress
       await downloadAndInstallUpdate((total, current) => {
-        console.log(`Download progress: ${current}/${total}`)
+        installProgress.value =
+          total > 0 ? Math.min(100, Math.round((current / total) * 100)) : null
       })
     } catch (error) {
+      installError.value = String(error)
       console.error('Failed to install update:', error)
       throw error
     } finally {
@@ -118,6 +124,8 @@ export function useUpdate() {
     updateInfo,
     isChecking,
     isInstalling,
+    installProgress,
+    installError,
     autoUpdateEnabled,
     lastCheckTime,
     checkForUpdate,

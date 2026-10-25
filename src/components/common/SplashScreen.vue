@@ -6,7 +6,9 @@
   >
     <!-- 黑洞主视觉（原侧边栏 logo 区着色器，作为开机画面的品牌瞬间） -->
     <div class="splash-visual" aria-hidden="true">
-      <BlackHoleCanvas />
+      <BlackHoleCanvas v-if="webglAvailable" @unavailable="webglAvailable = false" />
+      <!-- WebGL 不可用：静态品牌降级（纯 CSS 黑洞剪影），避免空白开机画面 -->
+      <div v-else class="splash-fallback-core"></div>
     </div>
 
     <!-- 氛围层：暗角聚焦 + 胶片颗粒 -->
@@ -27,11 +29,11 @@
       <div class="splash-progress-fill"></div>
     </div>
 
-    <!-- 控制台元信息：左侧模块自检轮播，右侧版本 -->
+    <!-- 控制台元信息：左侧启动状态，右侧版本 -->
     <div class="splash-meta" aria-hidden="true">
       <span class="splash-status">
         <span class="splash-prompt">&gt;</span>
-        <span class="splash-status-text">{{ statusText }}</span>
+        <span class="splash-status-text">{{ t('splash.loading') }}</span>
         <span class="splash-caret"></span>
       </span>
       <span class="splash-version">v{{ appVersion }}</span>
@@ -42,12 +44,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BlackHoleCanvas from '@/components/common/BlackHoleCanvas.vue'
 import pkg from '../../../package.json'
 
-const props = defineProps<{
+defineProps<{
   /** 由宿主在初始化完成后置 true，触发「坠入奇点」退场编排 */
   leaving?: boolean
 }>()
@@ -61,45 +63,11 @@ const { t } = useI18n()
 
 const appVersion = pkg.version
 
-// 模块自检轮播：对应应用的真实功能模块
-const statusKeys = [
-  'splash.stepHosts',
-  'splash.stepWallpaper',
-  'splash.stepPodcast',
-  'splash.stepChat',
-] as const
-
-const stepIndex = ref(0)
-const statusText = computed(() => {
-  const key = statusKeys[stepIndex.value % statusKeys.length]
-  return key ? t(key) : ''
-})
-
-let statusTimer: number | null = null
+// 由实际渲染画布报告失败，避免预探测成功后第二次创建上下文仍然失败。
+const webglAvailable = ref(true)
 
 onMounted(() => {
   emit('ready')
-  statusTimer = window.setInterval(() => {
-    stepIndex.value = (stepIndex.value + 1) % statusKeys.length
-  }, 460)
-})
-
-// 退场时停止自检轮播
-watch(
-  () => props.leaving,
-  leaving => {
-    if (leaving && statusTimer !== null) {
-      window.clearInterval(statusTimer)
-      statusTimer = null
-    }
-  }
-)
-
-onUnmounted(() => {
-  if (statusTimer !== null) {
-    window.clearInterval(statusTimer)
-    statusTimer = null
-  }
 })
 </script>
 
@@ -145,6 +113,23 @@ onUnmounted(() => {
 /* 启动阶段禁止画布拖拽交互 */
 .splash-visual :deep(.black-hole-canvas) {
   pointer-events: none;
+}
+
+/* WebGL 不可用时的静态品牌降级：纯 CSS 黑洞剪影，无动画（reduced-motion 天然兼容），
+   随 .splash-visual 既有遮罩与入场编排一起淡入 */
+.splash-fallback-core {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 50%, rgb(0 0 0 / 0.92) 0 17%, transparent 24%),
+    radial-gradient(
+      circle at 50% 50%,
+      transparent 0 26%,
+      rgb(255 178 102 / 0.4) 29%,
+      rgb(255 150 70 / 0.14) 36%,
+      transparent 47%
+    ),
+    radial-gradient(circle at 50% 58%, rgb(255 178 102 / 0.07) 0%, transparent 68%);
 }
 
 @keyframes bh-in {

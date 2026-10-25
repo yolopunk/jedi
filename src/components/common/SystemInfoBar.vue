@@ -62,41 +62,35 @@
 
             <!-- Right Section: System Info Modules -->
             <div class="d-flex align-center h-100">
-                <!-- Module: Network (Compact) -->
+                <!-- Module: Network (Icon + Tooltip) -->
                 <div
                     class="info-module d-flex align-center px-2 h-100 border-left"
                 >
                     <v-icon
                         :icon="mdiEthernet"
                         size="14"
-                        class="mr-2 text-medium-emphasis"
+                        class="text-medium-emphasis icon-hover"
                     ></v-icon>
-                    <!-- Download -->
-                    <div class="d-flex align-center mr-3">
-                        <span class="network-speed mono-font text-caption">{{
-                            formatNetworkSpeed(
-                                osInfo?.metrics?.network_received,
-                            )
-                        }}</span>
-                        <v-icon
-                            :icon="mdiDownload"
-                            size="14"
-                            class="ml-1 text-success"
-                        ></v-icon>
-                    </div>
-                    <!-- Upload -->
-                    <div class="d-flex align-center">
-                        <span class="network-speed mono-font text-caption">{{
-                            formatNetworkSpeed(
-                                osInfo?.metrics?.network_transmitted,
-                            )
-                        }}</span>
-                        <v-icon
-                            :icon="mdiUpload"
-                            size="14"
-                            class="ml-1 text-info"
-                        ></v-icon>
-                    </div>
+                    <v-tooltip activator="parent" location="top">
+                        <div class="d-flex flex-column align-center">
+                            <span class="font-weight-bold mb-1">{{
+                                $t("system.download")
+                            }}
+                                /
+                                {{ $t("system.upload") }}</span>
+                            <span class="mono-font">{{
+                                formatNetworkSpeed(
+                                    osInfo?.metrics?.network_received,
+                                )
+                            }}
+                                /
+                                {{
+                                    formatNetworkSpeed(
+                                        osInfo?.metrics?.network_transmitted,
+                                    )
+                                }}</span>
+                        </div>
+                    </v-tooltip>
                 </div>
 
                 <!-- Module: Performance (CPU/MEM) -->
@@ -214,13 +208,15 @@
             v-model="showUpdateDialog"
             :update-info="updateInfo"
             :is-installing="isInstalling"
+            :progress="installProgress"
+            :error="installError"
             @install="_handleInstallUpdate"
         ></UpdateDialog>
     </div>
 </template>
 
 <script setup lang="ts">
-import { mdiCpu64Bit, mdiDownload, mdiEthernet, mdiMemory, mdiServer, mdiUpload } from '@mdi/js'
+import { mdiCpu64Bit, mdiDownload, mdiEthernet, mdiMemory, mdiServer } from '@mdi/js'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { getOsInfo } from '@/api/hosts'
 import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
@@ -236,7 +232,15 @@ const appVersion = pkg.version
 const { currentPlaying } = useAudioPlayer()
 
 // Update composable
-const { hasUpdate, updateInfo, isChecking, isInstalling, installUpdate } = useUpdate()
+const {
+  hasUpdate,
+  updateInfo,
+  isChecking,
+  isInstalling,
+  installProgress,
+  installError,
+  installUpdate,
+} = useUpdate()
 
 const showUpdateDialog = ref(false)
 
@@ -323,7 +327,7 @@ const getMemoryUsagePercentage = _getMemoryUsagePercentage
     width: 100%;
     height: 100%;
     overflow: hidden;
-    font-size: 11px; /* Ensure base font size is small enough */
+    font-size: 12px; /* Compact base size; module details live in tooltips */
 }
 
 .border-right {
@@ -368,12 +372,6 @@ const getMemoryUsagePercentage = _getMemoryUsagePercentage
     font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.5px;
-}
-
-.network-speed {
-    display: inline-block;
-    min-width: 54px; /* Fixed width for stability */
-    text-align: right;
 }
 
 /* Podcast Player Section */

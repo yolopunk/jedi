@@ -5,13 +5,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 
+const emit = defineEmits<{ unavailable: [] }>()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 let gl: WebGLRenderingContext | null = null
 let prog: WebGLProgram | null = null
 let animId = 0
+let resetAnimId: number | null = null
 let running = true
 let needsResize = true
 let resizeHandler: (() => void) | null = null
@@ -387,6 +389,8 @@ function render(now: number) {
 
 // Mouse interaction
 function onMouseDown(e: MouseEvent) {
+  if (e.button !== 0 || prefersReducedMotion) return
+  if (resetAnimId !== null) cancelAnimationFrame(resetAnimId)
   mouseDown = true
   mouseDownTime = Date.now()
   lastMX = e.clientX
@@ -407,12 +411,14 @@ function onMouseMove(e: MouseEvent) {
 }
 
 function onMouseUp() {
+  if (!mouseDown) return
   mouseDown = false
   // Smoothly reset to defaults
   animateReset()
 }
 
 function animateReset() {
+  if (resetAnimId !== null) cancelAnimationFrame(resetAnimId)
   const startTilt = tiltVal
   const startRotate = rotateVal
   const duration = 600
@@ -425,9 +431,9 @@ function animateReset() {
     const ease = 1 - (1 - t) ** 3
     tiltVal = startTilt * (1 - ease)
     rotateVal = startRotate * (1 - ease)
-    if (t < 1) requestAnimationFrame(step)
+    resetAnimId = t < 1 ? requestAnimationFrame(step) : null
   }
-  requestAnimationFrame(step)
+  resetAnimId = requestAnimationFrame(step)
 }
 
 function onVisibilityChange() {
@@ -446,7 +452,7 @@ onMounted(() => {
   if (!canvas) return
 
   if (!initWebGL(canvas)) {
-    console.warn('[LogoShader] WebGL not available')
+    emit('unavailable')
     return
   }
 
@@ -463,14 +469,22 @@ onMounted(() => {
   window.addEventListener('mouseup', onMouseUp)
 })
 
-onUnmounted(() => {
+onBeforeUnmount(() => {
   running = false
   cancelAnimationFrame(animId)
+  if (resetAnimId !== null) {
+    cancelAnimationFrame(resetAnimId)
+    resetAnimId = null
+  }
   if (resizeHandler) {
     window.removeEventListener('resize', resizeHandler)
     resizeHandler = null
   }
   document.removeEventListener('visibilitychange', onVisibilityChange)
+  const canvas = canvasRef.value
+  canvas?.removeEventListener('mousedown', onMouseDown)
+  window.removeEventListener('mousemove', onMouseMove)
+  window.removeEventListener('mouseup', onMouseUp)
   if (gl) {
     gl.getExtension('WEBGL_lose_context')?.loseContext()
     gl = null

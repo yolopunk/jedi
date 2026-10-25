@@ -31,7 +31,7 @@
 
     <!-- Info -->
     <div class="worker-info">
-      <div class="worker-description">{{ worker.description }}</div>
+      <div class="worker-description" :title="worker.description">{{ worker.description }}</div>
       <div class="worker-meta">
         <span v-if="worker.progress" class="worker-progress">{{ worker.progress }}</span>
         <span v-else class="worker-status-text">{{ statusText }}</span>
@@ -43,7 +43,8 @@
     <button
       v-if="worker.status === 'running'"
       class="stop-btn"
-      title="Stop worker"
+      :aria-label="t('agentTrace.stopWorker')"
+      :title="t('agentTrace.stopWorker')"
       @click.stop="$emit('stop', worker.id)"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
@@ -55,7 +56,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { WorkerStatus, WorkerStatusKind } from '@/agent/poolTypes'
+import { useI18n } from 'vue-i18n'
+import type { WorkerStatus } from '@/agent/poolTypes'
 
 const props = defineProps<{
   worker: WorkerStatus
@@ -63,15 +65,9 @@ const props = defineProps<{
 
 defineEmits<(e: 'stop', workerId: string) => void>()
 
-const statusLabels: Record<WorkerStatusKind, string> = {
-  idle: 'Idle',
-  running: 'Running',
-  completed: 'Completed',
-  failed: 'Failed',
-  stopped: 'Stopped',
-}
+const { t } = useI18n()
 
-const statusText = computed(() => statusLabels[props.worker.status])
+const statusText = computed(() => t(`agentTrace.status.${props.worker.status}`))
 
 const elapsedTime = computed(() => {
   if (!props.worker.started_at || props.worker.status === 'idle') return null
@@ -183,8 +179,9 @@ const elapsedTime = computed(() => {
 }
 
 .worker-status-text {
-  font-size: 11px;
+  font-size: 12px;
   color: rgb(var(--text-rgb) / 0.35);
+  flex-shrink: 0;
 }
 
 .status-running .worker-status-text {
@@ -200,15 +197,18 @@ const elapsedTime = computed(() => {
 }
 
 .worker-progress {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--accent);
-  font-family: 'JetBrains Mono', monospace;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .worker-elapsed {
-  font-size: 11px;
+  font-size: 12px;
   color: rgb(var(--text-rgb) / 0.25);
-  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
 }
 
 .worker-elapsed::before {

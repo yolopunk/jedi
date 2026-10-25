@@ -47,6 +47,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useAgentPool } from '@/agent/useAgentPool'
+import WorkerCard from './WorkerCard.vue'
 
 defineProps<{
   showPanel: boolean

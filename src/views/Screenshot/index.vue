@@ -1,49 +1,53 @@
 <template>
   <main class="screenshot-page" :style="{ '--thumbnail-size': `${thumbnailSize}px` }">
-    <header class="capture-header">
-      <div class="heading">
-        <h1>{{ t('screenshot.galleryTitle') }}<span class="title-dot" aria-hidden="true"></span></h1>
-      </div>
-      <div class="capture-actions">
-        <v-btn color="primary" rounded="lg" :prepend-icon="mdiPlus" :loading="capturing" @click="startCapture">{{ t('screenshot.start') }}</v-btn>
-        <span class="shortcut"><v-icon :icon="mdiKeyboardOutline" size="16" aria-hidden="true" />Ctrl + Alt + S</span>
-      </div>
-    </header>
-    <v-alert v-if="error" type="error" variant="tonal" closable @click:close="error = ''">{{ error }}</v-alert>
-    <section class="gallery" :aria-label="t('screenshot.recent')" :aria-busy="loading">
-      <div class="gallery-toolbar">
-        <div class="collection-summary"><v-icon :icon="mdiImageMultipleOutline" size="18" aria-hidden="true" /><span class="collection-label">{{ t('screenshot.recent') }}</span><span class="count">{{ recent.length }}</span></div>
-        <div class="gallery-controls">
-          <label class="density-control">{{ t('screenshot.thumbnailSize') }}<input v-model.number="thumbnailSize" type="range" min="220" max="380" step="20" /></label>
-          <v-btn :icon="mdiRefresh" variant="text" size="small" :loading="loading" :aria-label="t('common.refresh')" @click="loadRecent" />
+    <div class="screenshot-body">
+      <header class="capture-header">
+        <div class="heading">
+          <h1>{{ t('screenshot.galleryTitle') }}<span class="title-dot" aria-hidden="true"></span></h1>
         </div>
-      </div>
-      <div v-if="recent.length" class="gallery-collections">
-        <section v-for="group in groups" :key="group.key" class="date-group" :aria-label="group.title">
-          <div class="date-heading"><h3>{{ group.title }}</h3><span>{{ group.items.length.toString().padStart(2, '0') }}</span><div></div></div>
-          <div class="photo-columns">
-            <button v-for="(item, index) in group.items" :key="item.path" class="capture-card" type="button" :style="{ '--card-delay': `${Math.min(index, 5) * 35}ms` }" @click="selected = item; beautifying = false">
-              <div class="thumbnail">
-                <img v-if="!brokenImages.has(item.path)" :key="`${item.path}:${imageRetries[item.path] || 0}`" :src="thumbSrc(item.path)" :alt="item.name" loading="lazy" draggable="false" @error="onThumbError(item.path)" />
-                <div v-else class="thumb-broken">
-                  <v-icon :icon="mdiImageOffOutline" size="22" aria-hidden="true" />
-                  <span class="thumb-broken-text">{{ t('screenshot.imageMissing') }}</span>
-                  <button type="button" class="thumb-retry" @click.stop="retryThumb(item.path)">{{ t('screenshot.retryImage') }}</button>
-                </div>
-                <span v-if="!brokenImages.has(item.path)" class="preview-hint"><v-icon :icon="mdiMagnifyPlusOutline" size="18" aria-hidden="true" />{{ t('screenshot.preview') }}</span>
-              </div>
-              <div class="card-info"><span class="capture-name" :title="item.name">{{ item.name }}</span><span class="card-meta"><time>{{ formatDate(item.modifiedMs) }}</time><span>{{ formatSize(item.size) }}</span></span></div>
-            </button>
+        <div class="capture-actions">
+          <v-btn color="primary" rounded="lg" :prepend-icon="mdiPlus" :loading="capturing" @click="startCapture">{{ t('screenshot.start') }}</v-btn>
+          <span class="shortcut"><v-icon :icon="mdiKeyboardOutline" size="16" aria-hidden="true" />Ctrl + Alt + S</span>
+        </div>
+      </header>
+      <v-alert v-if="error" type="error" variant="tonal" closable @click:close="error = ''">{{ error }}</v-alert>
+      <section class="gallery" :aria-label="t('screenshot.recent')" :aria-busy="loading">
+        <div class="gallery-toolbar">
+          <div class="collection-summary"><v-icon :icon="mdiImageMultipleOutline" size="18" aria-hidden="true" /><span class="collection-label">{{ t('screenshot.recent') }}</span><span class="count">{{ recent.length }}</span></div>
+          <div class="gallery-controls">
+            <label class="density-control">{{ t('screenshot.thumbnailSize') }}<input v-model.number="thumbnailSize" type="range" min="220" max="380" step="20" /></label>
+            <v-btn :icon="mdiRefresh" variant="text" size="small" :loading="loading" :aria-label="t('common.refresh')" @click="loadRecent" />
           </div>
-        </section>
-      </div>
-      <div v-else-if="loading" class="gallery-skeleton" :aria-label="t('common.refresh')"><div v-for="i in 6" :key="i" class="skeleton-frame"></div></div>
-      <div v-else class="empty-state">
-        <div class="empty-frames" aria-hidden="true"><span></span><span><v-icon :icon="mdiCropFree" size="32" /></span><span></span></div>
-        <h3>{{ t('screenshot.recentEmpty') }}</h3><p>{{ t('screenshot.galleryDescription') }}</p>
-        <v-btn variant="tonal" color="primary" :prepend-icon="mdiCrop" :loading="capturing" @click="startCapture">{{ t('screenshot.start') }}</v-btn>
-      </div>
-    </section>
+        </div>
+        <div v-if="recent.length" class="gallery-collections">
+          <section v-for="group in groups" :key="group.key" class="date-group" :aria-label="group.title">
+            <div class="date-heading"><h3>{{ group.title }}</h3><span>{{ group.items.length.toString().padStart(2, '0') }}</span><div></div></div>
+            <div class="photo-columns">
+              <article v-for="(item, index) in group.items" :key="item.path" class="capture-card" :style="{ '--card-delay': `${Math.min(index, 5) * 35}ms` }">
+                <button class="capture-open" type="button" @click="selected = item; beautifying = false">
+                <div class="thumbnail">
+                  <img v-if="!brokenImages.has(item.path)" :key="`${item.path}:${imageRetries[item.path] || 0}`" :src="thumbSrc(item.path)" :alt="item.name" loading="lazy" draggable="false" @error="onThumbError(item.path)" />
+                  <div v-else class="thumb-broken">
+                    <v-icon :icon="mdiImageOffOutline" size="22" aria-hidden="true" />
+                    <span class="thumb-broken-text">{{ t('screenshot.imageMissing') }}</span>
+                  </div>
+                  <span v-if="!brokenImages.has(item.path)" class="preview-hint"><v-icon :icon="mdiMagnifyPlusOutline" size="18" aria-hidden="true" />{{ t('screenshot.preview') }}</span>
+                </div>
+                <div class="card-info"><span class="capture-name" :title="item.name">{{ item.name }}</span><span class="card-meta"><time>{{ formatDate(item.modifiedMs) }}</time><span>{{ formatSize(item.size) }}</span></span></div>
+                </button>
+                <button v-if="brokenImages.has(item.path)" type="button" class="thumb-retry" @click="retryThumb(item.path)">{{ t('screenshot.retryImage') }}</button>
+              </article>
+            </div>
+          </section>
+        </div>
+        <div v-else-if="loading" class="gallery-skeleton" :aria-label="t('common.refresh')"><div v-for="i in 6" :key="i" class="skeleton-frame"></div></div>
+        <div v-else-if="!error" class="empty-state">
+          <div class="empty-frames" aria-hidden="true"><span></span><span><v-icon :icon="mdiCropFree" size="32" /></span><span></span></div>
+          <h3>{{ t('screenshot.recentEmpty') }}</h3><p>{{ t('screenshot.galleryDescription') }}</p>
+          <v-btn variant="tonal" color="primary" :prepend-icon="mdiCrop" :loading="capturing" @click="startCapture">{{ t('screenshot.start') }}</v-btn>
+        </div>
+      </section>
+    </div>
     <v-dialog :model-value="!!selected" max-width="1200" @update:model-value="selected = null">
       <div v-if="selected" class="preview-panel">
         <header class="preview-header">
@@ -55,8 +59,9 @@
           <v-btn :icon="mdiClose" variant="text" :aria-label="t('screenshot.closePreview')" @click="selected = null" />
         </header>
         <BeautifyEditor v-if="beautifying" :path="selected.path" @saved="onStyledSaved" />
-        <div v-else class="preview-image" :class="{ 'is-actual': previewZoom === 'actual', 'is-panning': panning }" @mousedown="onPanStart">
-          <img :src="convertFileSrc(selected.path)" :alt="selected.name" draggable="false" :style="previewStyle" @load="onPreviewLoad" />
+        <div v-else class="preview-image" tabindex="0" :aria-label="t('screenshot.preview')" :class="{ 'is-actual': previewZoom === 'actual', 'is-panning': panning }" @pointerdown="onPanStart" @pointermove="onPanMove" @pointerup="onPanEnd" @pointercancel="onPanEnd" @lostpointercapture="onPanEnd">
+          <div v-if="previewFailed" role="alert" class="thumb-broken"><span>{{ t('screenshot.imageMissing') }}</span><v-btn variant="text" @click="retryThumb(selected.path); previewFailed = false">{{ t('screenshot.retryImage') }}</v-btn></div>
+          <img v-else :src="thumbSrc(selected.path)" :alt="selected.name" draggable="false" :style="previewStyle" @load="onPreviewLoad" @error="previewFailed = true" />
         </div>
         <footer class="preview-footer">
           <span>{{ formatDate(selected.modifiedMs) }} · {{ formatSize(selected.size) }}</span>
@@ -128,6 +133,8 @@ const error = ref('')
 const previewZoom = ref<'fit' | 'actual'>('fit')
 const previewPixels = ref<{ w: number; h: number } | null>(null)
 const panning = ref(false)
+const previewFailed = ref(false)
+let panOrigin = { x: 0, y: 0, left: 0, top: 0 }
 const imageRetries = ref<Record<string, number>>({})
 const brokenImages = ref(new Set<string>())
 let unlisten: UnlistenFn | undefined
@@ -144,6 +151,7 @@ const previewStyle = computed(() => {
 })
 
 watch(selected, () => {
+  previewFailed.value = false
   previewZoom.value = 'fit'
   previewPixels.value = null
   panning.value = false
@@ -154,27 +162,28 @@ function onPreviewLoad(event: Event) {
   previewPixels.value = { w: img.naturalWidth, h: img.naturalHeight }
 }
 
-function onPanStart(event: MouseEvent) {
+function onPanStart(event: PointerEvent) {
   if (previewZoom.value !== 'actual' || event.button !== 0) return
   const el = event.currentTarget as HTMLElement
   if (el.scrollWidth <= el.clientWidth && el.scrollHeight <= el.clientHeight) return
+  panOrigin = { x: event.clientX, y: event.clientY, left: el.scrollLeft, top: el.scrollTop }
   panning.value = true
-  const startX = event.clientX
-  const startY = event.clientY
-  const startLeft = el.scrollLeft
-  const startTop = el.scrollTop
-  const onMove = (move: MouseEvent) => {
-    el.scrollLeft = startLeft - (move.clientX - startX)
-    el.scrollTop = startTop - (move.clientY - startY)
-  }
-  const onUp = () => {
-    panning.value = false
-    window.removeEventListener('mousemove', onMove)
-    window.removeEventListener('mouseup', onUp)
-  }
-  window.addEventListener('mousemove', onMove)
-  window.addEventListener('mouseup', onUp)
+  el.setPointerCapture(event.pointerId)
+  el.focus({ preventScroll: true })
   event.preventDefault()
+}
+
+function onPanMove(event: PointerEvent) {
+  if (!panning.value) return
+  const el = event.currentTarget as HTMLElement
+  el.scrollLeft = panOrigin.left - (event.clientX - panOrigin.x)
+  el.scrollTop = panOrigin.top - (event.clientY - panOrigin.y)
+}
+
+function onPanEnd(event: PointerEvent) {
+  panning.value = false
+  const el = event.currentTarget as HTMLElement
+  if (el.hasPointerCapture(event.pointerId)) el.releasePointerCapture(event.pointerId)
 }
 
 function thumbSrc(path: string): string {
@@ -263,7 +272,8 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.screenshot-page { height: 100%; overflow: auto; padding: clamp(24px, 3.5vw, 48px); color: var(--text); background: var(--bg); }
+.screenshot-page { height: 100%; overflow: auto; color: var(--text); background: var(--bg); container-type: inline-size; }
+.screenshot-body { padding: clamp(24px, 3.5vw, 48px); }
 h1, h2, h3, p { margin: 0; }
 .capture-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-bottom: 24px; }
 .section-label { display: block; color: var(--text-muted); font-size: 10px; font-weight: 600; letter-spacing: 2px; line-height: 1.6; text-transform: uppercase; }
@@ -283,8 +293,9 @@ h1 { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight
 .date-heading > span { color: var(--text-muted); font: 10px var(--jedi-font-mono); }
 .date-heading > div { height: 1px; flex: 1; background: var(--border); }
 .photo-columns { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--thumbnail-size), 1fr)); gap: 24px; }
+.capture-open { display: block; width: 100%; text-align: left; color: inherit; border-radius: inherit; }
 .capture-card { display: block; width: 100%; margin: 0; padding: 0; text-align: left; color: inherit; background: transparent; border: 0; border-radius: 12px; cursor: pointer; animation: photo-reveal var(--motion-enter) var(--ease-out) var(--card-delay) backwards; }
-.capture-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.capture-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .thumbnail { position: relative; aspect-ratio: 16 / 10; border-radius: 10px; overflow: hidden; }
 .thumbnail img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 14px rgb(var(--ink-rgb) / .18); transition: box-shadow var(--motion-normal); }
 .capture-card:hover .thumbnail img { box-shadow: 0 6px 18px rgb(var(--ink-rgb) / .24); }
@@ -294,7 +305,7 @@ h1 { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight
 .thumb-retry:hover { border-color: var(--border-strong); color: var(--text); }
 .thumb-retry:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .preview-hint { position: absolute; display: flex; align-items: center; gap: 6px; right: 10px; bottom: 10px; padding: 7px 10px; font-size: 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); opacity: 0; transform: translateY(4px); transition: opacity var(--motion-fast), transform var(--motion-fast); }
-.capture-card:hover .preview-hint, .capture-card:focus-visible .preview-hint { opacity: 1; transform: none; }
+.capture-card:hover .preview-hint, .capture-open:focus-visible .preview-hint { opacity: 1; transform: none; }
 .card-info { padding: 10px 2px 0; }
 .capture-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
 .card-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: 10px; color: var(--text-muted); }
@@ -316,7 +327,7 @@ h1 { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight
 .preview-header { border-bottom: 1px solid var(--border); }
 .preview-image { min-height: 250px; padding: 40px; background: var(--surface-canvas); display: grid; place-items: center; overflow: auto; }
 .preview-image img { max-width: 100%; max-height: 60vh; object-fit: contain; box-shadow: var(--shadow-lg); }
-.preview-image.is-actual { max-height: 60vh; display: block; cursor: grab; user-select: none; }
+.preview-image.is-actual { max-height: 60vh; display: block; cursor: grab; user-select: none; touch-action: none; }
 .preview-image.is-actual img { display: block; max-width: none; max-height: none; }
 .preview-image.is-actual.is-panning { cursor: grabbing; }
 .preview-footer { flex-wrap: wrap; color: var(--text-muted); font-size: 11px; border-top: 1px solid var(--border); }
@@ -324,6 +335,9 @@ h1 { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight
 .zoom-toggle { display: flex; gap: 4px; }
 @keyframes photo-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes gallery-pulse { to { opacity: .45; } }
-@media (max-width: 700px) { .capture-header { align-items: flex-start; flex-direction: column; } .capture-actions { flex-direction: row; } .density-control { display: none; } .screenshot-page { padding: 24px 18px; } .preview-image { padding: 20px; } }
+/* In-page layout responds to the real content-area width (container query), not the viewport */
+@container (max-width: 700px) { .screenshot-body { padding: 24px 18px; } .capture-header { align-items: flex-start; flex-direction: column; } .capture-actions { flex-direction: row; } .density-control { display: none; } }
+/* v-dialog content is teleported to the viewport-level overlay container, outside .screenshot-page; keep it viewport-based */
+@media (max-width: 700px) { .preview-image { padding: 20px; } }
 @media (prefers-reduced-motion: reduce) { .capture-card, .skeleton-frame { animation: none; } .capture-card, .preview-hint, .thumbnail img { transition: none; } }
 </style>

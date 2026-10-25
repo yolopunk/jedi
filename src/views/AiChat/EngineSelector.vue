@@ -110,7 +110,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
       aria-haspopup="listbox"
       @click="toggle"
     >
-      <span class="engine-dot" :class="{ scanning: hub.scanning }" aria-hidden="true"></span>
+      <span class="engine-dot" :class="{ scanning: hub.scanning, danger: !!hub.error }" aria-hidden="true"></span>
       <span class="engine-trigger-name">{{ label }}</span>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
         <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2" />
@@ -128,9 +128,16 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
         :aria-selected="engine.id === hub.selectedEngineId"
         @click="engine.tier !== 'B' && pick(engine)"
       >
-        <span class="engine-item-name">
-          {{ engine.name }}
-          <span v-if="engine.location" class="engine-item-loc">{{ engine.location }}</span>
+        <span class="engine-item-main">
+          <span
+            class="engine-item-dot"
+            :class="{ active: engine.id === hub.selectedEngineId }"
+            aria-hidden="true"
+          ></span>
+          <span class="engine-item-name">
+            {{ engine.name }}
+            <span v-if="engine.location" class="engine-item-loc">{{ engine.location }}</span>
+          </span>
         </span>
         <span class="engine-item-side">
           <span v-if="engine.tier === 'B'" class="engine-badge soon">{{ t('chatWorkspace.engineComingSoon') }}</span>
@@ -197,12 +204,18 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   white-space: nowrap;
 }
 
+/* 状态点语义：accent = 当前选中引擎（触发器始终反映选中项），danger = 检测失败，
+   scanning = 检测中（置于最后，扫描期间覆盖 danger：detect 开始即清空 error） */
 .engine-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--success, #34d399);
+  background: var(--accent);
   flex-shrink: 0;
+}
+
+.engine-dot.danger {
+  background: var(--danger);
 }
 
 .engine-dot.scanning {
@@ -272,6 +285,27 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 .engine-item.missing {
   cursor: default;
   opacity: 0.4;
+}
+
+.engine-item-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* 菜单项状态点：与触发器点同源 —— accent = 选中项，中性 = 可选未选中 */
+.engine-item-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-subtle);
+  flex-shrink: 0;
+}
+
+.engine-item-dot.active {
+  background: var(--accent);
 }
 
 .engine-item-name {

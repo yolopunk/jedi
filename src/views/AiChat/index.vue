@@ -10,11 +10,12 @@
             <span class="workspace-title">{{ t('sidebar.chat') }}</span>
           </div>
           <div class="header-right">
-            <div class="status-badge" :class="{ ready: !!modelsDevStore.selectedModel }">
+            <div class="status-badge" :class="{ ready: statusReady }">
               <span class="status-dot"></span>
               <span class="status-text">{{ connectionStatus }}</span>
             </div>
             <button
+              v-if="isBuiltinEngine"
               type="button"
               class="provider-display"
               :aria-label="t('chat.selectProvider')"
@@ -228,7 +229,7 @@
             <EngineSelector />
 
             <!-- Model选择器 -->
-            <div ref="modelSelectorRef" class="model-selector" @keydown="handleModelMenuKeydown">
+            <div v-if="isBuiltinEngine" ref="modelSelectorRef" class="model-selector" @keydown="handleModelMenuKeydown">
               <button
                 ref="modelDropdownBtnRef"
                 type="button"
@@ -391,6 +392,7 @@ import AgentPoolPanel from '@/components/agent/AgentPoolPanel.vue'
 import CommandPalette from '@/components/CommandPalette.vue'
 import { useTwoStepConfirm } from '@/composables/useTwoStepConfirm'
 import { useAgentStore } from '@/stores/agent'
+import { useAgentHubStore } from '@/stores/agentHub'
 import { useAiChatStore } from '@/stores/aiChat'
 import { useMcpClientStore } from '@/stores/mcpClient'
 import { useModelsDevStore } from '@/stores/modelsDev'
@@ -411,6 +413,7 @@ const mcpClientStore = useMcpClientStore()
 const skillsStore = useSkillsStore()
 const toolStatsStore = useToolStatsStore()
 const agentStore = useAgentStore()
+const agentHubStore = useAgentHubStore()
 const modelsDevStore = useModelsDevStore()
 const providerConfigStore = useProviderConfigStore()
 
@@ -548,9 +551,18 @@ function formatContextShort(len?: number): string {
 const currentProviderName = computed(() => {
   return modelsDevStore.selectedProvider?.name || t('chat.selectProvider')
 })
-const connectionStatus = computed(() =>
-  modelsDevStore.selectedModel ? t('chatWorkspace.modelSelected') : t('chatWorkspace.selectModel')
-)
+// C02（引擎/服务商/模型关系）：外部引擎的请求由该引擎自身执行，不依赖内置
+// 服务商/模型配置 —— 顶部状态改为引擎感知，服务商入口仅在内置引擎时展示。
+const isBuiltinEngine = computed(() => agentHubStore.selectedEngine.tier === 'builtin')
+const connectionStatus = computed(() => {
+  if (!isBuiltinEngine.value) {
+    return t('chatWorkspace.engineExecuting', { engine: agentHubStore.selectedEngine.name })
+  }
+  return modelsDevStore.selectedModel
+    ? t('chatWorkspace.modelSelected')
+    : t('chatWorkspace.selectModel')
+})
+const statusReady = computed(() => (isBuiltinEngine.value ? !!modelsDevStore.selectedModel : true))
 
 const displayMessages = computed(() => {
   return store.currentSession?.messages || []

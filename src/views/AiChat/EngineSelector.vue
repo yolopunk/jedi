@@ -46,21 +46,21 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 </script>
 
 <template>
-  <div ref="rootRef" class="model-selector engine-selector" @keydown.esc.stop="open = false">
+  <div ref="rootRef" class="engine-selector" @keydown.esc.stop="open = false">
     <button
-      class="model-dropdown-btn"
+      class="engine-trigger"
       :title="t('chatWorkspace.engine')"
       :aria-expanded="open"
       aria-haspopup="listbox"
       @click="toggle"
     >
       <span class="engine-dot" :class="{ scanning: hub.scanning }" aria-hidden="true"></span>
-      <span class="model-dropdown-name">{{ label }}</span>
+      <span class="engine-trigger-name">{{ label }}</span>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
         <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2" />
       </svg>
     </button>
-    <div v-if="open" class="model-dropdown-menu engine-menu" role="listbox">
+    <div v-if="open" class="engine-menu" role="listbox">
       <div class="engine-group">{{ t('chatWorkspace.engineInstalled') }}</div>
       <button
         v-for="engine in installedEngines"
@@ -100,8 +100,45 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 </template>
 
 <style scoped>
+/* The root is a grid item of .input-bar (chat.css): flexible 1fr column,
+   hugging its right edge so the model selector owns column 4 untouched. */
 .engine-selector {
-  flex-shrink: 0;
+  position: relative;
+  grid-row: 2;
+  grid-column: 3;
+  justify-self: end;
+  min-width: 0;
+  max-width: 220px;
+}
+
+/* 胶囊触发器 - 与模型选择器观感一致 */
+.engine-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.engine-trigger:hover {
+  background: rgb(var(--ink-rgb) / 0.08);
+  color: rgb(var(--text-rgb) / 0.9);
+}
+
+.engine-trigger svg {
+  opacity: 0.5;
+}
+
+.engine-trigger-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .engine-dot {
@@ -123,9 +160,20 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   }
 }
 
+/* 引擎下拉菜单 - 自带完整浮层样式，不依赖 index.vue 的 scoped CSS */
 .engine-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
   min-width: 230px;
   max-height: 340px;
+  overflow-y: auto;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
 }
 
 .engine-group {

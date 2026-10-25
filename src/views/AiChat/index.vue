@@ -14,18 +14,15 @@
               <span class="status-dot"></span>
               <span class="status-text">{{ connectionStatus }}</span>
             </div>
-            <div
+            <button
+              type="button"
               class="provider-display"
-              role="button"
-              tabindex="0"
+              :aria-label="t('chat.selectProvider')"
               :title="$t('chat.selectProvider')"
               @click="showModelSettings = true"
-              @keydown.enter.prevent="showModelSettings = true"
-              @keydown.space.prevent="showModelSettings = true"
             >
-
               <span class="provider-name">{{ currentProviderName }}</span>
-            </div>
+            </button>
             <button class="workers-btn" @click="showWorkersPanel = true" :title="t('chatWorkspace.workers')" :aria-label="t('chatWorkspace.workers')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <rect x="2" y="7" width="20" height="10" rx="2"/>
@@ -231,8 +228,10 @@
             <EngineSelector />
 
             <!-- Model选择器 -->
-            <div ref="modelSelectorRef" class="model-selector" @keydown.esc.stop="showModelDropdown = false">
+            <div ref="modelSelectorRef" class="model-selector" @keydown="handleModelMenuKeydown">
               <button
+                ref="modelDropdownBtnRef"
+                type="button"
                 class="model-dropdown-btn"
                 :title="currentModelName"
                 :aria-expanded="showModelDropdown"
@@ -244,21 +243,20 @@
                   <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2"/>
                 </svg>
               </button>
-              <div v-if="showModelDropdown" class="model-dropdown-menu" role="listbox">
-                <div
+              <div v-if="showModelDropdown" ref="modelDropdownMenuRef" class="model-dropdown-menu" role="listbox">
+                <button
                   v-for="model in selectedProviderModels"
                   :key="model.id"
+                  type="button"
                   class="model-dropdown-item"
                   :class="{ selected: model.id === modelsDevStore.selectedModelId }"
                   role="option"
                   :aria-selected="model.id === modelsDevStore.selectedModelId"
-                  tabindex="0"
                   @click="selectModelFromDropdown(model)"
-                  @keydown.enter.prevent="selectModelFromDropdown(model)"
                 >
                   <span class="model-item-name">{{ model.name }}</span>
                   <span class="model-item-context">{{ formatContextShort(model.limit?.context) }}</span>
-                </div>
+                </button>
               </div>
             </div>
 
@@ -407,7 +405,7 @@ import ModelSettings from './ModelSettings.vue'
 import SkillsManagerDialog from './SkillsManagerDialog.vue'
 import ToolConfirmCard from './ToolConfirmCard.vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const store = useAiChatStore()
 const mcpClientStore = useMcpClientStore()
 const skillsStore = useSkillsStore()
@@ -422,6 +420,8 @@ const messagesContainer = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
 const inputConsoleRef = ref<HTMLElement | null>(null)
 const modelSelectorRef = ref<HTMLElement | null>(null)
+const modelDropdownBtnRef = ref<HTMLButtonElement | null>(null)
+const modelDropdownMenuRef = ref<HTMLDivElement | null>(null)
 const showCommands = ref(false)
 const commandActiveIndex = ref(0)
 const showScrollButton = ref(false)
@@ -479,6 +479,57 @@ const currentModelName = computed(() => {
 function selectModelFromDropdown(model: any) {
   modelsDevStore.selectModel(model.id)
   showModelDropdown.value = false
+  modelDropdownBtnRef.value?.focus()
+}
+
+// 下拉打开时把 DOM 焦点移入当前选中项（无选中则第一项），保证菜单可纯键盘操作
+watch(showModelDropdown, async open => {
+  if (!open) return
+  await nextTick()
+  const items = modelMenuItems()
+  if (!items.length) return
+  const selected = items.findIndex(item => item.classList.contains('selected'))
+  focusMenuItem(items, selected >= 0 ? selected : 0)
+})
+
+function modelMenuItems(): HTMLButtonElement[] {
+  return Array.from(
+    modelDropdownMenuRef.value?.querySelectorAll<HTMLButtonElement>('.model-dropdown-item') ?? []
+  )
+}
+
+// 到头即停的 DOM 焦点移动（与引擎菜单一致）
+function focusMenuItem(items: HTMLButtonElement[], index: number) {
+  const item = items[index]
+  if (!item) return
+  item.focus()
+  item.scrollIntoView({ block: 'nearest' })
+}
+
+function handleModelMenuKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.stopPropagation()
+    if (!modelDropdownMenuRef.value) return
+    showModelDropdown.value = false
+    modelDropdownBtnRef.value?.focus()
+    return
+  }
+  const items = modelMenuItems()
+  if (!items.length) return
+  const current = items.indexOf(document.activeElement as HTMLButtonElement)
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    focusMenuItem(items, Math.min(current + 1, items.length - 1))
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    focusMenuItem(items, Math.max(current - 1, 0))
+  } else if (event.key === 'Home') {
+    event.preventDefault()
+    focusMenuItem(items, 0)
+  } else if (event.key === 'End') {
+    event.preventDefault()
+    focusMenuItem(items, items.length - 1)
+  }
 }
 
 function openSkillsManager() {
@@ -565,18 +616,19 @@ function closeTrace() {
 function formatTimestamp(timestamp?: number) {
   if (!timestamp) return '00:00:00'
   const date = new Date(timestamp)
-  return date.toLocaleTimeString('en-US', { hour12: false })
+  return date.toLocaleTimeString(locale.value, { hour12: false })
 }
 
 function formatSessionTime(dateStr: string) {
   const date = new Date(dateStr)
   const now = new Date()
   const diff = now.getTime() - date.getTime()
+  const rtf = new Intl.RelativeTimeFormat(locale.value, { numeric: 'auto' })
 
-  if (diff < 60000) return 'JUST NOW'
-  if (diff < 3600000) return `${Math.floor(diff / 60000)} MIN AGO`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)} HRS AGO`
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
+  if (diff < 60000) return rtf.format(0, 'minute')
+  if (diff < 3600000) return rtf.format(-Math.floor(diff / 60000), 'minute')
+  if (diff < 86400000) return rtf.format(-Math.floor(diff / 3600000), 'hour')
+  return date.toLocaleDateString(locale.value, { month: 'short', day: 'numeric' })
 }
 
 function handleSelectSession(sessionId: string) {

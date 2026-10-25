@@ -4,7 +4,7 @@
 // Tier-A engines are selectable; Tier-B stay visible with an "adapter
 // pending" badge until their driver lands (M2-M4).
 
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { EngineDescriptor } from '@/agent/hub/types'
 import { useAgentHubStore } from '@/stores/agentHub'
@@ -14,6 +14,8 @@ const hub = useAgentHubStore()
 
 const open = ref(false)
 const rootRef = ref<HTMLElement | null>(null)
+const triggerRef = ref<HTMLButtonElement | null>(null)
+const menuRef = ref<HTMLDivElement | null>(null)
 
 const installedEngines = computed(() => hub.engines)
 const notInstalledAgents = computed(() => hub.reports.filter(r => r.installations.length === 0))
@@ -31,6 +33,59 @@ function toggle() {
 function pick(engine: EngineDescriptor) {
   hub.selectEngine(engine.id)
   open.value = false
+  triggerRef.value?.focus()
+}
+
+// 可选项 = .engine-item 按钮且非 disabled（tier-B 与 "未检测到" 占位均被跳过）
+function listSelectableItems(): HTMLButtonElement[] {
+  return Array.from(
+    menuRef.value?.querySelectorAll<HTMLButtonElement>('button.engine-item:not(:disabled)') ?? []
+  )
+}
+
+function focusItem(items: HTMLButtonElement[], index: number) {
+  const item = items[index]
+  if (!item) return
+  item.focus()
+  item.scrollIntoView({ block: 'nearest' })
+}
+
+// 菜单打开时聚焦当前选中项；无选中则聚焦第一个可选项
+watch(open, async value => {
+  if (!value) return
+  await nextTick()
+  const items = listSelectableItems()
+  if (!items.length) return
+  const selected = items.findIndex(item => item.classList.contains('selected'))
+  focusItem(items, selected >= 0 ? selected : 0)
+})
+
+// 焦点在选项间到头即停（与模型下拉一致）；Escape 关闭并把焦点还给触发器
+function handleMenuKeydown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    event.stopPropagation()
+    if (open.value) {
+      open.value = false
+      triggerRef.value?.focus()
+    }
+    return
+  }
+  const items = listSelectableItems()
+  if (!items.length) return
+  const current = items.indexOf(document.activeElement as HTMLButtonElement)
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    focusItem(items, Math.min(current + 1, items.length - 1))
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    focusItem(items, Math.max(current - 1, 0))
+  } else if (event.key === 'Home') {
+    event.preventDefault()
+    focusItem(items, 0)
+  } else if (event.key === 'End') {
+    event.preventDefault()
+    focusItem(items, items.length - 1)
+  }
 }
 
 function onDocClick(e: MouseEvent) {
@@ -46,8 +101,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 </script>
 
 <template>
-  <div ref="rootRef" class="engine-selector" @keydown.esc.stop="open = false">
+  <div ref="rootRef" class="engine-selector" @keydown="handleMenuKeydown">
     <button
+      ref="triggerRef"
       class="engine-trigger"
       :title="t('chatWorkspace.engine')"
       :aria-expanded="open"
@@ -60,7 +116,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
         <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2" />
       </svg>
     </button>
-    <div v-if="open" class="engine-menu" role="listbox">
+    <div v-if="open" ref="menuRef" class="engine-menu" role="listbox">
       <div class="engine-group">{{ t('chatWorkspace.engineInstalled') }}</div>
       <button
         v-for="engine in installedEngines"
@@ -199,7 +255,8 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   text-align: left;
 }
 
-.engine-item:hover:not(:disabled) {
+.engine-item:hover:not(:disabled),
+.engine-item:focus-visible:not(:disabled) {
   background: rgba(127, 127, 127, 0.12);
 }
 

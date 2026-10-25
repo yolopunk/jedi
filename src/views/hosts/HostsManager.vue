@@ -1,12 +1,27 @@
 <template>
   <div class="hosts-container scifi-page">
+    <!-- 页头：与聊天页 chat-header 统一 -->
+    <div class="hosts-header">
+      <div class="header-logo">
+        <v-icon :icon="mdiDomain" size="18" aria-hidden="true" />
+        <span class="header-title">{{ t('sidebar.hostsManager') }}</span>
+      </div>
+      <button
+        type="button"
+        class="header-primary-btn"
+        @click="dialogs.addGroup = true"
+      >
+        <v-icon :icon="mdiPlus" size="16" aria-hidden="true" />
+        <span>{{ t('hosts.groups.add') }}</span>
+      </button>
+    </div>
+
     <div class="content-wrapper">
       <!-- 分组管理区域 -->
       <group-manager
         v-if="groups.length"
         v-model="selectedGroup"
         :groups="groups"
-        @add-group="dialogs.addGroup = true"
         @rename-group="openRenameGroupDialog"
         class="fade-in flex-shrink-0"
       />
@@ -99,12 +114,7 @@
     @delete="confirmDeleteHost"
   />
 
-  <notification-snackbar
-    v-model="showSnackbar"
-    :text="snackbarText"
-    :color="snackbarColor"
-    :timeout="3000"
-  />
+  <AppNotification />
 
   <!-- 全局开关悬浮按钮 -->
   <global-switch-fab
@@ -115,18 +125,20 @@
 </template>
 
 <script setup lang="ts">
+import { mdiDomain, mdiPlus } from '@mdi/js'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getOsInfo } from '@/api/hosts'
+import AppNotification from '@/components/common/AppNotification.vue'
 import EmptyState from '@/components/hosts/common/EmptyState.vue'
 import GlobalSwitchFab from '@/components/hosts/common/GlobalSwitchFab.vue'
 import GroupManager from '@/components/hosts/common/GroupManager.vue'
-import NotificationSnackbar from '@/components/hosts/common/NotificationSnackbar.vue'
 import AddGroupDialog from '@/components/hosts/dialogs/AddGroupDialog.vue'
 import AddHostDialog from '@/components/hosts/dialogs/AddHostDialog.vue'
 import DeleteConfirmDialog from '@/components/hosts/dialogs/DeleteConfirmDialog.vue'
 import EditHostDialog from '@/components/hosts/dialogs/EditHostDialog.vue'
 import HostsTable from '@/components/hosts/tables/HostsTable.vue'
+import { useAppNotification } from '@/composables/useAppNotification'
 import { useHostsData } from '@/composables/useHostsData'
 import type { HostEntry } from '@/types/hosts'
 
@@ -146,16 +158,12 @@ const hostToDelete = ref<HostEntry | null>(null)
 const renameGroupOriginalName = ref('')
 const renameGroupName = ref('')
 
-const showSnackbar = ref(false)
-const snackbarText = ref('')
-const snackbarColor = ref<'success' | 'error' | 'info' | 'warning'>('success')
-
 const search = ref('')
 
+const { notify } = useAppNotification()
+
 function showNotification(text: string, color: 'success' | 'error' | 'info' | 'warning') {
-  snackbarText.value = text
-  snackbarColor.value = color
-  showSnackbar.value = true
+  notify(text, color)
 }
 
 const {
@@ -225,6 +233,56 @@ onMounted(async () => {
   overflow: hidden;
   position: relative;
   font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+}
+
+/* 页头：对齐聊天页 .chat-header 令牌 */
+.hosts-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  min-height: 60px;
+  padding: 12px 24px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.hosts-header .header-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+
+.hosts-header .header-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: var(--jedi-font-ui);
+}
+
+.header-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--jedi-font-ui);
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background var(--motion-fast), border-color var(--motion-fast);
+}
+
+.header-primary-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .content-wrapper {

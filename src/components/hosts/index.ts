@@ -7,7 +7,6 @@ export { default as EmptyState } from './common/EmptyState.vue'
 export { default as GroupManager } from './common/GroupManager.vue'
 // 公共组件
 export { default as HeaderSection } from './common/HeaderSection.vue'
-export { default as NotificationSnackbar } from './common/NotificationSnackbar.vue'
 // 对话框组件
 export { default as AddGroupDialog } from './dialogs/AddGroupDialog.vue'
 export { default as AddHostDialog } from './dialogs/AddHostDialog.vue'

@@ -1,9 +1,9 @@
 <template>
-  <v-snackbar v-model="show" :scrim="false" :timeout="timeout" location="top right" class="console-snackbar-root" :elevation="0">
+  <v-snackbar v-model="show" :scrim="false" :timeout="-1" location="top right" class="console-snackbar-root" :elevation="0">
     <div class="notice" :class="`notice-${color}`" role="status" aria-live="polite">
       <span class="notice-icon"><v-icon :icon="icon" size="20" aria-hidden="true" /></span>
       <div class="notice-content"><strong>{{ t(`notifications.${color}`) }}</strong><p>{{ text }}</p></div>
-      <button type="button" class="notice-close" :aria-label="t('common.close')" @click="show = false"><v-icon :icon="mdiClose" size="16" aria-hidden="true" /></button>
+      <button type="button" class="notice-close" :aria-label="t('common.close')" @click="dismiss"><v-icon :icon="mdiClose" size="16" aria-hidden="true" /></button>
     </div>
   </v-snackbar>
 </template>
@@ -18,19 +18,20 @@ import {
 } from '@mdi/js'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useAppNotification } from '@/composables/useAppNotification'
 
-const props = defineProps<{
-  modelValue: boolean
-  text: string
-  color: 'success' | 'error' | 'info' | 'warning'
-  timeout?: number
-}>()
-const emit = defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 const { t } = useI18n()
+const { visible, text, color, dismiss } = useAppNotification()
+
 const show = computed({
-  get: () => props.modelValue,
-  set: value => emit('update:modelValue', value),
+  get: () => visible.value,
+  set: value => {
+    if (!value) {
+      dismiss()
+    }
+  },
 })
+
 const icon = computed(
   () =>
     ({
@@ -38,7 +39,7 @@ const icon = computed(
       error: mdiAlertCircleOutline,
       warning: mdiAlertOutline,
       info: mdiInformationOutline,
-    })[props.color]
+    })[color.value]
 )
 </script>
 

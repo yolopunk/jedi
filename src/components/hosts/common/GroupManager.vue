@@ -33,22 +33,12 @@
           <v-icon :icon="mdiPencil" size="x-small"></v-icon>
         </v-btn>
       </v-tab>
-
-      <!-- 添加分组按钮作为最后一个标签 -->
-      <v-tab
-        value="add-group"
-        class="add-group-tab"
-        @click="$emit('add-group')"
-      >
-        <v-icon :icon="mdiPlus" size="small" class="mr-1"></v-icon>
-        {{ $t('hosts.groups.add') }}
-      </v-tab>
     </v-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
-import { mdiDomain, mdiPencil, mdiPlus } from '@mdi/js'
+import { mdiDomain, mdiPencil } from '@mdi/js'
 import { computed } from 'vue'
 import type { Group } from '@/types/hosts'
 
@@ -61,7 +51,6 @@ const props = defineProps<{
 // 定义组件事件
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
-  (e: 'add-group'): void
   (e: 'rename-group', value: string): void
 }>()
 
@@ -69,9 +58,7 @@ const emit = defineEmits<{
 const selectedTab = computed({
   get: () => props.modelValue,
   set: value => {
-    if (value !== 'add-group') {
-      emit('update:modelValue', value)
-    }
+    emit('update:modelValue', value)
   },
 })
 </script>
@@ -122,18 +109,5 @@ const selectedTab = computed({
 .group-tab.v-tab--selected {
   color: var(--jedi-text-primary) !important;
   font-weight: 600;
-}
-
-.add-group-tab {
-  min-width: 120px;
-  font-weight: 500;
-  text-transform: none;
-  letter-spacing: 0.3px;
-  color: var(--jedi-success) !important;
-  transition: all 0.3s ease;
-}
-
-.add-group-tab:hover {
-  background-color: var(--jedi-bg-surface-hover) !important;
 }
 </style>

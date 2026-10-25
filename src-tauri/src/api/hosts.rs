@@ -317,6 +317,11 @@ pub fn revert_hosts() -> Result<String, String> {
 }
 
 #[tauri::command]
+pub fn get_hosts_path() -> String {
+  HOSTS_PATH.to_string()
+}
+
+#[tauri::command]
 pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
   // 读取系统hosts文件
   let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {

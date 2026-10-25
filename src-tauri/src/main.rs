@@ -42,7 +42,7 @@ use crate::api::ai_chat::{
 use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
 };
-use crate::api::hosts::{read_system_hosts, revert_hosts, update_hosts_with_groups};
+use crate::api::hosts::{get_hosts_path, read_system_hosts, revert_hosts, update_hosts_with_groups};
 use crate::api::memory::{memory_delete, memory_list, memory_recall, memory_save};
 use crate::api::os::{get_os_info, SystemState};
 use crate::api::podcast::{
@@ -241,6 +241,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       update_hosts_with_groups,
       revert_hosts,
       read_system_hosts,
+      get_hosts_path,
       get_os_info,
       get_app_info,
       enable_autostart,

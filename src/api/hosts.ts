@@ -23,6 +23,14 @@ export async function readSystemHosts(): Promise<Group[]> {
 }
 
 /**
+ * 获取系统hosts文件路径
+ * @returns hosts文件路径
+ */
+export async function getHostsPath(): Promise<string> {
+  return await invoke<string>('get_hosts_path')
+}
+
+/**
  * 更新hosts文件
  * @param groups 分组数据
  * @returns 更新结果

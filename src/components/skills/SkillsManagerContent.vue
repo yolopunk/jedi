@@ -1,15 +1,15 @@
 <template>
   <div class="mgr-body">
-    <div v-if="showSearch" class="mgr-toolbar">
+    <!-- 工具栏：搜索为主操作占满一行，排序/清零为次操作；清零用 title 提示影响范围 -->
+    <div class="mgr-toolbar">
       <input
+        v-if="showSearch"
         v-model="search"
         class="mgr-search"
         type="search"
         :placeholder="$t('skills.page.searchPlaceholder')"
         :aria-label="$t('skills.page.searchPlaceholder')"
       />
-    </div>
-    <div class="mgr-toolbar">
       <button
         class="mgr-mini"
         :class="{ on: sortByUsage }"
@@ -18,7 +18,7 @@
       >
         ⇅ {{ $t('skills.stats.sortByUsage') }}
       </button>
-      <button class="mgr-mini danger" @click="handleClearStats">
+      <button class="mgr-mini danger" :title="$t('skills.clearStatsHint')" @click="handleClearStats">
         {{ armedId === CLEAR_ID ? $t('skills.stats.confirmClear') : $t('skills.stats.clear') }}
       </button>
     </div>
@@ -264,8 +264,14 @@ onMounted(() => {
 }
 
 .mgr-mini.danger {
-  background: rgb(var(--danger-rgb) / 0.16);
+  background: transparent;
+  border-color: rgb(var(--danger-rgb) / 0.45);
   color: var(--danger);
+}
+
+.mgr-mini.danger:hover {
+  border-color: rgb(var(--danger-rgb) / 0.75);
+  background: rgb(var(--danger-rgb) / 0.08);
 }
 
 .mgr-error {

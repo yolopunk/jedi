@@ -12,14 +12,25 @@
       <span class="row-icon">{{ tool.icon }}</span>
       <div class="row-info">
         <div class="row-name">
-          <span class="row-tool-name">{{ tool.name }}</span>
+          <span class="row-tool-name">{{ displayName }}</span>
+          <span v-if="isFriendlyBuiltin" class="row-tool-id">{{ tool.name }}</span>
           <span class="row-source" v-if="tool.source === 'mcp'">MCP</span>
           <span class="row-risk" :class="tool.risk ?? 'read'">
             {{ $t(`skills.risk.${tool.risk ?? 'read'}`) }}
           </span>
           <span v-if="statBadge" class="row-stat-badge">{{ statBadge }}</span>
         </div>
-        <div class="row-desc">{{ tool.description }}</div>
+        <div class="row-desc">{{ displayPurpose }}</div>
+        <div v-if="expanded" class="row-meta">
+          <div class="row-meta-line">
+            <span class="row-meta-label">{{ $t('skills.toolIdLabel') }}</span>
+            <code class="row-meta-value">{{ tool.id }}</code>
+          </div>
+          <div class="row-meta-line">
+            <span class="row-meta-label">{{ $t('skills.toolDescLabel') }}</span>
+            <span class="row-meta-desc">{{ tool.description }}</span>
+          </div>
+        </div>
         <div v-if="expanded" class="row-params">
           <div v-if="paramEntries.length === 0" class="row-param-empty">
             {{ $t('skills.noParams') }}
@@ -29,6 +40,30 @@
             <span class="row-param-type">{{ schema.type }}</span>
             <span class="row-param-desc">{{ schema.description }}{{ schema.required ? ' *' : '' }}</span>
           </div>
+        </div>
+        <div v-if="expanded && (tool.risk ?? 'read') !== 'read'" class="row-perm">
+          <div class="row-perm-head">
+            <span class="row-perm-title">{{ $t('skills.alwaysAllowSection') }}</span>
+            <button
+              class="row-toggle warn"
+              :class="{ on: toolsStore.isAlwaysAllowed(tool.id) }"
+              role="switch"
+              :aria-checked="toolsStore.isAlwaysAllowed(tool.id)"
+              :aria-label="$t('skills.alwaysAllow')"
+              :title="$t('skills.alwaysAllowHint')"
+              @click.stop="
+                toolsStore.setAlwaysAllowed(tool.id, !toolsStore.isAlwaysAllowed(tool.id))
+              "
+              @keydown.stop
+            >
+              <span class="knob"></span>
+            </button>
+          </div>
+          <ul class="row-perm-notes">
+            <li>{{ $t('skills.alwaysAllowScope') }}</li>
+            <li>{{ $t('skills.alwaysAllowEffect') }}</li>
+            <li>{{ $t('skills.alwaysAllowRecover') }}</li>
+          </ul>
         </div>
         <div v-if="expanded && statLines.length" class="row-stats-detail">
           <div class="row-stats-line">
@@ -44,20 +79,6 @@
       </div>
     </div>
     <div class="row-actions" @click.stop>
-      <div v-if="(tool.risk ?? 'read') !== 'read'" class="row-toggle-row">
-        <span class="row-toggle-label">{{ $t('skills.alwaysAllow') }}</span>
-        <button
-          class="row-toggle warn"
-          :class="{ on: toolsStore.isAlwaysAllowed(tool.id) }"
-          role="switch"
-          :aria-checked="toolsStore.isAlwaysAllowed(tool.id)"
-          :aria-label="$t('skills.alwaysAllow')"
-          :title="$t('skills.alwaysAllowHint')"
-          @click="toolsStore.setAlwaysAllowed(tool.id, !toolsStore.isAlwaysAllowed(tool.id))"
-        >
-          <span class="knob"></span>
-        </button>
-      </div>
       <div class="row-toggle-row">
         <span class="row-toggle-label">{{ $t('skills.enabled') }}</span>
         <button
@@ -93,6 +114,20 @@ const toolsStore = useToolsStore()
 const statsStore = useToolStatsStore()
 
 const paramEntries = computed(() => Object.entries(props.tool.parameters?.properties ?? {}))
+
+// K01：内置工具（browser/filesystem/memory）首层显示中文友好名称与一句话用途，
+// 内部 ID / 英文长描述移入展开详情；其余工具（MCP 等）保持原始 name/description
+const FRIENDLY_TOOL_IDS = ['browser', 'filesystem', 'memory']
+
+const isFriendlyBuiltin = computed(() => FRIENDLY_TOOL_IDS.includes(props.tool.id))
+
+const displayName = computed(() =>
+  isFriendlyBuiltin.value ? t(`skills.toolFriendly.${props.tool.id}`) : props.tool.name
+)
+
+const displayPurpose = computed(() =>
+  isFriendlyBuiltin.value ? t(`skills.toolPurpose.${props.tool.id}`) : props.tool.description
+)
 
 const statBadge = computed<string | null>(() => {
   const s = statsStore.statsFor(props.tool.id)
@@ -227,15 +262,55 @@ const statErrors = computed(() =>
   font-weight: 600;
 }
 
+.row-tool-id {
+  flex-shrink: 0;
+  font-family: var(--jedi-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
 .row-desc {
   margin-top: 2px;
-  font-size: 11px;
+  font-size: 13px;
   color: var(--text-muted);
   line-height: 1.4;
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-meta {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row-meta-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.row-meta-label {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.row-meta-value {
+  font-family: var(--jedi-font-mono);
+  color: var(--accent);
+}
+
+.row-meta-desc {
+  min-width: 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .row-params {
@@ -371,5 +446,44 @@ const statErrors = computed(() =>
 
 .row-toggle.warn.on .knob {
   background: var(--warning);
+}
+
+.row-perm {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgb(var(--warning-rgb) / 0.35);
+  border-radius: 8px;
+  background: rgb(var(--warning-rgb) / 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row-perm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.row-perm-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.row-perm-notes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.row-perm-notes li {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
 }
 </style>

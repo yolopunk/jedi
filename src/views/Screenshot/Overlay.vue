@@ -53,7 +53,7 @@
     <!-- 底部提示（无选区时） -->
     <div v-if="!selection && !drag" class="hint">{{ t('screenshot.overlayHint') }}</div>
 
-    <div v-if="errorText" class="error-toast">{{ errorText }}</div>
+    <div v-if="errorText" class="error-toast" role="alert">{{ errorText }}</div>
   </div>
 </template>
 

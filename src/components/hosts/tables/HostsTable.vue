@@ -67,15 +67,19 @@
                         </td>
                         <td class="td-actions">
                             <button
+                                type="button"
                                 class="icon-action"
                                 @click="emit('edit-host', item.originalMap)"
+                                :aria-label="$t('common.edit')"
                                 :title="$t('common.edit')"
                             >
                                 <v-icon :icon="mdiPencilOutline" size="16" />
                             </button>
                             <button
+                                type="button"
                                 class="icon-action danger"
                                 @click="emit('delete-host', item.originalMap)"
+                                :aria-label="$t('common.delete')"
                                 :title="$t('common.delete')"
                             >
                                 <v-icon :icon="mdiTrashCanOutline" size="16" />
@@ -337,7 +341,7 @@ onUnmounted(() => {
 }
 
 .col-status { width: 88px; }
-.col-actions { width: 84px; }
+.col-actions { width: 96px; }
 
 .hosts-table thead th {
     position: sticky;
@@ -439,14 +443,23 @@ onUnmounted(() => {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     border: none;
     border-radius: 5px;
     background: none;
     color: var(--text-subtle);
     cursor: pointer;
     transition: background 0.12s ease, color 0.12s ease;
+}
+
+.icon-action + .icon-action {
+    margin-left: 8px;
+}
+
+.icon-action:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
 }
 
 .icon-action:hover {

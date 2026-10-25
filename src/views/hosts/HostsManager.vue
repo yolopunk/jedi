@@ -6,14 +6,31 @@
         <v-icon :icon="mdiDomain" size="18" aria-hidden="true" />
         <span class="header-title">{{ t('sidebar.hostsManager') }}</span>
       </div>
-      <button
-        type="button"
-        class="header-primary-btn"
-        @click="dialogs.addGroup = true"
-      >
-        <v-icon :icon="mdiPlus" size="16" aria-hidden="true" />
-        <span>{{ t('hosts.groups.add') }}</span>
-      </button>
+      <div class="header-actions">
+        <button
+          type="button"
+          class="global-switch-btn"
+          :class="{ on: hostsResolveSwitch }"
+          :aria-pressed="hostsResolveSwitch"
+          :title="t('hosts.globalSwitch.hint')"
+          @click="toggleGlobalSwitch"
+        >
+          <v-icon
+            :icon="hostsResolveSwitch ? mdiPowerPlugOutline : mdiPowerPlugOffOutline"
+            size="16"
+            aria-hidden="true"
+          />
+          <span>{{ t('hosts.globalSwitch.label') }}: {{ hostsResolveSwitch ? t('hosts.globalSwitch.enabled') : t('hosts.globalSwitch.disabled') }}</span>
+        </button>
+        <button
+          type="button"
+          class="header-primary-btn"
+          @click="dialogs.addGroup = true"
+        >
+          <v-icon :icon="mdiPlus" size="16" aria-hidden="true" />
+          <span>{{ t('hosts.groups.add') }}</span>
+        </button>
+      </div>
     </div>
 
     <div class="content-wrapper">
@@ -115,23 +132,15 @@
   />
 
   <AppNotification />
-
-  <!-- 全局开关悬浮按钮 -->
-  <global-switch-fab
-    v-model="hostsResolveSwitch"
-    @update:model-value="handleHostsSwitch"
-    class="fade-in"
-  />
 </template>
 
 <script setup lang="ts">
-import { mdiDomain, mdiPlus } from '@mdi/js'
+import { mdiDomain, mdiPlus, mdiPowerPlugOffOutline, mdiPowerPlugOutline } from '@mdi/js'
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getOsInfo } from '@/api/hosts'
 import AppNotification from '@/components/common/AppNotification.vue'
 import EmptyState from '@/components/hosts/common/EmptyState.vue'
-import GlobalSwitchFab from '@/components/hosts/common/GlobalSwitchFab.vue'
 import GroupManager from '@/components/hosts/common/GroupManager.vue'
 import AddGroupDialog from '@/components/hosts/dialogs/AddGroupDialog.vue'
 import AddHostDialog from '@/components/hosts/dialogs/AddHostDialog.vue'
@@ -200,6 +209,13 @@ function removeHost(host: HostEntry) {
 
 function handleOpenDomain(_domain: string, message: string) {
   showNotification(message, 'info')
+}
+
+// 与原悬浮开关等价：先乐观翻转状态，再调用统一切换逻辑（失败时由 useHostsData 回滚）
+function toggleGlobalSwitch() {
+  const next = !hostsResolveSwitch.value
+  hostsResolveSwitch.value = next
+  handleHostsSwitch(next)
 }
 
 function openRenameGroupDialog(name: string) {
@@ -283,6 +299,37 @@ onMounted(async () => {
 .header-primary-btn:hover {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.global-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-family: var(--jedi-font-ui);
+  color: var(--text);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color var(--motion-fast), color var(--motion-fast);
+}
+
+.global-switch-btn:hover {
+  border-color: rgb(var(--accent-rgb) / 0.5);
+}
+
+.global-switch-btn.on {
+  color: var(--success);
+  border-color: rgb(var(--success-rgb) / 0.45);
 }
 
 .content-wrapper {

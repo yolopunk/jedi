@@ -30,14 +30,6 @@
 
       <!-- Content -->
       <div class="card-body">
-        <div class="warning-icon">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="1.5"/>
-            <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2"/>
-            <circle cx="12" cy="17" r="1" fill="currentColor"/>
-          </svg>
-        </div>
-
         <p class="confirm-text">{{ $t('hosts.dialog.deleteConfirm') }}</p>
 
         <div v-if="host" class="host-info">
@@ -190,18 +182,6 @@ function confirmDelete() {
   flex-direction: column;
   align-items: center;
   text-align: center;
-}
-
-.warning-icon {
-  width: 64px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgb(var(--danger-rgb) / 0.08);
-  border-radius: 50%;
-  color: var(--danger);
-  margin-bottom: 16px;
 }
 
 .confirm-text {

@@ -1,9 +1,8 @@
 <template>
   <v-dialog
     :model-value="modelValue"
-    @update:model-value="$emit('update:modelValue', $event)"
+    @update:model-value="onModelChange"
     max-width="480"
-    persistent
   >
     <v-card class="model-settings-card">
       <!-- Header -->
@@ -21,7 +20,7 @@
             <p>{{ $t('hosts.dialog.addToGroup', { group: groupName }) }}</p>
           </div>
         </div>
-        <button class="close-btn" type="button" :aria-label="$t('common.close')" @click="closeDialog">
+        <button class="close-btn" type="button" :aria-label="$t('common.close')" @click="requestClose">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
             <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -40,16 +39,15 @@
             </svg>
             {{ $t('hosts.dialog.ipLabel') }}
           </label>
-          <div class="input-wrapper">
-            <span class="input-prefix">IP</span>
-            <input
-              v-model="hostIp"
-              type="text"
-              class="form-input with-prefix"
-              placeholder="192.168.1.1"
-              @keyup.enter="confirmAdd"
-            />
-          </div>
+          <input
+            id="add-host-ip"
+            ref="ipInputRef"
+            v-model="hostIp"
+            type="text"
+            class="form-input"
+            placeholder="192.168.1.1"
+            @keyup.enter="confirmAdd"
+          />
         </div>
 
         <div class="form-group">
@@ -60,15 +58,25 @@
             </svg>
             {{ $t('hosts.dialog.domainLabel') }}
           </label>
-          <div class="input-wrapper">
-            <span class="input-prefix">URL</span>
-            <input
-              v-model="hostDomain"
-              type="text"
-              class="form-input with-prefix"
-              placeholder="example.com"
-              @keyup.enter="confirmAdd"
-            />
+          <input
+            id="add-host-domain"
+            v-model="hostDomain"
+            type="text"
+            class="form-input"
+            placeholder="example.com"
+            @keyup.enter="confirmAdd"
+          />
+        </div>
+
+        <div v-if="showDirtyConfirm" class="dirty-bar" role="alert">
+          <span class="dirty-title">{{ $t('mcp.dirtyTitle') }}</span>
+          <div class="dirty-actions">
+            <button ref="dirtyKeepRef" type="button" class="dirty-btn" @click="keepEditing">
+              {{ $t('mcp.dirtyKeep') }}
+            </button>
+            <button type="button" class="dirty-btn danger" @click="discardAndClose">
+              {{ $t('mcp.dirtyDiscard') }}
+            </button>
           </div>
         </div>
       </div>
@@ -88,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { validateHostInput } from '@/utils/hostsUtils'
 
@@ -107,6 +115,12 @@ const emit = defineEmits<{
 
 const hostIp = ref('')
 const hostDomain = ref('')
+const showDirtyConfirm = ref(false)
+const dirtyKeepRef = ref<HTMLButtonElement | null>(null)
+const ipInputRef = ref<HTMLInputElement | null>(null)
+
+// 任一输入字段有内容即视为脏数据
+const isDirty = computed(() => hostIp.value.trim() !== '' || hostDomain.value.trim() !== '')
 
 watch(
   () => props.modelValue,
@@ -114,12 +128,43 @@ watch(
     if (open) {
       hostIp.value = ''
       hostDomain.value = ''
+      showDirtyConfirm.value = false
     }
   }
 )
 
+function onModelChange(value: boolean) {
+  if (value) {
+    emit('update:modelValue', true)
+    return
+  }
+  requestClose()
+}
+
 function closeDialog() {
   emit('update:modelValue', false)
+}
+
+// 空表单时 Esc / 遮罩 / 关闭按钮直接关闭；有改动时先显示内联确认条
+function requestClose() {
+  if (!isDirty.value) {
+    closeDialog()
+    return
+  }
+  showDirtyConfirm.value = true
+  nextTick(() => dirtyKeepRef.value?.focus())
+}
+
+function keepEditing() {
+  showDirtyConfirm.value = false
+  nextTick(() => ipInputRef.value?.focus())
+}
+
+function discardAndClose() {
+  hostIp.value = ''
+  hostDomain.value = ''
+  showDirtyConfirm.value = false
+  closeDialog()
 }
 
 function confirmAdd() {
@@ -237,50 +282,69 @@ function confirmAdd() {
   color: var(--success);
 }
 
-.input-wrapper {
-  display: flex;
-  align-items: center;
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
   background: rgb(var(--accent-rgb) / 0.03);
   border: 1px solid rgb(var(--accent-rgb) / 0.12);
   border-radius: 10px;
-  overflow: hidden;
-  transition: border-color 0.15s;
-}
-
-.input-wrapper:focus-within {
-  border-color: rgb(var(--accent-rgb) / 0.4);
-  box-shadow: 0 0 0 2px rgb(var(--accent-rgb) / 0.1);
-}
-
-.input-prefix {
-  padding: 12px 14px;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  color: rgb(var(--accent-rgb) / 0.6);
-  background: rgb(var(--accent-rgb) / 0.05);
-  border-right: 1px solid rgb(var(--accent-rgb) / 0.12);
-  min-width: 52px;
-  text-align: center;
-}
-
-.form-input {
-  flex: 1;
-  padding: 12px 14px;
-  background: transparent;
-  border: none;
   outline: none;
   color: var(--text);
   font-family: 'JetBrains Mono', monospace;
   font-size: 13px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-input:focus {
+  border-color: rgb(var(--accent-rgb) / 0.4);
+  box-shadow: 0 0 0 2px rgb(var(--accent-rgb) / 0.1);
 }
 
 .form-input::placeholder {
-  color: rgb(var(--text-rgb) / 0.2);
+  color: rgb(var(--text-rgb) / 0.45);
 }
 
-.form-input.with-prefix {
-  padding-left: 12px;
+.dirty-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgb(var(--warning-rgb) / 0.14);
+  border: 1px solid rgb(var(--warning-rgb) / 0.32);
+}
+
+.dirty-title {
+  font-size: 12px;
+  color: var(--warning);
+}
+
+.dirty-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.dirty-btn {
+  cursor: pointer;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgb(var(--text-rgb) / 0.08);
+  color: var(--text);
+  transition: filter 0.15s ease;
+}
+
+.dirty-btn:hover {
+  filter: brightness(1.15);
+}
+
+.dirty-btn.danger {
+  background: rgb(var(--danger-rgb) / 0.16);
+  color: var(--danger);
 }
 
 .card-footer {

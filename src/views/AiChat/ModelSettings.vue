@@ -19,11 +19,11 @@
             </svg>
           </div>
           <div class="brand-text">
-            <h2>Configure Provider</h2>
-            <p v-if="!selectedProvider">Select a provider to configure</p>
+            <h2>{{ t('modelSettings.title') }}</h2>
+            <p v-if="!selectedProvider">{{ t('modelSettings.subtitle') }}</p>
           </div>
         </div>
-        <button class="close-btn" aria-label="Close" @click="$emit('update:modelValue', false)">
+        <button class="close-btn" :aria-label="t('common.close')" @click="$emit('update:modelValue', false)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
             <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -34,7 +34,7 @@
       <!-- Loading State -->
       <div v-if="loading" class="loading-state">
         <div class="spinner"></div>
-        <span>Loading providers...</span>
+        <span>{{ t('modelSettings.loading') }}</span>
       </div>
 
       <!-- Error State -->
@@ -45,7 +45,7 @@
           <circle cx="12" cy="16" r="1" fill="currentColor"/>
         </svg>
         <span>{{ error }}</span>
-        <button class="retry-btn" @click="retryLoad">Retry</button>
+        <button class="retry-btn" @click="retryLoad">{{ t('modelSettings.retry') }}</button>
       </div>
 
       <!-- Main Content -->
@@ -53,7 +53,7 @@
         <!-- Provider List (shown when no provider selected) -->
         <div v-if="!selectedProvider" class="provider-list">
           <div class="list-header">
-            <span class="list-label">PROVIDERS</span>
+            <span class="list-label">{{ t('modelSettings.providers') }}</span>
             <div class="category-pills">
               <button
                 v-for="cat in categories"
@@ -62,7 +62,7 @@
                 :class="{ active: activeCategory === cat.id }"
                 @click="activeCategory = cat.id"
               >
-                {{ cat.label }}
+                {{ t(`modelSettings.category.${cat.id}`) }}
                 <span class="pill-count">{{ getCategoryCount(cat.id) }}</span>
               </button>
             </div>
@@ -70,7 +70,7 @@
               v-model="providerSearch"
               type="text"
               class="provider-search"
-              placeholder="Search providers..."
+              :placeholder="t('modelSettings.searchProviders')"
             />
           </div>
 
@@ -104,15 +104,15 @@
                 </div>
                 <div class="provider-info">
                   <span class="provider-name">{{ provider.name }}</span>
-                  <span class="provider-models">{{ Object.keys(provider.models).length }} models</span>
+                  <span class="provider-models">{{ t('modelSettings.modelsCount', { n: Object.keys(provider.models).length }) }}</span>
                 </div>
                 <div class="provider-status">
                   <span v-if="isConfigured(provider.id)" class="status-badge configured">
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-                    Ready
+                    {{ t('modelSettings.ready') }}
                   </span>
                   <span v-else class="status-badge">
-                    Not set
+                    {{ t('modelSettings.notSet') }}
                   </span>
                 </div>
               </div>
@@ -123,7 +123,7 @@
                 :class="{ active: modelsDevStore.selectedProviderId === provider.id }"
                 @click.stop="selectProviderDirectly(provider)"
               >
-                {{ modelsDevStore.selectedProviderId === provider.id ? 'Using' : 'Select' }}
+                {{ modelsDevStore.selectedProviderId === provider.id ? t('modelSettings.using') : t('modelSettings.select') }}
               </button>
               <!-- Chevron for unconfigured providers (click to configure) -->
               <svg v-else class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -132,7 +132,7 @@
             </div>
 
             <div v-if="filteredProviders.length === 0" class="empty-list">
-              <span>No providers in this category</span>
+              <span>{{ t('modelSettings.emptyCategory') }}</span>
             </div>
           </div>
         </div>
@@ -145,7 +145,7 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                 <polyline points="15 18 9 12 15 6" stroke="currentColor" stroke-width="2"/>
               </svg>
-              Back
+              {{ t('common.back') }}
             </button>
             <div class="selected-provider">
               <div class="provider-logo large">
@@ -176,7 +176,7 @@
                       <polyline points="15 3 21 3 21 9" stroke="currentColor" stroke-width="2"/>
                       <line x1="10" y1="14" x2="21" y2="3" stroke="currentColor" stroke-width="2"/>
                     </svg>
-                    Doc
+                    {{ t('modelSettings.doc') }}
                   </a>
                 </div>
               </div>
@@ -186,7 +186,7 @@
           <!-- API Key Config (both custom and non-custom) -->
           <div class="config-form">
             <div class="form-group">
-              <label>API KEY</label>
+              <label>{{ t('modelSettings.apiKey') }}</label>
               <div class="input-row">
                 <input
                   v-model="configApiKey"
@@ -196,7 +196,7 @@
                 />
                 <button
                   class="toggle-btn"
-                  :aria-label="showKey ? 'Hide API key' : 'Show API key'"
+                  :aria-label="showKey ? t('modelSettings.hideKey') : t('modelSettings.showKey')"
                   @click="showKey = !showKey"
                 >
                   <svg v-if="showKey" width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -213,7 +213,7 @@
 
             <!-- Custom provider: Base URL field -->
             <div v-if="selectedProvider.isCustom" class="form-group">
-              <label>BASE URL</label>
+              <label>{{ t('modelSettings.baseUrl') }}</label>
               <input
                 v-model="configBaseUrl"
                 type="text"
@@ -224,17 +224,17 @@
 
             <!-- Custom provider: Model ID field -->
             <div v-if="selectedProvider.isCustom" class="form-group">
-              <label>MODEL ID</label>
+              <label>{{ t('modelSettings.modelId') }}</label>
               <input
                 v-model="configModelId"
                 type="text"
-                placeholder="e.g., gpt-4o, claude-3-opus"
+                :placeholder="t('modelSettings.modelIdPlaceholder')"
                 class="api-input"
               />
             </div>
 
             <div class="form-actions">
-              <v-tooltip text="Verify credentials work">
+              <v-tooltip :text="t('modelSettings.testTooltip')">
                 <template v-slot:activator="{ props }">
                   <v-btn
                     v-bind="props"
@@ -245,24 +245,24 @@
                     @click="testConnection"
                   >
                     <v-icon icon="mdi-lightning-bolt" start size="14" />
-                    Test
+                    {{ t('modelSettings.test') }}
                   </v-btn>
                 </template>
               </v-tooltip>
               <button
                 v-if="isCurrentProviderConfigured"
                 class="delete-btn"
-                title="Remove saved credentials"
+                :title="t('modelSettings.removeKeyTooltip')"
                 @click="deleteKey"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                   <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14z" stroke="currentColor" stroke-width="2"/>
                 </svg>
-                Remove Key
+                {{ t('modelSettings.removeKey') }}
               </button>
               <div class="spacer"></div>
               <v-btn size="small" variant="text" @click="selectedProvider = null">
-                Cancel
+                {{ t('common.cancel') }}
               </v-btn>
               <v-btn
                 v-if="!isCurrentProviderConfigured"
@@ -271,7 +271,7 @@
                 :disabled="!configApiKey"
                 @click="saveKey"
               >
-                Save
+                {{ t('common.save') }}
               </v-btn>
             </div>
 
@@ -283,7 +283,7 @@
           <!-- Model List -->
           <div class="model-section">
             <div class="section-header">
-              <span class="section-label">AVAILABLE MODELS</span>
+              <span class="section-label">{{ t('modelSettings.availableModels') }}</span>
               <span class="model-count">{{ filteredModels.length }} / {{ selectedProviderModels.length }}</span>
             </div>
 
@@ -296,10 +296,10 @@
               <input
                 v-model="modelSearch"
                 type="text"
-                placeholder="Search models..."
+                :placeholder="t('modelSettings.searchModels')"
                 class="search-input"
               />
-              <button v-if="modelSearch" class="clear-search" aria-label="Clear search" @click="modelSearch = ''">
+              <button v-if="modelSearch" class="clear-search" :aria-label="t('modelSettings.clearSearch')" @click="modelSearch = ''">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                   <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
                   <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -323,19 +323,19 @@
                   <div class="model-name-row">
                     <span class="model-name">{{ model.name }}</span>
                     <div class="model-badges">
-                      <v-tooltip :text="`Context: ${formatContext(model.limit?.context)}`">
+                      <v-tooltip :text="t('modelSettings.contextTooltip', { size: formatContext(model.limit?.context) })">
                         <template v-slot:activator="{ props }">
                           <span v-bind="props" class="badge context">
                             {{ formatContextShort(model.limit?.context) }}
                           </span>
                         </template>
                       </v-tooltip>
-                      <v-tooltip v-if="model.reasoning" text="Supports reasoning">
+                      <v-tooltip v-if="model.reasoning" :text="t('modelSettings.supportsReasoning')">
                         <template v-slot:activator="{ props }">
                           <span v-bind="props" class="badge reasoning">R</span>
                         </template>
                       </v-tooltip>
-                      <v-tooltip v-if="model.tool_call" text="Supports tool calling">
+                      <v-tooltip v-if="model.tool_call" :text="t('modelSettings.supportsTools')">
                         <template v-slot:activator="{ props }">
                           <span v-bind="props" class="badge tools">T</span>
                         </template>
@@ -356,7 +356,7 @@
               </div>
 
               <div v-if="filteredModels.length === 0" class="empty-models">
-                <span>No models match "{{ modelSearch }}"</span>
+                <span>{{ t('modelSettings.noModelsMatch', { query: modelSearch }) }}</span>
               </div>
             </div>
           </div>
@@ -369,6 +369,7 @@
 <script setup lang="ts">
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useModelsDevStore } from '@/stores/modelsDev'
 import { useProviderConfigStore } from '@/stores/providerConfig'
 import type { ModelsDevModel, ModelsDevProvider } from '@/types/modelsDev'
@@ -378,6 +379,7 @@ const emit = defineEmits<(e: 'update:modelValue', value: boolean | string) => vo
 
 const modelsDevStore = useModelsDevStore()
 const providerConfigStore = useProviderConfigStore()
+const { t } = useI18n()
 
 const activeCategory = ref<'popular' | 'configured' | 'other' | 'custom'>('popular')
 const providerSearch = ref('')
@@ -392,10 +394,10 @@ const modelSearch = ref('')
 const testResult = ref<{ type: 'success' | 'error'; message: string } | null>(null)
 
 const categories = [
-  { id: 'popular' as const, label: 'Popular' },
-  { id: 'configured' as const, label: 'Configured' },
-  { id: 'other' as const, label: 'Other' },
-  { id: 'custom' as const, label: 'Custom' },
+  { id: 'popular' as const },
+  { id: 'configured' as const },
+  { id: 'other' as const },
+  { id: 'custom' as const },
 ]
 
 const loading = computed(() => modelsDevStore.loading || providerConfigStore.loading)
@@ -404,7 +406,7 @@ const error = computed(() => modelsDevStore.error || providerConfigStore.error)
 // Special built-in custom provider entry
 const CUSTOM_PROVIDER_ENTRY: ModelsDevProvider = {
   id: '__custom__',
-  name: 'Custom Provider',
+  name: t('modelSettings.customProvider'),
   models: {},
   isCustom: true,
 }
@@ -583,7 +585,7 @@ async function testConnection() {
     if (!baseURL) {
       testResult.value = {
         type: 'error',
-        message: 'This provider requires a base URL endpoint to be configured.',
+        message: t('modelSettings.testNeedBaseUrl'),
       }
       return
     }
@@ -596,20 +598,25 @@ async function testConnection() {
     if (res.ok) {
       testResult.value = {
         type: 'success',
-        message: 'Connection successful — credentials verified.',
+        message: t('modelSettings.testSuccess'),
       }
     } else if (res.status === 401 || res.status === 403) {
       testResult.value = {
         type: 'error',
-        message: `Authentication failed (HTTP ${res.status}). Check your API key.`,
+        message: t('modelSettings.testAuthFailed', { status: res.status }),
       }
     } else {
-      testResult.value = { type: 'error', message: `Provider responded with HTTP ${res.status}.` }
+      testResult.value = {
+        type: 'error',
+        message: t('modelSettings.testHttpError', { status: res.status }),
+      }
     }
   } catch (e) {
     testResult.value = {
       type: 'error',
-      message: `Connection failed: ${e instanceof Error ? e.message : String(e)}`,
+      message: t('modelSettings.testFailed', {
+        reason: e instanceof Error ? e.message : String(e),
+      }),
     }
   } finally {
     testing.value = false
@@ -636,20 +643,29 @@ function formatCost(model: ModelsDevModel): string {
   if (!input && !output) return ''
   const fmt = (n: number) => `$${(n / 1000000).toFixed(1)}`
   if (input && output) return `${fmt(input)}/${fmt(output)}`
-  if (input !== undefined) return `in: ${fmt(input)}`
-  return output !== undefined ? `out: ${fmt(output)}` : ''
+  if (input !== undefined) return `${t('modelSettings.costInput')}: ${fmt(input)}`
+  return output !== undefined ? `${t('modelSettings.costOutput')}: ${fmt(output)}` : ''
 }
 
 function buildCostTooltip(model: ModelsDevModel): string {
   const parts: string[] = []
-  if (model.cost?.input) parts.push(`Input: $${(model.cost.input / 1000000).toFixed(2)}/1M tokens`)
+  if (model.cost?.input)
+    parts.push(
+      `${t('modelSettings.costInput')}: $${(model.cost.input / 1000000).toFixed(2)}/1M tokens`
+    )
   if (model.cost?.output)
-    parts.push(`Output: $${(model.cost.output / 1000000).toFixed(2)}/1M tokens`)
+    parts.push(
+      `${t('modelSettings.costOutput')}: $${(model.cost.output / 1000000).toFixed(2)}/1M tokens`
+    )
   if (model.cost?.cache_read)
-    parts.push(`Cache read: $${(model.cost.cache_read / 1000000).toFixed(2)}/1M`)
+    parts.push(
+      `${t('modelSettings.costCacheRead')}: $${(model.cost.cache_read / 1000000).toFixed(2)}/1M`
+    )
   if (model.cost?.cache_write)
-    parts.push(`Cache write: $${(model.cost.cache_write / 1000000).toFixed(2)}/1M`)
-  return parts.length ? parts.join('\n') : 'No cost data'
+    parts.push(
+      `${t('modelSettings.costCacheWrite')}: $${(model.cost.cache_write / 1000000).toFixed(2)}/1M`
+    )
+  return parts.length ? parts.join('\n') : t('modelSettings.noCostData')
 }
 
 function isUrl(str: string): boolean {

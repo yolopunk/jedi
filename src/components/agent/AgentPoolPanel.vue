@@ -10,10 +10,10 @@
               <path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="1.5"/>
               <line x1="12" y1="12" x2="12" y2="12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
             </svg>
-            <span class="header-title">Workers</span>
+            <span class="header-title">{{ t('agentPool.title') }}</span>
             <span v-if="workers.length > 0" class="worker-count">{{ workers.length }}</span>
           </div>
-          <button class="close-btn" @click="$emit('update:showPanel', false)">
+          <button class="close-btn" :aria-label="t('common.close')" @click="$emit('update:showPanel', false)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
               <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -28,7 +28,7 @@
               <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
               <path d="M9 10h.01M15 10h.01M9 14s1 1 3 1 3-1 3-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
-            <span>No active workers</span>
+            <span>{{ t('agentPool.empty') }}</span>
           </div>
           <div v-else class="worker-list">
             <WorkerCard
@@ -45,6 +45,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useAgentPool } from '@/agent/useAgentPool'
 
 defineProps<{
@@ -55,6 +56,7 @@ defineEmits<{
   'update:showPanel': [value: boolean]
 }>()
 
+const { t } = useI18n()
 const { workers, stop } = useAgentPool()
 
 function handleStop(workerId: string) {

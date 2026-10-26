@@ -1170,7 +1170,7 @@ onUnmounted(() => {
   margin-top: 20px;
   margin-bottom: 10px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--text);
   font-family: inherit;
 }
 
@@ -1179,6 +1179,46 @@ onUnmounted(() => {
   line-height: 1.6;
   color: var(--text-muted);
   font-family: inherit;
+}
+
+.markdown-body :deep(ul),
+.markdown-body :deep(ol) {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+
+.markdown-body :deep(li) {
+  margin: 5px 0;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.markdown-body :deep(li)::marker {
+  color: var(--accent);
+}
+
+.markdown-body :deep(strong) {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.markdown-body :deep(a) {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgb(var(--accent-rgb) / 0.35);
+}
+
+.markdown-body :deep(blockquote) {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  background: rgb(var(--accent-rgb) / 0.05);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 4px 4px 0;
+  color: var(--text-muted);
+}
+
+.markdown-body :deep(blockquote p) {
+  margin-bottom: 0;
 }
 
 .markdown-body :deep(pre) {

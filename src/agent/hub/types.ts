@@ -8,7 +8,7 @@
 import type { RunAgentHooks, RunAgentResult, RunAgentSpec } from '@/agent/runAgent'
 
 export interface SpawnSpec {
-  kind: 'windows-exe' | 'windows-cmd' | 'wsl' | 'unix'
+  kind: 'windows-exe' | 'windows-cmd' | 'windows-app' | 'wsl' | 'unix'
   distro?: string | null
   exe: string
 }

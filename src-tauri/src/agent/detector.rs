@@ -1,7 +1,7 @@
 // Agent hub detection (see docs/ai-chat/05-multi-agent-rd-plan.md §5).
 //
 // Discovers installed coding agents across hosts, aligned with Magpie's
-// mainstream agent list (https://github.com/yetone/magpie):
+// mainstream agent list (https://github.com/yetone/magpie) plus ZCode:
 //  - Windows host: known-dir scan (npm/scoop/cargo/volta/...) + `where.exe`
 //  - WSL: enumerate distros (`wsl.exe -l -q`, UTF-16LE output!), filter
 //    virtual distros, then one probe script per distro (PATH + login shell
@@ -42,6 +42,7 @@ pub const AGENTS: &[AgentDef] = &[
   // is the Antigravity IDE launcher (VS Code fork: diff/merge/goto flags) —
   // probing that name yields a false positive, verified on a real machine.
   AgentDef { id: "antigravity", display_name: "Antigravity CLI", binaries: &["agy"] },
+  AgentDef { id: "zcode", display_name: "ZCode", binaries: &["zcode"] },
 ];
 
 const CACHE_TTL: Duration = Duration::from_secs(24 * 3600);
@@ -129,7 +130,7 @@ fn shquote(s: &str) -> String {
 
 /// POSIX probe script: per agent, resolve the first binary visible on PATH or
 /// in a known install dir, printing `agent-id|/abs/path` lines. Runs once per
-/// host (login shell), so one spawn covers all 12 agents.
+/// host (login shell), so one spawn covers every supported agent.
 fn unix_probe_script() -> String {
   let mut script = String::from(
     "DIRS=\"$HOME/.local/bin $HOME/.npm-global/bin $HOME/.local/share/pnpm $HOME/.bun/bin $HOME/.volta/bin $HOME/.cargo/bin $HOME/go/bin $HOME/.deno/bin /usr/local/bin /opt/homebrew/bin /usr/bin /usr/sbin\"\n",
@@ -234,6 +235,42 @@ fn windows_candidate_dirs() -> Vec<std::path::PathBuf> {
 }
 
 #[cfg(target_os = "windows")]
+async fn probe_windows_zcode_desktop() -> Option<(String, String, SpawnSpec)> {
+  // The desktop installer does not add `zcode` to PATH, but it ships the same
+  // Agent CLI runtime under resources/glm/zcode.cjs. Resolve the install from
+  // its per-user uninstall entry so custom installation directories work.
+  let mut cmd = Command::new("reg.exe");
+  cmd.args([
+    "query",
+    "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall",
+    "/s",
+    "/f",
+    "ZCode",
+    "/d",
+  ]);
+  let output = run_capture(&mut cmd, Duration::from_secs(3)).await.ok()?;
+  let icon_path = output.lines().find_map(|line| {
+    let line = line.trim();
+    let value = line.strip_prefix("DisplayIcon")?.trim_start();
+    value.strip_prefix("REG_SZ").map(str::trim)
+  })?;
+  let install_dir = std::path::Path::new(icon_path.trim_matches('"')).parent()?;
+  let runtime = install_dir.join("resources").join("glm").join("zcode.cjs");
+  if !runtime.is_file() {
+    return None;
+  }
+  Some((
+    "zcode".into(),
+    "windows".into(),
+    SpawnSpec {
+      kind: "windows-app".into(),
+      distro: None,
+      exe: runtime.to_string_lossy().into_owned(),
+    },
+  ))
+}
+
+#[cfg(target_os = "windows")]
 async fn probe_windows_host() -> Vec<(String, String, SpawnSpec)> {
   let dirs = windows_candidate_dirs();
   let exts = ["", ".cmd", ".exe", ".bat"];
@@ -272,6 +309,11 @@ async fn probe_windows_host() -> Vec<(String, String, SpawnSpec)> {
       ));
     }
   }
+  if !found.iter().any(|(agent_id, _, _)| agent_id == "zcode") {
+    if let Some(zcode) = probe_windows_zcode_desktop().await {
+      found.push(zcode);
+    }
+  }
   found
 }
 
@@ -291,6 +333,9 @@ fn current_host() -> &'static str {
 }
 
 async fn probe_version(spec: SpawnSpec) -> Option<String> {
+  if spec.kind == "windows-app" {
+    return None;
+  }
   let mut cmd = match spec.kind.as_str() {
     "wsl" => {
       let mut c = Command::new("wsl.exe");

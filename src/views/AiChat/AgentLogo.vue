@@ -7,7 +7,6 @@ import geminiCliLogo from '@lobehub/icons-static-svg/icons/geminicli-color.svg?u
 import gooseLogo from '@lobehub/icons-static-svg/icons/goose.svg?url'
 import kimiLogo from '@lobehub/icons-static-svg/icons/kimi-color.svg?url'
 import opencodeLogo from '@lobehub/icons-static-svg/icons/opencode.svg?url'
-import piLogo from '@lobehub/icons-static-svg/icons/pi.svg?url'
 import qwenLogo from '@lobehub/icons-static-svg/icons/qwen-color.svg?url'
 import { computed } from 'vue'
 
@@ -36,7 +35,7 @@ const logos: Record<string, LogoDefinition> = {
   'qwen-code': { src: qwenLogo },
   'cursor-cli': { src: cursorLogo, monochrome: true },
   opencode: { src: opencodeLogo, monochrome: true },
-  pi: { src: piLogo, monochrome: true },
+  pi: { src: '/agent-logos/pi.svg' },
   antigravity: { src: antigravityLogo },
   goose: { src: gooseLogo, monochrome: true },
   'kimi-code': { src: kimiLogo },

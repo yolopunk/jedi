@@ -134,10 +134,12 @@ const navItems = [
   { to: '/screenshot', icon: mdiCrop, tooltipKey: 'sidebar.screenshot' },
 ]
 
-// Width changes are immediate while dragging; collapse remains an explicit action.
+// Expanded widths resize continuously. Pulling past the minimum snaps to the
+// compact icon rail so the handle's true minimum matches the visible layout.
 const defaultWidth = 220
 const collapsedWidth = 64
 const minWidth = 176
+const collapseThreshold = minWidth - 24
 const maxWidth = 320
 const width = ref(defaultWidth)
 const isResizing = ref(false)
@@ -182,9 +184,13 @@ function doResize(event: PointerEvent) {
     startX = event.clientX
     startWidth = minWidth
   }
-  width.value = Math.round(
-    Math.min(maxWidth, Math.max(minWidth, startWidth + event.clientX - startX))
-  )
+  const nextWidth = startWidth + event.clientX - startX
+  if (nextWidth <= collapseThreshold) {
+    isCollapsed.value = true
+    emit('update:width', collapsedWidth)
+    return
+  }
+  width.value = Math.round(Math.min(maxWidth, Math.max(minWidth, nextWidth)))
   emit('update:width', width.value)
 }
 
@@ -216,13 +222,21 @@ function resizeWithKeyboard(event: KeyboardEvent) {
     isCollapsed.value = !isCollapsed.value
     return
   }
+  if (event.key === 'Home') {
+    isCollapsed.value = true
+    emit('update:width', collapsedWidth)
+    return
+  }
   const step = event.shiftKey ? 32 : 8
   const next =
-    event.key === 'Home'
-      ? minWidth
-      : event.key === 'End'
-        ? maxWidth
-        : (isCollapsed.value ? minWidth : width.value) + (event.key === 'ArrowRight' ? step : -step)
+    event.key === 'End'
+      ? maxWidth
+      : (isCollapsed.value ? minWidth : width.value) + (event.key === 'ArrowRight' ? step : -step)
+  if (!isCollapsed.value && event.key === 'ArrowLeft' && next <= minWidth) {
+    isCollapsed.value = true
+    emit('update:width', collapsedWidth)
+    return
+  }
   width.value = Math.min(maxWidth, Math.max(minWidth, next))
   isCollapsed.value = false
   emit('update:width', width.value)

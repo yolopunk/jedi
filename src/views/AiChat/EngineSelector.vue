@@ -219,9 +219,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  border: 1px solid rgb(var(--accent-rgb) / 0.22);
+  border: 1px solid transparent;
   border-radius: 9px;
-  background: linear-gradient(145deg, rgb(var(--accent-rgb) / 0.16), rgb(var(--accent-rgb) / 0.055));
+  background: transparent;
   color: var(--text);
 }
 
@@ -370,14 +370,14 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   flex: 0 0 32px;
   display: grid;
   place-items: center;
-  border: 1px solid rgb(var(--text-rgb) / 0.09);
+  border: 1px solid transparent;
   border-radius: 9px;
-  background: var(--surface-raised);
+  background: transparent;
 }
 
 .engine-item.selected .engine-logo {
-  border-color: rgb(var(--accent-rgb) / 0.25);
-  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.055);
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .engine-item:disabled {

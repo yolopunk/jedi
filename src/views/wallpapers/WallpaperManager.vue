@@ -1130,8 +1130,10 @@ onUnmounted(() => {
   max-height: 95vh;
 }
 
-/* Console Snackbar */
-.console-snackbar {
+/* Console Snackbar — style the wrapper pill, not the overlay root: the
+   component class lands on the fullscreen .v-snackbar overlay, and a
+   background there would blank the whole page whenever a toast shows. */
+.console-snackbar :deep(.v-snackbar__wrapper) {
   background: var(--bg-terminal) !important;
   border: 1px solid rgb(var(--accent-rgb) / 0.3);
   border-radius: 4px !important;

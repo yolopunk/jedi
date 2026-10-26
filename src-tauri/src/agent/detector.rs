@@ -110,6 +110,11 @@ fn decode_console_output(bytes: &[u8]) -> String {
 }
 
 async fn run_capture(cmd: &mut Command, t: Duration) -> Result<String, String> {
+  // Every detector probe targets a console binary (where.exe, reg.exe,
+  // wsl.exe, login shells). Without CREATE_NO_WINDOW each spawn flashes a
+  // console window over the app on Windows; stdio stays piped either way.
+  #[cfg(target_os = "windows")]
+  cmd.creation_flags(0x0800_0000);
   let out = timeout(t, cmd.output())
     .await
     .map_err(|_| "timed out".to_string())?
@@ -359,8 +364,6 @@ async fn probe_version(spec: SpawnSpec) -> Option<String> {
       c
     }
   };
-  #[cfg(target_os = "windows")]
-  cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW: no console flash
   let text = run_capture(&mut cmd, VERSION_TIMEOUT).await.ok()?;
   let line = first_line(&text);
   if line.is_empty() { None } else { Some(line.chars().take(120).collect()) }

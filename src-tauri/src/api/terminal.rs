@@ -94,6 +94,8 @@ fn build_shell_command(command: &str) -> Command {
   {
     let mut c = Command::new("cmd");
     c.arg("/C").arg(command);
+    // stdio is piped; keep the console window from flashing over the app.
+    c.creation_flags(0x0800_0000);
     c
   }
   #[cfg(not(target_os = "windows"))]

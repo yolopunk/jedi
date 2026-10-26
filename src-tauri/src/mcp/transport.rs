@@ -3,10 +3,15 @@
 
 use crate::mcp::types::{JsonRpcNotification, JsonRpcRequest, JsonRpcResponse, McpError};
 use std::io::{BufRead, BufReader, Write};
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt as _;
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use tracing::{debug, info, warn};
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 /// MCP 传输层配置
 #[allow(dead_code)]
@@ -120,6 +125,10 @@ impl StdioTransport {
 
     let mut cmd = Command::new(&self.config.command);
     cmd.args(&self.config.args);
+    // stdio is piped, so suppress the console window console-server processes
+    // would otherwise flash on Windows.
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
 
     // 设置环境变量
     for (key, value) in &self.config.env {

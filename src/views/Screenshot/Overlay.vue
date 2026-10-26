@@ -40,6 +40,8 @@
       v-if="selection && !busy"
       ref="toolbarRef"
       class="toolbar"
+      role="toolbar"
+      :aria-label="t('screenshot.title')"
       :style="toolbarStyle"
       @mousedown.stop
     >
@@ -419,7 +421,7 @@ onUnmounted(() => {
   overflow: hidden;
   user-select: none;
   cursor: crosshair;
-  background: #000;
+  background: #05070a;
 }
 
 .frozen-frame {
@@ -427,12 +429,14 @@ onUnmounted(() => {
   inset: 0;
   width: 100vw;
   height: 100vh;
+  object-fit: fill;
   pointer-events: none;
 }
 
 .guide {
   position: absolute;
-  background: rgba(80, 200, 255, 0.55);
+  background: rgba(91, 174, 255, 0.48);
+  box-shadow: 0 0 8px rgba(62, 158, 255, 0.22);
   pointer-events: none;
   z-index: 1;
 }
@@ -451,20 +455,23 @@ onUnmounted(() => {
 
 .selection {
   position: absolute;
-  border: 1px solid rgba(80, 200, 255, 0.95);
+  border: 1px solid rgba(115, 192, 255, 1);
+  outline: 1px solid rgba(255, 255, 255, 0.38);
+  outline-offset: -2px;
   /* 大扩散阴影把选区之外整体压暗 */
-  box-shadow: 0 0 0 100000px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 100000px rgba(3, 6, 12, 0.56), inset 0 0 0 1px rgba(6, 15, 24, 0.28);
   cursor: move;
   z-index: 2;
 }
 
 .handle {
   position: absolute;
-  width: 9px;
-  height: 9px;
-  background: #fff;
-  border: 1px solid rgba(30, 30, 30, 0.8);
-  border-radius: 1px;
+  width: 10px;
+  height: 10px;
+  background: #f8fcff;
+  border: 2px solid #318ae7;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
 }
 
 .handle-nw,
@@ -489,65 +496,74 @@ onUnmounted(() => {
 
 .size-badge {
   position: absolute;
-  top: -26px;
+  top: -31px;
   right: 0;
-  padding: 2px 8px;
-  border-radius: 3px;
-  background: rgba(20, 20, 20, 0.85);
-  color: #fff;
-  font-size: 12px;
-  line-height: 1.4;
+  padding: 4px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 7px;
+  background: rgba(12, 16, 22, 0.88);
+  color: rgba(255, 255, 255, 0.9);
+  font: 600 11px/1.4 var(--jedi-font-mono, monospace);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
   white-space: nowrap;
   pointer-events: none;
 }
 
 .size-badge.flipped {
-  top: 4px;
-  right: 4px;
+  top: 7px;
+  right: 7px;
 }
 
 .toolbar {
   position: absolute;
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 4px;
-  border-radius: 6px;
-  background: rgba(28, 28, 30, 0.96);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  gap: 3px;
+  min-height: 46px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 13px;
+  background: rgba(15, 18, 24, 0.91);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(22px) saturate(145%);
   z-index: 3;
   max-width: calc(100vw - 16px);
   overflow-x: auto;
   white-space: nowrap;
+  animation: toolbar-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .tb-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 11px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  font-weight: 550;
   line-height: 1.5;
   cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
 .tb-icon {
   justify-content: center;
-  width: 32px;
+  width: 34px;
   padding-inline: 6px;
 }
 
 .tb-ocr {
-  color: #9ee4ff;
+  color: #9bd8ff;
 }
 
 .tb-ocr kbd {
   padding: 1px 5px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.07);
   color: rgba(255, 255, 255, 0.62);
@@ -555,36 +571,45 @@ onUnmounted(() => {
 }
 
 .tb-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 
+.tb-btn:focus-visible {
+  outline: 2px solid #69b8ff;
+  outline-offset: 1px;
+}
+
 .tb-primary {
-  background: rgba(80, 200, 255, 0.18);
-  color: #7fd8ff;
+  background: linear-gradient(135deg, rgba(42, 133, 224, 0.94), rgba(57, 104, 221, 0.94));
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(36, 112, 210, 0.28);
 }
 
 .tb-primary:hover {
-  background: rgba(80, 200, 255, 0.3);
+  background: linear-gradient(135deg, rgba(53, 148, 240, 1), rgba(68, 117, 231, 1));
 }
 
 .tb-divider {
   width: 1px;
-  height: 18px;
+  height: 22px;
   margin: 0 4px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .hint {
   position: absolute;
-  bottom: 24px;
+  bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 6px 16px;
+  padding: 8px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.11);
   border-radius: 999px;
-  background: rgba(20, 20, 20, 0.7);
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 12px;
+  background: rgba(13, 16, 21, 0.78);
+  color: rgba(255, 255, 255, 0.78);
+  font: 11px var(--jedi-font-ui, sans-serif);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(16px);
   white-space: nowrap;
   pointer-events: none;
   z-index: 1;
@@ -592,14 +617,25 @@ onUnmounted(() => {
 
 .error-toast {
   position: absolute;
-  top: 16px;
+  top: 22px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 6px 16px;
-  border-radius: 6px;
-  background: rgba(140, 30, 30, 0.92);
+  padding: 9px 15px;
+  border: 1px solid rgba(255, 160, 160, 0.2);
+  border-radius: 9px;
+  background: rgba(127, 29, 29, 0.93);
   color: #fff;
   font-size: 13px;
   z-index: 4;
+}
+
+@keyframes toolbar-enter {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toolbar { animation: none; }
+  .tb-btn { transition: none; }
 }
 </style>

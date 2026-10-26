@@ -697,8 +697,7 @@ export default {
   screenshot: {
     ocr: {
       title: '识别文字',
-      local:
-        '使用跨平台 Rust 离线 OCR，图片不会上传，也不依赖系统语言包。',
+      local: '使用跨平台 Rust 离线 OCR，图片不会上传，也不依赖系统语言包。',
       shortcut: '识别文字（Shift+C）',
       loading: '正在识别图片中的文字…',
       result: '识别结果（可编辑）',
@@ -724,6 +723,8 @@ export default {
     original: '查看原图',
     beautify: '背景美化',
     beautifyHint: '调整背景与画框，另存新图，原图始终保留。超大图片导出最长边为 6000 像素。',
+    livePreview: '实时预览',
+    appearance: '画框与空间',
     background: '背景预设',
     preset: '背景预设 {number}',
     colorFrom: '起始颜色',

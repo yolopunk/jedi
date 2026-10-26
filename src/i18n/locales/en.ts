@@ -710,7 +710,8 @@ export default {
       copied: 'Copied',
       errors: {
         unsupported: 'Local OCR is not supported on this system.',
-        engineUnavailable: 'The bundled OCR model could not be loaded. Reinstall or update Jedi and retry.',
+        engineUnavailable:
+          'The bundled OCR model could not be loaded. Reinstall or update Jedi and retry.',
         languageUnavailable: 'The bundled OCR model does not support this language.',
         invalidPath: 'Only PNG images in the capture gallery can be recognized.',
         unreadable: 'Cannot read this image. Refresh the gallery and retry.',
@@ -728,6 +729,8 @@ export default {
     beautify: 'Background studio',
     beautifyHint:
       'Customize your frame and save a new image. Originals stay intact. Large exports are limited to 6000 px.',
+    livePreview: 'Live preview',
+    appearance: 'Frame and spacing',
     background: 'Background presets',
     preset: 'Background preset {number}',
     colorFrom: 'Start color',

@@ -3,37 +3,48 @@
     <div class="screenshot-body">
       <header class="capture-header">
         <div class="heading">
-          <h1>{{ t('screenshot.galleryTitle') }}<span class="title-dot" aria-hidden="true"></span></h1>
+          <span class="eyebrow">
+            <v-icon :icon="mdiImageMultipleOutline" size="15" aria-hidden="true" />
+            {{ t('screenshot.collectionLabel') }}
+          </span>
+          <h1>{{ t('screenshot.galleryTitle') }}</h1>
+          <p>{{ t('screenshot.galleryDescription') }}</p>
         </div>
         <div class="capture-actions">
-          <v-btn color="primary" rounded="lg" :prepend-icon="mdiPlus" :loading="capturing" @click="startCapture">{{ t('screenshot.start') }}</v-btn>
-          <span class="shortcut"><v-icon :icon="mdiKeyboardOutline" size="16" aria-hidden="true" />Ctrl + Alt + S</span>
+          <v-btn class="capture-button" color="primary" rounded="lg" size="large" :prepend-icon="mdiCropFree" :loading="capturing" @click="startCapture">{{ t('screenshot.start') }}</v-btn>
+          <span class="shortcut"><v-icon :icon="mdiKeyboardOutline" size="15" aria-hidden="true" /><kbd>Ctrl</kbd><span>+</span><kbd>Alt</kbd><span>+</span><kbd>S</kbd></span>
         </div>
       </header>
-      <v-alert v-if="error" type="error" variant="tonal" closable @click:close="error = ''">{{ error }}</v-alert>
+      <v-alert v-if="error" class="gallery-alert" type="error" variant="tonal" closable @click:close="error = ''">{{ error }}</v-alert>
       <section class="gallery" :aria-label="t('screenshot.recent')" :aria-busy="loading">
         <div class="gallery-toolbar">
-          <div class="collection-summary"><v-icon :icon="mdiImageMultipleOutline" size="18" aria-hidden="true" /><span class="collection-label">{{ t('screenshot.recent') }}</span><span class="count">{{ recent.length }}</span></div>
+          <div class="collection-summary">
+            <span class="toolbar-icon"><v-icon :icon="mdiViewGridOutline" size="18" aria-hidden="true" /></span>
+            <span><strong>{{ t('screenshot.recent') }}</strong><small>{{ recent.length.toString().padStart(2, '0') }}</small></span>
+          </div>
           <div class="gallery-controls">
-            <label class="density-control">{{ t('screenshot.thumbnailSize') }}<input v-model.number="thumbnailSize" type="range" min="220" max="380" step="20" /></label>
-            <v-btn :icon="mdiRefresh" variant="text" size="small" :loading="loading" :aria-label="t('common.refresh')" @click="loadRecent" />
+            <label class="density-control"><v-icon :icon="mdiImageSizeSelectLarge" size="16" aria-hidden="true" /><span>{{ t('screenshot.thumbnailSize') }}</span><input v-model.number="thumbnailSize" type="range" min="220" max="380" step="20" /></label>
+            <span class="toolbar-divider" aria-hidden="true"></span>
+            <v-btn :icon="mdiRefresh" variant="text" density="comfortable" :loading="loading" :aria-label="t('common.refresh')" @click="loadRecent" />
           </div>
         </div>
         <div v-if="recent.length" class="gallery-collections">
           <section v-for="group in groups" :key="group.key" class="date-group" :aria-label="group.title">
-            <div class="date-heading"><h3>{{ group.title }}</h3><span>{{ group.items.length.toString().padStart(2, '0') }}</span><div></div></div>
+            <div class="date-heading"><span class="date-mark" aria-hidden="true"></span><h3>{{ group.title }}</h3><span>{{ group.items.length.toString().padStart(2, '0') }}</span><div></div></div>
             <div class="photo-columns">
               <article v-for="(item, index) in group.items" :key="item.path" class="capture-card" :style="{ '--card-delay': `${Math.min(index, 5) * 35}ms` }">
                 <button class="capture-open" type="button" @click="selected = item; beautifying = false">
-                <div class="thumbnail">
-                  <img v-if="!brokenImages.has(item.path)" :key="`${item.path}:${imageRetries[item.path] || 0}`" :src="thumbSrc(item.path)" :alt="item.name" loading="lazy" draggable="false" @error="onThumbError(item.path)" />
-                  <div v-else class="thumb-broken">
-                    <v-icon :icon="mdiImageOffOutline" size="22" aria-hidden="true" />
-                    <span class="thumb-broken-text">{{ t('screenshot.imageMissing') }}</span>
+                  <div class="thumbnail">
+                    <div class="image-mat">
+                      <img v-if="!brokenImages.has(item.path)" :key="`${item.path}:${imageRetries[item.path] || 0}`" :src="thumbSrc(item.path)" :alt="item.name" loading="lazy" draggable="false" @error="onThumbError(item.path)" />
+                      <div v-else class="thumb-broken">
+                        <v-icon :icon="mdiImageOffOutline" size="24" aria-hidden="true" />
+                        <span class="thumb-broken-text">{{ t('screenshot.imageMissing') }}</span>
+                      </div>
+                    </div>
+                    <span v-if="!brokenImages.has(item.path)" class="preview-hint"><v-icon :icon="mdiMagnifyPlusOutline" size="17" aria-hidden="true" />{{ t('screenshot.preview') }}</span>
                   </div>
-                  <span v-if="!brokenImages.has(item.path)" class="preview-hint"><v-icon :icon="mdiMagnifyPlusOutline" size="18" aria-hidden="true" />{{ t('screenshot.preview') }}</span>
-                </div>
-                <div class="card-info"><span class="capture-name" :title="item.name">{{ item.name }}</span><span class="card-meta"><time>{{ formatDate(item.modifiedMs) }}</time><span>{{ formatSize(item.size) }}</span></span></div>
+                  <div class="card-info"><span class="capture-name" :title="item.name">{{ item.name }}</span><span class="card-meta"><time>{{ formatDate(item.modifiedMs) }}</time><span>{{ formatSize(item.size) }}</span></span></div>
                 </button>
                 <button v-if="brokenImages.has(item.path)" type="button" class="thumb-retry" @click="retryThumb(item.path)">{{ t('screenshot.retryImage') }}</button>
               </article>
@@ -48,33 +59,40 @@
         </div>
       </section>
     </div>
-    <v-dialog :model-value="!!selected" max-width="1200" @update:model-value="selected = null">
-      <div v-if="selected" class="preview-panel">
+    <v-dialog :model-value="!!selected" max-width="1440" transition="dialog-bottom-transition" @update:model-value="selected = null">
+      <div v-if="selected" class="preview-panel" :class="{ 'is-beautifying': beautifying }">
         <header class="preview-header">
-          <div>
-            <span class="section-label">{{ t(beautifying ? 'screenshot.beautify' : 'screenshot.preview') }}</span>
+          <div class="preview-title">
+            <span class="section-label">{{ t('screenshot.collectionLabel') }}</span>
             <h2>{{ selected.name }}</h2>
-            <span v-if="!beautifying && previewPixelLabel" class="pixel-size">{{ previewPixelLabel }}</span>
+            <span class="pixel-size"><template v-if="previewPixelLabel">{{ previewPixelLabel }} · </template>{{ formatSize(selected.size) }}</span>
           </div>
-          <v-btn :icon="mdiClose" variant="text" :aria-label="t('screenshot.closePreview')" @click="selected = null" />
+          <div class="mode-switch" :aria-label="t('screenshot.preview')">
+            <button type="button" :class="{ active: !beautifying }" :aria-pressed="!beautifying" @click="beautifying = false"><v-icon :icon="mdiEyeOutline" size="16" aria-hidden="true" />{{ t('screenshot.preview') }}</button>
+            <button type="button" :class="{ active: beautifying }" :aria-pressed="beautifying" @click="beautifying = true"><v-icon :icon="mdiAutoFix" size="16" aria-hidden="true" />{{ t('screenshot.beautify') }}</button>
+          </div>
+          <v-btn class="close-preview" :icon="mdiClose" variant="text" :aria-label="t('screenshot.closePreview')" @click="selected = null" />
         </header>
         <BeautifyEditor v-if="beautifying" :path="selected.path" @saved="onStyledSaved" />
-        <div v-else class="preview-image" tabindex="0" :aria-label="t('screenshot.preview')" :class="{ 'is-actual': previewZoom === 'actual', 'is-panning': panning }" @pointerdown="onPanStart" @pointermove="onPanMove" @pointerup="onPanEnd" @pointercancel="onPanEnd" @lostpointercapture="onPanEnd">
-          <div v-if="previewFailed" role="alert" class="thumb-broken"><span>{{ t('screenshot.imageMissing') }}</span><v-btn variant="text" @click="retryThumb(selected.path); previewFailed = false">{{ t('screenshot.retryImage') }}</v-btn></div>
-          <img v-else :src="thumbSrc(selected.path)" :alt="selected.name" draggable="false" :style="previewStyle" @load="onPreviewLoad" @error="previewFailed = true" />
+        <div v-else class="preview-workspace" :class="{ 'has-ocr': showOcr }">
+          <div class="preview-image" tabindex="0" :aria-label="t('screenshot.preview')" :class="{ 'is-actual': previewZoom === 'actual', 'is-panning': panning }" @pointerdown="onPanStart" @pointermove="onPanMove" @pointerup="onPanEnd" @pointercancel="onPanEnd" @lostpointercapture="onPanEnd">
+            <div v-if="previewFailed" role="alert" class="thumb-broken"><span>{{ t('screenshot.imageMissing') }}</span><v-btn variant="text" @click="retryThumb(selected.path); previewFailed = false">{{ t('screenshot.retryImage') }}</v-btn></div>
+            <img v-else :src="thumbSrc(selected.path)" :alt="selected.name" draggable="false" :style="previewStyle" @load="onPreviewLoad" @error="previewFailed = true" />
+          </div>
+          <OcrPanel v-if="showOcr" :path="selected.path" />
         </div>
-        <OcrPanel v-if="showOcr && !beautifying" :path="selected.path" />
         <footer class="preview-footer">
-          <span>{{ formatDate(selected.modifiedMs) }} · {{ formatSize(selected.size) }}</span>
-          <div>
+          <span>{{ formatDate(selected.modifiedMs) }}</span>
+          <div v-if="!beautifying" class="preview-actions">
             <div v-if="!beautifying" class="zoom-toggle">
               <v-btn size="small" :variant="previewZoom === 'fit' ? 'tonal' : 'text'" :color="previewZoom === 'fit' ? 'primary' : undefined" @click="previewZoom = 'fit'">{{ t('screenshot.fitWindow') }}</v-btn>
               <v-btn size="small" :variant="previewZoom === 'actual' ? 'tonal' : 'text'" :color="previewZoom === 'actual' ? 'primary' : undefined" :disabled="!previewPixels" @click="previewZoom = 'actual'">{{ t('screenshot.actualSize') }}</v-btn>
             </div>
-            <v-btn v-if="!beautifying" variant="tonal" :aria-pressed="showOcr" @click="showOcr = !showOcr">{{ t('screenshot.ocr.title') }}</v-btn>
+            <span class="footer-divider" aria-hidden="true"></span>
+            <v-btn variant="tonal" :prepend-icon="mdiTextRecognition" :aria-pressed="showOcr" @click="showOcr = !showOcr">{{ t('screenshot.ocr.title') }}</v-btn>
             <v-btn variant="text" :prepend-icon="mdiFolderOpenOutline" @click="openFolder(selected.path)">{{ t('screenshot.openFolder') }}</v-btn>
-            <v-btn variant="tonal" color="primary" :title="beautifying ? t('screenshot.backToOriginalHint') : undefined" @click="beautifying = !beautifying">{{ t(beautifying ? 'screenshot.backToOriginal' : 'screenshot.beautify') }}</v-btn>
           </div>
+          <span v-else>{{ t('screenshot.saveAsCopy') }}</span>
         </footer>
       </div>
     </v-dialog>
@@ -83,16 +101,20 @@
 
 <script setup lang="ts">
 import {
+  mdiAutoFix,
   mdiClose,
   mdiCrop,
   mdiCropFree,
+  mdiEyeOutline,
   mdiFolderOpenOutline,
   mdiImageMultipleOutline,
   mdiImageOffOutline,
+  mdiImageSizeSelectLarge,
   mdiKeyboardOutline,
   mdiMagnifyPlusOutline,
-  mdiPlus,
   mdiRefresh,
+  mdiTextRecognition,
+  mdiViewGridOutline,
 } from '@mdi/js'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
@@ -300,72 +322,124 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.screenshot-page { height: 100%; overflow: auto; color: var(--text); background: var(--bg); container-type: inline-size; }
-.screenshot-body { padding: clamp(24px, 3.5vw, 48px); }
+.screenshot-page {
+  height: 100%;
+  overflow: auto;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 84% 2%, rgb(var(--accent-rgb) / 0.08), transparent 28rem),
+    var(--bg);
+  container-type: inline-size;
+}
+.screenshot-body { width: min(1500px, 100%); min-height: 100%; margin: 0 auto; padding: clamp(28px, 4vw, 58px); }
 h1, h2, h3, p { margin: 0; }
-.capture-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-bottom: 24px; }
-.section-label { display: block; color: var(--text-muted); font-size: 10px; font-weight: 600; letter-spacing: 2px; line-height: 1.6; text-transform: uppercase; }
-h1 { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight: 600; letter-spacing: -0.5px; }
-.title-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
-.capture-actions { display: flex; flex-direction: column; align-items: center; gap: 10px; flex-shrink: 0; }
-.shortcut { display: flex; align-items: center; gap: 6px; color: var(--text-muted); font: 10px var(--jedi-font-mono); }
-.gallery-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 12px 0; }
-.collection-summary, .gallery-controls { display: flex; align-items: center; gap: 10px; }
-.collection-summary > .v-icon { color: var(--text-muted); }
-.collection-label { font-size: 13px; font-weight: 600; }
-.count { border: 1px solid var(--border); border-radius: 6px; min-width: 26px; padding: 2px 6px; text-align: center; font: 10px var(--jedi-font-mono); color: var(--text-muted); }
-.density-control { display: flex; gap: 12px; align-items: center; color: var(--text-muted); font-size: 11px; }
-.density-control input { width: 88px; accent-color: var(--accent); }
-.date-heading { display: flex; align-items: center; gap: 12px; margin: 28px 0 18px; }
-.date-heading h3 { font-size: 12px; font-weight: 500; }
-.date-heading > span { color: var(--text-muted); font: 10px var(--jedi-font-mono); }
-.date-heading > div { height: 1px; flex: 1; background: var(--border); }
-.photo-columns { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--thumbnail-size), 1fr)); gap: 24px; }
-.capture-open { display: block; width: 100%; text-align: left; color: inherit; border-radius: inherit; }
-.capture-card { display: block; width: 100%; margin: 0; padding: 0; text-align: left; color: inherit; background: transparent; border: 0; border-radius: 12px; cursor: pointer; animation: photo-reveal var(--motion-enter) var(--ease-out) var(--card-delay) backwards; }
-.capture-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.thumbnail { position: relative; aspect-ratio: 16 / 10; border-radius: 10px; overflow: hidden; }
-.thumbnail img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 14px rgb(var(--ink-rgb) / .18); transition: box-shadow var(--motion-normal); }
-.capture-card:hover .thumbnail img { box-shadow: 0 6px 18px rgb(var(--ink-rgb) / .24); }
+.capture-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; padding: 8px 2px 30px; }
+.heading { max-width: 620px; }
+.eyebrow, .section-label { display: flex; align-items: center; gap: 8px; color: var(--accent); font: 600 10px/1.6 var(--jedi-font-mono); letter-spacing: 1.6px; text-transform: uppercase; }
+h1 { margin-top: 8px; font-size: clamp(27px, 3vw, 38px); font-weight: 650; letter-spacing: -1.4px; }
+.heading p { max-width: 520px; margin-top: 10px; color: var(--text-muted); font-size: 13px; line-height: 1.7; }
+.capture-actions { display: flex; flex-direction: column; align-items: center; gap: 9px; flex-shrink: 0; }
+.capture-button { min-width: 142px; box-shadow: 0 10px 30px rgb(var(--accent-rgb) / 0.22); }
+.shortcut { display: flex; align-items: center; gap: 4px; color: var(--text-muted); font: 10px var(--jedi-font-mono); }
+.shortcut kbd { min-width: 22px; padding: 2px 6px; border: 1px solid var(--border); border-bottom-color: var(--border-strong); border-radius: 5px; background: var(--surface-raised); color: var(--text-muted); font: inherit; text-align: center; box-shadow: 0 1px 0 rgb(var(--text-rgb) / 0.08); }
+.gallery-alert { margin-bottom: 18px; }
+.gallery { padding-bottom: 40px; }
+.gallery-toolbar { position: sticky; top: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 18px; min-height: 58px; padding: 9px 12px; border: 1px solid rgb(var(--text-rgb) / 0.08); border-radius: 14px; background: rgb(var(--bg-rgb) / 0.82); box-shadow: 0 12px 36px rgb(var(--ink-rgb) / 0.08); backdrop-filter: blur(18px) saturate(140%); }
+.collection-summary, .gallery-controls, .density-control { display: flex; align-items: center; }
+.collection-summary { gap: 11px; }
+.toolbar-icon { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid rgb(var(--accent-rgb) / 0.22); border-radius: 10px; background: rgb(var(--accent-rgb) / 0.1); color: var(--accent); }
+.collection-summary > span:last-child { display: flex; flex-direction: column; gap: 1px; }
+.collection-summary strong { font-size: 12px; font-weight: 650; }
+.collection-summary small { color: var(--text-muted); font: 10px var(--jedi-font-mono); }
+.gallery-controls { gap: 8px; }
+.density-control { gap: 10px; padding: 0 8px; color: var(--text-muted); font-size: 11px; }
+.density-control input { width: 94px; accent-color: var(--accent); cursor: pointer; }
+.toolbar-divider, .footer-divider { width: 1px; height: 22px; background: var(--border); }
+.date-heading { display: flex; align-items: center; gap: 10px; margin: 32px 2px 15px; }
+.date-mark { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px rgb(var(--accent-rgb) / 0.1); }
+.date-heading h3 { font-size: 12px; font-weight: 600; }
+.date-heading > span:not(.date-mark) { color: var(--text-muted); font: 10px var(--jedi-font-mono); }
+.date-heading > div { height: 1px; flex: 1; background: linear-gradient(90deg, var(--border), transparent); }
+.photo-columns { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--thumbnail-size), 100%), 1fr)); gap: clamp(16px, 2vw, 24px); }
+.capture-card { position: relative; min-width: 0; border: 1px solid rgb(var(--text-rgb) / 0.08); border-radius: 16px; background: rgb(var(--text-rgb) / 0.025); overflow: hidden; animation: photo-reveal var(--motion-enter) var(--ease-out) var(--card-delay) backwards; transition: border-color var(--motion-fast), background var(--motion-fast), transform var(--motion-fast), box-shadow var(--motion-normal); }
+.capture-card:hover { border-color: rgb(var(--accent-rgb) / 0.32); background: rgb(var(--text-rgb) / 0.045); transform: translateY(-3px); box-shadow: 0 16px 38px rgb(var(--ink-rgb) / 0.16); }
+.capture-open { display: block; width: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.capture-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.thumbnail { position: relative; aspect-ratio: 16 / 10; margin: 8px 8px 0; border-radius: 11px; overflow: hidden; background:
+    linear-gradient(135deg, rgb(var(--text-rgb) / 0.035), transparent 60%),
+    var(--surface-canvas); }
+.thumbnail::before { position: absolute; inset: 0; content: ''; background-image: radial-gradient(rgb(var(--text-rgb) / 0.08) 0.7px, transparent 0.7px); background-size: 10px 10px; opacity: 0.45; }
+.image-mat { position: absolute; inset: 12px; display: grid; place-items: center; min-width: 0; min-height: 0; }
+.thumbnail img { position: relative; display: block; width: 100%; height: 100%; object-fit: contain; filter: saturate(0.96); box-shadow: 0 10px 24px rgb(var(--ink-rgb) / 0.22); transition: filter var(--motion-normal), transform var(--motion-normal), box-shadow var(--motion-normal); }
+.capture-card:hover .thumbnail img { filter: saturate(1.03); transform: scale(1.012); box-shadow: 0 14px 30px rgb(var(--ink-rgb) / 0.28); }
 .thumb-broken { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px; text-align: center; color: var(--text-muted); }
 .thumb-broken-text { font-size: 12px; line-height: 1.6; }
-.thumb-retry { padding: 4px 12px; font-size: 12px; color: var(--text-muted); background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; transition: border-color var(--motion-fast), color var(--motion-fast); }
-.thumb-retry:hover { border-color: var(--border-strong); color: var(--text); }
+.thumb-retry { position: absolute; top: 18px; right: 18px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-raised); color: var(--text-muted); font-size: 11px; cursor: pointer; }
+.thumb-retry:hover { border-color: var(--accent); color: var(--text); }
 .thumb-retry:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.preview-hint { position: absolute; display: flex; align-items: center; gap: 6px; right: 10px; bottom: 10px; padding: 7px 10px; font-size: 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); opacity: 0; transform: translateY(4px); transition: opacity var(--motion-fast), transform var(--motion-fast); }
+.preview-hint { position: absolute; right: 10px; bottom: 10px; display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid rgb(var(--text-rgb) / 0.12); border-radius: 8px; background: rgb(var(--bg-rgb) / 0.84); color: var(--text); font-size: 11px; opacity: 0; transform: translateY(5px); backdrop-filter: blur(12px); transition: opacity var(--motion-fast), transform var(--motion-fast); }
 .capture-card:hover .preview-hint, .capture-open:focus-visible .preview-hint { opacity: 1; transform: none; }
-.card-info { padding: 10px 2px 0; }
-.capture-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
-.card-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: 10px; color: var(--text-muted); }
-.empty-state { min-height: 370px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.empty-frames { display: flex; align-items: center; margin-bottom: 30px; height: 120px; }
-.empty-frames span { display: grid; place-items: center; width: 94px; height: 110px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface-raised); box-shadow: var(--shadow-md); color: var(--accent); }
-.empty-frames span:first-child { transform: rotate(-12deg) translateX(18px); background: var(--surface-canvas); }
-.empty-frames span:last-child { transform: rotate(12deg) translateX(-18px); background: var(--surface-canvas); }
+.card-info { padding: 14px 15px 15px; }
+.capture-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; }
+.card-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; color: var(--text-muted); font: 10px var(--jedi-font-mono); }
+.empty-state { min-height: 400px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.empty-frames { display: flex; align-items: center; height: 120px; margin-bottom: 30px; }
+.empty-frames span { display: grid; width: 94px; height: 110px; place-items: center; border: 1px solid var(--border-strong); border-radius: 14px; background: var(--surface-raised); color: var(--accent); box-shadow: var(--shadow-md); }
+.empty-frames span:first-child { transform: rotate(-10deg) translateX(18px); background: var(--surface-canvas); }
+.empty-frames span:last-child { transform: rotate(10deg) translateX(-18px); background: var(--surface-canvas); }
 .empty-frames span:nth-child(2) { z-index: 1; }
-.empty-state h3 { font-size: 16px; font-weight: 550; }
-.empty-state p { color: var(--text-muted); font-size: 12px; margin-top: 8px; }
+.empty-state h3 { font-size: 17px; font-weight: 650; }
+.empty-state p { max-width: 400px; margin-top: 8px; color: var(--text-muted); font-size: 12px; line-height: 1.7; }
 .empty-state .v-btn { margin-top: 22px; }
-.gallery-skeleton { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; padding-top: 28px; }
-.skeleton-frame { height: 220px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-canvas); animation: gallery-pulse 1.5s ease-in-out infinite alternate; }
-.preview-panel { color: var(--text); overflow: auto !important; }
-.preview-header, .preview-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; }
-.preview-header h2 { margin-top: 5px; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; }
-.pixel-size { display: block; margin-top: 4px; color: var(--text-muted); font: 11px var(--jedi-font-mono); }
-.preview-header { border-bottom: 1px solid var(--border); }
-.preview-image { min-height: 250px; padding: 40px; background: var(--surface-canvas); display: grid; place-items: center; overflow: auto; }
-.preview-image img { max-width: 100%; max-height: 60vh; object-fit: contain; box-shadow: var(--shadow-lg); }
-.preview-image.is-actual { max-height: 60vh; display: block; cursor: grab; user-select: none; touch-action: none; }
+.gallery-skeleton { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; padding-top: 32px; }
+.skeleton-frame { aspect-ratio: 16 / 11; border: 1px solid var(--border); border-radius: 16px; background: linear-gradient(105deg, var(--surface-canvas) 25%, rgb(var(--text-rgb) / 0.065) 40%, var(--surface-canvas) 58%); background-size: 220% 100%; animation: gallery-pulse 1.6s ease-in-out infinite; }
+.preview-panel { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; width: min(1440px, 94vw); height: min(880px, 92vh); overflow: hidden; border: 1px solid rgb(var(--text-rgb) / 0.12); border-radius: 18px; background: var(--bg); color: var(--text); box-shadow: 0 30px 90px rgb(var(--ink-rgb) / 0.42); }
+.preview-header, .preview-footer { display: flex; align-items: center; gap: 18px; padding: 14px 18px; background: rgb(var(--bg-rgb) / 0.9); backdrop-filter: blur(18px); }
+.preview-header { min-height: 72px; border-bottom: 1px solid var(--border); }
+.preview-title { min-width: 0; flex: 1; }
+.preview-header h2 { max-width: 520px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 650; }
+.pixel-size { display: block; margin-top: 3px; color: var(--text-muted); font: 10px var(--jedi-font-mono); }
+.mode-switch { display: flex; gap: 3px; padding: 4px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-canvas); }
+.mode-switch button { display: flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 13px; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); font: 600 11px var(--jedi-font-ui); cursor: pointer; transition: color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast); }
+.mode-switch button:hover { color: var(--text); }
+.mode-switch button.active { background: var(--surface-raised); color: var(--text); box-shadow: 0 3px 10px rgb(var(--ink-rgb) / 0.14); }
+.mode-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.close-preview { margin-left: auto; }
+.preview-workspace { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.preview-workspace.has-ocr { grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); }
+.preview-image { min-width: 0; min-height: 320px; display: grid; place-items: center; overflow: auto; padding: clamp(26px, 4vw, 56px); background:
+    radial-gradient(circle at 50% 35%, rgb(var(--accent-rgb) / 0.075), transparent 34rem),
+    radial-gradient(rgb(var(--text-rgb) / 0.07) 0.7px, transparent 0.7px),
+    var(--surface-canvas); background-size: auto, 12px 12px, auto; }
+.preview-image img { max-width: 100%; max-height: 68vh; object-fit: contain; box-shadow: 0 24px 64px rgb(var(--ink-rgb) / 0.34), 0 0 0 1px rgb(var(--text-rgb) / 0.1); }
+.preview-image.is-actual { display: block; cursor: grab; user-select: none; touch-action: none; }
 .preview-image.is-actual img { display: block; max-width: none; max-height: none; }
 .preview-image.is-actual.is-panning { cursor: grabbing; }
-.preview-footer { flex-wrap: wrap; color: var(--text-muted); font-size: 11px; border-top: 1px solid var(--border); }
-.preview-footer > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.zoom-toggle { display: flex; gap: 4px; }
-@keyframes photo-reveal { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-@keyframes gallery-pulse { to { opacity: .45; } }
-/* In-page layout responds to the real content-area width (container query), not the viewport */
-@container (max-width: 700px) { .screenshot-body { padding: 24px 18px; } .capture-header { align-items: flex-start; flex-direction: column; } .capture-actions { flex-direction: row; } .density-control { display: none; } }
-/* v-dialog content is teleported to the viewport-level overlay container, outside .screenshot-page; keep it viewport-based */
-@media (max-width: 700px) { .preview-image { padding: 20px; } }
-@media (prefers-reduced-motion: reduce) { .capture-card, .skeleton-frame { animation: none; } .capture-card, .preview-hint, .thumbnail img { transition: none; } }
+.preview-footer { min-height: 64px; justify-content: space-between; flex-wrap: wrap; border-top: 1px solid var(--border); color: var(--text-muted); font: 10px var(--jedi-font-mono); }
+.preview-actions, .zoom-toggle { display: flex; align-items: center; gap: 6px; }
+@keyframes photo-reveal { from { opacity: 0; transform: translateY(10px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes gallery-pulse { from { background-position: 100% 0; } to { background-position: -120% 0; } }
+@container (max-width: 760px) {
+  .screenshot-body { padding: 24px 18px 40px; }
+  .capture-header { align-items: flex-start; flex-direction: column; }
+  .capture-actions { width: 100%; align-items: stretch; }
+  .capture-button { width: 100%; }
+  .shortcut { justify-content: center; }
+  .density-control span, .density-control > .v-icon, .toolbar-divider { display: none; }
+}
+@media (max-width: 880px) {
+  .preview-panel { width: 96vw; height: 94vh; }
+  .preview-header { flex-wrap: wrap; }
+  .mode-switch { order: 3; width: 100%; }
+  .mode-switch button { flex: 1; justify-content: center; }
+  .preview-workspace.has-ocr { grid-template-columns: 1fr; overflow: auto; }
+  .preview-image { min-height: 300px; padding: 22px; }
+  .preview-footer { align-items: flex-start; }
+  .preview-actions { width: 100%; flex-wrap: wrap; }
+  .footer-divider { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .capture-card, .skeleton-frame { animation: none; }
+  .capture-card, .preview-hint, .thumbnail img, .mode-switch button { transition: none; }
+}
 </style>

@@ -87,14 +87,18 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.ocr-panel { min-height: 240px; padding: 20px 24px; border-top: 1px solid var(--border); background: var(--bg); }
-header, footer { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-header { justify-content: space-between; margin-bottom: 12px; }
-h3 { font-size: 15px; margin: 0 0 6px; }
-p, footer { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
-.result-label { display: block; font-size: 12px; margin-bottom: 8px; }
-textarea { display: block; width: 100%; min-height: 160px; max-height: 40vh; padding: 12px; resize: vertical; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--bg-elevated-2); font: 14px/1.7 var(--jedi-font-ui); }
-textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-footer { margin-top: 12px; }
-footer > :first-child { margin-right: auto; }
+.ocr-panel { min-width: 0; min-height: 0; overflow: auto; padding: 22px; border-left: 1px solid var(--border); background: linear-gradient(180deg, rgb(var(--accent-rgb) / 0.045), transparent 180px), var(--bg); }
+header, footer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+header { justify-content: space-between; margin-bottom: 18px; }
+header > div { min-width: 0; }
+h3 { margin: 0 0 5px; font-size: 14px; font-weight: 650; }
+p, footer { color: var(--text-muted); font-size: 11px; line-height: 1.65; }
+header p { max-width: 250px; margin: 0; }
+.result-label { display: block; margin: 12px 0 8px; color: var(--text-muted); font-size: 10px; font-weight: 600; letter-spacing: 0.7px; text-transform: uppercase; }
+textarea { display: block; width: 100%; min-height: 230px; max-height: 48vh; padding: 13px 14px; resize: vertical; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-canvas); color: var(--text); font: 13px/1.72 var(--jedi-font-ui); transition: border-color var(--motion-fast), box-shadow var(--motion-fast); }
+textarea:focus-visible { border-color: rgb(var(--accent-rgb) / 0.65); outline: 0; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.12); }
+footer { margin-top: 13px; }
+footer > :first-child { width: 100%; overflow-wrap: anywhere; font: 9px/1.6 var(--jedi-font-mono); }
+footer > :nth-child(2) { margin-right: auto; color: var(--success); }
+@media (max-width: 880px) { .ocr-panel { min-height: 360px; border-top: 1px solid var(--border); border-left: 0; } }
 </style>

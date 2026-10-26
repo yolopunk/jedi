@@ -208,7 +208,7 @@
   justify-content: flex-start;
 }
 
-/* ---- Avatars: crisp geometric chips, one color per speaker ---- */
+/* ---- Avatars: agent identity for assistant turns, monogram for the user ---- */
 .msg-avatar {
   flex-shrink: 0;
   width: 30px;
@@ -222,16 +222,11 @@
   border: 1px solid transparent;
 }
 
-/* AI — holocron-cyan crystal */
 .msg-avatar.ai {
-  color: var(--accent-hover);
-  background: linear-gradient(160deg, rgb(var(--accent-rgb) / 0.18) 0%, rgb(var(--accent-rgb) / 0.05) 100%);
-  border-color: rgb(var(--accent-rgb) / 0.32);
-}
-
-.msg-avatar.ai .avatar-mark {
-  display: block;
-  filter: drop-shadow(0 0 4px rgb(var(--accent-rgb) / 0.35));
+  color: var(--text);
+  background: var(--surface-raised);
+  border-color: rgb(var(--text-rgb) / 0.1);
+  box-shadow: 0 5px 15px rgb(var(--ink-rgb) / 0.08);
 }
 
 /* Thinking — a single quiet pulsing ring (no toy sound waves) */
@@ -788,13 +783,12 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 8px;
+  padding: 5px 8px;
   color: var(--text-muted);
   font-size: 11px;
 }
 
 .composer-agent-summary span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.composer-agent-dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgb(var(--success-rgb) / .1); }
 
 .model-dropdown-btn {
   display: flex;
@@ -963,14 +957,14 @@
 }
 
 .chat-empty .empty-mark {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   display: grid;
   place-items: center;
   background: linear-gradient(145deg, rgb(var(--accent-rgb) / 0.16), rgb(var(--accent-rgb) / 0.045));
   border: 1px solid rgb(var(--accent-rgb) / 0.25);
-  border-radius: 16px;
-  color: var(--accent);
+  border-radius: 18px;
+  color: var(--text);
   box-shadow: 0 16px 44px rgb(var(--accent-rgb) / 0.12);
 }
 

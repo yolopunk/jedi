@@ -1,3 +1,5 @@
 allowBuilds:
   esbuild: true
   vue-demi: true
+minimumReleaseAgeExclude:
+  - '@lobehub/icons-static-svg@1.101.0'

@@ -4,11 +4,12 @@
 // Tier-A engines are selectable; Tier-B stay visible with an "adapter
 // pending" badge until their driver lands (M2-M4).
 
-import { mdiChevronDown, mdiConsoleLine, mdiRefresh } from '@mdi/js'
+import { mdiChevronDown, mdiRefresh } from '@mdi/js'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { EngineDescriptor } from '@/agent/hub/types'
 import { useAgentHubStore } from '@/stores/agentHub'
+import AgentLogo from './AgentLogo.vue'
 
 const { t } = useI18n()
 const hub = useAgentHubStore()
@@ -31,6 +32,7 @@ const meta = computed(() => {
   if (e.tier === 'builtin') return t('chatWorkspace.builtinRuntime')
   return [e.location, e.installation?.version].filter(Boolean).join(' · ')
 })
+const selectedAgentId = computed(() => hub.selectedEngine.agentId || 'builtin')
 
 function toggle() {
   open.value = !open.value
@@ -116,7 +118,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
       aria-haspopup="listbox"
       @click="toggle"
     >
-      <span class="engine-icon"><v-icon :icon="mdiConsoleLine" size="19" aria-hidden="true" /></span>
+      <span class="engine-icon"><AgentLogo :agent-id="selectedAgentId" :size="24" /></span>
       <span class="engine-trigger-copy">
         <span class="engine-trigger-name">{{ label }}</span>
         <span class="engine-trigger-meta">{{ meta }}</span>
@@ -132,40 +134,40 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
         </div>
         <span>{{ String(hub.installedCount).padStart(2, '0') }}</span>
       </div>
-      <div class="engine-group">{{ t('chatWorkspace.engineInstalled') }}</div>
-      <button
-        v-for="engine in installedEngines"
-        :key="engine.id"
-        class="engine-item"
-        :class="{ selected: engine.id === hub.selectedEngineId }"
-        :disabled="engine.tier === 'B'"
-        role="option"
-        :aria-selected="engine.id === hub.selectedEngineId"
-        @click="engine.tier !== 'B' && pick(engine)"
-      >
-        <span class="engine-item-main">
-          <span
-            class="engine-item-dot"
-            :class="{ active: engine.id === hub.selectedEngineId }"
-            aria-hidden="true"
-          ></span>
-          <span class="engine-item-name">
-            {{ engine.name }}
-            <span v-if="engine.location" class="engine-item-loc">{{ engine.location }}</span>
+      <div class="engine-list">
+        <div class="engine-group">{{ t('chatWorkspace.engineInstalled') }}</div>
+        <button
+          v-for="engine in installedEngines"
+          :key="engine.id"
+          class="engine-item"
+          :class="{ selected: engine.id === hub.selectedEngineId }"
+          :disabled="engine.tier === 'B'"
+          role="option"
+          :aria-selected="engine.id === hub.selectedEngineId"
+          @click="engine.tier !== 'B' && pick(engine)"
+        >
+          <span class="engine-logo"><AgentLogo :agent-id="engine.agentId" :size="22" /></span>
+          <span class="engine-item-copy">
+            <span class="engine-item-name">{{ engine.name }}</span>
+            <span class="engine-item-meta">
+              <span v-if="engine.location">{{ engine.location }}</span>
+              <span v-if="engine.installation?.version">{{ engine.installation.version }}</span>
+            </span>
           </span>
-        </span>
-        <span class="engine-item-side">
-          <span v-if="engine.tier === 'B'" class="engine-badge soon">{{ t('chatWorkspace.engineComingSoon') }}</span>
-          <span v-else-if="engine.installation?.version" class="engine-version">{{ engine.installation.version }}</span>
-        </span>
-      </button>
+          <span class="engine-item-side">
+            <span v-if="engine.tier === 'B'" class="engine-badge soon">{{ t('chatWorkspace.engineComingSoon') }}</span>
+            <span v-else class="engine-check" aria-hidden="true">✓</span>
+          </span>
+        </button>
 
-      <template v-if="notInstalledAgents.length">
-        <div class="engine-group">{{ t('chatWorkspace.engineNotDetected') }}</div>
-        <div v-for="agent in notInstalledAgents" :key="agent.id" class="engine-item missing">
-          <span class="engine-item-name">{{ agent.name }}</span>
-        </div>
-      </template>
+        <template v-if="notInstalledAgents.length">
+          <div class="engine-group">{{ t('chatWorkspace.engineNotDetected') }}</div>
+          <div v-for="agent in notInstalledAgents" :key="agent.id" class="engine-item missing">
+            <span class="engine-logo"><AgentLogo :agent-id="agent.id" :size="22" /></span>
+            <span class="engine-item-name">{{ agent.name }}</span>
+          </div>
+        </template>
+      </div>
 
       <div class="engine-footer">
         <span v-if="hub.error" class="engine-error">{{ t('chatWorkspace.engineDetectFailed') }}</span>
@@ -220,7 +222,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   border: 1px solid rgb(var(--accent-rgb) / 0.22);
   border-radius: 9px;
   background: linear-gradient(145deg, rgb(var(--accent-rgb) / 0.16), rgb(var(--accent-rgb) / 0.055));
-  color: var(--accent);
+  color: var(--text);
 }
 
 .engine-trigger-copy {
@@ -278,14 +280,16 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  width: 340px;
-  max-width: min(88vw, 340px);
-  max-height: min(440px, 68vh);
-  overflow-y: auto;
+  width: 390px;
+  max-width: min(88vw, 390px);
+  max-height: min(390px, calc(100vh - 200px));
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   background: var(--surface-raised);
   border: 1px solid var(--border-strong);
   border-radius: 12px;
-  padding: 6px;
+  padding: 7px;
   box-shadow: var(--shadow-lg);
   z-index: 100;
 }
@@ -295,11 +299,23 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin: 2px 2px 6px;
+  margin: 1px 1px 6px;
   padding: 12px;
   border-radius: 9px;
   background: rgb(var(--accent-rgb) / 0.07);
 }
+
+.engine-list {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+  scrollbar-gutter: stable;
+}
+
+.engine-list::-webkit-scrollbar { width: 5px; }
+.engine-list::-webkit-scrollbar-track { background: transparent; }
+.engine-list::-webkit-scrollbar-thumb { background: rgb(var(--text-rgb) / 0.16); border-radius: 999px; }
 
 .engine-menu-header > div {
   min-width: 0;
@@ -324,9 +340,10 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  padding: 9px 10px;
+  min-height: 48px;
+  padding: 6px 8px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
@@ -347,6 +364,22 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   background: rgb(var(--accent-rgb) / 0.09);
 }
 
+.engine-logo {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(var(--text-rgb) / 0.09);
+  border-radius: 9px;
+  background: var(--surface-raised);
+}
+
+.engine-item.selected .engine-logo {
+  border-color: rgb(var(--accent-rgb) / 0.25);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.055);
+}
+
 .engine-item:disabled {
   cursor: default;
   opacity: 0.55;
@@ -357,37 +390,39 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   opacity: 0.4;
 }
 
-.engine-item-main {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.engine-item-copy {
   flex: 1;
   min-width: 0;
-}
-
-/* 菜单项状态点：与触发器点同源 —— accent = 选中项，中性 = 可选未选中 */
-.engine-item-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--text-subtle);
-  flex-shrink: 0;
-}
-
-.engine-item-dot.active {
-  background: var(--accent);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .engine-item-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
 }
 
-.engine-item-loc {
-  opacity: 0.6;
-  margin-left: 6px;
-  font-size: 11px;
+.engine-item-meta {
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  color: var(--text-subtle);
+  font: 9.5px var(--jedi-font-mono);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.engine-item-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.engine-item-meta span + span::before {
+  content: '·';
+  margin-right: 6px;
 }
 
 .engine-item-side {
@@ -397,13 +432,19 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   flex-shrink: 0;
 }
 
-.engine-version {
-  opacity: 0.5;
-  font-size: 10.5px;
-  max-width: 90px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.engine-check {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: transparent;
+  font-size: 10px;
+}
+
+.engine-item.selected .engine-check {
+  color: var(--on-accent);
+  background: var(--accent);
 }
 
 .engine-badge.soon {
@@ -419,8 +460,8 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-top: 5px;
-  padding: 9px 10px 4px;
+  margin-top: 4px;
+  padding: 8px 10px 3px;
   border-top: 1px solid rgba(127, 127, 127, 0.18);
 }
 
@@ -448,7 +489,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 
 @media (max-width: 720px) {
   .engine-selector { width: min(100%, 320px); }
-  .engine-menu { width: min(88vw, 340px); }
+  .engine-menu { width: min(88vw, 390px); }
 }
 
 .engine-refresh:hover:not(:disabled) {

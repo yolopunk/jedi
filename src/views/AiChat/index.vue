@@ -48,7 +48,7 @@
           <!-- 新会话引导 -->
           <div v-if="!store.currentSession || store.currentSession.messages.length === 0" class="chat-empty">
             <span class="empty-kicker">{{ t('chatWorkspace.readyToRun') }}</span>
-            <div class="empty-mark"><v-icon :icon="mdiConsoleLine" size="28" aria-hidden="true" /></div>
+            <div class="empty-mark"><AgentLogo :agent-id="currentAgentId" :size="36" /></div>
             <h1 class="empty-title">{{ currentAgentName }}</h1>
             <p class="empty-subtitle">{{ emptyAgentSubtitle }}</p>
             <div class="agent-context-card">
@@ -115,10 +115,7 @@
                     :class="{ thinking: store.isLoading && index === displayMessages.length - 1 }"
                     aria-hidden="true"
                   >
-                    <svg class="avatar-mark" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
-                      <path d="M12 2.5 21.5 12 12 21.5 2.5 12 12 2.5Z" />
-                      <path d="M12 7.5 16.5 12 12 16.5 7.5 12 12 7.5Z" opacity="0.55" />
-                    </svg>
+                    <AgentLogo :agent-id="messageAgentId(message)" :size="20" />
                   </div>
                   <div class="message-content ai-message">
                     <div class="message-meta">
@@ -262,7 +259,7 @@
               </div>
             </div>
             <div v-else class="composer-agent-summary">
-              <span class="composer-agent-dot" aria-hidden="true"></span>
+              <AgentLogo :agent-id="currentAgentId" :size="16" />
               <span>{{ currentAgentName }}</span>
             </div>
 
@@ -389,7 +386,6 @@
 import {
   mdiAccountGroupOutline,
   mdiArrowTopRight,
-  mdiConsoleLine,
   mdiHistory,
   mdiLanConnect,
   mdiPlus,
@@ -414,6 +410,7 @@ import { useProviderConfigStore } from '@/stores/providerConfig'
 import { useSkillsStore } from '@/stores/skills'
 import { useToolStatsStore } from '@/stores/toolStats'
 import { renderSafe, sharedMd } from '@/utils/markdown'
+import AgentLogo from './AgentLogo.vue'
 import AgentTrace from './AgentTrace.vue'
 import EngineSelector from './EngineSelector.vue'
 import McpServersDialog from './McpServersDialog.vue'
@@ -571,6 +568,7 @@ const isBuiltinEngine = computed(() => agentHubStore.selectedEngine.tier === 'bu
 const currentAgentName = computed(() =>
   isBuiltinEngine.value ? t('chatWorkspace.jediBuiltin') : agentHubStore.selectedEngine.name
 )
+const currentAgentId = computed(() => agentHubStore.selectedEngine.agentId || 'builtin')
 const currentAgentContext = computed(() => {
   const engine = agentHubStore.selectedEngine
   if (isBuiltinEngine.value) {
@@ -641,6 +639,14 @@ function messageAgentName(message: ChatMessage): string {
   if (!engineId || engineId === 'builtin') return t('chatWorkspace.jediBuiltin')
   return (
     agentHubStore.engines.find(engine => engine.id === engineId)?.name ?? engineId.split('@')[0]
+  )
+}
+
+function messageAgentId(message: ChatMessage): string {
+  const engineId = message.metadata?.run?.engine
+  if (!engineId || engineId === 'builtin') return 'builtin'
+  return (
+    agentHubStore.engines.find(engine => engine.id === engineId)?.agentId ?? engineId.split('@')[0]
   )
 }
 

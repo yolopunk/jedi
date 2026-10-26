@@ -2,11 +2,9 @@
 import antigravityLogo from '@lobehub/icons-static-svg/icons/antigravity-color.svg?url'
 import claudeCodeLogo from '@lobehub/icons-static-svg/icons/claudecode-color.svg?url'
 import codexLogo from '@lobehub/icons-static-svg/icons/codex-color.svg?url'
-import cursorLogo from '@lobehub/icons-static-svg/icons/cursor.svg?url'
 import geminiCliLogo from '@lobehub/icons-static-svg/icons/geminicli-color.svg?url'
 import gooseLogo from '@lobehub/icons-static-svg/icons/goose.svg?url'
 import kimiLogo from '@lobehub/icons-static-svg/icons/kimi-color.svg?url'
-import opencodeLogo from '@lobehub/icons-static-svg/icons/opencode.svg?url'
 import qwenLogo from '@lobehub/icons-static-svg/icons/qwen-color.svg?url'
 import { computed } from 'vue'
 
@@ -33,8 +31,8 @@ const logos: Record<string, LogoDefinition> = {
   codex: { src: codexLogo },
   'gemini-cli': { src: geminiCliLogo },
   'qwen-code': { src: qwenLogo },
-  'cursor-cli': { src: cursorLogo, monochrome: true },
-  opencode: { src: opencodeLogo, monochrome: true },
+  'cursor-cli': { src: '/agent-logos/cursor.svg' },
+  opencode: { src: '/agent-logos/opencode.svg' },
   pi: { src: '/agent-logos/pi.svg' },
   antigravity: { src: antigravityLogo },
   goose: { src: gooseLogo, monochrome: true },

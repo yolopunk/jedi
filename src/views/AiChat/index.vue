@@ -5,15 +5,11 @@
       <div class="chat-console-area">
         <!-- Chat toolbar -->
         <div class="chat-header">
-          <div class="header-logo">
-            <v-icon :icon="mdiMessageOutline" size="18" aria-hidden="true" />
-            <span class="workspace-title">{{ t('sidebar.chat') }}</span>
+          <div class="header-agent">
+            <span class="header-kicker">{{ t('chatWorkspace.agentWorkspace') }}</span>
+            <EngineSelector />
           </div>
           <div class="header-right">
-            <div class="status-badge" :class="{ ready: statusReady }">
-              <span class="status-dot"></span>
-              <span class="status-text">{{ connectionStatus }}</span>
-            </div>
             <button
               v-if="isBuiltinEngine"
               type="button"
@@ -22,27 +18,23 @@
               :title="$t('chat.selectProvider')"
               @click="showModelSettings = true"
             >
-              <span class="provider-name">{{ currentProviderName }}</span>
+              <v-icon :icon="mdiTuneVariant" size="16" aria-hidden="true" />
+              <span class="provider-copy">
+                <small>{{ t('chatWorkspace.provider') }}</small>
+                <span class="provider-name">{{ currentProviderName }} · {{ currentModelName }}</span>
+              </span>
             </button>
+            <span class="header-divider" aria-hidden="true"></span>
             <button class="workers-btn" @click="showWorkersPanel = true" :title="t('chatWorkspace.workers')" :aria-label="t('chatWorkspace.workers')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="2" y="7" width="20" height="10" rx="2"/>
-                <path d="M6 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2"/>
-                <line x1="12" y1="12" x2="12" y2="12.01" stroke-width="2" stroke-linecap="round"/>
-              </svg>
+              <v-icon :icon="mdiAccountGroupOutline" size="17" aria-hidden="true" />
               <span v-if="workers.length > 0" class="workers-count">{{ workers.length }}</span>
             </button>
             <button class="workers-btn" @click="showMcpServers = true" :title="t('chatWorkspace.mcp')" :aria-label="t('chatWorkspace.mcp')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M9 2v6M15 2v6M9 8h6M12 8v6a4 4 0 0 1-4 4H7"/>
-                <circle cx="6" cy="20" r="2"/>
-              </svg>
+              <v-icon :icon="mdiLanConnect" size="17" aria-hidden="true" />
               <span v-if="mcpClientStore.connectedIds.length > 0" class="workers-count">{{ mcpClientStore.connectedIds.length }}</span>
             </button>
             <button class="workers-btn" @click="showSkillsManager = true" :title="$t('skills.title')" :aria-label="$t('skills.title')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-              </svg>
+              <v-icon :icon="mdiTools" size="17" aria-hidden="true" />
               <span v-if="skillsStore.enabledCount > 0" class="workers-count">{{ skillsStore.enabledCount }}</span>
             </button>
             <span class="header-divider" aria-hidden="true"></span>
@@ -55,9 +47,20 @@
         <div ref="messagesContainer" class="messages-container" @scroll="handleScroll" @click="handleMessagesClick">
           <!-- 新会话引导 -->
           <div v-if="!store.currentSession || store.currentSession.messages.length === 0" class="chat-empty">
-            <div class="empty-mark"><v-icon :icon="mdiRobotOutline" size="28" aria-hidden="true" /></div>
-            <h1 class="empty-title">Jedi Agent</h1>
-            <p class="empty-subtitle">{{ t('chatWorkspace.subtitle') }}</p>
+            <span class="empty-kicker">{{ t('chatWorkspace.readyToRun') }}</span>
+            <div class="empty-mark"><v-icon :icon="mdiConsoleLine" size="28" aria-hidden="true" /></div>
+            <h1 class="empty-title">{{ currentAgentName }}</h1>
+            <p class="empty-subtitle">{{ emptyAgentSubtitle }}</p>
+            <div class="agent-context-card">
+              <div class="agent-context-status"><span></span>{{ t('chatWorkspace.currentAgent') }}</div>
+              <strong>{{ currentAgentName }}</strong>
+              <span>{{ currentAgentContext }}</span>
+              <small>{{ detectedAgentsLabel }}</small>
+            </div>
+            <button v-if="isBuiltinEngine && !statusReady" type="button" class="configure-provider-btn" @click="showModelSettings = true">
+              <v-icon :icon="mdiTuneVariant" size="16" aria-hidden="true" />
+              {{ t('chatWorkspace.configureProvider') }}
+            </button>
             <div class="empty-examples">
               <button
                 v-for="ex in examplePrompts"
@@ -65,25 +68,20 @@
                 class="example-chip"
                 @click="applyExample(ex)"
               >
-                {{ ex }}
+                <span>{{ ex }}</span>
+                <v-icon :icon="mdiArrowTopRight" size="16" aria-hidden="true" />
               </button>
             </div>
-
           </div>
 
           <!-- 消息列表 -->
           <div v-else class="messages-list">
             <div
               v-for="(message, index) in displayMessages"
-              :key="index"
+              :key="messageKey(message, index)"
               class="console-message"
               :class="message.role"
             >
-              <!-- 消息时间戳 -->
-              <div class="message-timestamp">
-                <span class="timestamp">[{{ formatTimestamp(message.timestamp) }}]</span>
-              </div>
-
               <div class="message-row">
                 <!-- 用户消息 -->
                 <template v-if="message.role === 'user'">
@@ -91,6 +89,10 @@
                     <span class="avatar-monogram">YOU</span>
                   </div>
                   <div class="message-content user-message">
+                    <div class="message-meta user-meta">
+                      <span class="speaker-name">{{ t('chatWorkspace.you') }}</span>
+                      <time>{{ formatTimestamp(message.timestamp) }}</time>
+                    </div>
                     <div v-if="message.metadata?.attachments?.length" class="message-attachments">
                       <img
                         v-for="path in message.metadata.attachments"
@@ -120,7 +122,9 @@
                   </div>
                   <div class="message-content ai-message">
                     <div class="message-meta">
-                      <span class="model-badge">{{ currentModelName }}</span>
+                      <span class="speaker-name">{{ messageAgentName(message) }}</span>
+                      <span class="model-badge">{{ messageRuntimeLabel(message) }}</span>
+                      <time>{{ formatTimestamp(message.timestamp) }}</time>
                     </div>
                     <div class="message-body">
                       <div class="markdown-body" v-html="renderMessage(message.content)"></div>
@@ -225,9 +229,6 @@
               @input="autoResize"
             ></textarea>
 
-            <!-- Agent 引擎选择器 -->
-            <EngineSelector />
-
             <!-- Model选择器 -->
             <div v-if="isBuiltinEngine" ref="modelSelectorRef" class="model-selector" @keydown="handleModelMenuKeydown">
               <button
@@ -259,6 +260,10 @@
                   <span class="model-item-context">{{ formatContextShort(model.limit?.context) }}</span>
                 </button>
               </div>
+            </div>
+            <div v-else class="composer-agent-summary">
+              <span class="composer-agent-dot" aria-hidden="true"></span>
+              <span>{{ currentAgentName }}</span>
             </div>
 
             <!-- 发送 / 停止按钮 -->
@@ -381,7 +386,16 @@
 </template>
 
 <script setup lang="ts">
-import { mdiHistory, mdiMessageOutline, mdiPlus, mdiRobotOutline } from '@mdi/js'
+import {
+  mdiAccountGroupOutline,
+  mdiArrowTopRight,
+  mdiConsoleLine,
+  mdiHistory,
+  mdiLanConnect,
+  mdiPlus,
+  mdiTools,
+  mdiTuneVariant,
+} from '@mdi/js'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -554,13 +568,25 @@ const currentProviderName = computed(() => {
 // C02（引擎/服务商/模型关系）：外部引擎的请求由该引擎自身执行，不依赖内置
 // 服务商/模型配置 —— 顶部状态改为引擎感知，服务商入口仅在内置引擎时展示。
 const isBuiltinEngine = computed(() => agentHubStore.selectedEngine.tier === 'builtin')
-const connectionStatus = computed(() => {
-  if (!isBuiltinEngine.value) {
-    return t('chatWorkspace.engineExecuting', { engine: agentHubStore.selectedEngine.name })
+const currentAgentName = computed(() =>
+  isBuiltinEngine.value ? t('chatWorkspace.jediBuiltin') : agentHubStore.selectedEngine.name
+)
+const currentAgentContext = computed(() => {
+  const engine = agentHubStore.selectedEngine
+  if (isBuiltinEngine.value) {
+    return `${currentProviderName.value} · ${currentModelName.value}`
   }
-  return modelsDevStore.selectedModel
-    ? t('chatWorkspace.modelSelected')
-    : t('chatWorkspace.selectModel')
+  return [engine.location, engine.installation?.version].filter(Boolean).join(' · ')
+})
+const emptyAgentSubtitle = computed(() =>
+  isBuiltinEngine.value
+    ? t('chatWorkspace.builtinSubtitle')
+    : t('chatWorkspace.externalSubtitle', { agent: currentAgentName.value })
+)
+const detectedAgentsLabel = computed(() => {
+  if (agentHubStore.scanning) return t('chatWorkspace.engineScanning')
+  if (agentHubStore.error) return t('chatWorkspace.engineDetectFailed')
+  return t('chatWorkspace.detectedAgents', { count: agentHubStore.installedCount })
 })
 const statusReady = computed(() => (isBuiltinEngine.value ? !!modelsDevStore.selectedModel : true))
 
@@ -604,6 +630,28 @@ function handleMessagesClick(e: MouseEvent) {
 // Trace panel: one button per assistant turn opens the right rail focused on
 // that message's run, instead of dumping the whole trace inline under the bubble.
 type ChatMessage = NonNullable<typeof store.currentSession>['messages'][number]
+
+function messageKey(message: ChatMessage, index: number): string {
+  const nativeId = message.metadata?.run?.nativeSessionId
+  return `${store.currentSessionId}-${message.role}-${message.timestamp ?? nativeId ?? index}`
+}
+
+function messageAgentName(message: ChatMessage): string {
+  const engineId = message.metadata?.run?.engine
+  if (!engineId || engineId === 'builtin') return t('chatWorkspace.jediBuiltin')
+  return (
+    agentHubStore.engines.find(engine => engine.id === engineId)?.name ?? engineId.split('@')[0]
+  )
+}
+
+function messageRuntimeLabel(message: ChatMessage): string {
+  const run = message.metadata?.run
+  if (!run?.engine || run.engine === 'builtin') {
+    return run?.model || currentModelName.value
+  }
+  const engine = agentHubStore.engines.find(item => item.id === run.engine)
+  return engine?.location || run.engine.split('@')[1] || t('chatWorkspace.externalRuntime')
+}
 
 function openTrace(message: ChatMessage) {
   if (isTraceActive(message)) {

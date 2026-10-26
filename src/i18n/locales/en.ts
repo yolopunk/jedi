@@ -1,5 +1,21 @@
 export default {
   chatWorkspace: {
+    agentWorkspace: 'Agent workspace',
+    currentAgent: 'Active agent',
+    changeAgent: 'Change agent, currently {agent}',
+    chooseAgent: 'Choose an agent',
+    chooseAgentHint: 'Start and continue conversations with agents installed on this system.',
+    jediBuiltin: 'Jedi built-in agent',
+    builtinRuntime: 'Jedi Runtime',
+    externalRuntime: 'External agent',
+    provider: 'Provider / Model',
+    configureProvider: 'Configure provider and model',
+    readyToRun: 'Ready to run',
+    builtinSubtitle:
+      'Run through your configured provider and model with Jedi skills, MCP, and local tools.',
+    externalSubtitle: 'Run directly with {agent}, preserving its native capabilities and context.',
+    detectedAgents: '{count} system agents detected',
+    you: 'You',
     enabled: 'Enabled',
     disabled: 'Disabled',
     workers: 'Background tasks',

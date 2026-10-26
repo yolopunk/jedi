@@ -4,6 +4,7 @@
 // Tier-A engines are selectable; Tier-B stay visible with an "adapter
 // pending" badge until their driver lands (M2-M4).
 
+import { mdiChevronDown, mdiConsoleLine, mdiRefresh } from '@mdi/js'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { EngineDescriptor } from '@/agent/hub/types'
@@ -22,8 +23,13 @@ const notInstalledAgents = computed(() => hub.reports.filter(r => r.installation
 
 const label = computed(() => {
   const e = hub.selectedEngine
-  if (e.tier === 'builtin') return t('chatWorkspace.engineBuiltin')
-  return e.location ? `${e.name} · ${e.location}` : e.name
+  if (e.tier === 'builtin') return t('chatWorkspace.jediBuiltin')
+  return e.name
+})
+const meta = computed(() => {
+  const e = hub.selectedEngine
+  if (e.tier === 'builtin') return t('chatWorkspace.builtinRuntime')
+  return [e.location, e.installation?.version].filter(Boolean).join(' · ')
 })
 
 function toggle() {
@@ -105,18 +111,27 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
     <button
       ref="triggerRef"
       class="engine-trigger"
-      :title="t('chatWorkspace.engine')"
+      :aria-label="t('chatWorkspace.changeAgent', { agent: label })"
       :aria-expanded="open"
       aria-haspopup="listbox"
       @click="toggle"
     >
-      <span class="engine-dot" :class="{ scanning: hub.scanning, danger: !!hub.error }" aria-hidden="true"></span>
-      <span class="engine-trigger-name">{{ label }}</span>
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-        <polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="2" />
-      </svg>
+      <span class="engine-icon"><v-icon :icon="mdiConsoleLine" size="19" aria-hidden="true" /></span>
+      <span class="engine-trigger-copy">
+        <span class="engine-trigger-name">{{ label }}</span>
+        <span class="engine-trigger-meta">{{ meta }}</span>
+      </span>
+      <span class="engine-state" :class="{ scanning: hub.scanning, danger: !!hub.error }" aria-hidden="true"></span>
+      <v-icon :icon="mdiChevronDown" size="16" aria-hidden="true" />
     </button>
     <div v-if="open" ref="menuRef" class="engine-menu" role="listbox">
+      <div class="engine-menu-header">
+        <div>
+          <strong>{{ t('chatWorkspace.chooseAgent') }}</strong>
+          <span>{{ t('chatWorkspace.chooseAgentHint') }}</span>
+        </div>
+        <span>{{ String(hub.installedCount).padStart(2, '0') }}</span>
+      </div>
       <div class="engine-group">{{ t('chatWorkspace.engineInstalled') }}</div>
       <button
         v-for="engine in installedEngines"
@@ -155,6 +170,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
       <div class="engine-footer">
         <span v-if="hub.error" class="engine-error">{{ t('chatWorkspace.engineDetectFailed') }}</span>
         <button class="engine-refresh" :disabled="hub.scanning" @click="hub.detect(true)">
+          <v-icon :icon="mdiRefresh" size="14" aria-hidden="true" />
           {{ hub.scanning ? t('chatWorkspace.engineScanning') : t('chatWorkspace.engineRefresh') }}
         </button>
       </div>
@@ -163,63 +179,91 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 </template>
 
 <style scoped>
-/* The root is a grid item of .input-bar (chat.css): flexible 1fr column,
-   hugging its right edge so the model selector owns column 4 untouched. */
 .engine-selector {
   position: relative;
-  grid-row: 2;
-  grid-column: 3;
-  justify-self: end;
   min-width: 0;
-  max-width: 220px;
+  width: min(260px, 36vw);
 }
 
-/* 胶囊触发器 - 与模型选择器观感一致 */
 .engine-trigger {
+  width: 100%;
+  min-height: 48px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  color: var(--text-muted);
-  font-size: 12px;
+  gap: 10px;
+  padding: 6px 10px 6px 7px;
+  border: 1px solid rgb(var(--text-rgb) / 0.09);
+  border-radius: 12px;
+  background: rgb(var(--text-rgb) / 0.025);
+  color: var(--text);
+  text-align: left;
   cursor: pointer;
-  max-width: 100%;
+  transition: border-color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast);
 }
 
 .engine-trigger:hover {
-  background: rgb(var(--ink-rgb) / 0.08);
-  color: rgb(var(--text-rgb) / 0.9);
+  border-color: rgb(var(--accent-rgb) / 0.32);
+  background: rgb(var(--accent-rgb) / 0.055);
 }
 
-.engine-trigger svg {
-  opacity: 0.5;
+.engine-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.engine-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(var(--accent-rgb) / 0.22);
+  border-radius: 9px;
+  background: linear-gradient(145deg, rgb(var(--accent-rgb) / 0.16), rgb(var(--accent-rgb) / 0.055));
+  color: var(--accent);
+}
+
+.engine-trigger-copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .engine-trigger-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 12px;
+  font-weight: 650;
 }
 
-/* 状态点语义：accent = 当前选中引擎（触发器始终反映选中项），danger = 检测失败，
-   scanning = 检测中（置于最后，扫描期间覆盖 danger：detect 开始即清空 error） */
-.engine-dot {
+.engine-trigger-meta {
+  overflow: hidden;
+  color: var(--text-muted);
+  font: 9px var(--jedi-font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-state {
   width: 7px;
   height: 7px;
+  flex: 0 0 auto;
   border-radius: 50%;
-  background: var(--accent);
-  flex-shrink: 0;
+  background: var(--success);
+  box-shadow: 0 0 0 4px rgb(var(--success-rgb) / 0.1);
 }
 
-.engine-dot.danger {
+.engine-state.danger {
   background: var(--danger);
+  box-shadow: 0 0 0 4px rgb(var(--danger-rgb) / 0.1);
 }
 
-.engine-dot.scanning {
+.engine-state.scanning {
   background: var(--warning, #fbbf24);
+  box-shadow: none;
   animation: engine-pulse 1s ease-in-out infinite;
 }
 
@@ -232,10 +276,11 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 /* 引擎下拉菜单 - 自带完整浮层样式，不依赖 index.vue 的 scoped CSS */
 .engine-menu {
   position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0;
-  min-width: 230px;
-  max-height: 340px;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 340px;
+  max-width: min(88vw, 340px);
+  max-height: min(440px, 68vh);
   overflow-y: auto;
   background: var(--surface-raised);
   border: 1px solid var(--border-strong);
@@ -244,6 +289,28 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   box-shadow: var(--shadow-lg);
   z-index: 100;
 }
+
+.engine-menu-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 2px 2px 6px;
+  padding: 12px;
+  border-radius: 9px;
+  background: rgb(var(--accent-rgb) / 0.07);
+}
+
+.engine-menu-header > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.engine-menu-header strong { font-size: 12px; }
+.engine-menu-header div span { color: var(--text-muted); font-size: 10px; line-height: 1.45; }
+.engine-menu-header > span { color: var(--accent); font: 600 11px var(--jedi-font-mono); }
 
 .engine-group {
   padding: 6px 12px 4px;
@@ -259,8 +326,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   justify-content: space-between;
   gap: 12px;
   width: 100%;
-  padding: 7px 12px;
-  border: none;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: transparent;
   color: inherit;
   font-size: 12.5px;
@@ -270,11 +338,13 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 
 .engine-item:hover:not(:disabled),
 .engine-item:focus-visible:not(:disabled) {
-  background: rgba(127, 127, 127, 0.12);
+  background: rgb(var(--text-rgb) / 0.055);
+  outline: none;
 }
 
 .engine-item.selected {
-  background: rgba(127, 127, 127, 0.18);
+  border-color: rgb(var(--accent-rgb) / 0.22);
+  background: rgb(var(--accent-rgb) / 0.09);
 }
 
 .engine-item:disabled {
@@ -349,7 +419,8 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 6px 12px;
+  margin-top: 5px;
+  padding: 9px 10px 4px;
   border-top: 1px solid rgba(127, 127, 127, 0.18);
 }
 
@@ -362,6 +433,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 }
 
 .engine-refresh {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   border: none;
   background: transparent;
   color: inherit;
@@ -370,6 +444,11 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   cursor: pointer;
   padding: 2px 4px;
   flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .engine-selector { width: min(100%, 320px); }
+  .engine-menu { width: min(88vw, 340px); }
 }
 
 .engine-refresh:hover:not(:disabled) {

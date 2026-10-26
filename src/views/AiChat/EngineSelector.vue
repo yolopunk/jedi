@@ -219,9 +219,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  border: 1px solid transparent;
+  border: 1px solid rgb(var(--accent-rgb) / 0.22);
   border-radius: 9px;
-  background: transparent;
+  background: linear-gradient(145deg, rgb(var(--accent-rgb) / 0.16), rgb(var(--accent-rgb) / 0.055));
   color: var(--text);
 }
 
@@ -344,9 +344,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   width: 100%;
   min-height: 48px;
   padding: 6px 8px;
-  border: 1px solid transparent;
+  border: 1px solid rgb(var(--text-rgb) / 0.09);
   border-radius: 8px;
-  background: transparent;
+  background: var(--surface-raised);
   color: inherit;
   font-size: 12.5px;
   cursor: pointer;
@@ -376,8 +376,8 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 }
 
 .engine-item.selected .engine-logo {
-  border-color: transparent;
-  box-shadow: none;
+  border-color: rgb(var(--accent-rgb) / 0.25);
+  box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.055);
 }
 
 .engine-item:disabled {

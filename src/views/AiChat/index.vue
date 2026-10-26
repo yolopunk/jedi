@@ -48,7 +48,9 @@
           <!-- 新会话引导 -->
           <div v-if="!store.currentSession || store.currentSession.messages.length === 0" class="chat-empty">
             <span class="empty-kicker">{{ t('chatWorkspace.readyToRun') }}</span>
-            <div class="empty-mark"><AgentLogo :agent-id="currentAgentId" :size="36" /></div>
+            <div class="empty-mark" :class="{ 'app-brand': isBuiltinEngine }">
+              <AgentLogo :agent-id="currentAgentId" :size="36" />
+            </div>
             <h1 class="empty-title">{{ currentAgentName }}</h1>
             <p class="empty-subtitle">{{ emptyAgentSubtitle }}</p>
             <div class="agent-context-card">
@@ -112,7 +114,10 @@
                 <template v-else>
                   <div
                     class="msg-avatar ai"
-                    :class="{ thinking: store.isLoading && index === displayMessages.length - 1 }"
+                    :class="{
+                      thinking: store.isLoading && index === displayMessages.length - 1,
+                      'app-brand': messageAgentId(message) === 'builtin',
+                    }"
                     aria-hidden="true"
                   >
                     <AgentLogo :agent-id="messageAgentId(message)" :size="20" />
@@ -959,7 +964,7 @@ onMounted(async () => {
   margin: 22px 0 10px;
   line-height: 1.35;
   font-weight: 650;
-  color: var(--bg-elevated);
+  color: var(--text);
   letter-spacing: 0.2px;
 }
 .markdown-body h1 {
@@ -980,7 +985,7 @@ onMounted(async () => {
 
 .markdown-body strong {
   font-weight: 700;
-  color: var(--bg-elevated);
+  color: var(--text);
 }
 .markdown-body em {
   font-style: italic;

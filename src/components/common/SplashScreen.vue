@@ -18,7 +18,7 @@
     <div class="splash-brand">
       <img
         class="splash-logo"
-        src="/icon.png?v=jedi-koala-20261003"
+        src="/branding/jedi-mark-white.svg?v=jedi-koala-20261003"
         alt=""
       />
       <h1 class="splash-title">{{ t('sidebar.title') }}</h1>
@@ -177,9 +177,7 @@ onMounted(() => {
 .splash-logo {
   width: 52px;
   height: 52px;
-  border-radius: 12px;
-  border: 1px solid rgb(255 255 255 / 0.14);
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.3), 0 1px 0 rgb(255 255 255 / 0.08) inset;
+  object-fit: contain;
   animation: logo-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both;
 }
 

@@ -42,7 +42,7 @@ const logos: Record<string, LogoDefinition> = {
   'kimi-code': { src: kimiLogo },
   crush: { src: '/agent-logos/crush.svg' },
   droid: { src: '/agent-logos/droid.svg', monochrome: true },
-  zcode: { src: '/agent-logos/zcode.svg', monochrome: true },
+  zcode: { src: '/agent-logos/zcode.png' },
 }
 
 const normalizedId = computed(() => props.agentId.toLowerCase().split('@')[0])

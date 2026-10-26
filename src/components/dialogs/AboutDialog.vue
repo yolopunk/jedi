@@ -34,7 +34,7 @@
       <!-- Content -->
       <div class="card-body">
         <div class="about-logo">
-          <img src="/icon.png?v=jedi-koala-20261003" alt="Jedi Logo" class="app-logo" />
+          <img :src="logoSrc" alt="Jedi Logo" class="app-logo" />
           <div class="logo-glow"></div>
         </div>
 
@@ -91,8 +91,9 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { type AppInfo, getAppInfo } from '@/api/app'
+import { useTheme } from '@/composables/useTheme'
 
 defineProps<{ modelValue: boolean }>()
 defineEmits<{
@@ -104,6 +105,12 @@ defineEmits<{
 
 const currentYear = new Date().getFullYear()
 const appInfo = ref<AppInfo>({ version: '0.0.0', name: 'Jedi' })
+const { isDark } = useTheme()
+const logoSrc = computed(() =>
+  isDark.value
+    ? '/branding/jedi-mark-white.svg?v=jedi-koala-20261003'
+    : '/branding/jedi-mark.svg?v=jedi-koala-20261003'
+)
 
 onMounted(async () => {
   try {

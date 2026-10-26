@@ -116,13 +116,13 @@ const emit = defineEmits<{
   (e: 'update:collapsed', collapsed: boolean): void
 }>()
 
-// Dark theme uses the black-tile koala variant
+// Use the transparent brand mark so the logo belongs to the sidebar surface.
 const { isDark } = useTheme()
 
 const logoSrc = computed(() =>
   isDark.value
-    ? '/branding/jedi-app-icon-dark.png?v=jedi-koala-20261003'
-    : '/icon.png?v=jedi-koala-20261003'
+    ? '/branding/jedi-mark-white.svg?v=jedi-koala-20261003'
+    : '/branding/jedi-mark.svg?v=jedi-koala-20261003'
 )
 
 const navItems = [
@@ -368,12 +368,13 @@ onUnmounted(() => {
     letter-spacing: 0.5px;
 }
 
-/* Ensure icons center in collapsed mode */
-.sidebar-item.justify-center :deep(.v-list-item) {
+/* Ensure icons center in collapsed mode. These classes land on the item's
+   root element, so no :deep() — Vuetify lays items out as a grid for text
+   alignment; a flex rail centers the lone prepend icon. */
+.sidebar-item.justify-center {
+    display: flex;
     justify-content: center !important;
     padding-inline: 0 !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
     min-width: 0 !important;
 }
 
@@ -388,10 +389,7 @@ onUnmounted(() => {
 }
 
 .sidebar-item.justify-center :deep(.v-list-item__prepend) {
-    margin-inline-end: 0 !important;
-    margin-inline-start: 0 !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    margin-inline: 0 !important;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -405,6 +403,7 @@ onUnmounted(() => {
     display: flex;
     justify-content: center;
     align-items: center;
+    transform: translateX(0.5px);
 }
 
 /* Sidebar Item — quiet neutral highlight (ChatGPT/Claude style) */

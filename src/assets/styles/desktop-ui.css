@@ -31,6 +31,11 @@
   border-radius: 10px !important;
   transition: background var(--motion-fast), border-color var(--motion-fast);
 }
+/* These shell controls define their own states; avoid stacking Vuetify overlays. */
+.v-application .sidebar-item > .v-list-item__overlay,
+.v-application .header-action-btn > .v-btn__overlay {
+  opacity: 0 !important;
+}
 .v-application .sidebar-item:hover { background: rgb(var(--text-rgb) / 0.04); }
 .v-application .sidebar-item.v-list-item--active {
   background: rgb(var(--accent-rgb) / 0.09);

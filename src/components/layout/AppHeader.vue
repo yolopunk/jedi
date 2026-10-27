@@ -377,8 +377,7 @@ const handleClose = async () => {
   color: rgba(var(--v-theme-on-surface), 0.68);
   transition:
     background 0.15s ease,
-    color 0.15s ease,
-    transform 0.15s ease;
+    color 0.15s ease;
 }
 
 .update-progress-btn {
@@ -399,7 +398,7 @@ const handleClose = async () => {
 }
 
 .header-action-btn:active {
-  transform: translateY(1px);
+  background: rgba(var(--v-theme-primary), 0.2);
 }
 
 .action-primary {

@@ -1,8 +1,14 @@
-import { invoke } from '@tauri-apps/api/core'
+import { getVersion } from '@tauri-apps/api/app'
+import { invoke, isTauri } from '@tauri-apps/api/core'
+import pkg from '../../package.json'
 
 export interface AppInfo {
   version: string
   name: string
+}
+
+export async function getAppVersion(): Promise<string> {
+  return isTauri() ? getVersion() : pkg.version
 }
 
 /**

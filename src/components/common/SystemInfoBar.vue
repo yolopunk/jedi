@@ -7,7 +7,7 @@
                     class="text-caption font-weight-black text-disabled mr-1 ls-1"
                     >JEDI</span
                 >
-                <span class="text-caption text-medium-emphasis"
+                <span v-if="appVersion" class="text-caption text-medium-emphasis"
                     >v{{ appVersion }}</span
                 >
             </div>
@@ -169,13 +169,15 @@
 <script setup lang="ts">
 import { mdiCpu64Bit, mdiEthernet, mdiMemory, mdiServer } from '@mdi/js'
 import { onMounted, onUnmounted, ref } from 'vue'
+import { getAppVersion } from '@/api/app'
 import { getOsInfo } from '@/api/hosts'
 import PlayerBar from '@/components/podcast/PlayerBar.vue'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import type { OsInfo } from '@/types/os'
-import pkg from '../../../package.json'
-
-const appVersion = pkg.version
+const appVersion = ref('')
+getAppVersion().then(version => { appVersion.value = version }).catch(error => {
+  console.error('Failed to read app version:', error)
+})
 
 // Audio player
 const { currentPlaying } = useAudioPlayer()

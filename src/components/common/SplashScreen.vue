@@ -36,7 +36,7 @@
         <span class="splash-status-text">{{ t('splash.loading') }}</span>
         <span class="splash-caret"></span>
       </span>
-      <span class="splash-version">v{{ appVersion }}</span>
+      <span v-if="appVersion" class="splash-version">v{{ appVersion }}</span>
     </div>
 
     <span class="sr-only">{{ t('splash.loading') }}</span>
@@ -46,8 +46,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { getAppVersion } from '@/api/app'
 import BlackHoleCanvas from '@/components/common/BlackHoleCanvas.vue'
-import pkg from '../../../package.json'
 
 defineProps<{
   /** 由宿主在初始化完成后置 true，触发「坠入奇点」退场编排 */
@@ -61,7 +61,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const appVersion = pkg.version
+const appVersion = ref('')
+getAppVersion().then(version => { appVersion.value = version }).catch(error => {
+  console.error('Failed to read app version:', error)
+})
 
 // 由实际渲染画布报告失败，避免预探测成功后第二次创建上下文仍然失败。
 const webglAvailable = ref(true)

@@ -17,6 +17,7 @@
           size="x-small"
           variant="text"
           class="header-action-btn"
+          :aria-label="hasUpdate && updateInfo ? $t('settings.updateAvailable', { version: updateInfo.version }) : $t('settings.checkUpdate')"
           @click="handleCheckUpdate"
         >
           <v-progress-circular
@@ -145,6 +146,8 @@
       v-model="showUpdateDialog"
       :update-info="updateInfo"
       :is-installing="isInstalling"
+      :progress="installProgress"
+      :error="installError"
       @install="handleInstallUpdate"
     />
   </div>
@@ -182,7 +185,7 @@ let appWindow: TauriWindow | null = null
 const isMaximized = ref(false)
 const showUpdateDialog = ref(false)
 const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
-const { hasUpdate, updateInfo, isChecking, isInstalling, checkForUpdate, installUpdate } =
+const { hasUpdate, updateInfo, isChecking, isInstalling, installProgress, installError, checkForUpdate, installUpdate } =
   useUpdate()
 
 const handleCheckUpdate = async () => {

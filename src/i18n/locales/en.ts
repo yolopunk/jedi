@@ -542,6 +542,7 @@ export default {
       current: 'Current',
       new: 'New',
       releaseNotes: 'Release Notes',
+      noReleaseNotes: 'No release notes available',
       installing: 'Installing update...',
       inProgress: 'Updating. The app will restart when complete…',
       failed: 'Update failed. You can retry.',

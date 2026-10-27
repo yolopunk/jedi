@@ -35,7 +35,7 @@
         <div class="version-info">
           <div class="version-row">
             <span class="version-label">{{ $t('dialogs.update.current') }}</span>
-            <span class="version-value current">v{{ currentVersion }}</span>
+            <span class="version-value current">v{{ updateInfo.currentVersion }}</span>
           </div>
           <div class="version-arrow">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -63,7 +63,8 @@
             role="region"
             :aria-label="$t('dialogs.update.releaseNotes')"
           >
-            <div class="release-notes" v-html="formattedReleaseNotes"></div>
+            <div v-if="formattedReleaseNotes" class="release-notes" v-html="formattedReleaseNotes"></div>
+            <div v-else class="release-notes">{{ $t('dialogs.update.noReleaseNotes') }}</div>
           </div>
         </div>
 
@@ -107,7 +108,6 @@ import DOMPurify from 'dompurify'
 import MarkdownIt from 'markdown-it'
 import { computed } from 'vue'
 import type { UpdateInfo } from '@/api/update'
-import pkg from '../../../package.json'
 
 const props = defineProps<{
   modelValue: boolean
@@ -122,11 +122,10 @@ defineEmits<{
   (e: 'install'): void
 }>()
 
-const currentVersion = pkg.version
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
 const formattedReleaseNotes = computed(() => {
-  if (!props.updateInfo.body) return ''
+  if (!props.updateInfo.body || props.updateInfo.body.trim() === 'See the assets to download and install this version.') return ''
   return DOMPurify.sanitize(md.render(props.updateInfo.body))
 })
 </script>

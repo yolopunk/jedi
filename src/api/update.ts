@@ -3,6 +3,7 @@ import { check, type Update } from '@tauri-apps/plugin-updater'
 
 export interface UpdateInfo {
   version: string
+  currentVersion: string
   date: string
   body: string
 }
@@ -13,10 +14,14 @@ let currentUpdate: Update | null = null
 export async function checkUpdate(): Promise<UpdateInfo | null> {
   try {
     const update = await check()
-    if (update?.available) {
+    currentUpdate = null
+    // Build metadata does not affect version precedence.
+    const normalizeVersion = (version: string) => version.replace(/^v/i, '').split('+')[0]
+    if (update?.available && normalizeVersion(update.version) !== normalizeVersion(update.currentVersion)) {
       currentUpdate = update
       return {
         version: update.version,
+        currentVersion: update.currentVersion,
         date: update.date || new Date().toISOString(),
         body: update.body || '',
       }

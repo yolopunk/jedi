@@ -10,44 +10,6 @@
                 <span class="text-caption text-medium-emphasis"
                     >v{{ appVersion }}</span
                 >
-
-                <!-- Update Indicator -->
-                <v-btn
-                    v-if="hasUpdate"
-                    variant="text"
-                    size="x-small"
-                    density="compact"
-                    class="ml-1 px-1 update-btn"
-                    @click="showUpdateDialog = true"
-                >
-                    <v-icon
-                        :icon="mdiDownload"
-                        size="14"
-                        class="text-error"
-                    ></v-icon>
-                    <v-tooltip activator="parent" location="top">
-                        {{ $t("update.title") }}: {{ updateInfo?.version }}
-                    </v-tooltip>
-                </v-btn>
-
-                <!-- Checking Indicator -->
-                <v-btn
-                    v-if="isChecking"
-                    variant="text"
-                    size="x-small"
-                    density="compact"
-                    class="ml-1 px-1"
-                >
-                    <v-progress-circular
-                        :size="14"
-                        :width="2"
-                        indeterminate
-                        class="text-primary"
-                    ></v-progress-circular>
-                    <v-tooltip activator="parent" location="top">
-                        {{ $t("settings.updateChecking") }}
-                    </v-tooltip>
-                </v-btn>
             </div>
 
             <!-- Center Section: Podcast Player -->
@@ -201,28 +163,15 @@
                 </div>
             </div>
         </div>
-
-        <!-- Update Dialog -->
-        <UpdateDialog
-            v-if="updateInfo"
-            v-model="showUpdateDialog"
-            :update-info="updateInfo"
-            :is-installing="isInstalling"
-            :progress="installProgress"
-            :error="installError"
-            @install="_handleInstallUpdate"
-        ></UpdateDialog>
     </div>
 </template>
 
 <script setup lang="ts">
-import { mdiCpu64Bit, mdiDownload, mdiEthernet, mdiMemory, mdiServer } from '@mdi/js'
+import { mdiCpu64Bit, mdiEthernet, mdiMemory, mdiServer } from '@mdi/js'
 import { onMounted, onUnmounted, ref } from 'vue'
 import { getOsInfo } from '@/api/hosts'
-import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
 import PlayerBar from '@/components/podcast/PlayerBar.vue'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
-import { useUpdate } from '@/composables/useUpdate'
 import type { OsInfo } from '@/types/os'
 import pkg from '../../../package.json'
 
@@ -230,28 +179,6 @@ const appVersion = pkg.version
 
 // Audio player
 const { currentPlaying } = useAudioPlayer()
-
-// Update composable
-const {
-  hasUpdate,
-  updateInfo,
-  isChecking,
-  isInstalling,
-  installProgress,
-  installError,
-  installUpdate,
-} = useUpdate()
-
-const showUpdateDialog = ref(false)
-
-const _handleInstallUpdate = async () => {
-  try {
-    await installUpdate()
-    showUpdateDialog.value = false
-  } catch (error) {
-    console.error('Failed to install update:', error)
-  }
-}
 
 // 系统信息
 const osInfo = ref<OsInfo | null>(null)

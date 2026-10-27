@@ -530,6 +530,7 @@ export default {
       current: '当前版本',
       new: '新版本',
       releaseNotes: '更新日志',
+      noReleaseNotes: '暂无更新日志',
       installing: '正在安装更新…',
       inProgress: '正在更新，完成后将自动重启…',
       failed: '更新失败，可以重试。',

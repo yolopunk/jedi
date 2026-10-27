@@ -34,6 +34,7 @@ export class OpencodeDriver implements AgentDriver {
     resume: true,
     models: true,
     approval: 'none', // headless run auto-executed bash in probes
+    usesJediKey: false, // free default model / own auth config
   } as const
 
   supports(engine: EngineDescriptor): boolean {

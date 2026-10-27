@@ -17,6 +17,7 @@ export class BuiltinDriver implements AgentDriver {
     resume: false,
     models: true,
     approval: 'builtin',
+    usesJediKey: true,
   } as const
 
   supports(engine: EngineDescriptor): boolean {

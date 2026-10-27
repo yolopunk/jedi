@@ -42,6 +42,7 @@ export class GeminiCliDriver implements AgentDriver {
     resume: false, // conversation replay instead of native resume
     models: true,
     approval: 'none', // headless default mode fails unapproved tools
+    usesJediKey: true, // GEMINI/DASHSCOPE keys injected from Jedi keyring
   } as const
 
   supports(engine: EngineDescriptor): boolean {

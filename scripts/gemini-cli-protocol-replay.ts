@@ -105,10 +105,22 @@ function check(name: string, cond: boolean, detail = '') {
   check('S5 single turn passes through bare', single === 'only question')
 }
 
-// ---------- Scenario 6: non-JSON garbage tolerated ----------
+// ---------- Scenario 6: noisy / garbage output NEVER leaks into the bubble ----------
 {
-  const r = parseGeminiFamilyOutput('plain text crash output')
-  check('S6 garbage passthrough as text', r.text === 'plain text crash output')
+  // Pure garbage: no JSON at all → error, empty text (driver rejects).
+  const garbage = parseGeminiFamilyOutput('plain text crash output')
+  check('S6 garbage → error not text', garbage.text === '' && !!garbage.error)
+
+  // Banner noise wrapped around a valid qwen error record → JSON extracted.
+  const noisy = parseGeminiFamilyOutput(
+    '\u001b[?25lWelcome to qwen 0.26.1\n[{"type":"result","subtype":"error_during_execution","session_id":"s9","is_error":true,"usage":{"input_tokens":0,"output_tokens":0},"error":{"message":"No auth type is selected."}}]\nTip: run qwen login'
+  )
+  check('S6 noise+ANSI stripped, JSON extracted', !!noisy.error && noisy.error.includes('auth type'), JSON.stringify(noisy.error))
+  check('S6 noisy path yields no raw text', noisy.text === '')
+
+  // Unparseable JSON body → error with preview, never the raw wall.
+  const broken = parseGeminiFamilyOutput('log line\n{"type":"result", broken')
+  check('S6 broken JSON → error preview', broken.text === '' && !!broken.error)
 }
 
 // ---------- Scenario 7: WSL path translation (docs §5.3 W5) ----------

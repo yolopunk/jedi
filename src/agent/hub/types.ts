@@ -54,6 +54,14 @@ export interface DriverCapabilities {
   resume: boolean
   models: boolean
   approval: 'native' | 'extension' | 'builtin' | 'none'
+  /**
+   * True when the engine needs a Jedi-configured provider API key (builtin
+   * LLM calls, pi env injection, gemini-family env injection). Engines with
+   * their own auth (claude-code login, codex ChatGPT, opencode free model,
+   * antigravity OAuth) set false — sendMessage must not block them on the
+   * keyring gate.
+   */
+  usesJediKey: boolean
 }
 
 /** Options for starting a run on an engine. */

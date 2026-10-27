@@ -63,6 +63,7 @@ export class PiDriver implements AgentDriver {
     resume: true,
     models: true,
     approval: 'extension',
+    usesJediKey: true,
   } as const
 
   supports(engine: EngineDescriptor): boolean {

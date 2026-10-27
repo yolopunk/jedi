@@ -27,6 +27,7 @@ export class AntigravityDriver implements AgentDriver {
     resume: true,
     models: true,
     approval: 'none', // headless default fails/waits on unapproved tools
+    usesJediKey: false, // Google OAuth interactive login
   } as const
 
   supports(engine: EngineDescriptor): boolean {

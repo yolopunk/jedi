@@ -501,10 +501,19 @@ export const useAiChatStore = defineStore('aiChat', () => {
         void updateSessionTitle(session.id, heuristicTitle(content))
       }
 
-      // Get API key for provider
-      const apiKeyInfo = await providerConfigStore.getApiKey(provider)
-      if (!apiKeyInfo) {
-        throw new Error(`API key not configured for provider: ${provider}`)
+      // API key gate is per-engine: external engines with their own auth
+      // (claude-code login / codex ChatGPT / opencode free / antigravity
+      // OAuth) must NOT be blocked by an unconfigured Jedi keyring.
+      const hubForGate = useAgentHubStore()
+      const gateEngine = hubForGate.selectedEngine
+      const gateDriver = gateEngine.tier !== 'builtin' ? driverFor(gateEngine) : null
+      const needsJediKey = gateDriver ? gateDriver.capabilities.usesJediKey !== false : true
+      let apiKeyInfo: { key: string; endpoint?: string } | null = null
+      if (needsJediKey) {
+        apiKeyInfo = await providerConfigStore.getApiKey(provider)
+        if (!apiKeyInfo) {
+          throw new Error(`API key not configured for provider: ${provider}`)
+        }
       }
 
       const enabledToolNames = toolRegistry.listEnabled().map(t => t.name)
@@ -635,8 +644,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
       const runSpec = {
         provider,
         model,
-        apiKey: apiKeyInfo.key,
-        endpoint: apiKeyInfo.endpoint,
+        apiKey: apiKeyInfo?.key ?? '',
+        endpoint: apiKeyInfo?.endpoint,
         messages: aiMessages,
         sessionId: session.id,
         stepLimit,
@@ -882,8 +891,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
       })
 
       // Distill a concise title from the first exchange. Best-effort and
-      // non-blocking: the provisional heuristic title stays if this fails.
-      if (shouldAutoTitle && fullContent.trim()) {
+      // non-blocking: the provisional heuristic title stays if this fails
+      // (external engines without a Jedi key skip distillation).
+      if (shouldAutoTitle && fullContent.trim() && apiKeyInfo) {
         void distillTitle({
           provider,
           model,

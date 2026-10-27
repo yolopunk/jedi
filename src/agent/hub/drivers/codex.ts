@@ -35,6 +35,7 @@ export class CodexDriver implements AgentDriver {
     resume: true,
     models: true,
     approval: 'native',
+    usesJediKey: false, // own ChatGPT login (~/.codex)
   } as const
 
   supports(engine: EngineDescriptor): boolean {

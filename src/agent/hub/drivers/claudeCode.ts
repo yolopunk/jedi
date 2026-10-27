@@ -76,6 +76,7 @@ export class ClaudeCodeDriver implements AgentDriver {
     resume: true,
     models: true,
     approval: 'native',
+    usesJediKey: false, // own login state (~/.claude)
   } as const
 
   supports(engine: EngineDescriptor): boolean {

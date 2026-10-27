@@ -29,18 +29,41 @@ export interface GeminiFamilyResult {
   error: string | null
 }
 
+/** Strip ANSI escape sequences (spinners/progress) that break JSON.parse. */
+const ANSI_RE = /\u001b\[[0-9;?]*[A-Za-z]/g
+
 /** Parse the whole accumulated stdout of a `-o json` run (either variant). */
 export function parseGeminiFamilyOutput(raw: string): GeminiFamilyResult {
-  const trimmed = raw.trim()
-  if (!trimmed) {
+  const cleaned = raw.replace(ANSI_RE, '').trim()
+  if (!cleaned) {
     return { text: '', finishReason: 'error', error: 'empty output from CLI' }
   }
   let parsed: unknown
   try {
-    parsed = JSON.parse(trimmed)
+    parsed = JSON.parse(cleaned)
   } catch {
-    // Non-JSON output (e.g. plain-text failure on stderr that leaked in):
-    return { text: trimmed, finishReason: 'error', error: null }
+    // CLI sometimes wraps the JSON with plain-text noise (banners, login
+    // hints). Extract the outermost JSON value instead of giving up — and
+    // never pass raw stdout through as the answer text (it would dump a
+    // wall of protocol JSON into the chat bubble).
+    const start = Math.min(...[cleaned.indexOf('{'), cleaned.indexOf('[')].filter(i => i >= 0))
+    const end = Math.max(cleaned.lastIndexOf('}'), cleaned.lastIndexOf(']'))
+    if (!Number.isFinite(start) || start < 0 || end <= start) {
+      return {
+        text: '',
+        finishReason: 'error',
+        error: cleaned.slice(0, 400) || 'non-JSON output from CLI',
+      }
+    }
+    try {
+      parsed = JSON.parse(cleaned.slice(start, end + 1))
+    } catch {
+      return {
+        text: '',
+        finishReason: 'error',
+        error: `unparseable CLI output: ${cleaned.slice(0, 200)}`,
+      }
+    }
   }
 
   // qwen-style: array of Claude-Code-like records.
@@ -49,7 +72,7 @@ export function parseGeminiFamilyOutput(raw: string): GeminiFamilyResult {
       .reverse()
       .find((r: any) => r && typeof r === 'object' && r.type === 'result')
     if (!result) {
-      return { text: trimmed, finishReason: 'error', error: 'no result record in output' }
+      return { text: '', finishReason: 'error', error: 'no result record in output' }
     }
     const isError = result.is_error === true || result.subtype !== 'success'
     return {
@@ -90,7 +113,7 @@ export function parseGeminiFamilyOutput(raw: string): GeminiFamilyResult {
       error: null,
     }
   }
-  return { text: trimmed, finishReason: 'error', error: 'unrecognized output shape' }
+  return { text: '', finishReason: 'error', error: 'unrecognized output shape' }
 }
 
 /**

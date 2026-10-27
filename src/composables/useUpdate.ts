@@ -45,7 +45,7 @@ export function useUpdate() {
   })
 
   const checkForUpdate = async () => {
-    if (isChecking.value) return
+    if (isChecking.value || isInstalling.value) return
 
     isChecking.value = true
     try {

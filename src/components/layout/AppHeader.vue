@@ -17,23 +17,26 @@
           size="x-small"
           variant="text"
           class="header-action-btn"
-          :aria-label="hasUpdate && updateInfo ? $t('settings.updateAvailable', { version: updateInfo.version }) : $t('settings.checkUpdate')"
+          :class="{ 'update-progress-btn': isInstalling }"
+          :aria-label="updateStatus"
           @click="handleCheckUpdate"
         >
           <v-progress-circular
-            v-if="isChecking"
+            v-if="isChecking || isInstalling"
             :size="15"
             :width="2"
-            indeterminate
+            :indeterminate="!isInstalling || installProgress == null || installProgress >= 100"
+            :model-value="installProgress ?? 0"
           />
+          <span v-if="isInstalling" class="update-progress-label">{{ installProgress != null && installProgress < 100 ? `${installProgress}%` : $t('dialogs.update.updatingShort') }}</span>
           <v-icon
-            v-else
-            :icon="hasUpdate ? mdiDownloadCircle : mdiCloudSyncOutline"
+            v-if="!isChecking && !isInstalling"
+            :icon="installError ? mdiAlertCircle : hasUpdate ? mdiDownloadCircle : mdiCloudSyncOutline"
             size="16"
-            :class="{ 'update-available': hasUpdate }"
+            :class="{ 'update-available': hasUpdate || installError }"
           />
           <v-tooltip activator="parent" location="bottom">
-            {{ hasUpdate && updateInfo ? $t('settings.updateAvailable', { version: updateInfo.version }) : $t('settings.checkUpdate') }}
+            {{ updateStatus }}
           </v-tooltip>
         </v-btn>
 
@@ -155,6 +158,7 @@
 
 <script setup lang="ts">
 import {
+  mdiAlertCircle,
   mdiClose,
   mdiCloudSyncOutline,
   mdiCog,
@@ -167,7 +171,8 @@ import {
   mdiWindowRestore,
 } from '@mdi/js'
 import { getCurrentWindow, type Window as TauriWindow } from '@tauri-apps/api/window'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
 import { useThemeToggle } from '@/composables/useTheme'
 import { useUpdate } from '@/composables/useUpdate'
@@ -184,9 +189,23 @@ let appWindow: TauriWindow | null = null
 
 const isMaximized = ref(false)
 const showUpdateDialog = ref(false)
+const { t } = useI18n()
 const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
 const { hasUpdate, updateInfo, isChecking, isInstalling, installProgress, installError, checkForUpdate, installUpdate } =
   useUpdate()
+
+const updateStatus = computed(() => {
+  if (isInstalling.value) {
+    return installProgress.value != null && installProgress.value < 100
+      ? `${t('dialogs.update.downloading')} ${installProgress.value}%`
+      : t('dialogs.update.inProgress')
+  }
+  if (installError.value) return t('dialogs.update.failed')
+  if (isChecking.value) return t('settings.updateChecking')
+  return hasUpdate.value && updateInfo.value
+    ? t('settings.updateAvailable', { version: updateInfo.value.version })
+    : t('settings.checkUpdate')
+})
 
 const handleCheckUpdate = async () => {
   if (!hasUpdate.value) {
@@ -198,6 +217,7 @@ const handleCheckUpdate = async () => {
 }
 
 const handleInstallUpdate = async () => {
+  showUpdateDialog.value = false
   try {
     await installUpdate()
     showUpdateDialog.value = false
@@ -359,6 +379,18 @@ const handleClose = async () => {
     background 0.15s ease,
     color 0.15s ease,
     transform 0.15s ease;
+}
+
+.update-progress-btn {
+  width: auto !important;
+  padding: 0 4px !important;
+  gap: 4px;
+  color: rgb(var(--v-theme-primary));
+}
+
+.update-progress-label {
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .header-action-btn:hover {

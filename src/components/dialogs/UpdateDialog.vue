@@ -3,7 +3,6 @@
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
     max-width="520"
-    :persistent="isInstalling"
   >
     <v-card class="model-settings-card">
       <!-- Header -->
@@ -22,7 +21,7 @@
             <p v-else>{{ $t('dialogs.update.inProgress') }}</p>
           </div>
         </div>
-        <button class="close-btn" type="button" :aria-label="$t('common.close')" :disabled="isInstalling" @click="$emit('update:modelValue', false)">
+        <button class="close-btn" type="button" :aria-label="$t('common.close')" @click="$emit('update:modelValue', false)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2"/>
             <line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2"/>
@@ -80,8 +79,8 @@
 
       <!-- Footer -->
       <div class="card-footer">
-        <v-btn variant="text" @click="$emit('update:modelValue', false)" :disabled="isInstalling">
-          {{ $t('common.cancel') }}
+        <v-btn variant="text" @click="$emit('update:modelValue', false)">
+          {{ $t(isInstalling ? 'common.close' : 'common.cancel') }}
         </v-btn>
         <v-spacer />
         <v-btn

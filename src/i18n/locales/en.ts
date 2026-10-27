@@ -545,6 +545,7 @@ export default {
       noReleaseNotes: 'No release notes available',
       installing: 'Installing update...',
       inProgress: 'Updating. The app will restart when complete…',
+      updatingShort: 'Updating',
       failed: 'Update failed. You can retry.',
       install: 'Download & Install',
     },

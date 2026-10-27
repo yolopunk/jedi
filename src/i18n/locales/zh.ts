@@ -533,6 +533,7 @@ export default {
       noReleaseNotes: '暂无更新日志',
       installing: '正在安装更新…',
       inProgress: '正在更新，完成后将自动重启…',
+      updatingShort: '更新中',
       failed: '更新失败，可以重试。',
       install: '下载并安装',
     },

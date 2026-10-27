@@ -219,6 +219,7 @@ const handleManualCheck = async () => {
 }
 
 const handleInstallUpdate = async () => {
+  showUpdateDialog.value = false
   try {
     await installUpdate()
     showUpdateDialog.value = false

@@ -278,6 +278,49 @@ async fn probe_wsl_distro(distro: &str) -> Vec<(String, String, SpawnSpec)> {
   parse_probe_output(&host, &text)
 }
 
+/// npm installs both a Unix shell shim and a Windows launcher. Never pass
+/// the extensionless shim to CreateProcess, even for cached installations.
+#[cfg(target_os = "windows")]
+pub(crate) fn windows_launcher(exe: &str) -> Option<SpawnSpec> {
+  let path = std::path::Path::new(exe);
+  let candidates = if path.extension().is_none() {
+    vec![
+      path.with_extension("exe"),
+      path.with_extension("cmd"),
+      path.with_extension("bat"),
+    ]
+  } else {
+    vec![path.to_path_buf()]
+  };
+  for candidate in candidates {
+    if !candidate.is_file() {
+      continue;
+    }
+    let ext = candidate.extension()?.to_str()?.to_ascii_lowercase();
+    if !matches!(ext.as_str(), "exe" | "cmd" | "bat") {
+      continue;
+    }
+    // Resolve fnm's per-shell junction before the owning shell disappears.
+    let resolved = candidate.canonicalize().unwrap_or(candidate);
+    let resolved = resolved.to_string_lossy();
+    let exe = resolved
+      .strip_prefix(r"\\?\")
+      .unwrap_or(&resolved)
+      .to_string();
+    return Some(SpawnSpec {
+      kind: if ext == "exe" {
+        "windows-exe"
+      } else {
+        "windows-cmd"
+      }
+      .into(),
+      distro: None,
+      exe,
+    });
+  }
+  None
+}
+
 #[cfg(target_os = "windows")]
 fn windows_candidate_dirs() -> Vec<std::path::PathBuf> {
   let home = std::path::PathBuf::from(std::env::var("USERPROFILE").unwrap_or_default());
@@ -288,6 +331,7 @@ fn windows_candidate_dirs() -> Vec<std::path::PathBuf> {
     ".volta\\bin",
     ".local\\bin",
     "AppData\\Local\\pnpm",
+    "scoop\\apps\\fnm\\current\\aliases\\default",
   ]
   .iter()
   .map(|rel| home.join(rel))
@@ -333,7 +377,7 @@ async fn probe_windows_zcode_desktop() -> Option<(String, String, SpawnSpec)> {
 #[cfg(target_os = "windows")]
 async fn probe_windows_host() -> Vec<(String, String, SpawnSpec)> {
   let dirs = windows_candidate_dirs();
-  let exts = ["", ".cmd", ".exe", ".bat"];
+  let exts = [".exe", ".cmd", ".bat"];
   let mut found: Vec<(String, String, SpawnSpec)> = Vec::new();
   for agent in AGENTS {
     let mut hit: Option<String> = None;
@@ -353,20 +397,18 @@ async fn probe_windows_host() -> Vec<(String, String, SpawnSpec)> {
       let mut cmd = Command::new("where.exe");
       cmd.arg(bin);
       if let Ok(text) = run_capture(&mut cmd, Duration::from_secs(3)).await {
-        if let Some(line) = text.lines().map(str::trim).find(|l| !l.is_empty()) {
+        if let Some(line) = text
+          .lines()
+          .map(str::trim)
+          .find(|l| windows_launcher(l).is_some())
+        {
           hit = Some(line.to_string());
           break;
         }
       }
     }
-    if let Some(exe) = hit {
-      let kind =
-        if exe.ends_with(".cmd") || exe.ends_with(".bat") { "windows-cmd" } else { "windows-exe" };
-      found.push((
-        agent.id.to_string(),
-        "windows".to_string(),
-        SpawnSpec { kind: kind.into(), distro: None, exe },
-      ));
+    if let Some(spec) = hit.and_then(|exe| windows_launcher(&exe)) {
+      found.push((agent.id.to_string(), "windows".to_string(), spec));
     }
   }
   if !found.iter().any(|(agent_id, _, _)| agent_id == "zcode") {

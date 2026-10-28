@@ -26,6 +26,14 @@ pub struct ProcHandle {
 }
 
 fn build_command(spec: &SpawnSpec, args: &[String]) -> Command {
+  #[cfg(target_os = "windows")]
+  let resolved = if spec.kind == "windows-exe" || spec.kind == "windows-cmd" {
+    crate::agent::detector::windows_launcher(&spec.exe)
+  } else {
+    None
+  };
+  #[cfg(target_os = "windows")]
+  let spec = resolved.as_ref().unwrap_or(spec);
   let mut cmd = match spec.kind.as_str() {
     "wsl" => {
       // Quote exe+args into one login-shell command line so the WSL side
@@ -36,8 +44,7 @@ fn build_command(spec: &SpawnSpec, args: &[String]) -> Command {
         line.push_str(&shell_quote(a));
       }
       let mut c = Command::new("wsl.exe");
-      c
-        .arg("-d")
+      c.arg("-d")
         .arg(spec.distro.as_deref().unwrap_or_default())
         .arg("--exec")
         .arg("bash")
@@ -46,9 +53,19 @@ fn build_command(spec: &SpawnSpec, args: &[String]) -> Command {
       c
     }
     "windows-cmd" => {
-      let mut c = Command::new("cmd");
-      c.arg("/C").arg(&spec.exe);
-      c.args(args);
+      let mut c = Command::new(std::env::var_os("COMSPEC").unwrap_or_else(|| "cmd.exe".into()));
+      c.arg("/D").arg("/S").arg("/C");
+      #[cfg(target_os = "windows")]
+      {
+        use std::os::windows::process::CommandExt;
+        // /S strips the outer quote pair; preserve the quoted executable
+        // path and each argument inside it (notably paths with spaces).
+        c.as_std_mut().raw_arg("\"");
+        c.arg(&spec.exe).args(args);
+        c.as_std_mut().raw_arg("\"");
+      }
+      #[cfg(not(target_os = "windows"))]
+      c.arg(&spec.exe).args(args);
       c
     }
     _ => {
@@ -102,7 +119,7 @@ pub async fn agent_proc_spawn(
     .stderr(std::process::Stdio::piped())
     .kill_on_drop(true);
 
-  let mut child: Child = cmd.spawn().map_err(|e| format!("failed to spawn agent: {e}"))?;
+  let mut child: Child = cmd.spawn().map_err(|e| format!("failed to spawn agent {} ({}): {e}", spec.exe, spec.kind))?;
   let stdin = child.stdin.take().ok_or("no stdin pipe")?;
   let stdout = child.stdout.take().ok_or("no stdout pipe")?;
   let stderr = child.stderr.take().ok_or("no stderr pipe")?;
@@ -181,4 +198,61 @@ pub async fn agent_proc_kill(
     h.supervisor.abort(); // drops Child -> kill_on_drop terminates the tree
   }
   Ok(())
+}
+
+#[cfg(all(test, target_os = "windows"))]
+mod launcher_tests {
+  use super::*;
+  #[tokio::test]
+  async fn installed_opencode_launcher_starts() {
+    let dir = std::path::PathBuf::from(std::env::var("USERPROFILE").unwrap())
+      .join("scoop/apps/fnm/current/aliases/default");
+    let spec =
+      match crate::agent::detector::windows_launcher(&dir.join("opencode").to_string_lossy()) {
+        Some(spec) => spec,
+        None => return, // Optional smoke test on machines without OpenCode.
+      };
+    let output = build_command(&spec, &["--version".into()])
+      .output()
+      .await
+      .unwrap();
+    assert!(
+      output.status.success(),
+      "{}",
+      String::from_utf8_lossy(&output.stderr)
+    );
+    assert!(String::from_utf8_lossy(&output.stdout)
+      .to_ascii_lowercase()
+      .contains("opencode"));
+  }
+  #[tokio::test]
+  async fn cached_unix_shim_uses_windows_launcher_with_spaces() {
+    let dir = tempfile::Builder::new()
+      .prefix("agent launcher ")
+      .tempdir()
+      .unwrap();
+    let shim = dir.path().join("opencode");
+    std::fs::write(&shim, "#!/bin/sh\nexit 1\n").unwrap();
+    std::fs::write(dir.path().join("opencode.cmd"), "@echo off\r\necho %~1\r\n").unwrap();
+    let spec = SpawnSpec {
+      kind: "windows-exe".into(),
+      distro: None,
+      exe: shim.to_string_lossy().into_owned(),
+    };
+    let output = build_command(&spec, &["hello world".into()])
+      .output()
+      .await
+      .unwrap();
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(
+      String::from_utf8_lossy(&output.stdout).trim(),
+      "hello world"
+    );
+    assert_eq!(
+      crate::agent::detector::windows_launcher(&spec.exe)
+        .unwrap()
+        .kind,
+      "windows-cmd"
+    );
+  }
 }

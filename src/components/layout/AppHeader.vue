@@ -8,7 +8,19 @@
   >
     <div class="header-left" :class="{ 'header-left--mac': isMac() }" />
 
-    <div class="header-center" />
+    <div class="header-center">
+      <button
+        v-if="hasUpdate || isInstalling || installError"
+        type="button"
+        class="update-notice"
+        :class="{ 'update-notice--error': installError }"
+        :aria-label="updateStatus"
+        @click="handleCheckUpdate"
+      >
+        <v-icon :icon="installError ? mdiAlertCircle : mdiDownloadCircle" size="16" aria-hidden="true" />
+        <span role="status">{{ updateStatus }}</span>
+      </button>
+    </div>
 
     <div class="header-right">
       <div class="global-actions">
@@ -191,8 +203,16 @@ const isMaximized = ref(false)
 const showUpdateDialog = ref(false)
 const { t } = useI18n()
 const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
-const { hasUpdate, updateInfo, isChecking, isInstalling, installProgress, installError, checkForUpdate, installUpdate } =
-  useUpdate()
+const {
+  hasUpdate,
+  updateInfo,
+  isChecking,
+  isInstalling,
+  installProgress,
+  installError,
+  checkForUpdate,
+  installUpdate,
+} = useUpdate()
 
 const updateStatus = computed(() => {
   if (isInstalling.value) {
@@ -262,7 +282,7 @@ const onDragMouseDown = async (e: MouseEvent) => {
   if (!appWindow) return
   if (e.button !== 0) return
   const target = e.target as HTMLElement
-  if (target.closest('.header-right, .global-actions')) {
+  if (target.closest('.header-right, .global-actions, .update-notice')) {
     return
   }
   try {
@@ -278,7 +298,7 @@ const onDragDoubleClick = async (e: MouseEvent) => {
   e.preventDefault()
   if (!appWindow) return
   const target = e.target as HTMLElement
-  if (target.closest('.header-right, .global-actions')) {
+  if (target.closest('.header-right, .global-actions, .update-notice')) {
     return
   }
   try {
@@ -353,7 +373,46 @@ const handleClose = async () => {
 
 .header-center {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 8px;
   overflow: hidden;
+}
+
+.update-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid rgb(var(--v-theme-primary));
+  border-radius: 6px;
+  background: rgb(var(--v-theme-primary));
+  color: rgb(var(--v-theme-on-primary));
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+}
+
+.update-notice span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.update-notice:hover { filter: brightness(1.1); }
+.update-notice:focus-visible {
+  outline: 2px solid rgb(var(--v-theme-on-surface));
+  outline-offset: 1px;
+}
+.update-notice--error {
+  background: rgb(var(--v-theme-error));
+  border-color: rgb(var(--v-theme-error));
+  color: rgb(var(--v-theme-on-error));
 }
 
 .global-actions {

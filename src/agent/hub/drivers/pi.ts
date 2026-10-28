@@ -108,7 +108,14 @@ export class PiDriver implements AgentDriver {
         const line = String(msg.line ?? '').trim()
         if (!line) return
         try {
-          translator.handleRecord(JSON.parse(line))
+          const record = JSON.parse(line)
+          translator.handleRecord(record)
+          if (record.type === 'agent_settled') {
+            const error = translator.snapshot().lastError
+            finish(error ? new Error(error) : undefined)
+          } else if (record.type === 'response' && record.success === false) {
+            finish(new Error(String(record.error ?? 'pi command failed')))
+          }
         } catch {
           /* non-JSON line (banner etc.) — ignore */
         }

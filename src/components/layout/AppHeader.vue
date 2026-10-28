@@ -123,36 +123,27 @@
       </div>
 
       <div v-if="SHOW_WINDOW_CONTROLS" class="window-controls">
-        <v-btn
-          icon
-          size="x-small"
-          variant="text"
+        <button type="button"
           class="window-btn"
           :aria-label="$t('windowControls.minimize')"
           @click="handleMinimize"
         >
           <v-icon :icon="mdiWindowMinimize" size="16" />
-        </v-btn>
-        <v-btn
-          icon
-          size="x-small"
-          variant="text"
+        </button>
+        <button type="button"
           class="window-btn"
           :aria-label="isMaximized ? $t('windowControls.restore') : $t('windowControls.maximize')"
           @click="handleMaximize"
         >
           <v-icon :icon="isMaximized ? mdiWindowRestore : mdiWindowMaximize" size="16" />
-        </v-btn>
-        <v-btn
-          icon
-          size="x-small"
-          variant="text"
+        </button>
+        <button type="button"
           class="window-btn window-btn-close"
           :aria-label="$t('windowControls.close')"
           @click="handleClose"
         >
           <v-icon :icon="mdiClose" size="16" />
-        </v-btn>
+        </button>
       </div>
     </div>
 
@@ -483,17 +474,25 @@ const handleClose = async () => {
 }
 
 .window-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 4px;
   height: 24px !important;
   width: 24px !important;
   min-width: 24px !important;
   padding: 0 !important;
   margin: 0 1px;
-  transition: all 0.15s ease;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .window-btn:hover {
-  background: rgba(var(--v-theme-on-surface), 0.08);
+  background: rgb(var(--text-rgb) / 0.08);
+  color: var(--text);
 }
 
 .window-btn .v-icon {
@@ -510,7 +509,7 @@ const handleClose = async () => {
 }
 
 .window-btn-close:hover .v-icon {
-  color: var(--text-inverse) !important;
+  color: white !important;
   opacity: 1;
 }
 </style>

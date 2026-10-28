@@ -67,6 +67,7 @@ pub struct AgentInstallation {
   pub host: String,
   pub exe: String,
   pub version: Option<String>,
+  pub default_model: Option<String>,
   pub spawn: SpawnSpec,
 }
 
@@ -94,6 +95,60 @@ impl DetectorState {
   pub fn new() -> Self {
     Self { cache: Mutex::new(None) }
   }
+}
+
+/// Only return the configured model name; never expose configuration or credentials.
+fn configured_model(agent: &str, content: &str) -> Option<String> {
+  let model = if agent == "codex" {
+    content
+      .lines()
+      .take_while(|line| !line.trim_start().starts_with('['))
+      .find_map(|line| {
+        let (key, value) = line.split_once('=')?;
+        if key.trim() != "model" {
+          return None;
+        }
+        serde_json::from_str::<String>(value.trim()).ok()
+      })
+  } else {
+    let json: serde_json::Value = serde_json::from_str(content).ok()?;
+    json
+      .get("defaultModel")
+      .and_then(|v| v.as_str())
+      .or_else(|| json.get("model").and_then(|v| v.as_str()))
+      .or_else(|| json.pointer("/model/name").and_then(|v| v.as_str()))
+      .or_else(|| json.pointer("/env/ANTHROPIC_MODEL").and_then(|v| v.as_str()))
+      .map(str::to_owned)
+  };
+  model.filter(|name| !name.trim().is_empty() && name != "unknown")
+}
+
+async fn probe_default_model(agent: &str, spec: &SpawnSpec) -> Option<String> {
+  let paths: &[&str] = match agent {
+    "pi" => &[".pi/agent/settings.json"],
+    "codex" => &[".codex/config.toml"],
+    "claude-code" => &[".claude/settings.json"],
+    "gemini-cli" => &[".gemini/settings.json"],
+    "qwen-code" => &[".qwen/settings.json"],
+    "cursor-cli" => &[".cursor/cli-config.json"],
+    "opencode" => &[".config/opencode/opencode.json"],
+    _ => return None,
+  };
+  for path in paths {
+    let content = if spec.kind == "wsl" {
+      let mut cmd = Command::new("wsl.exe");
+      cmd.args(["-d", spec.distro.as_deref()?, "--exec", "bash", "-lc"]);
+      cmd.arg(format!("cat -- \"$HOME/{path}\" 2>/dev/null"));
+      run_capture(&mut cmd, VERSION_TIMEOUT).await.ok()
+    } else {
+      let file = dirs::home_dir()?.join(path);
+      tokio::fs::read_to_string(file).await.ok()
+    };
+    if let Some(model) = content.and_then(|text| configured_model(agent, &text)) {
+      return Some(model);
+    }
+  }
+  None
 }
 
 /// wsl.exe prints UTF-16LE; most other console tools print UTF-8. Detect by
@@ -429,12 +484,14 @@ pub async fn detect_agents(
     .collect();
   for (agent_id, host, spec) in raw {
     let version = versions.get(&(agent_id.clone(), spec.exe.clone())).cloned().flatten();
+    let default_model = probe_default_model(&agent_id, &spec).await;
     if let Some(report) = reports.iter_mut().find(|r| r.id == agent_id) {
       report.installations.push(AgentInstallation {
         agent_id: agent_id.clone(),
         host,
         exe: spec.exe.clone(),
         version,
+        default_model,
         spawn: spec,
       });
     }
@@ -444,4 +501,29 @@ pub async fn detect_agents(
     DetectionResult { reports, duration_ms: started.elapsed().as_millis() as u64 };
   *state.cache.lock().await = Some((Instant::now(), result.clone()));
   Ok(result)
+}
+
+#[cfg(test)]
+mod model_tests {
+  use super::configured_model;
+  #[test]
+  fn reads_model_without_returning_other_settings() {
+    assert_eq!(
+      configured_model("pi", r#"{"defaultModel":"my-model","apiKey":"secret"}"#),
+      Some("my-model".into())
+    );
+    assert_eq!(
+      configured_model(
+        "codex",
+        "model = \"gpt-test\"\n[profiles.other]\nmodel = \"other\""
+      ),
+      Some("gpt-test".into())
+    );
+    assert_eq!(
+      configured_model("gemini-cli", r#"{"model":{"name":"gemini-test"}}"#),
+      Some("gemini-test".into())
+    );
+    assert_eq!(configured_model("pi", "{}"), None);
+    assert_eq!(configured_model("pi", "invalid"), None);
+  }
 }

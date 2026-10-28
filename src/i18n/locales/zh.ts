@@ -1,5 +1,6 @@
 export default {
   chatWorkspace: {
+    defaultModelUnknown: '未读取到默认模型',
     agentWorkspace: 'Agent 工作区',
     currentAgent: '当前执行 Agent',
     changeAgent: '切换 Agent，当前为 {agent}',

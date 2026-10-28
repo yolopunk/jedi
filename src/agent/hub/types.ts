@@ -19,6 +19,7 @@ export interface AgentInstallation {
   host: string
   exe: string
   version?: string | null
+  defaultModel?: string | null
   spawn: SpawnSpec
 }
 

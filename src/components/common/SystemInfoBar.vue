@@ -69,13 +69,9 @@
                             size="14"
                             class="mr-1 text-medium-emphasis icon-hover"
                         ></v-icon>
-                        <v-progress-linear
-                            :model-value="osInfo?.metrics?.cpu_usage || 0"
-                            color="primary"
-                            height="3"
-                            rounded
-                            class="flex-grow-1 opacity-80"
-                        ></v-progress-linear>
+                        <span class="metric-track" role="meter" :aria-label="$t('system.cpuUsage')" :aria-valuenow="Math.round(osInfo?.metrics?.cpu_usage || 0)" aria-valuemin="0" aria-valuemax="100">
+                            <span class="metric-fill" :style="{ width: `${Math.min(100, Math.max(0, osInfo?.metrics?.cpu_usage || 0))}%` }" />
+                        </span>
                         <v-tooltip
                             activator="parent"
                             location="top"
@@ -101,13 +97,9 @@
                             size="14"
                             class="mr-1 text-medium-emphasis icon-hover"
                         ></v-icon>
-                        <v-progress-linear
-                            :model-value="getMemoryUsagePercentage()"
-                            color="warning"
-                            height="3"
-                            rounded
-                            class="flex-grow-1 opacity-80"
-                        ></v-progress-linear>
+                        <span class="metric-track" role="meter" :aria-label="$t('system.memory')" :aria-valuenow="Math.round(getMemoryUsagePercentage())" aria-valuemin="0" aria-valuemax="100">
+                            <span class="metric-fill metric-fill--memory" :style="{ width: `${Math.min(100, Math.max(0, getMemoryUsagePercentage()))}%` }" />
+                        </span>
                         <v-tooltip
                             activator="parent"
                             location="top"
@@ -252,6 +244,16 @@ const getMemoryUsagePercentage = _getMemoryUsagePercentage
 </script>
 
 <style scoped>
+.metric-track {
+    display: block;
+    flex: 1;
+    height: 4px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: rgb(var(--text-rgb) / 0.12);
+}
+.metric-fill { display: block; height: 100%; background: var(--accent); }
+.metric-fill--memory { background: var(--warning); }
 .system-info-bar {
     width: 100%;
     height: 100%;

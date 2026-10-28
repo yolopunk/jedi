@@ -1,5 +1,6 @@
 export default {
   chatWorkspace: {
+    defaultModelUnknown: 'Default model unavailable',
     agentWorkspace: 'Agent workspace',
     currentAgent: 'Active agent',
     changeAgent: 'Change agent, currently {agent}',

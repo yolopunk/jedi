@@ -30,7 +30,7 @@ const label = computed(() => {
 const meta = computed(() => {
   const e = hub.selectedEngine
   if (e.tier === 'builtin') return t('chatWorkspace.builtinRuntime')
-  return [e.location, e.installation?.version].filter(Boolean).join(' · ')
+  return [e.installation?.defaultModel || t('chatWorkspace.defaultModelUnknown'), e.location].filter(Boolean).join(' · ')
 })
 const selectedAgentId = computed(() => hub.selectedEngine.agentId || 'builtin')
 
@@ -149,6 +149,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
           <span class="engine-item-copy">
             <span class="engine-item-name">{{ engine.name }}</span>
             <span class="engine-item-meta">
+              <span v-if="engine.tier !== 'builtin'">{{ engine.installation?.defaultModel || t('chatWorkspace.defaultModelUnknown') }}</span>
               <span v-if="engine.location">{{ engine.location }}</span>
               <span v-if="engine.installation?.version">{{ engine.installation.version }}</span>
             </span>

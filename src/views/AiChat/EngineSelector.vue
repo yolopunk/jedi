@@ -8,6 +8,7 @@ import { mdiChevronDown, mdiRefresh } from '@mdi/js'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { EngineDescriptor } from '@/agent/hub/types'
+import { defaultModelLabel, engineBadge, engineSelectable } from '@/agent/hub/engineStatus'
 import { useAgentHubStore } from '@/stores/agentHub'
 import AgentLogo from './AgentLogo.vue'
 
@@ -30,7 +31,12 @@ const label = computed(() => {
 const meta = computed(() => {
   const e = hub.selectedEngine
   if (e.tier === 'builtin') return t('chatWorkspace.builtinRuntime')
-  return [e.installation?.defaultModel || t('chatWorkspace.defaultModelUnknown'), e.location].filter(Boolean).join(' · ')
+  return [defaultModelLabel(e, t), e.location].filter(Boolean).join(' · ')
+})
+const selectedBadge = computed(() => engineBadge(hub.selectedEngine, t))
+const stateTitle = computed(() => {
+  const inst = hub.selectedEngine.installation
+  return [selectedBadge.value?.label, inst?.statusReason, inst?.statusHint].filter(Boolean).join(' — ')
 })
 const selectedAgentId = computed(() => hub.selectedEngine.agentId || 'builtin')
 
@@ -122,7 +128,15 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
         <span class="engine-trigger-name">{{ label }}</span>
         <span class="engine-trigger-meta">{{ meta }}</span>
       </span>
-      <span class="engine-state" :class="{ scanning: hub.scanning, danger: !!hub.error }" aria-hidden="true"></span>
+      <span
+        class="engine-state"
+        :class="[
+          { scanning: hub.scanning, danger: !!hub.error },
+          !hub.scanning && !hub.error && selectedBadge ? `state-${selectedBadge.kind}` : '',
+        ]"
+        :title="stateTitle"
+        aria-hidden="true"
+      ></span>
       <v-icon :icon="mdiChevronDown" size="16" aria-hidden="true" />
     </button>
     <div v-if="open" ref="menuRef" class="engine-menu" role="listbox">
@@ -140,23 +154,36 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
           :key="engine.id"
           class="engine-item"
           :class="{ selected: engine.id === hub.selectedEngineId }"
-          :disabled="engine.tier === 'B'"
+          :disabled="!engineSelectable(engine)"
           role="option"
           :aria-selected="engine.id === hub.selectedEngineId"
-          @click="engine.tier !== 'B' && pick(engine)"
+          :title="[engine.installation?.statusReason, engine.installation?.statusHint].filter(Boolean).join(' · ')"
+          @click="engineSelectable(engine) && pick(engine)"
         >
           <span class="engine-logo"><AgentLogo :agent-id="engine.agentId" :size="22" /></span>
           <span class="engine-item-copy">
             <span class="engine-item-name">{{ engine.name }}</span>
             <span class="engine-item-meta">
-              <span v-if="engine.tier !== 'builtin'">{{ engine.installation?.defaultModel || t('chatWorkspace.defaultModelUnknown') }}</span>
+              <span v-if="engine.tier !== 'builtin'">{{ defaultModelLabel(engine, t) }}</span>
               <span v-if="engine.location">{{ engine.location }}</span>
               <span v-if="engine.installation?.version">{{ engine.installation.version }}</span>
             </span>
+            <span
+              v-if="engine.tier === 'A' && engine.installation?.status !== 'ready' && engine.installation?.statusReason"
+              class="engine-item-reason"
+            >
+              {{ engine.installation.statusReason
+              }}<template v-if="engine.installation.statusHint"> · {{ engine.installation.statusHint }}</template>
+            </span>
           </span>
           <span class="engine-item-side">
-            <span v-if="engine.tier === 'B'" class="engine-badge soon">{{ t('chatWorkspace.engineComingSoon') }}</span>
-            <span v-else class="engine-check" aria-hidden="true">✓</span>
+            <span
+              v-if="engineBadge(engine, t) && engineBadge(engine, t)!.kind !== 'ready'"
+              class="engine-badge"
+              :class="engineBadge(engine, t)!.kind"
+              >{{ engineBadge(engine, t)!.label }}</span
+            >
+            <span v-if="engineSelectable(engine)" class="engine-check" aria-hidden="true">✓</span>
           </span>
         </button>
 
@@ -447,12 +474,50 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   background: var(--accent);
 }
 
-.engine-badge.soon {
+.engine-badge {
   font-size: 10px;
   padding: 1px 6px;
   border-radius: 8px;
+  white-space: nowrap;
+}
+
+.engine-badge.muted {
   background: rgba(127, 127, 127, 0.2);
   opacity: 0.8;
+}
+
+.engine-badge.warn {
+  background: rgb(var(--warning-rgb, 251 191 36) / 0.16);
+  color: var(--warning, #b45309);
+}
+
+.engine-badge.danger {
+  background: rgb(var(--danger-rgb) / 0.12);
+  color: var(--danger);
+}
+
+.engine-item-reason {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-state.state-warn {
+  background: var(--warning, #fbbf24);
+  box-shadow: 0 0 0 4px rgb(var(--warning-rgb, 251 191 36) / 0.12);
+}
+
+.engine-state.state-danger {
+  background: var(--danger);
+  box-shadow: 0 0 0 4px rgb(var(--danger-rgb) / 0.1);
+}
+
+.engine-state.state-muted {
+  background: var(--text-subtle);
+  box-shadow: none;
 }
 
 .engine-footer {

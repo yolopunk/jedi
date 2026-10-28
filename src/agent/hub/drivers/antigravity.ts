@@ -12,6 +12,7 @@ import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
 import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
+import { createAgentDiagnostics } from '../agentError'
 import { createAntigravityTranslator } from './antigravityProtocol'
 import { buildConversationPrompt } from './geminiCliProtocol'
 
@@ -52,6 +53,7 @@ export class AntigravityDriver implements AgentDriver {
 
     const procId = `agy-${opts.sessionId}-${Date.now()}`
     const translator = createAntigravityTranslator(hooks)
+    const diag = createAgentDiagnostics(engine.name)
     let settled = false
 
     let resolveDone: (r: RunAgentResult) => void = () => {}
@@ -68,7 +70,7 @@ export class AntigravityDriver implements AgentDriver {
       void invoke('agent_proc_kill', { id: procId }).catch(() => {})
       const snap = translator.snapshot()
       if ((failure || snap.lastError) && !snap.fullText.trim()) {
-        rejectDone(new Error(snap.lastError ?? failure?.message ?? 'agy run failed'))
+        rejectDone(failure ?? diag.protocol(snap.lastError ?? 'agy run failed'))
         return
       }
       if (snap.nativeSessionId) {
@@ -103,18 +105,16 @@ export class AntigravityDriver implements AgentDriver {
           if (model) hooks.onModel?.(model)
           translator.handleRecord(record)
         } catch {
-          /* non-JSON line — ignore */
+          const early = diag.line(line)
+          if (early) finish(early)
         }
         if (translator.snapshot().turnComplete) finish()
       } else if (msg.type === 'exit') {
-        if (!settled) finish(new Error(`agy exited before result (code ${msg.code ?? '?'})`))
+        if (!settled) finish(diag.exit(msg.code, translator.snapshot().lastError))
       } else if (msg.type === 'stderr') {
-        // Pre-auth stderr carries the OAuth URL — surface it for the user.
-        if (String(msg.line ?? '').includes('accounts.google.com')) {
-          console.info('[antigravity] login required:', String(msg.line).trim())
-        } else {
-          console.warn('[antigravity]', msg.line)
-        }
+        // Pre-auth stderr carries the OAuth URL: agy would block on it forever.
+        const early = diag.line(String(msg.line ?? ''))
+        if (early) finish(early)
       }
     }
 
@@ -128,7 +128,7 @@ export class AntigravityDriver implements AgentDriver {
         onEvent: channel,
       })
     } catch (e) {
-      throw new Error(`failed to spawn agy: ${e}`)
+      throw diag.spawn(e)
     }
 
     if (opts.signal?.aborted) {

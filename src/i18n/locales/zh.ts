@@ -1,6 +1,17 @@
 export default {
   chatWorkspace: {
     defaultModelUnknown: '未读取到默认模型',
+    defaultModelByAgent: '未配置默认模型（由 Agent 决定）',
+    modelUnconfirmed: '模型未确认',
+    modelUnconfirmedReason: 'Agent 未在本轮回复中报告所用模型',
+    engineNeedsAuth: '需要登录',
+    engineInvalidPath: '路径失效',
+    engineUnconfirmed: '待确认',
+    phasePreparing: '准备启动',
+    phaseSubmitted: '已提交，等待回复',
+    phaseGenerating: '生成中',
+    errorDetails: '技术详情',
+    elapsedSeconds: '{n} 秒',
     agentWorkspace: 'Agent 工作区',
     currentAgent: '当前执行 Agent',
     changeAgent: '切换 Agent，当前为 {agent}',

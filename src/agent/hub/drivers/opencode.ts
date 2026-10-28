@@ -1,7 +1,7 @@
 // OpencodeDriver: drives opencode (`opencode run --format json`) as a
 // per-turn child process (docs §3.2 Tier B2).
 //
-// Verified on opencode 1.19.4 (docs §10): NDJSON events (step/text/tool_use/
+// Verified on opencode 1.19.4 and 2.0.29 (docs §10): NDJSON events (step/text/tool_use/
 // step_finish), every event carries sessionID, and `opencode run -s <id>`
 // resumes across processes. The engine's free default model worked without
 // any key configuration, making this an end-to-end usable engine. Auth:
@@ -11,6 +11,7 @@ import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
 import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
+import { createAgentDiagnostics } from '../agentError'
 import { createOpencodeTranslator } from './opencodeProtocol'
 
 // opencode sessionID per Jedi chat session for `-s` resume continuity.
@@ -23,6 +24,48 @@ function lastUserText(messages: DriverStartOpts['messages']): string {
   return (lastUser.content as Array<{ type: string; text?: string }>)
     .map(part => (part.type === 'text' ? (part.text ?? '') : ''))
     .join('')
+}
+
+/**
+ * Model of the last message in an opencode session, via `session export`.
+ * Best-effort: resolves '' on any failure or after a short timeout.
+ */
+function exportedModel(spec: unknown, procId: string, sessionId: string): Promise<string> {
+  return new Promise(resolve => {
+    const lines: string[] = []
+    let finished = false
+    const end = (model: string) => {
+      if (finished) return
+      finished = true
+      clearTimeout(timer)
+      void invoke('agent_proc_kill', { id: procId }).catch(() => {})
+      resolve(model)
+    }
+    const timer = setTimeout(() => end(''), 15000)
+    const channel = new Channel<any>()
+    channel.onmessage = (msg: any) => {
+      if (msg?.type === 'line') lines.push(String(msg.line ?? ''))
+      else if (msg?.type === 'exit') {
+        try {
+          const raw = lines.join('\n')
+          const data = JSON.parse(raw.slice(raw.indexOf('{')))
+          const messages: any[] = Array.isArray(data?.messages) ? data.messages : []
+          const model = [...messages].reverse().find(m => m?.model?.id)?.model
+          end(model ? (model.providerID ? `${model.providerID}/${model.id}` : String(model.id)) : '')
+        } catch {
+          end('')
+        }
+      }
+    }
+    invoke('agent_proc_spawn', {
+      id: procId,
+      spec,
+      args: ['session', 'export', sessionId],
+      cwd: null,
+      env: null,
+      onEvent: channel,
+    }).catch(() => end(''))
+  })
 }
 
 export class OpencodeDriver implements AgentDriver {
@@ -59,6 +102,8 @@ export class OpencodeDriver implements AgentDriver {
 
     const procId = `opencode-${opts.sessionId}-${Date.now()}`
     const translator = createOpencodeTranslator(hooks)
+    const diag = createAgentDiagnostics(engine.name)
+    let sawModel = false
     let settled = false
 
     let resolveDone: (r: RunAgentResult) => void = () => {}
@@ -81,14 +126,14 @@ export class OpencodeDriver implements AgentDriver {
         return
       }
       if (snap.lastError && !text.trim()) {
-        rejectDone(new Error(snap.lastError))
+        rejectDone(diag.protocol(snap.lastError))
         return
       }
       if (snap.nativeSessionId) {
         opencodeSessionByJediSession.set(opts.sessionId, snap.nativeSessionId)
       }
       hooks.onFinish?.({ finishReason: snap.finishReason, usage: snap.usage })
-      resolveDone({
+      const result: RunAgentResult = {
         text,
         reasoning: snap.reasoning,
         finishReason: snap.finishReason,
@@ -96,7 +141,17 @@ export class OpencodeDriver implements AgentDriver {
         toolCount: snap.toolCount,
         enabledToolNames: [],
         nativeSessionId: snap.nativeSessionId,
-      })
+      }
+      // The JSON stream never names the model (2.x); the session export does.
+      if (!sawModel && snap.nativeSessionId) {
+        void exportedModel(engine.installation!.spawn, `${procId}-export`, snap.nativeSessionId)
+          .then(m => {
+            if (m) hooks.onModel?.(m)
+          })
+          .finally(() => resolveDone(result))
+      } else {
+        resolveDone(result)
+      }
     }
 
     function onAbort() {
@@ -113,17 +168,23 @@ export class OpencodeDriver implements AgentDriver {
         try {
           const record = JSON.parse(line)
           const model = nativeModel(record)
-          if (model) hooks.onModel?.(model)
+          if (model) {
+            sawModel = true
+            hooks.onModel?.(model)
+          }
           translator.handleRecord(record)
         } catch {
           // Non-JSON line — opencode prints failures like "Error: …".
           translator.noteErrorLine(line)
+          const early = diag.line(line)
+          if (early) finish(early)
         }
       } else if (msg.type === 'exit') {
         // One-shot mode: the process ending IS the turn boundary.
-        finish(msg.code ? new Error(`opencode exited with code ${msg.code}`) : undefined)
+        finish(msg.code ? diag.exit(msg.code, translator.snapshot().lastError) : undefined)
       } else if (msg.type === 'stderr') {
-        console.warn('[opencode]', msg.line)
+        const early = diag.line(String(msg.line ?? ''))
+        if (early) finish(early)
       }
     }
 
@@ -137,7 +198,7 @@ export class OpencodeDriver implements AgentDriver {
         onEvent: channel,
       })
     } catch (e) {
-      throw new Error(`failed to spawn opencode: ${e}`)
+      throw diag.spawn(e)
     }
 
     if (opts.signal?.aborted) {

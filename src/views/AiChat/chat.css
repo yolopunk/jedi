@@ -439,6 +439,41 @@
   letter-spacing: 2px;
 }
 
+.streaming-elapsed {
+  font-size: 11px;
+  color: var(--text-muted, currentColor);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.message-error-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.message-error-detail {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.message-error-detail summary {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.message-error-detail pre {
+  margin: 6px 0 0;
+  padding: 8px;
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-size: 11px;
+  border-radius: 6px;
+  background: rgba(127, 127, 127, 0.1);
+}
+
 .streaming-dots {
   display: flex;
   gap: 3px;

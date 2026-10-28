@@ -11,6 +11,7 @@ import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
 import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
+import { createAgentDiagnostics } from '../agentError'
 import { createCodexTranslator } from './codexProtocol'
 
 // codex threadId per Jedi chat session for thread/resume continuity.
@@ -51,6 +52,7 @@ export class CodexDriver implements AgentDriver {
 
     const procId = `codex-${opts.sessionId}-${Date.now()}`
     const translator = createCodexTranslator(hooks)
+    const diag = createAgentDiagnostics(engine.name)
     let settled = false
     let rpcSeq = 0
     // id-correlated pending requests: turn/start needs the threadId from the
@@ -105,7 +107,7 @@ export class CodexDriver implements AgentDriver {
       void invoke('agent_proc_kill', { id: procId }).catch(() => {})
       const snap = translator.snapshot()
       if ((failure || snap.lastError) && !snap.fullText.trim()) {
-        rejectDone(failure ?? new Error(snap.lastError!))
+        rejectDone(failure ?? diag.protocol(snap.lastError!))
         return
       }
       if (snap.threadId) codexThreadByJediSession.set(opts.sessionId, snap.threadId)
@@ -147,15 +149,17 @@ export class CodexDriver implements AgentDriver {
           }
           translator.handleRecord(record)
         } catch {
-          /* non-JSON line — ignore */
+          const early = diag.line(line)
+          if (early) finish(early)
         }
         if (translator.snapshot().turnComplete) finish()
       } else if (msg.type === 'exit') {
         if (!settled && !translator.snapshot().turnComplete) {
-          finish(new Error(`codex process exited before turn/completed (code ${msg.code ?? '?'})`))
+          finish(diag.exit(msg.code, translator.snapshot().lastError))
         }
       } else if (msg.type === 'stderr') {
-        console.warn('[codex]', msg.line)
+        const early = diag.line(String(msg.line ?? ''))
+        if (early) finish(early)
       }
     }
 
@@ -169,7 +173,7 @@ export class CodexDriver implements AgentDriver {
         onEvent: channel,
       })
     } catch (e) {
-      throw new Error(`failed to spawn codex: ${e}`)
+      throw diag.spawn(e)
     }
 
     if (opts.signal?.aborted) {

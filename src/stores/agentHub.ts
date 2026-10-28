@@ -90,7 +90,9 @@ export const useAgentHubStore = defineStore('agentHub', () => {
       // Prefer a supported installed agent when there is no saved choice.
       const ids = new Set(engines.value.map(e => e.id))
       if (!ids.has(selectedEngineId.value) || !hasSavedSelection) {
-        selectedEngineId.value = engines.value.find(e => e.tier === 'A')?.id ?? 'builtin'
+        const tierA = engines.value.filter(e => e.tier === 'A')
+        selectedEngineId.value =
+          (tierA.find(e => e.installation?.status === 'ready') ?? tierA[0])?.id ?? 'builtin'
       }
     } catch (e: any) {
       error.value = e?.message ?? String(e)

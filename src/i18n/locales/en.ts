@@ -1,6 +1,17 @@
 export default {
   chatWorkspace: {
     defaultModelUnknown: 'Default model unavailable',
+    defaultModelByAgent: 'No default set (agent decides)',
+    modelUnconfirmed: 'Model unconfirmed',
+    modelUnconfirmedReason: 'The agent did not report the model used for this turn',
+    engineNeedsAuth: 'Sign-in needed',
+    engineInvalidPath: 'Path invalid',
+    engineUnconfirmed: 'Unverified',
+    phasePreparing: 'Starting',
+    phaseSubmitted: 'Submitted, waiting for reply',
+    phaseGenerating: 'Generating',
+    errorDetails: 'Technical details',
+    elapsedSeconds: '{n}s',
     agentWorkspace: 'Agent workspace',
     currentAgent: 'Active agent',
     changeAgent: 'Change agent, currently {agent}',

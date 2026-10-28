@@ -19,9 +19,18 @@ export interface AgentInstallation {
   host: string
   exe: string
   version?: string | null
+  /** Default model from env/config; null when the agent decides itself. */
   defaultModel?: string | null
+  /** "env:<NAME>" | "config:<file>" | "profile:<name>" | "agent-default" */
+  modelSource?: string
+  /** Static readiness from detection; "unknown" is confirmed by the first run. */
+  status?: InstallationStatus
+  statusReason?: string | null
+  statusHint?: string | null
   spawn: SpawnSpec
 }
+
+export type InstallationStatus = 'ready' | 'needs_auth' | 'invalid_path' | 'unknown'
 
 export interface AgentReport {
   id: string

@@ -17,6 +17,7 @@ import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
 import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
+import { createAgentDiagnostics } from '../agentError'
 import {
   type ClaudeApprovalRequest,
   controlResponseFor,
@@ -105,6 +106,7 @@ export class ClaudeCodeDriver implements AgentDriver {
     if (resumedSession) args.push('--resume', resumedSession)
 
     const procId = `claude-${opts.sessionId}-${Date.now()}`
+    const diag = createAgentDiagnostics(engine.name)
     let settled = false
 
     let resolveDone: (r: RunAgentResult) => void = () => {}
@@ -142,7 +144,7 @@ export class ClaudeCodeDriver implements AgentDriver {
       void invoke('agent_proc_kill', { id: procId }).catch(() => {})
       const snap = translator.snapshot()
       if ((failure || snap.lastError) && !snap.fullText.trim()) {
-        rejectDone(failure ?? new Error(snap.lastError!))
+        rejectDone(failure ?? diag.protocol(snap.lastError!))
         return
       }
       if (snap.nativeSessionId) claudeSessionByJediSession.set(opts.sessionId, snap.nativeSessionId)
@@ -176,16 +178,18 @@ export class ClaudeCodeDriver implements AgentDriver {
           if (model) hooks.onModel?.(model)
           translator.handleRecord(record)
         } catch {
-          /* non-JSON line — ignore */
+          const early = diag.line(line)
+          if (early) finish(early)
         }
         if (translator.snapshot().turnComplete) finish()
       } else if (msg.type === 'exit') {
         const snap = translator.snapshot()
         if (!settled && !snap.turnComplete) {
-          finish(new Error(`claude process exited before result (code ${msg.code ?? '?'})`))
+          finish(diag.exit(msg.code, snap.lastError))
         }
       } else if (msg.type === 'stderr') {
-        console.warn('[claude-code]', msg.line)
+        const early = diag.line(String(msg.line ?? ''))
+        if (early) finish(early)
       }
     }
 
@@ -199,7 +203,7 @@ export class ClaudeCodeDriver implements AgentDriver {
         onEvent: channel,
       })
     } catch (e) {
-      throw new Error(`failed to spawn claude: ${e}`)
+      throw diag.spawn(e)
     }
 
     if (opts.signal?.aborted) {

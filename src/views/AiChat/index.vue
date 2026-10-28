@@ -125,15 +125,23 @@
                   <div class="message-content ai-message">
                     <div class="message-meta">
                       <span class="speaker-name">{{ messageAgentName(message) }}</span>
-                      <span class="model-badge">{{ messageRuntimeLabel(message) }}</span>
+                      <span class="model-badge" :title="messageRuntimeTitle(message)">{{ messageRuntimeLabel(message) }}</span>
                       <time>{{ formatTimestamp(message.timestamp) }}</time>
                     </div>
                     <div class="message-body">
                       <div class="markdown-body" v-html="renderMessage(message.content)"></div>
+                      <div v-if="message.error && message.metadata?.run?.errorHint" class="message-error-hint">
+                        {{ message.metadata.run.errorHint }}
+                      </div>
+                      <details v-if="message.error && message.metadata?.run?.errorDetail" class="message-error-detail">
+                        <summary>{{ $t('chatWorkspace.errorDetails') }}</summary>
+                        <pre>{{ message.metadata.run.errorDetail }}</pre>
+                      </details>
                       <!-- 流式输出指示器（内嵌于消息框内部） -->
                       <div v-if="message.isStreaming" class="streaming-indicator inline">
                         <div class="streaming-cursor"></div>
-                        <span class="streaming-text">PROCESSING</span>
+                        <span class="streaming-text">{{ messagePhaseLabel(message) }}</span>
+                        <span class="streaming-elapsed">{{ messageElapsed(message) }}</span>
                         <span class="streaming-dots">
                           <span class="dot"></span>
                           <span class="dot"></span>
@@ -660,8 +668,50 @@ function messageRuntimeLabel(message: ChatMessage): string {
   if (!run?.engine || run.engine === 'builtin') {
     return run?.model || currentModelName.value
   }
-  const engine = agentHubStore.engines.find(item => item.id === run.engine)
-  return run.model || engine?.installation?.defaultModel || t('chatWorkspace.defaultModelUnknown')
+  // Never infer the actual model from the configured default: only the model
+  // the agent itself reported for this turn is shown.
+  return run.model || t('chatWorkspace.modelUnconfirmed')
+}
+
+// Ticks once a second while a run is live so the elapsed counter updates.
+const nowTick = ref(Date.now())
+let nowTimer: ReturnType<typeof setInterval> | undefined
+watch(
+  () => store.isLoading,
+  loading => {
+    clearInterval(nowTimer)
+    nowTimer = undefined
+    if (loading) {
+      nowTick.value = Date.now()
+      nowTimer = setInterval(() => (nowTick.value = Date.now()), 1000)
+    }
+  },
+  { immediate: true }
+)
+onUnmounted(() => clearInterval(nowTimer))
+
+function messagePhaseLabel(message: ChatMessage): string {
+  switch (message.metadata?.run?.phase) {
+    case 'preparing':
+      return t('chatWorkspace.phasePreparing')
+    case 'generating':
+      return t('chatWorkspace.phaseGenerating')
+    default:
+      return t('chatWorkspace.phaseSubmitted')
+  }
+}
+
+function messageElapsed(message: ChatMessage): string {
+  const startedAt = message.metadata?.run?.startedAt
+  if (!startedAt) return ''
+  const n = Math.max(0, Math.floor((nowTick.value - startedAt) / 1000))
+  return t('chatWorkspace.elapsedSeconds', { n })
+}
+
+function messageRuntimeTitle(message: ChatMessage): string | undefined {
+  const run = message.metadata?.run
+  if (!run?.engine || run.engine === 'builtin' || run.model) return undefined
+  return t('chatWorkspace.modelUnconfirmedReason')
 }
 
 function openTrace(message: ChatMessage) {
@@ -825,6 +875,11 @@ async function handleSend() {
       scrollToBottom()
     } catch (e) {
       console.error('Failed to send message:', e)
+      // Give the prompt back so the user can retry without retyping.
+      if (!inputText.value.trim()) {
+        inputText.value = content
+        nextTick(autoResize)
+      }
     }
   }
 }

@@ -68,6 +68,15 @@ pub struct AgentInstallation {
   pub exe: String,
   pub version: Option<String>,
   pub default_model: Option<String>,
+  /// Where `default_model` came from: "env:<NAME>" | "config:<file>" |
+  /// "profile:<name>" | "agent-default" (the agent decides; confirmed only
+  /// once a run reports the model it actually used).
+  pub model_source: String,
+  /// "ready" | "needs_auth" | "invalid_path" | "unknown" (cannot be checked
+  /// statically; confirmed by the first run).
+  pub status: String,
+  pub status_reason: Option<String>,
+  pub status_hint: Option<String>,
   pub spawn: SpawnSpec,
 }
 
@@ -97,58 +106,521 @@ impl DetectorState {
   }
 }
 
-/// Only return the configured model name; never expose configuration or credentials.
-fn configured_model(agent: &str, content: &str) -> Option<String> {
-  let model = if agent == "codex" {
-    content
-      .lines()
-      .take_while(|line| !line.trim_start().starts_with('['))
-      .find_map(|line| {
-        let (key, value) = line.split_once('=')?;
-        if key.trim() != "model" {
-          return None;
-        }
-        serde_json::from_str::<String>(value.trim()).ok()
-      })
-  } else {
-    let json: serde_json::Value = serde_json::from_str(content).ok()?;
-    json
-      .get("defaultModel")
-      .and_then(|v| v.as_str())
-      .or_else(|| json.get("model").and_then(|v| v.as_str()))
-      .or_else(|| json.pointer("/model/name").and_then(|v| v.as_str()))
-      .or_else(|| json.pointer("/env/ANTHROPIC_MODEL").and_then(|v| v.as_str()))
-      .map(str::to_owned)
-  };
-  model.filter(|name| !name.trim().is_empty() && name != "unknown")
+/// A config file the readiness probe reads. Its content stays inside this
+/// process: only derived facts (model name, auth *kind*) are ever returned.
+struct ConfFile {
+  key: &'static str,
+  /// Env var that relocates the agent's config dir (e.g. CODEX_HOME).
+  dir_env: Option<&'static str>,
+  /// Default dir relative to $HOME.
+  dir: &'static str,
+  file: &'static str,
 }
 
-async fn probe_default_model(agent: &str, spec: &SpawnSpec) -> Option<String> {
-  let paths: &[&str] = match agent {
-    "pi" => &[".pi/agent/settings.json"],
-    "codex" => &[".codex/config.toml"],
-    "claude-code" => &[".claude/settings.json"],
-    "gemini-cli" => &[".gemini/settings.json"],
-    "qwen-code" => &[".qwen/settings.json"],
-    "cursor-cli" => &[".cursor/cli-config.json"],
-    "opencode" => &[".config/opencode/opencode.json"],
-    _ => return None,
+struct ProbePlan {
+  /// Files whose content is parsed (model / auth-type keys).
+  read: &'static [ConfFile],
+  /// Credential files: only existence + size is checked, never read.
+  sized: &'static [ConfFile],
+  /// Env vars whose presence (not value) means "credentials configured".
+  auth_env: &'static [&'static str],
+  /// Env vars that name the model; their value is a model id, not a secret.
+  model_env: &'static [&'static str],
+}
+
+// A macro (not a fn) so `&[cf!(..)]` is promoted to a `'static` slice.
+macro_rules! cf {
+  ($key:expr, $dir_env:expr, $dir:expr, $file:expr) => {
+    ConfFile { key: $key, dir_env: $dir_env, dir: $dir, file: $file }
   };
-  for path in paths {
-    let content = if spec.kind == "wsl" {
-      let mut cmd = Command::new("wsl.exe");
-      cmd.args(["-d", spec.distro.as_deref()?, "--exec", "bash", "-lc"]);
-      cmd.arg(format!("cat -- \"$HOME/{path}\" 2>/dev/null"));
-      run_capture(&mut cmd, VERSION_TIMEOUT).await.ok()
-    } else {
-      let file = dirs::home_dir()?.join(path);
-      tokio::fs::read_to_string(file).await.ok()
-    };
-    if let Some(model) = content.and_then(|text| configured_model(agent, &text)) {
-      return Some(model);
+}
+
+fn probe_plan(agent: &str) -> Option<ProbePlan> {
+  Some(match agent {
+    "claude-code" => ProbePlan {
+      read: &[cf!("settings", Some("CLAUDE_CONFIG_DIR"), ".claude", "settings.json")],
+      sized: &[cf!("credentials", Some("CLAUDE_CONFIG_DIR"), ".claude", ".credentials.json")],
+      auth_env: &[
+        "ANTHROPIC_API_KEY",
+        "ANTHROPIC_AUTH_TOKEN",
+        "CLAUDE_CODE_OAUTH_TOKEN",
+        "CLAUDE_CODE_USE_BEDROCK",
+        "CLAUDE_CODE_USE_VERTEX",
+      ],
+      model_env: &["ANTHROPIC_MODEL"],
+    },
+    "codex" => ProbePlan {
+      read: &[cf!("config", Some("CODEX_HOME"), ".codex", "config.toml")],
+      sized: &[cf!("auth", Some("CODEX_HOME"), ".codex", "auth.json")],
+      auth_env: &["OPENAI_API_KEY", "CODEX_API_KEY"],
+      model_env: &[],
+    },
+    "pi" => ProbePlan {
+      read: &[
+        cf!("settings", Some("PI_CODING_AGENT_DIR"), ".pi/agent", "settings.json"),
+        // auth.json is parsed only to count its provider entries.
+        cf!("auth", Some("PI_CODING_AGENT_DIR"), ".pi/agent", "auth.json"),
+      ],
+      sized: &[cf!("models", Some("PI_CODING_AGENT_DIR"), ".pi/agent", "models.json")],
+      auth_env: &[
+        "ANTHROPIC_API_KEY",
+        "OPENAI_API_KEY",
+        "GEMINI_API_KEY",
+        "OPENROUTER_API_KEY",
+        "GROQ_API_KEY",
+        "XAI_API_KEY",
+        "MISTRAL_API_KEY",
+        "DEEPSEEK_API_KEY",
+      ],
+      model_env: &[],
+    },
+    "gemini-cli" => ProbePlan {
+      read: &[cf!("settings", None, ".gemini", "settings.json")],
+      sized: &[],
+      auth_env: &[
+        "GEMINI_API_KEY",
+        "GOOGLE_API_KEY",
+        "GOOGLE_GENAI_USE_VERTEXAI",
+        "GOOGLE_GENAI_USE_GCA",
+      ],
+      model_env: &["GEMINI_MODEL"],
+    },
+    "qwen-code" => ProbePlan {
+      read: &[cf!("settings", None, ".qwen", "settings.json")],
+      sized: &[],
+      auth_env: &["OPENAI_API_KEY", "DASHSCOPE_API_KEY"],
+      model_env: &["OPENAI_MODEL"],
+    },
+    "cursor-cli" => ProbePlan {
+      read: &[cf!("config", None, ".cursor", "cli-config.json")],
+      sized: &[],
+      auth_env: &["CURSOR_API_KEY"],
+      model_env: &[],
+    },
+    "opencode" => ProbePlan {
+      read: &[
+        cf!("config", Some("XDG_CONFIG_HOME"), ".config", "opencode/opencode.json"),
+        cf!("configc", Some("XDG_CONFIG_HOME"), ".config", "opencode/opencode.jsonc"),
+      ],
+      sized: &[],
+      auth_env: &[],
+      model_env: &["OPENCODE_MODEL"],
+    },
+    "antigravity" => ProbePlan { read: &[], sized: &[], auth_env: &[], model_env: &[] },
+    _ => return None,
+  })
+}
+
+/// Everything the readiness probe learned about one installation.
+#[derive(Default, Debug)]
+struct Facts {
+  exe_exists: bool,
+  env_set: Vec<String>,
+  env_vals: HashMap<String, String>,
+  sizes: HashMap<String, u64>,
+  files: HashMap<String, String>,
+}
+
+impl Facts {
+  fn any_env(&self, names: &[&str]) -> Option<String> {
+    names.iter().find(|n| self.env_set.iter().any(|s| s == *n)).map(|s| s.to_string())
+  }
+  fn json(&self, key: &str) -> Option<serde_json::Value> {
+    let text = self.files.get(key)?;
+    serde_json::from_str(text).ok().or_else(|| serde_json::from_str(&strip_jsonc(text)).ok())
+  }
+}
+
+/// Drop `//` line comments so opencode.jsonc parses (strings kept intact).
+fn strip_jsonc(text: &str) -> String {
+  let mut out = String::with_capacity(text.len());
+  for line in text.lines() {
+    let mut in_str = false;
+    let mut prev = '\0';
+    let mut cut = line.len();
+    for (i, ch) in line.char_indices() {
+      if ch == '"' && prev != '\\' {
+        in_str = !in_str;
+      } else if !in_str && ch == '/' && prev == '/' {
+        cut = i - 1;
+        break;
+      }
+      prev = ch;
+    }
+    out.push_str(&line[..cut]);
+    out.push('\n');
+  }
+  out
+}
+
+fn clean_model(name: Option<&str>) -> Option<String> {
+  let name = name?.trim();
+  if name.is_empty() || name == "unknown" { None } else { Some(name.to_string()) }
+}
+
+/// Top-level TOML string value (before the first table header).
+fn toml_top_string(content: &str, key: &str) -> Option<String> {
+  content
+    .lines()
+    .take_while(|line| !line.trim_start().starts_with('['))
+    .find_map(|line| toml_kv(line, key))
+}
+
+fn toml_kv(line: &str, key: &str) -> Option<String> {
+  let line = line.split(" #").next()?;
+  let (k, v) = line.split_once('=')?;
+  if k.trim() != key {
+    return None;
+  }
+  let v = v.trim();
+  serde_json::from_str::<String>(v)
+    .ok()
+    .or_else(|| v.strip_prefix('\'')?.strip_suffix('\'').map(str::to_string))
+}
+
+/// `[profiles.<name>]` (or `[profiles."<name>"]`) table value.
+fn toml_profile_string(content: &str, profile: &str, key: &str) -> Option<String> {
+  let headers = [format!("[profiles.{profile}]"), format!("[profiles.\"{profile}\"]")];
+  let mut inside = false;
+  for line in content.lines() {
+    let t = line.trim();
+    if t.starts_with('[') {
+      inside = headers.iter().any(|h| h == t);
+      continue;
+    }
+    if inside {
+      if let Some(v) = toml_kv(t, key) {
+        return Some(v);
+      }
     }
   }
   None
+}
+
+/// Only return the configured model name; never expose configuration or credentials.
+fn configured_model(agent: &str, content: &str) -> Option<String> {
+  if agent == "codex" {
+    if let Some(profile) = toml_top_string(content, "profile") {
+      if let Some(m) = toml_profile_string(content, &profile, "model") {
+        return clean_model(Some(&m));
+      }
+    }
+    return clean_model(toml_top_string(content, "model").as_deref());
+  }
+  let json: serde_json::Value = serde_json::from_str(content)
+    .ok()
+    .or_else(|| serde_json::from_str(&strip_jsonc(content)).ok())?;
+  let pick = json
+    .get("defaultModel")
+    .and_then(|v| v.as_str())
+    .or_else(|| json.get("model").and_then(|v| v.as_str()))
+    .or_else(|| json.pointer("/model/name").and_then(|v| v.as_str()))
+    .or_else(|| json.pointer("/env/ANTHROPIC_MODEL").and_then(|v| v.as_str()))
+    .map(str::to_owned);
+  // pi stores provider and model separately; show "provider/model".
+  let pick = match (agent, pick, json.get("defaultProvider").and_then(|v| v.as_str())) {
+    ("pi", Some(m), Some(p)) if !m.contains('/') && !p.is_empty() => Some(format!("{p}/{m}")),
+    (_, m, _) => m,
+  };
+  clean_model(pick.as_deref())
+}
+
+struct Readiness {
+  status: &'static str,
+  reason: Option<String>,
+  hint: Option<String>,
+  default_model: Option<String>,
+  model_source: String,
+}
+
+fn conf_file_label(plan: &ProbePlan, key: &str) -> String {
+  plan
+    .read
+    .iter()
+    .find(|f| f.key == key)
+    .map(|f| format!("{}/{}", f.dir.trim_start_matches('.').trim_start_matches('/'), f.file))
+    .map(|p| format!("~/.{p}"))
+    .unwrap_or_else(|| key.to_string())
+}
+
+/// Pure assessment from probe facts (unit-tested below).
+fn assess(agent: &str, plan: &ProbePlan, facts: &Facts) -> Readiness {
+  // --- default model: env beats config file (matches the agents' own order)
+  let mut default_model = None;
+  let mut model_source = "agent-default".to_string();
+  for name in plan.model_env {
+    if let Some(v) = clean_model(facts.env_vals.get(*name).map(String::as_str)) {
+      default_model = Some(v);
+      model_source = format!("env:{name}");
+      break;
+    }
+  }
+  if default_model.is_none() {
+    for f in plan.read {
+      if f.key == "auth" {
+        continue;
+      }
+      let Some(text) = facts.files.get(f.key) else { continue };
+      if let Some(m) = configured_model(agent, text) {
+        default_model = Some(m);
+        model_source = match (agent, toml_top_string(text, "profile")) {
+          ("codex", Some(p)) => format!("profile:{p}"),
+          _ => format!("config:{}", conf_file_label(plan, f.key)),
+        };
+        break;
+      }
+    }
+  }
+
+  let ready = |r: Option<&str>| Readiness {
+    status: "ready",
+    reason: r.map(str::to_string),
+    hint: None,
+    default_model: default_model.clone(),
+    model_source: model_source.clone(),
+  };
+  let needs = |reason: &str, hint: &str| Readiness {
+    status: "needs_auth",
+    reason: Some(reason.to_string()),
+    hint: Some(hint.to_string()),
+    default_model: default_model.clone(),
+    model_source: model_source.clone(),
+  };
+  let unknown = |reason: &str, hint: &str| Readiness {
+    status: "unknown",
+    reason: Some(reason.to_string()),
+    hint: Some(hint.to_string()),
+    default_model: default_model.clone(),
+    model_source: model_source.clone(),
+  };
+
+  if !facts.exe_exists {
+    return Readiness {
+      status: "invalid_path",
+      reason: Some("安装路径已失效（可执行文件不存在）".into()),
+      hint: Some("重新安装该 Agent 后点击“重新检测”".into()),
+      default_model,
+      model_source,
+    };
+  }
+
+  let size = |k: &str| facts.sizes.get(k).copied().unwrap_or(0);
+  let settings = facts.json("settings");
+  let selected_auth = settings.as_ref().and_then(|s| {
+    s.pointer("/security/auth/selectedType")
+      .or_else(|| s.get("selectedAuthType"))
+      .and_then(|v| v.as_str())
+      .map(str::to_string)
+  });
+
+  match agent {
+    "claude-code" => {
+      let settings_env = settings
+        .as_ref()
+        .and_then(|s| s.get("env"))
+        .map(|e| ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"].iter().any(|k| e.get(*k).is_some()))
+        .unwrap_or(false);
+      let helper = settings.as_ref().map(|s| s.get("apiKeyHelper").is_some()).unwrap_or(false);
+      if size("credentials") > 2 || settings_env || helper || facts.any_env(plan.auth_env).is_some()
+      {
+        ready(None)
+      } else if cfg!(target_os = "macos") {
+        // macOS keeps the OAuth token in the Keychain: not checkable here.
+        unknown("登录状态保存在系统钥匙串中，将在首次运行时确认", "如未登录，请在终端运行 claude 并执行 /login")
+      } else {
+        needs("未找到 Claude Code 登录凭据", "在终端运行 claude 并执行 /login，或设置 ANTHROPIC_API_KEY")
+      }
+    }
+    "codex" => {
+      let custom_provider = facts
+        .files
+        .get("config")
+        .and_then(|t| toml_top_string(t, "model_provider"))
+        .map(|p| p != "openai")
+        .unwrap_or(false);
+      if size("auth") > 2 || custom_provider || facts.any_env(plan.auth_env).is_some() {
+        ready(None)
+      } else {
+        needs("未找到 Codex 登录凭据", "在终端运行 codex login，或设置 OPENAI_API_KEY")
+      }
+    }
+    "pi" => {
+      let providers = facts
+        .json("auth")
+        .and_then(|v| v.as_object().map(|o| o.len()))
+        .unwrap_or(0);
+      if providers > 0 || size("models") > 2 || facts.any_env(plan.auth_env).is_some() {
+        ready(None)
+      } else {
+        needs(
+          "pi 尚未登录任何模型提供方（auth.json 为空）",
+          "在终端运行 pi 并输入 /login 登录，或设置对应提供方的 API Key 环境变量",
+        )
+      }
+    }
+    "gemini-cli" => {
+      if selected_auth.is_some() || facts.any_env(plan.auth_env).is_some() {
+        ready(None)
+      } else {
+        needs(
+          "Gemini CLI 未选择认证方式（~/.gemini/settings.json 缺少 auth 配置）",
+          "在终端运行 gemini 完成登录并选择认证方式，或设置 GEMINI_API_KEY",
+        )
+      }
+    }
+    "qwen-code" => {
+      if selected_auth.is_some() || facts.any_env(plan.auth_env).is_some() {
+        ready(None)
+      } else {
+        needs(
+          "Qwen Code 未选择认证方式（~/.qwen/settings.json 缺少 auth 配置）",
+          "在终端运行 qwen 完成认证，或设置 OPENAI_API_KEY",
+        )
+      }
+    }
+    // OpenCode ships free models, so it runs without any login.
+    "opencode" => ready(None),
+    "antigravity" => unknown(
+      "Antigravity 使用浏览器 OAuth 登录，无法离线确认登录状态",
+      "如未登录，请先在终端运行 agy 完成浏览器登录",
+    ),
+    "cursor-cli" => {
+      if facts.any_env(plan.auth_env).is_some() {
+        ready(None)
+      } else {
+        unknown("无法离线确认 Cursor CLI 登录状态", "如未登录，请在终端运行 cursor-agent login")
+      }
+    }
+    _ => unknown("该 Agent 暂未适配", "请选择其他 Agent"),
+  }
+}
+
+/// bash expression for a config path, honoring the relocation env var.
+fn bash_path(f: &ConfFile) -> String {
+  let base = match f.dir_env {
+    Some(var) => format!("${{{var}:-$HOME/{}}}", f.dir),
+    None => format!("$HOME/{}", f.dir),
+  };
+  // XDG_CONFIG_HOME replaces ~/.config itself; other vars replace the
+  // agent dir. Both resolve to "<base>/<file>".
+  format!("\"{base}/{}\"", f.file)
+}
+
+fn native_path(f: &ConfFile) -> Option<std::path::PathBuf> {
+  let base = f
+    .dir_env
+    .and_then(|v| std::env::var_os(v))
+    .filter(|v| !v.is_empty())
+    .map(std::path::PathBuf::from)
+    .or_else(|| dirs::home_dir().map(|h| h.join(f.dir)))?;
+  Some(base.join(f.file))
+}
+
+/// One WSL round-trip per installation. Output lines (never secrets):
+/// `X|1` exe present, `E|NAME` auth env set, `V|NAME|model`, `S|key|size`,
+/// `R|key|<base64 config>` (parsed in-process, never forwarded).
+fn wsl_readiness_script(exe: &str, plan: &ProbePlan) -> String {
+  let mut s = format!("[ -x {} ] && echo 'X|1'\n", shquote(exe));
+  for v in plan.auth_env {
+    s.push_str(&format!("[ -n \"${{{v}:-}}\" ] && echo 'E|{v}'\n"));
+  }
+  for v in plan.model_env {
+    s.push_str(&format!("[ -n \"${{{v}:-}}\" ] && printf 'V|{v}|%s\\n' \"${{{v}}}\"\n"));
+  }
+  for f in plan.sized {
+    let p = bash_path(f);
+    s.push_str(&format!("[ -f {p} ] && printf 'S|{}|%s\\n' \"$(wc -c < {p})\"\n", f.key));
+  }
+  for f in plan.read {
+    let p = bash_path(f);
+    s.push_str(&format!(
+      "[ -f {p} ] && {{ printf 'R|{}|'; base64 -w0 {p}; echo; }}\n",
+      f.key
+    ));
+  }
+  s.push_str("true\n");
+  s
+}
+
+fn parse_readiness_output(text: &str) -> Facts {
+  use base64::Engine;
+  let mut facts = Facts::default();
+  for line in text.lines() {
+    let mut parts = line.trim_end_matches('\r').splitn(3, '|');
+    match (parts.next(), parts.next(), parts.next()) {
+      (Some("X"), _, _) => facts.exe_exists = true,
+      (Some("E"), Some(name), _) => facts.env_set.push(name.to_string()),
+      (Some("V"), Some(name), Some(v)) => {
+        facts.env_vals.insert(name.to_string(), v.to_string());
+      }
+      (Some("S"), Some(key), Some(n)) => {
+        facts.sizes.insert(key.to_string(), n.trim().parse().unwrap_or(0));
+      }
+      (Some("R"), Some(key), Some(b64)) => {
+        if let Ok(bytes) = base64::engine::general_purpose::STANDARD.decode(b64.trim()) {
+          facts.files.insert(key.to_string(), String::from_utf8_lossy(&bytes).into_owned());
+        }
+      }
+      _ => {}
+    }
+  }
+  facts
+}
+
+async fn gather_facts(plan: &ProbePlan, spec: &SpawnSpec) -> Facts {
+  if spec.kind == "wsl" {
+    let Some(distro) = spec.distro.as_deref() else { return Facts::default() };
+    let mut cmd = Command::new("wsl.exe");
+    cmd.args(["-d", distro, "--exec", "bash", "-lc"]);
+    cmd.arg(wsl_readiness_script(&spec.exe, plan));
+    return match run_capture(&mut cmd, HOST_PROBE_TIMEOUT).await {
+      Ok(text) => parse_readiness_output(&text),
+      // A probe failure is not proof the path is gone; keep it usable.
+      Err(_) => Facts { exe_exists: true, ..Facts::default() },
+    };
+  }
+  let mut facts = Facts {
+    exe_exists: std::path::Path::new(&spec.exe).is_file(),
+    ..Facts::default()
+  };
+  for v in plan.auth_env {
+    if std::env::var_os(v).is_some_and(|x| !x.is_empty()) {
+      facts.env_set.push(v.to_string());
+    }
+  }
+  for v in plan.model_env {
+    if let Ok(x) = std::env::var(v) {
+      facts.env_vals.insert(v.to_string(), x);
+    }
+  }
+  for f in plan.sized {
+    if let Some(meta) = native_path(f).and_then(|p| std::fs::metadata(p).ok()) {
+      facts.sizes.insert(f.key.to_string(), meta.len());
+    }
+  }
+  for f in plan.read {
+    if let Some(p) = native_path(f) {
+      if let Ok(text) = tokio::fs::read_to_string(p).await {
+        facts.files.insert(f.key.to_string(), text);
+      }
+    }
+  }
+  facts
+}
+
+async fn probe_readiness(agent: String, spec: SpawnSpec) -> Readiness {
+  let Some(plan) = probe_plan(&agent) else {
+    let exists = spec.kind == "wsl" || std::path::Path::new(&spec.exe).is_file();
+    return Readiness {
+      status: if exists { "unknown" } else { "invalid_path" },
+      reason: Some("该 Agent 暂未适配".into()),
+      hint: None,
+      default_model: None,
+      model_source: "agent-default".into(),
+    };
+  };
+  let facts = gather_facts(&plan, &spec).await;
+  assess(&agent, &plan, &facts)
 }
 
 /// wsl.exe prints UTF-16LE; most other console tools print UTF-8. Detect by
@@ -524,16 +996,35 @@ pub async fn detect_agents(
       installations: Vec::new(),
     })
     .collect();
-  for (agent_id, host, spec) in raw {
+  // Readiness probes (auth + default model): one per installation, parallel.
+  let readiness_tasks: Vec<_> = raw
+    .iter()
+    .map(|(agent_id, _, spec)| tokio::spawn(probe_readiness(agent_id.clone(), spec.clone())))
+    .collect();
+  let mut readiness = Vec::new();
+  for handle in readiness_tasks {
+    readiness.push(handle.await.ok());
+  }
+  for ((agent_id, host, spec), ready) in raw.into_iter().zip(readiness) {
     let version = versions.get(&(agent_id.clone(), spec.exe.clone())).cloned().flatten();
-    let default_model = probe_default_model(&agent_id, &spec).await;
+    let ready = ready.unwrap_or(Readiness {
+      status: "unknown",
+      reason: None,
+      hint: None,
+      default_model: None,
+      model_source: "agent-default".into(),
+    });
     if let Some(report) = reports.iter_mut().find(|r| r.id == agent_id) {
       report.installations.push(AgentInstallation {
         agent_id: agent_id.clone(),
         host,
         exe: spec.exe.clone(),
         version,
-        default_model,
+        default_model: ready.default_model,
+        model_source: ready.model_source,
+        status: ready.status.to_string(),
+        status_reason: ready.reason,
+        status_hint: ready.hint,
         spawn: spec,
       });
     }
@@ -547,7 +1038,8 @@ pub async fn detect_agents(
 
 #[cfg(test)]
 mod model_tests {
-  use super::configured_model;
+  use super::*;
+
   #[test]
   fn reads_model_without_returning_other_settings() {
     assert_eq!(
@@ -555,17 +1047,137 @@ mod model_tests {
       Some("my-model".into())
     );
     assert_eq!(
+      configured_model("pi", r#"{"defaultProvider":"anthropic","defaultModel":"m"}"#),
+      Some("anthropic/m".into())
+    );
+    assert_eq!(
+      configured_model("codex", "model = \"gpt-test\"
+[profiles.other]
+model = \"other\""),
+      Some("gpt-test".into())
+    );
+    assert_eq!(
       configured_model(
         "codex",
-        "model = \"gpt-test\"\n[profiles.other]\nmodel = \"other\""
+        "profile = \"fast\"
+model = \"base\"
+[profiles.fast]
+model = \"gpt-fast\""
       ),
-      Some("gpt-test".into())
+      Some("gpt-fast".into())
     );
     assert_eq!(
       configured_model("gemini-cli", r#"{"model":{"name":"gemini-test"}}"#),
       Some("gemini-test".into())
     );
+    assert_eq!(
+      configured_model("opencode", "{
+  // comment
+  \"model\": \"anthropic/x\"
+}"),
+      Some("anthropic/x".into())
+    );
     assert_eq!(configured_model("pi", "{}"), None);
     assert_eq!(configured_model("pi", "invalid"), None);
+  }
+
+  fn facts() -> Facts {
+    Facts { exe_exists: true, ..Facts::default() }
+  }
+
+  #[test]
+  fn env_model_beats_config() {
+    let plan = probe_plan("claude-code").unwrap();
+    let mut f = facts();
+    f.files.insert("settings".into(), r#"{"model":"opus"}"#.into());
+    f.env_vals.insert("ANTHROPIC_MODEL".into(), "sonnet".into());
+    let r = assess("claude-code", &plan, &f);
+    assert_eq!(r.default_model.as_deref(), Some("sonnet"));
+    assert_eq!(r.model_source, "env:ANTHROPIC_MODEL");
+    f.env_vals.clear();
+    let r = assess("claude-code", &plan, &f);
+    assert_eq!(r.default_model.as_deref(), Some("opus"));
+    assert_eq!(r.model_source, "config:~/.claude/settings.json");
+  }
+
+  #[test]
+  fn unset_model_is_agent_default() {
+    let plan = probe_plan("opencode").unwrap();
+    let r = assess("opencode", &plan, &facts());
+    assert_eq!(r.default_model, None);
+    assert_eq!(r.model_source, "agent-default");
+    assert_eq!(r.status, "ready");
+  }
+
+  #[test]
+  fn auth_states() {
+    let pi = probe_plan("pi").unwrap();
+    let mut f = facts();
+    f.files.insert("auth".into(), "{}".into());
+    assert_eq!(assess("pi", &pi, &f).status, "needs_auth");
+    f.files.insert("auth".into(), r#"{"anthropic":{}}"#.into());
+    assert_eq!(assess("pi", &pi, &f).status, "ready");
+
+    let gem = probe_plan("gemini-cli").unwrap();
+    assert_eq!(assess("gemini-cli", &gem, &facts()).status, "needs_auth");
+    let mut f = facts();
+    f.files.insert(
+      "settings".into(),
+      r#"{"security":{"auth":{"selectedType":"oauth-personal"}}}"#.into(),
+    );
+    assert_eq!(assess("gemini-cli", &gem, &f).status, "ready");
+    let mut f = facts();
+    f.env_set.push("GEMINI_API_KEY".into());
+    assert_eq!(assess("gemini-cli", &gem, &f).status, "ready");
+
+    let codex = probe_plan("codex").unwrap();
+    let mut f = facts();
+    f.sizes.insert("auth".into(), 400);
+    assert_eq!(assess("codex", &codex, &f).status, "ready");
+
+    let mut gone = facts();
+    gone.exe_exists = false;
+    assert_eq!(assess("codex", &codex, &gone).status, "invalid_path");
+  }
+
+  #[test]
+  fn readiness_output_never_needs_secret_values() {
+    let script = wsl_readiness_script("/usr/bin/claude", &probe_plan("claude-code").unwrap());
+    // Credential env vars are tested for presence only.
+    assert!(script.contains("echo 'E|ANTHROPIC_API_KEY'"));
+    assert!(!script.contains("${ANTHROPIC_API_KEY}\""));
+    // Credential files are sized, never read.
+    assert!(script.contains("wc -c < \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json\""));
+    assert!(!script.contains("base64 -w0 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json"));
+    let f = parse_readiness_output("X|1
+E|ANTHROPIC_API_KEY
+S|credentials|0
+R|settings|e30=
+");
+    assert!(f.exe_exists);
+    assert_eq!(f.files.get("settings").map(String::as_str), Some("{}"));
+  }
+}
+
+#[cfg(test)]
+mod live_tests {
+  use super::*;
+
+  /// Real-machine readiness dump (status + model only, never secrets).
+  /// Run: cargo test live_readiness -- --ignored --nocapture
+  #[tokio::test]
+  #[ignore]
+  async fn live_readiness() {
+    let mut raw = probe_windows_host().await;
+    for d in list_wsl_distros().await {
+      raw.extend(probe_wsl_distro(&d).await);
+    }
+    for (agent, host, spec) in raw {
+      let r = probe_readiness(agent.clone(), spec.clone()).await;
+      println!(
+        "{agent:12} {host:16} {:12} model={:?} src={} reason={:?}",
+        r.status, r.default_model, r.model_source, r.reason
+      );
+    }
   }
 }

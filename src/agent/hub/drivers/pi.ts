@@ -20,6 +20,7 @@ import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
 import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
+import { createAgentDiagnostics } from '../agentError'
 import { createPiTranslator, textOfContent } from './piProtocol'
 
 // pi sessionId per Jedi chat session, so consecutive turns resume the same
@@ -59,6 +60,7 @@ export class PiDriver implements AgentDriver {
     // ---- Spawn through the Rust process manager (strict \n framing). ----
     const procId = `pi-${opts.sessionId}-${Date.now()}`
     const translator = createPiTranslator(hooks)
+    const diag = createAgentDiagnostics(engine.name)
     let settled = false
     let cmdSeq = 0
 
@@ -115,20 +117,22 @@ export class PiDriver implements AgentDriver {
           translator.handleRecord(record)
           if (record.type === 'agent_settled') {
             const error = translator.snapshot().lastError
-            finish(error ? new Error(error) : undefined)
+            finish(error ? diag.protocol(error) : undefined)
           } else if (record.type === 'response' && record.success === false) {
-            finish(new Error(String(record.error ?? 'pi command failed')))
+            finish(diag.protocol(String(record.error ?? 'pi command failed')))
           }
         } catch {
-          /* non-JSON line (banner etc.) — ignore */
+          const early = diag.line(line)
+          if (early) finish(early)
         }
       } else if (msg.type === 'exit') {
         if (!settled) {
-          finish(new Error(`pi process exited unexpectedly (code ${msg.code ?? '?'})`))
+          finish(diag.exit(msg.code, translator.snapshot().lastError))
         }
       } else if (msg.type === 'stderr') {
-        // pi keeps stdout protocol-only; stderr goes to the console.
-        console.warn('[pi]', msg.line)
+        // pi keeps stdout protocol-only; stderr carries auth / startup errors.
+        const early = diag.line(String(msg.line ?? ''))
+        if (early) finish(early)
       }
     }
 
@@ -142,7 +146,7 @@ export class PiDriver implements AgentDriver {
         onEvent: channel,
       })
     } catch (e) {
-      throw new Error(`failed to spawn pi: ${e}`)
+      throw diag.spawn(e)
     }
 
     if (opts.signal?.aborted) {

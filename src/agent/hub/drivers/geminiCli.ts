@@ -15,6 +15,7 @@ import type { RunAgentResult } from '@/agent/runAgent'
 import { nativeModel } from '../model'
 import { isWslHost, toWslPath } from '../paths'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
+import { createAgentDiagnostics } from '../agentError'
 import {
   buildConversationPrompt,
   emitGeminiFamilyResult,
@@ -62,6 +63,7 @@ export class GeminiCliDriver implements AgentDriver {
     }
 
     const procId = `${engine.agentId}-${opts.sessionId}-${Date.now()}`
+    const diag = createAgentDiagnostics(engine.name)
     let settled = false
     const stdoutChunks: string[] = []
 
@@ -72,10 +74,15 @@ export class GeminiCliDriver implements AgentDriver {
       rejectDone = reject
     })
 
-    const finish = () => {
+    const finish = (exitCode?: number | null, failure?: Error) => {
       if (settled) return
       settled = true
       opts.signal?.removeEventListener('abort', onAbort)
+      if (failure) {
+        void invoke('agent_proc_kill', { id: procId }).catch(() => {})
+        rejectDone(failure)
+        return
+      }
       const output = stdoutChunks.join('\n')
       const result = parseGeminiFamilyOutput(output)
       try {
@@ -87,8 +94,15 @@ export class GeminiCliDriver implements AgentDriver {
       } catch {
         /* Protocol parser below supplies the error. */
       }
-      if (result.error && !result.text.trim()) {
-        rejectDone(new Error(result.error))
+      if (!result.text.trim() && (result.error || exitCode)) {
+        // gemini exits 41 when no auth method is configured.
+        rejectDone(
+          exitCode === 41
+            ? diag.protocol(`not logged in (exit 41)${result.error ? `: ${result.error}` : ''}`)
+            : exitCode
+              ? diag.exit(exitCode, result.error)
+              : diag.protocol(result.error!)
+        )
         return
       }
       emitGeminiFamilyResult(result, hooks)
@@ -105,7 +119,7 @@ export class GeminiCliDriver implements AgentDriver {
 
     function onAbort() {
       void invoke('agent_proc_kill', { id: procId }).catch(() => {})
-      setTimeout(finish, 200)
+      setTimeout(() => finish(), 200)
     }
 
     const channel = new Channel<any>()
@@ -114,9 +128,10 @@ export class GeminiCliDriver implements AgentDriver {
       if (msg.type === 'line') {
         stdoutChunks.push(String(msg.line ?? ''))
       } else if (msg.type === 'exit') {
-        finish()
+        finish(msg.code)
       } else if (msg.type === 'stderr') {
-        console.warn(`[${engine.agentId}]`, msg.line)
+        const early = diag.line(String(msg.line ?? ''))
+        if (early) finish(undefined, early)
       }
     }
 
@@ -130,7 +145,7 @@ export class GeminiCliDriver implements AgentDriver {
         onEvent: channel,
       })
     } catch (e) {
-      throw new Error(`failed to spawn ${engine.agentId}: ${e}`)
+      throw diag.spawn(e)
     }
 
     if (opts.signal?.aborted) {

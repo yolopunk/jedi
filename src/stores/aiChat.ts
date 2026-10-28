@@ -1,6 +1,8 @@
 import { invoke } from '@tauri-apps/api/core'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { AgentRunError, agentError } from '@/agent/hub/agentError'
+import type { AgentErrorKind } from '@/agent/hub/agentError'
 import { driverFor } from '@/agent/hub/registry'
 import type { DriverHandle } from '@/agent/hub/types'
 import {
@@ -70,7 +72,25 @@ export interface AgentTraceDetail {
   toolCallId?: string
 }
 
+/** Lifecycle of one turn; every run ends in done / failed / stopped. */
+export type AgentRunPhase =
+  | 'preparing'
+  | 'submitted'
+  | 'generating'
+  | 'done'
+  | 'failed'
+  | 'stopped'
+
+/** An external agent with no hook activity for this long is presumed stuck. */
+const AGENT_IDLE_TIMEOUT_MS = 5 * 60 * 1000
+
 export interface AgentRunMetadata {
+  phase?: AgentRunPhase
+  /** Classified failure (external agents); reason lives in message.error. */
+  errorKind?: AgentErrorKind
+  errorHint?: string
+  /** Raw stderr tail / exit code for the expandable technical area. */
+  errorDetail?: string
   provider: string
   model: string
   /** 本轮使用的 agent 引擎（agent hub，"builtin" 或 "<agent>@<host>"） */
@@ -421,6 +441,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
           provider,
           model,
           startedAt: runStartedAt,
+          phase: 'preparing',
           stepLimit,
           enabledTools: [],
           toolCount: 0,
@@ -617,27 +638,18 @@ export const useAiChatStore = defineStore('aiChat', () => {
       // the trace/agent-store bookkeeping that the chat UI renders.
       //
       // Engine routing (agent hub, docs §4): the selected engine's driver runs
-      // the turn when available; engines whose driver has not landed yet
-      // (M2-M4 rollout) transparently fall back to the builtin executor and
-      // note the fallback in the trace.
+      // the turn. An external engine without a driver fails loudly instead of
+      // silently falling back to the builtin model.
       const agentHub = useAgentHubStore()
       const engine = agentHub.selectedEngine
       const engineDriver = engine.tier === 'builtin' ? null : driverFor(engine)
-      if (assistantMessage.metadata?.run) {
-        assistantMessage.metadata.run.engine = engineDriver ? engine.id : 'builtin'
-        if (engineDriver)
-          assistantMessage.metadata.run.model = engine.installation?.defaultModel || ''
-      }
       if (engine.tier !== 'builtin' && !engineDriver) {
-        pushTrace({
-          id: nextTraceId('engine'),
-          type: 'session',
-          status: 'done',
-          title: `Engine ${engine.name}${engine.location ? ` (${engine.location})` : ''}`,
-          content: '该引擎的驱动适配尚未完成（见研发规划 M2-M4），本轮由内置引擎执行。',
-          timestamp: Date.now(),
-          durationMs: 0,
-        })
+        throw new Error(`${engine.name} 暂未适配，无法在 Jedi 中调用。请选择其他 Agent。`)
+      }
+      if (assistantMessage.metadata?.run) {
+        assistantMessage.metadata.run.engine = engine.id
+        // The actual model is only known once the agent reports it (onModel).
+        if (engineDriver) assistantMessage.metadata.run.model = ''
       }
       // Recover the external engine's native session id from the persisted
       // run metadata so resume survives app restarts (docs §10 遗留收口).
@@ -664,12 +676,17 @@ export const useAiChatStore = defineStore('aiChat', () => {
       // wraps the same runAgent executor, external engines translate their
       // native protocol into the identical hooks.
       const activeDriver = engineDriver ?? driverFor(agentHub.builtinEngine)!
-      const driverHandle = await activeDriver.start(
-        runSpec,
-        withStatsHooks({
+      const setPhase = (phase: AgentRunPhase) => {
+        if (assistantMessage.metadata?.run) assistantMessage.metadata.run.phase = phase
+      }
+      // Idle watchdog for external agents: any hook event counts as activity.
+      let lastActivityAt = Date.now()
+      const touch = () => {
+        lastActivityAt = Date.now()
+      }
+      const driverHooks = withStatsHooks({
           onModel: model => {
             if (assistantMessage.metadata?.run) assistantMessage.metadata.run.model = model
-            if (engine.installation) engine.installation.defaultModel = model
           },
           onToolStart: ({ toolId, toolName, toolDescription, args, startedAt }) => {
             const relatedDecisionTrace = [...toolDecisionTraces.values()]
@@ -757,6 +774,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
             currentStreamStepIndex = stepNumber + 2
           },
           onTextDelta: ({ fullContent }) => {
+            setPhase('generating')
             streamingHasText = true
             streamingContent.value = fullContent
             assistantMessage.content = fullContent
@@ -832,9 +850,36 @@ export const useAiChatStore = defineStore('aiChat', () => {
             }
           },
         })
-      )
+      for (const key of Object.keys(driverHooks) as Array<keyof typeof driverHooks>) {
+        const hook = driverHooks[key] as ((...args: any[]) => unknown) | undefined
+        if (typeof hook === 'function') {
+          ;(driverHooks as any)[key] = (...args: any[]) => {
+            touch()
+            return hook(...args)
+          }
+        }
+      }
+      const driverHandle = await activeDriver.start(runSpec, driverHooks)
+      setPhase('submitted')
       activeDriverHandle.value = driverHandle
-      const runResult = await driverHandle.done
+      let watchdog: ReturnType<typeof setInterval> | undefined
+      const stalled = engineDriver
+        ? new Promise<never>((_, reject) => {
+            watchdog = setInterval(() => {
+              // Waiting on a tool confirmation is the user's time, not the agent's.
+              if (confirmationQueue.length) touch()
+              if (Date.now() - lastActivityAt < AGENT_IDLE_TIMEOUT_MS) return
+              clearInterval(watchdog)
+              driverHandle.abort?.()
+              driverHandle.dispose?.()
+              reject(agentError('timeout', engine.name, `no events for ${AGENT_IDLE_TIMEOUT_MS / 1000}s`))
+            }, 5000)
+          })
+        : null
+      const runResult = await (stalled
+        ? Promise.race([driverHandle.done, stalled]).finally(() => clearInterval(watchdog))
+        : driverHandle.done)
+      setPhase('done')
       // Persist the native session id inside the run metadata (SQLite) so the
       // next turn — even after an app restart — resumes the same conversation.
       if (runResult.nativeSessionId && assistantMessage.metadata?.run) {
@@ -923,6 +968,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
         assistantMessage.isStreaming = false
         if (!assistantMessage.content.trim()) assistantMessage.content = '（已停止生成）'
         if (assistantMessage.metadata?.run) {
+          assistantMessage.metadata.run.phase = 'stopped'
           assistantMessage.metadata.run.completedAt = Date.now()
           assistantMessage.metadata.run.totalDurationMs =
             assistantMessage.metadata.run.completedAt - runStartedAt
@@ -957,6 +1003,14 @@ export const useAiChatStore = defineStore('aiChat', () => {
       assistantMessage.isStreaming = false
       assistantMessage.error = e instanceof Error ? e.message : String(e)
       assistantMessage.content = `发送消息失败：${assistantMessage.error}`
+      if (assistantMessage.metadata?.run) {
+        assistantMessage.metadata.run.phase = 'failed'
+        if (e instanceof AgentRunError) {
+          assistantMessage.metadata.run.errorKind = e.kind
+          assistantMessage.metadata.run.errorHint = e.hint
+          assistantMessage.metadata.run.errorDetail = e.detail
+        }
+      }
       if (planTrace?.status === 'running') {
         failTrace(planTrace, assistantMessage.error)
       }

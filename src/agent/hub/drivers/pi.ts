@@ -10,43 +10,16 @@
 //    message_start/end, turn_end, agent_settled (the true end signal —
 //    retries/steering may follow agent_end), auto_retry_start/end.
 //  - auth: provider API keys from env (ANTHROPIC_API_KEY, OPENAI_API_KEY, …);
-//    we inject whatever the user configured in Jedi's keyring.
+//    inherited from the installed agent configuration.
 //
-// M2 scope: prompt streaming + tool events + session resume + key injection.
+// M2 scope: prompt streaming + tool events + session resume.
 // Approval gating via pi's permission extension is a documented follow-up;
 // until then pi runs with its own default permission behavior.
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
-import { useProviderConfigStore } from '@/stores/providerConfig'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
 import { createPiTranslator, textOfContent } from './piProtocol'
-
-/** Jedi provider id -> pi env var (pi providers.md "Use an API key from the environment"). */
-const PROVIDER_ENV: Record<string, string> = {
-  anthropic: 'ANTHROPIC_API_KEY',
-  openai: 'OPENAI_API_KEY',
-  deepseek: 'DEEPSEEK_API_KEY',
-  openrouter: 'OPENROUTER_API_KEY',
-  google: 'GEMINI_API_KEY',
-  gemini: 'GEMINI_API_KEY',
-  xai: 'XAI_API_KEY',
-  groq: 'GROQ_API_KEY',
-  mistral: 'MISTRAL_API_KEY',
-  zai: 'ZAI_API_KEY',
-}
-
-/** Jedi provider id -> pi provider prefix for --model. */
-const PROVIDER_MODEL_PREFIX: Record<string, string> = {
-  anthropic: 'anthropic',
-  openai: 'openai',
-  deepseek: 'deepseek',
-  openrouter: 'openrouter',
-  google: 'google',
-  xai: 'xai',
-  groq: 'groq',
-  mistral: 'mistral',
-}
 
 // pi sessionId per Jedi chat session, so consecutive turns resume the same
 // pi conversation. In-memory for M2: after an app restart a fresh pi session
@@ -63,7 +36,7 @@ export class PiDriver implements AgentDriver {
     resume: true,
     models: true,
     approval: 'extension',
-    usesJediKey: true,
+    usesJediKey: false,
   } as const
 
   supports(engine: EngineDescriptor): boolean {
@@ -76,29 +49,9 @@ export class PiDriver implements AgentDriver {
       throw new Error('PiDriver: engine installation missing')
     }
 
-    // ---- Environment: inject every configured Jedi provider key pi knows. ----
+    // Keep the installed agent's model and authentication configuration.
     const env: Record<string, string> = { PI_OFFLINE: '1', PI_TELEMETRY: '0' }
-    const providerConfig = useProviderConfigStore()
-    if (!providerConfig.configuredProviders.length) {
-      await providerConfig.loadConfiguredProviders()
-    }
-    for (const configured of providerConfig.configuredProviders) {
-      const envName = PROVIDER_ENV[configured.provider]
-      if (!configured.has_key || !envName) continue
-      try {
-        const info = await providerConfig.getApiKey(configured.provider)
-        if (info?.key) env[envName] = info.key
-      } catch {
-        /* best-effort: skip providers we cannot read */
-      }
-    }
-
-    // ---- Model: pass the Jedi-selected provider/model when pi knows it. ----
     const args: string[] = ['--mode', 'rpc']
-    const prefix = PROVIDER_MODEL_PREFIX[opts.provider]
-    if (prefix && opts.model && !opts.model.includes('/')) {
-      args.push('--model', `${prefix}/${opts.model}`)
-    }
     const resumedSession = opts.nativeSessionId ?? piSessionByJediSession.get(opts.sessionId)
     if (resumedSession) args.push('--session', resumedSession)
 

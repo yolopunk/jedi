@@ -70,6 +70,7 @@ export const useAgentHubStore = defineStore('agentHub', () => {
   })
 
   const selectedEngineId = ref<string>('builtin')
+  let hasSavedSelection = false
   const selectedEngine = computed<EngineDescriptor>(
     () => engines.value.find(e => e.id === selectedEngineId.value) ?? builtinEngine
   )
@@ -85,9 +86,12 @@ export const useAgentHubStore = defineStore('agentHub', () => {
     try {
       const result = await invoke<DetectionResult>('detect_agents', { force: force || null })
       reports.value = result.reports
-      // Drop a persisted selection whose engine vanished.
+      await loadPersisted()
+      // Prefer a supported installed agent when there is no saved choice.
       const ids = new Set(engines.value.map(e => e.id))
-      if (!ids.has(selectedEngineId.value)) selectedEngineId.value = 'builtin'
+      if (!ids.has(selectedEngineId.value) || !hasSavedSelection) {
+        selectedEngineId.value = engines.value.find(e => e.tier === 'A')?.id ?? 'builtin'
+      }
     } catch (e: any) {
       error.value = e?.message ?? String(e)
     } finally {
@@ -99,6 +103,7 @@ export const useAgentHubStore = defineStore('agentHub', () => {
   function selectEngine(id: string): void {
     const engine = engines.value.find(e => e.id === id)
     if (!engine) return
+    hasSavedSelection = true
     selectedEngineId.value = id
     void setItem(ENGINE_KEY, id)
   }
@@ -106,7 +111,10 @@ export const useAgentHubStore = defineStore('agentHub', () => {
   async function loadPersisted(): Promise<void> {
     try {
       const saved = await getItem<string>(ENGINE_KEY)
-      if (saved) selectedEngineId.value = saved
+      if (saved && !hasSavedSelection) {
+        selectedEngineId.value = saved
+        hasSavedSelection = true
+      }
     } catch {
       /* keep builtin */
     }

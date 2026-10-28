@@ -8,11 +8,10 @@
 // stream-json stdout stays empty), and `-r/--resume` is index-based rather
 // than id-based, so continuity is conversation replay in the prompt.
 // Auth: env keys (GEMINI_API_KEY / DASHSCOPE_API_KEY / QWEN_API_KEY …)
-// injected from Jedi's keyring like the pi driver does.
+// inherited from the installed agent configuration.
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentResult } from '@/agent/runAgent'
-import { useProviderConfigStore } from '@/stores/providerConfig'
 import { isWslHost, toWslPath } from '../paths'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
 import {
@@ -22,15 +21,6 @@ import {
 } from './geminiCliProtocol'
 
 const SUPPORTED_AGENTS = new Set(['gemini-cli', 'qwen-code', 'cursor-cli'])
-
-/** Jedi provider id -> env var recognized by this family. */
-const PROVIDER_ENV: Record<string, string> = {
-  google: 'GEMINI_API_KEY',
-  gemini: 'GEMINI_API_KEY',
-  qwen: 'QWEN_API_KEY',
-  dashscope: 'DASHSCOPE_API_KEY',
-  alibaba: 'DASHSCOPE_API_KEY',
-}
 
 export class GeminiCliDriver implements AgentDriver {
   id = 'gemini-cli-family'
@@ -42,7 +32,7 @@ export class GeminiCliDriver implements AgentDriver {
     resume: false, // conversation replay instead of native resume
     models: true,
     approval: 'none', // headless default mode fails unapproved tools
-    usesJediKey: true, // GEMINI/DASHSCOPE keys injected from Jedi keyring
+    usesJediKey: false, // own configuration / login
   } as const
 
   supports(engine: EngineDescriptor): boolean {
@@ -55,26 +45,8 @@ export class GeminiCliDriver implements AgentDriver {
       throw new Error('GeminiCliDriver: engine installation missing')
     }
 
-    const env: Record<string, string> = {}
-    const providerConfig = useProviderConfigStore()
-    if (!providerConfig.configuredProviders.length) {
-      await providerConfig.loadConfiguredProviders()
-    }
-    for (const configured of providerConfig.configuredProviders) {
-      const envName = PROVIDER_ENV[configured.provider]
-      if (!configured.has_key || !envName) continue
-      try {
-        const info = await providerConfig.getApiKey(configured.provider)
-        if (info?.key) env[envName] = info.key
-      } catch {
-        /* best-effort */
-      }
-    }
-
+    // Model and authentication come from the installed agent.
     const args: string[] = ['-p', buildConversationPrompt(opts.messages), '-o', 'json']
-    if (opts.model && engine.agentId === 'gemini-cli' && opts.provider === 'google') {
-      args.push('--model', opts.model)
-    }
     // Image attachments via `-f <file>`; WSL engines need drvfs-translated
     // paths (docs §5.3 W5) — computed locally, no wslpath subprocess.
     if (opts.attachments?.length) {
@@ -139,7 +111,7 @@ export class GeminiCliDriver implements AgentDriver {
         spec: engine.installation.spawn,
         args,
         cwd: null,
-        env: Object.keys(env).length ? env : null,
+        env: null,
         onEvent: channel,
       })
     } catch (e) {

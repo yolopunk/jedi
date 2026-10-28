@@ -102,7 +102,6 @@ function onDocClick(e: MouseEvent) {
 
 onMounted(() => {
   document.addEventListener('mousedown', onDocClick)
-  void hub.loadPersisted()
   if (!hub.detectedAt) void hub.detect()
 })
 onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))

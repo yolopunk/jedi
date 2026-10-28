@@ -100,11 +100,6 @@ export class ClaudeCodeDriver implements AgentDriver {
       '--permission-mode',
       'default',
     ]
-    // Only forward the Jedi-selected model when it is a Claude family id —
-    // Claude Code rejects foreign model ids.
-    if (opts.model && /claude/i.test(opts.model)) {
-      args.push('--model', opts.model)
-    }
     const resumedSession = opts.nativeSessionId ?? claudeSessionByJediSession.get(opts.sessionId)
     if (resumedSession) args.push('--resume', resumedSession)
 

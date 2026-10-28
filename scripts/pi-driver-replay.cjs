@@ -15,7 +15,7 @@ async function run(records, failure) {
   let channel
   let kills = 0
   const { PiDriver } = load('src/agent/hub/drivers/pi.ts', {
-    '../types': {}, './piProtocol': protocol,
+    '../types': {}, '../model': load('src/agent/hub/model.ts', {}), './piProtocol': protocol,
     '@tauri-apps/api/core': {
       Channel: class {},
       invoke: async (cmd, args) => {

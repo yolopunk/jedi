@@ -93,6 +93,15 @@ export function createCodexTranslator(hooks: RunAgentHooks) {
       return
     }
 
+    if (method === 'item/agentMessage/delta') {
+      const delta = String(record.params?.delta ?? '')
+      const id = String(record.params?.itemId ?? '')
+      emittedTextById.set(id, (emittedTextById.get(id) ?? '') + delta)
+      fullText += delta
+      if (delta) hooks.onTextDelta?.({ fullContent: fullText, delta })
+      return
+    }
+
     if (method === 'turn/started') {
       const id = record.params?.turn?.id
       if (id) turnId = String(id)

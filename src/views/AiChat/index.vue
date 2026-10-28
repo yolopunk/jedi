@@ -661,7 +661,7 @@ function messageRuntimeLabel(message: ChatMessage): string {
     return run?.model || currentModelName.value
   }
   const engine = agentHubStore.engines.find(item => item.id === run.engine)
-  return engine?.location || run.engine.split('@')[1] || t('chatWorkspace.externalRuntime')
+  return run.model || engine?.installation?.defaultModel || t('chatWorkspace.defaultModelUnknown')
 }
 
 function openTrace(message: ChatMessage) {

@@ -12,6 +12,7 @@
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentResult } from '@/agent/runAgent'
+import { nativeModel } from '../model'
 import { isWslHost, toWslPath } from '../paths'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
 import {
@@ -46,7 +47,11 @@ export class GeminiCliDriver implements AgentDriver {
     }
 
     // Model and authentication come from the installed agent.
-    const args: string[] = ['-p', buildConversationPrompt(opts.messages), '-o', 'json']
+    const args: string[] = [
+      '-p',
+      buildConversationPrompt(opts.messages),
+      ...(engine.agentId === 'cursor-cli' ? ['--output-format', 'json'] : ['-o', 'json']),
+    ]
     // Image attachments via `-f <file>`; WSL engines need drvfs-translated
     // paths (docs §5.3 W5) — computed locally, no wslpath subprocess.
     if (opts.attachments?.length) {
@@ -71,7 +76,17 @@ export class GeminiCliDriver implements AgentDriver {
       if (settled) return
       settled = true
       opts.signal?.removeEventListener('abort', onAbort)
-      const result = parseGeminiFamilyOutput(stdoutChunks.join('\n'))
+      const output = stdoutChunks.join('\n')
+      const result = parseGeminiFamilyOutput(output)
+      try {
+        const parsed = JSON.parse(output)
+        for (const record of Array.isArray(parsed) ? parsed : [parsed]) {
+          const model = nativeModel(record) ?? Object.keys(record?.stats?.models ?? {})[0]
+          if (model) hooks.onModel?.(model)
+        }
+      } catch {
+        /* Protocol parser below supplies the error. */
+      }
       if (result.error && !result.text.trim()) {
         rejectDone(new Error(result.error))
         return

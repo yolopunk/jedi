@@ -9,6 +9,7 @@
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
+import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
 import { createOpencodeTranslator } from './opencodeProtocol'
 
@@ -110,14 +111,17 @@ export class OpencodeDriver implements AgentDriver {
         const line = String(msg.line ?? '').trim()
         if (!line) return
         try {
-          translator.handleRecord(JSON.parse(line))
+          const record = JSON.parse(line)
+          const model = nativeModel(record)
+          if (model) hooks.onModel?.(model)
+          translator.handleRecord(record)
         } catch {
           // Non-JSON line — opencode prints failures like "Error: …".
           translator.noteErrorLine(line)
         }
       } else if (msg.type === 'exit') {
         // One-shot mode: the process ending IS the turn boundary.
-        finish()
+        finish(msg.code ? new Error(`opencode exited with code ${msg.code}`) : undefined)
       } else if (msg.type === 'stderr') {
         console.warn('[opencode]', msg.line)
       }

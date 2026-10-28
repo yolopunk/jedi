@@ -108,6 +108,7 @@ export interface RunAgentHooks {
     stepKind: 'tool-result' | 'initial' | 'continue'
     stepText: string
   }) => void
+  onModel?: (model: string) => void
   onTextDelta?: (e: { fullContent: string; delta: string }) => void
   onReasoningDelta?: (e: { fullReasoning: string; delta: string }) => void
   onToolCall?: (e: { toolName: string; toolCallId?: string; input: unknown }) => void

@@ -15,6 +15,7 @@
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
+import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
 import {
   type ClaudeApprovalRequest,
@@ -140,8 +141,8 @@ export class ClaudeCodeDriver implements AgentDriver {
       opts.signal?.removeEventListener('abort', onAbort)
       void invoke('agent_proc_kill', { id: procId }).catch(() => {})
       const snap = translator.snapshot()
-      if (failure && !snap.fullText.trim()) {
-        rejectDone(failure)
+      if ((failure || snap.lastError) && !snap.fullText.trim()) {
+        rejectDone(failure ?? new Error(snap.lastError!))
         return
       }
       if (snap.nativeSessionId) claudeSessionByJediSession.set(opts.sessionId, snap.nativeSessionId)
@@ -170,7 +171,10 @@ export class ClaudeCodeDriver implements AgentDriver {
         const line = String(msg.line ?? '').trim()
         if (!line) return
         try {
-          translator.handleRecord(JSON.parse(line))
+          const record = JSON.parse(line)
+          const model = nativeModel(record)
+          if (model) hooks.onModel?.(model)
+          translator.handleRecord(record)
         } catch {
           /* non-JSON line — ignore */
         }

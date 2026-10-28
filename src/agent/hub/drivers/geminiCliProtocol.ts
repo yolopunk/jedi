@@ -93,12 +93,12 @@ export function parseGeminiFamilyOutput(raw: string): GeminiFamilyResult {
   const doc = parsed as Record<string, any>
   if (doc && typeof doc === 'object') {
     const err = doc.error
-    if (err && (err.message || err.code)) {
+    if (doc.is_error || (err && (err.message || err.code))) {
       return {
         text: '',
         sessionId: typeof doc.session_id === 'string' ? doc.session_id : undefined,
         finishReason: 'error',
-        error: String(err.message ?? `error code ${err.code}`),
+        error: String(err?.message ?? doc.result ?? doc.subtype ?? `error code ${err?.code}`),
       }
     }
     const statsTotal = Object.values(doc.stats?.models ?? {}).reduce(
@@ -106,7 +106,7 @@ export function parseGeminiFamilyOutput(raw: string): GeminiFamilyResult {
       0
     )
     return {
-      text: typeof doc.response === 'string' ? doc.response : '',
+      text: typeof doc.response === 'string' ? doc.response : typeof doc.result === 'string' ? doc.result : '',
       sessionId: typeof doc.session_id === 'string' ? doc.session_id : undefined,
       usage: statsTotal > 0 ? { totalTokens: statsTotal } : undefined,
       finishReason: 'end_turn',

@@ -507,6 +507,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
       const hubForGate = useAgentHubStore()
       const gateEngine = hubForGate.selectedEngine
       const gateDriver = gateEngine.tier !== 'builtin' ? driverFor(gateEngine) : null
+      if (gateEngine.tier !== 'builtin' && !gateDriver) {
+        throw new Error(`Agent adapter unavailable: ${gateEngine.name}`)
+      }
       const needsJediKey = gateDriver ? gateDriver.capabilities.usesJediKey !== false : true
       let apiKeyInfo: { key: string; endpoint?: string } | null = null
       if (needsJediKey) {
@@ -622,6 +625,8 @@ export const useAiChatStore = defineStore('aiChat', () => {
       const engineDriver = engine.tier === 'builtin' ? null : driverFor(engine)
       if (assistantMessage.metadata?.run) {
         assistantMessage.metadata.run.engine = engineDriver ? engine.id : 'builtin'
+        if (engineDriver)
+          assistantMessage.metadata.run.model = engine.installation?.defaultModel || ''
       }
       if (engine.tier !== 'builtin' && !engineDriver) {
         pushTrace({
@@ -662,6 +667,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
       const driverHandle = await activeDriver.start(
         runSpec,
         withStatsHooks({
+          onModel: model => {
+            if (assistantMessage.metadata?.run) assistantMessage.metadata.run.model = model
+            if (engine.installation) engine.installation.defaultModel = model
+          },
           onToolStart: ({ toolId, toolName, toolDescription, args, startedAt }) => {
             const relatedDecisionTrace = [...toolDecisionTraces.values()]
               .reverse()

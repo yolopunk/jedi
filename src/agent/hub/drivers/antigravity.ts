@@ -10,6 +10,7 @@
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
+import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
 import { createAntigravityTranslator } from './antigravityProtocol'
 import { buildConversationPrompt } from './geminiCliProtocol'
@@ -97,13 +98,16 @@ export class AntigravityDriver implements AgentDriver {
         const line = String(msg.line ?? '').trim()
         if (!line) return
         try {
-          translator.handleRecord(JSON.parse(line))
+          const record = JSON.parse(line)
+          const model = nativeModel(record)
+          if (model) hooks.onModel?.(model)
+          translator.handleRecord(record)
         } catch {
           /* non-JSON line — ignore */
         }
         if (translator.snapshot().turnComplete) finish()
       } else if (msg.type === 'exit') {
-        if (!settled) finish()
+        if (!settled) finish(new Error(`agy exited before result (code ${msg.code ?? '?'})`))
       } else if (msg.type === 'stderr') {
         // Pre-auth stderr carries the OAuth URL — surface it for the user.
         if (String(msg.line ?? '').includes('accounts.google.com')) {

@@ -18,6 +18,7 @@
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
+import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
 import { createPiTranslator, textOfContent } from './piProtocol'
 
@@ -109,6 +110,8 @@ export class PiDriver implements AgentDriver {
         if (!line) return
         try {
           const record = JSON.parse(line)
+          const model = nativeModel(record)
+          if (model) hooks.onModel?.(model)
           translator.handleRecord(record)
           if (record.type === 'agent_settled') {
             const error = translator.snapshot().lastError

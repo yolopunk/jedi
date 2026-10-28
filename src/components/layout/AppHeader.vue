@@ -8,28 +8,17 @@
   >
     <div class="header-left" :class="{ 'header-left--mac': isMac() }" />
 
-    <div class="header-center">
-      <button
-        v-if="hasUpdate || isInstalling || installError"
-        type="button"
-        class="update-notice"
-        :class="{ 'update-notice--error': installError }"
-        :aria-label="updateStatus"
-        @click="handleCheckUpdate"
-      >
-        <v-icon :icon="installError ? mdiAlertCircle : mdiDownloadCircle" size="16" aria-hidden="true" />
-        <span role="status">{{ updateStatus }}</span>
-      </button>
-    </div>
+    <div class="header-center" />
 
     <div class="header-right">
       <div class="global-actions">
         <v-btn
-          icon
+          :icon="!(hasUpdate || isInstalling || installError)"
           size="x-small"
           variant="text"
           class="header-action-btn"
-          :class="{ 'update-progress-btn': isInstalling }"
+          :class="{ 'update-progress-btn': hasUpdate || isInstalling || installError }"
+          :aria-busy="isInstalling"
           :aria-label="updateStatus"
           @click="handleCheckUpdate"
         >
@@ -40,13 +29,15 @@
             :indeterminate="!isInstalling || installProgress == null || installProgress >= 100"
             :model-value="installProgress ?? 0"
           />
-          <span v-if="isInstalling" class="update-progress-label">{{ installProgress != null && installProgress < 100 ? `${installProgress}%` : $t('dialogs.update.updatingShort') }}</span>
+
           <v-icon
             v-if="!isChecking && !isInstalling"
             :icon="installError ? mdiAlertCircle : hasUpdate ? mdiDownloadCircle : mdiCloudSyncOutline"
             size="16"
             :class="{ 'update-available': hasUpdate || installError }"
           />
+          <span v-if="hasUpdate || isInstalling || installError" class="update-progress-label">{{ updateStatus }}</span>
+          <span v-if="isInstalling && installProgress != null && installProgress < 100" class="download-track" aria-hidden="true"><span :style="{ width: `${installProgress}%` }" /></span>
           <v-tooltip activator="parent" location="bottom">
             {{ updateStatus }}
           </v-tooltip>
@@ -371,41 +362,6 @@ const handleClose = async () => {
   overflow: hidden;
 }
 
-.update-notice {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  min-width: 0;
-  height: 26px;
-  padding: 0 12px;
-  border: 1px solid rgb(var(--v-theme-primary));
-  border-radius: 6px;
-  background: rgb(var(--v-theme-primary));
-  color: rgb(var(--v-theme-on-primary));
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  -webkit-app-region: no-drag;
-}
-
-.update-notice span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.update-notice:hover { filter: brightness(1.1); }
-.update-notice:focus-visible {
-  outline: 2px solid rgb(var(--v-theme-on-surface));
-  outline-offset: 1px;
-}
-.update-notice--error {
-  background: rgb(var(--v-theme-error));
-  border-color: rgb(var(--v-theme-error));
-  color: rgb(var(--v-theme-on-error));
-}
-
 .global-actions {
   display: inline-flex;
   align-items: center;
@@ -432,15 +388,22 @@ const handleClose = async () => {
 
 .update-progress-btn {
   width: auto !important;
-  padding: 0 4px !important;
-  gap: 4px;
+  max-width: min(250px, 32vw);
+  padding: 0 8px !important;
+  gap: 6px;
+  background: rgb(var(--accent-rgb) / 0.08);
   color: rgb(var(--v-theme-primary));
 }
 
 .update-progress-label {
   font-size: 11px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+.download-track { position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: rgb(var(--accent-rgb) / 0.15); }
+.download-track span { display: block; height: 100%; background: var(--accent); }
 
 .header-action-btn:hover {
   background: rgba(var(--v-theme-primary), 0.12);

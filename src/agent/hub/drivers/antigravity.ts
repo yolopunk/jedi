@@ -41,6 +41,7 @@ export class AntigravityDriver implements AgentDriver {
     if (!engine?.installation) {
       throw new Error('AntigravityDriver: engine installation missing')
     }
+    const sessionKey = JSON.stringify([engine.id, opts.sessionId])
 
     const args: string[] = [
       '-p',
@@ -48,7 +49,7 @@ export class AntigravityDriver implements AgentDriver {
       '--output-format',
       'stream-json',
     ]
-    const resumed = opts.nativeSessionId ?? agyConversationByJediSession.get(opts.sessionId)
+    const resumed = opts.nativeSessionId ?? agyConversationByJediSession.get(sessionKey)
     if (resumed) args.push('--conversation', resumed)
 
     const procId = `agy-${opts.sessionId}-${Date.now()}`
@@ -69,12 +70,12 @@ export class AntigravityDriver implements AgentDriver {
       opts.signal?.removeEventListener('abort', onAbort)
       void invoke('agent_proc_kill', { id: procId }).catch(() => {})
       const snap = translator.snapshot()
-      if ((failure || snap.lastError) && !snap.fullText.trim()) {
+      if (failure || snap.lastError) {
         rejectDone(failure ?? diag.protocol(snap.lastError ?? 'agy run failed'))
         return
       }
       if (snap.nativeSessionId) {
-        agyConversationByJediSession.set(opts.sessionId, snap.nativeSessionId)
+        agyConversationByJediSession.set(sessionKey, snap.nativeSessionId)
       }
       hooks.onFinish?.({ finishReason: snap.finishReason, usage: snap.usage })
       resolveDone({

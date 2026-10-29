@@ -90,6 +90,7 @@ export class OpencodeDriver implements AgentDriver {
     if (!engine?.installation) {
       throw new Error('OpencodeDriver: engine installation missing')
     }
+    const sessionKey = JSON.stringify([engine.id, opts.sessionId])
 
     const promptText = lastUserText(opts.messages)
     if (!promptText.trim()) {
@@ -97,7 +98,7 @@ export class OpencodeDriver implements AgentDriver {
     }
 
     const args: string[] = ['run', promptText, '--format', 'json']
-    const resumed = opts.nativeSessionId ?? opencodeSessionByJediSession.get(opts.sessionId)
+    const resumed = opts.nativeSessionId ?? opencodeSessionByJediSession.get(sessionKey)
     if (resumed) args.push('-s', resumed)
 
     const procId = `opencode-${opts.sessionId}-${Date.now()}`
@@ -121,16 +122,16 @@ export class OpencodeDriver implements AgentDriver {
       const snap = translator.snapshot()
       // Prefer the final message's text over the whole narration.
       const text = snap.finalText.trim() ? snap.finalText : snap.allText
-      if (failure && !text.trim()) {
+      if (failure) {
         rejectDone(failure)
         return
       }
-      if (snap.lastError && !text.trim()) {
+      if (snap.lastError) {
         rejectDone(diag.protocol(snap.lastError))
         return
       }
       if (snap.nativeSessionId) {
-        opencodeSessionByJediSession.set(opts.sessionId, snap.nativeSessionId)
+        opencodeSessionByJediSession.set(sessionKey, snap.nativeSessionId)
       }
       hooks.onFinish?.({ finishReason: snap.finishReason, usage: snap.usage })
       const result: RunAgentResult = {

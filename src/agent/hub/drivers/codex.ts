@@ -49,6 +49,7 @@ export class CodexDriver implements AgentDriver {
     if (!engine?.installation) {
       throw new Error('CodexDriver: engine installation missing')
     }
+    const sessionKey = JSON.stringify([engine.id, opts.sessionId])
 
     const procId = `codex-${opts.sessionId}-${Date.now()}`
     const translator = createCodexTranslator(hooks)
@@ -106,11 +107,11 @@ export class CodexDriver implements AgentDriver {
       opts.signal?.removeEventListener('abort', onAbort)
       void invoke('agent_proc_kill', { id: procId }).catch(() => {})
       const snap = translator.snapshot()
-      if ((failure || snap.lastError) && !snap.fullText.trim()) {
+      if (failure || snap.lastError) {
         rejectDone(failure ?? diag.protocol(snap.lastError!))
         return
       }
-      if (snap.threadId) codexThreadByJediSession.set(opts.sessionId, snap.threadId)
+      if (snap.threadId) codexThreadByJediSession.set(sessionKey, snap.threadId)
       hooks.onFinish?.({ finishReason: snap.finishReason, usage: snap.usage })
       resolveDone({
         text: snap.fullText,
@@ -200,7 +201,7 @@ export class CodexDriver implements AgentDriver {
         id: procId,
         line: JSON.stringify({ method: 'initialized' }),
       })
-      const resumed = opts.nativeSessionId ?? codexThreadByJediSession.get(opts.sessionId)
+      const resumed = opts.nativeSessionId ?? codexThreadByJediSession.get(sessionKey)
       const threadResp = await rpc(
         resumed ? 'thread/resume' : 'thread/start',
         resumed ? { threadId: resumed } : {}

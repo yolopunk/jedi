@@ -50,11 +50,12 @@ export class PiDriver implements AgentDriver {
     if (!engine?.installation) {
       throw new Error('PiDriver: engine installation missing')
     }
+    const sessionKey = JSON.stringify([engine.id, opts.sessionId])
 
     // Keep the installed agent's model and authentication configuration.
     const env: Record<string, string> = { PI_OFFLINE: '1', PI_TELEMETRY: '0' }
     const args: string[] = ['--mode', 'rpc']
-    const resumedSession = opts.nativeSessionId ?? piSessionByJediSession.get(opts.sessionId)
+    const resumedSession = opts.nativeSessionId ?? piSessionByJediSession.get(sessionKey)
     if (resumedSession) args.push('--session', resumedSession)
 
     // ---- Spawn through the Rust process manager (strict \n framing). ----
@@ -82,11 +83,11 @@ export class PiDriver implements AgentDriver {
       opts.signal?.removeEventListener('abort', onAbort)
       void invoke('agent_proc_kill', { id: procId }).catch(() => {})
       const snap = translator.snapshot()
-      if (failure && !snap.fullText.trim()) {
+      if (failure) {
         rejectDone(failure)
         return
       }
-      if (snap.piSessionId) piSessionByJediSession.set(opts.sessionId, snap.piSessionId)
+      if (snap.piSessionId) piSessionByJediSession.set(sessionKey, snap.piSessionId)
       hooks.onFinish?.({ finishReason: snap.finishReason, usage: snap.usage })
       resolveDone({
         text: snap.fullText,

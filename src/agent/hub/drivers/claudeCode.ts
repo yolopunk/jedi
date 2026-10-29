@@ -90,6 +90,7 @@ export class ClaudeCodeDriver implements AgentDriver {
     if (!engine?.installation) {
       throw new Error('ClaudeCodeDriver: engine installation missing')
     }
+    const sessionKey = JSON.stringify([engine.id, opts.sessionId])
 
     const args: string[] = [
       '-p',
@@ -102,7 +103,7 @@ export class ClaudeCodeDriver implements AgentDriver {
       '--permission-mode',
       'default',
     ]
-    const resumedSession = opts.nativeSessionId ?? claudeSessionByJediSession.get(opts.sessionId)
+    const resumedSession = opts.nativeSessionId ?? claudeSessionByJediSession.get(sessionKey)
     if (resumedSession) args.push('--resume', resumedSession)
 
     const procId = `claude-${opts.sessionId}-${Date.now()}`
@@ -143,11 +144,11 @@ export class ClaudeCodeDriver implements AgentDriver {
       opts.signal?.removeEventListener('abort', onAbort)
       void invoke('agent_proc_kill', { id: procId }).catch(() => {})
       const snap = translator.snapshot()
-      if ((failure || snap.lastError) && !snap.fullText.trim()) {
+      if (failure || snap.lastError) {
         rejectDone(failure ?? diag.protocol(snap.lastError!))
         return
       }
-      if (snap.nativeSessionId) claudeSessionByJediSession.set(opts.sessionId, snap.nativeSessionId)
+      if (snap.nativeSessionId) claudeSessionByJediSession.set(sessionKey, snap.nativeSessionId)
       hooks.onFinish?.({ finishReason: snap.finishReason, usage: snap.usage })
       resolveDone({
         text: snap.fullText,

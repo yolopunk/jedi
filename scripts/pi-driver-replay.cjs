@@ -7,7 +7,7 @@ function load(file, mocks) {
   const exports = {}
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(file, 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-  }).outputText, { exports, require: name => mocks[name], console, setTimeout })
+  }).outputText, { exports, require: name => mocks[name], console, setTimeout, clearTimeout })
   return exports
 }
 const protocol = load('src/agent/hub/drivers/piProtocol.ts', {})
@@ -15,7 +15,7 @@ async function run(records, failure) {
   let channel
   let kills = 0
   const { PiDriver } = load('src/agent/hub/drivers/pi.ts', {
-    '../types': {}, '../model': load('src/agent/hub/model.ts', {}), './piProtocol': protocol,
+    '../agentError': load('src/agent/hub/agentError.ts', {}), '../types': {}, '../model': load('src/agent/hub/model.ts', {}), './piProtocol': protocol,
     '@tauri-apps/api/core': {
       Channel: class {},
       invoke: async (cmd, args) => {

@@ -43,3 +43,12 @@ Crush、Goose、Droid、Kimi Code、ZCode：会被检测到并显示“即将支
 - **应用内截图缺失**：验证时 Windows 处于锁屏状态，computer-use 截图全黑，无法在 Jedi 窗口内完成 UI 级走查。经确认，本轮**以 CLI 级验证作为验收结论**；UI（阶段标签、耗时、错误提示、技术详情展开、失败恢复输入、徽标）未做实机走查，后续如需截图再补。
 - Gemini CLI / Qwen Code / Pi / Antigravity 需各自登录后再验证“成功对话”路径；Cursor CLI 需安装后验证。
 - OpenCode Windows 需在 opencode 账号中调整隐私设置或切换模型后复测。
+
+## 5. 会话隔离与结束状态回归修复
+
+- 原生会话 ID 按引擎（含 Windows / WSL 宿主）恢复，驱动内存缓存使用相同的隔离范围。
+- 已有部分文字时，进程退出或协议报错仍记录为失败，并保留已输出内容。
+- 用户停止后即使驱动正常返回，也记录为 stopped，而非 done。
+- 自动回归：`node scripts/agent-drivers-replay.cjs`、`node scripts/pi-driver-replay.cjs`、`node scripts/chat-agent-replay.cjs`。覆盖驱动成功与失败、部分输出后失败、跨宿主缓存隔离，以及 Chat store 的会话恢复、停止、失败内容和状态持久化。
+
+这些回归使用模拟进程事件，不替代真实 Agent 或应用 UI 验收。上文 Codex 的 `exec resume` 实机结果仅验证 CLI 能力；当前 Jedi 驱动使用 `app-server`，其真实应用链路仍需单独验证。

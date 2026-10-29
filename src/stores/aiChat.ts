@@ -656,6 +656,7 @@ export const useAiChatStore = defineStore('aiChat', () => {
       const lastNativeSessionId = session.messages
         .slice()
         .reverse()
+        .filter(m => m.metadata?.run?.engine === engine.id)
         .map(m => m.metadata?.run?.nativeSessionId)
         .find(id => !!id)
       const runSpec = {
@@ -879,12 +880,15 @@ export const useAiChatStore = defineStore('aiChat', () => {
       const runResult = await (stalled
         ? Promise.race([driverHandle.done, stalled]).finally(() => clearInterval(watchdog))
         : driverHandle.done)
-      setPhase('done')
       // Persist the native session id inside the run metadata (SQLite) so the
       // next turn — even after an app restart — resumes the same conversation.
       if (runResult.nativeSessionId && assistantMessage.metadata?.run) {
         assistantMessage.metadata.run.nativeSessionId = runResult.nativeSessionId
       }
+
+      // Drivers may resolve with partial output after an abort.
+      if (abortController.signal.aborted) throw new Error('aborted')
+      setPhase('done')
 
       ensurePlanCompleted('Answered directly.')
       completeTrace(
@@ -1002,7 +1006,10 @@ export const useAiChatStore = defineStore('aiChat', () => {
       console.error('Failed to send message:', e)
       assistantMessage.isStreaming = false
       assistantMessage.error = e instanceof Error ? e.message : String(e)
-      assistantMessage.content = `发送消息失败：${assistantMessage.error}`
+      const failureText = `发送消息失败：${assistantMessage.error}`
+      assistantMessage.content = assistantMessage.content.trim()
+        ? `${assistantMessage.content}\n\n${failureText}`
+        : failureText
       if (assistantMessage.metadata?.run) {
         assistantMessage.metadata.run.phase = 'failed'
         if (e instanceof AgentRunError) {

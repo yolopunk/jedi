@@ -94,7 +94,8 @@ export class GeminiCliDriver implements AgentDriver {
       } catch {
         /* Protocol parser below supplies the error. */
       }
-      if (!result.text.trim() && (result.error || exitCode)) {
+      if (result.error || exitCode) {
+        if (result.text) hooks.onTextDelta?.({ fullContent: result.text, delta: result.text })
         // gemini exits 41 when no auth method is configured.
         rejectDone(
           exitCode === 41

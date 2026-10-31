@@ -236,17 +236,16 @@
             <div class="form-actions">
               <v-tooltip :text="t('modelSettings.testTooltip')">
                 <template v-slot:activator="{ props }">
-                  <v-btn
+                  <button
                     v-bind="props"
-                    size="small"
-                    variant="tonal"
-                    :loading="testing"
-                    :disabled="!configApiKey"
+                    type="button"
+                    class="console-btn"
+                    :disabled="testing || !configApiKey"
                     @click="testConnection"
                   >
                     <v-icon icon="mdi-lightning-bolt" start size="14" />
-                    {{ t('modelSettings.test') }}
-                  </v-btn>
+                    <span class="btn-text">{{ testing ? t('common.loading') : t('modelSettings.test') }}</span>
+                  </button>
                 </template>
               </v-tooltip>
               <button
@@ -261,18 +260,18 @@
                 {{ t('modelSettings.removeKey') }}
               </button>
               <div class="spacer"></div>
-              <v-btn size="small" variant="text" @click="selectedProvider = null">
-                {{ t('common.cancel') }}
-              </v-btn>
-              <v-btn
+              <button type="button" class="console-btn" @click="selectedProvider = null">
+                <span class="btn-text">{{ t('common.cancel') }}</span>
+              </button>
+              <button
                 v-if="!isCurrentProviderConfigured"
-                size="small"
-                color="primary"
+                type="button"
+                class="console-btn primary"
                 :disabled="!configApiKey"
                 @click="saveKey"
               >
-                {{ t('common.save') }}
-              </v-btn>
+                <span class="btn-text">{{ t('common.save') }}</span>
+              </button>
             </div>
 
             <div v-if="testResult" class="test-result" :class="testResult.type">

@@ -82,9 +82,9 @@
 
       <!-- Footer -->
       <div class="card-footer">
-        <v-btn variant="tonal" color="primary" @click="$emit('update:modelValue', false)">
-          {{ $t('common.close') }}
-        </v-btn>
+        <button type="button" class="console-btn primary" @click="$emit('update:modelValue', false)">
+          <span class="btn-text">{{ $t('common.close') }}</span>
+        </button>
       </div>
     </v-card>
   </v-dialog>

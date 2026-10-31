@@ -82,9 +82,13 @@
 
       <!-- Footer -->
       <div class="card-footer">
-        <v-btn variant="text" @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
         <v-spacer />
-        <v-btn variant="tonal" color="primary" @click="confirmEdit">{{ $t('common.save') }}</v-btn>
+        <button type="button" class="console-btn" @click="closeDialog">
+          <span class="btn-text">{{ $t('common.cancel') }}</span>
+        </button>
+        <button type="button" class="console-btn primary" @click="confirmEdit">
+          <span class="btn-text">{{ $t('common.save') }}</span>
+        </button>
       </div>
     </v-card>
   </v-dialog>

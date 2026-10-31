@@ -79,24 +79,24 @@
 
       <!-- Footer -->
       <div class="card-footer">
-        <v-btn variant="text" @click="$emit('update:modelValue', false)">
-          {{ $t(isInstalling ? 'common.close' : 'common.cancel') }}
-        </v-btn>
         <v-spacer />
-        <v-btn
-          variant="tonal"
-          color="primary"
+        <button type="button" class="console-btn" @click="$emit('update:modelValue', false)">
+          <span class="btn-text">{{ $t(isInstalling ? 'common.close' : 'common.cancel') }}</span>
+        </button>
+        <button
+          type="button"
+          class="console-btn primary"
           :aria-label="$t(error ? 'common.retry' : 'dialogs.update.install')"
+          :disabled="isInstalling"
           @click="$emit('install')"
-          :loading="isInstalling"
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg v-if="!isInstalling" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          {{ $t(error ? 'common.retry' : 'dialogs.update.install') }}
-        </v-btn>
+          <span class="btn-text">{{ $t(isInstalling ? 'dialogs.update.inProgress' : error ? 'common.retry' : 'dialogs.update.install') }}</span>
+        </button>
       </div>
     </v-card>
   </v-dialog>
@@ -124,7 +124,11 @@ defineEmits<{
 const md = new MarkdownIt({ html: true, linkify: true, breaks: true })
 
 const formattedReleaseNotes = computed(() => {
-  if (!props.updateInfo.body || props.updateInfo.body.trim() === 'See the assets to download and install this version.') return ''
+  if (
+    !props.updateInfo.body ||
+    props.updateInfo.body.trim() === 'See the assets to download and install this version.'
+  )
+    return ''
   return DOMPurify.sanitize(md.render(props.updateInfo.body))
 })
 </script>

@@ -88,8 +88,12 @@
           {{ $t('hosts.dialog.addToGroup', { group: groupName }) }}
         </div>
         <v-spacer />
-        <v-btn variant="text" @click="closeDialog">{{ $t('common.cancel') }}</v-btn>
-        <v-btn variant="tonal" color="primary" @click="confirmAdd">{{ $t('common.add') }}</v-btn>
+        <button type="button" class="console-btn" @click="closeDialog">
+          <span class="btn-text">{{ $t('common.cancel') }}</span>
+        </button>
+        <button type="button" class="console-btn primary" @click="confirmAdd">
+          <span class="btn-text">{{ $t('common.add') }}</span>
+        </button>
       </div>
     </v-card>
   </v-dialog>

@@ -81,9 +81,9 @@
 
       <!-- Footer -->
       <div class="card-footer">
-        <v-btn variant="tonal" color="primary" @click="$emit('update:modelValue', false)">
-          {{ $t('dialogs.help.gotIt') }}
-        </v-btn>
+        <button type="button" class="console-btn primary" @click="$emit('update:modelValue', false)">
+          <span class="btn-text">{{ $t('dialogs.help.gotIt') }}</span>
+        </button>
       </div>
     </v-card>
   </v-dialog>

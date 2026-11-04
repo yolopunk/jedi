@@ -134,23 +134,9 @@ pub async fn update_hosts_with_groups(
     Err(e) => return Err(e),
   };
 
-  // 尝试读取hosts文件，如果失败则返回空字符串
-  let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {
-    Ok(content) => content,
-    Err(_e) => {
-      #[cfg(debug_assertions)]
-      {
-        return Err(format!("Failed to read hosts file: {}", _e));
-      }
-
-      #[cfg(not(debug_assertions))]
-      {
-        // 在生产环境或CI环境中，如果无法读取hosts文件，返回空字符串
-        // 这样可以避免在GitHub Actions等环境中因权限问题导致构建失败
-        "".to_string()
-      }
-    }
-  };
+  // 读不到现有 hosts 内容时不能继续写：那样会把整份文件重建成只剩 Jedi 段。
+  let hosts_content = std::fs::read_to_string(HOSTS_PATH)
+    .map_err(|e| format!("读取 hosts 文件失败（可能需要管理员权限）: {}", e))?;
 
   // 分析原始 hosts 文件，提取非 Jedi 管理部分
   let mut new_lines: Vec<String> = Vec::new();
@@ -205,20 +191,9 @@ pub async fn update_hosts_with_groups(
 
   let new_content = new_lines.join("\n") + "\n";
 
-  #[cfg(debug_assertions)]
-  match std::fs::write(HOSTS_PATH, new_content) {
-    Ok(_) => {}
-    Err(e) => return Err(format!("Failed to write hosts file: {}", e)),
-  };
-
-  #[cfg(not(debug_assertions))]
-  match std::fs::write(HOSTS_PATH, new_content) {
-    Ok(_) => {}
-    Err(_) => {
-      // 在生产环境或CI环境中，如果无法写入hosts文件，不返回错误
-      // 这样可以避免在GitHub Actions等环境中因权限问题导致构建失败
-    }
-  };
+  // 写入失败必须回传：静默吞掉会让前端以为已经生效（例如没有管理员权限时）
+  std::fs::write(HOSTS_PATH, new_content)
+    .map_err(|e| format!("写入 hosts 文件失败（可能需要管理员权限）: {}", e))?;
 
   Ok("Hosts updated successfully".to_string())
 }
@@ -226,22 +201,8 @@ pub async fn update_hosts_with_groups(
 #[tauri::command]
 pub fn revert_hosts() -> Result<String, String> {
   // 读取hosts文件
-  let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {
-    Ok(content) => content,
-    Err(_e) => {
-      #[cfg(debug_assertions)]
-      {
-        return Err(format!("Failed to read hosts file: {}", _e));
-      }
-
-      #[cfg(not(debug_assertions))]
-      {
-        // 在生产环境或CI环境中，如果无法读取hosts文件，返回空字符串
-        // 这样可以避免在GitHub Actions等环境中因权限问题导致构建失败
-        "".to_string()
-      }
-    }
-  };
+  let hosts_content = std::fs::read_to_string(HOSTS_PATH)
+    .map_err(|e| format!("读取 hosts 文件失败（可能需要管理员权限）: {}", e))?;
 
   let mut new_lines = Vec::new();
   let mut in_jedi_section = false;
@@ -313,28 +274,13 @@ pub fn revert_hosts() -> Result<String, String> {
     }
   }
 
-  // 写入新的hosts文件
+  // 写入新的hosts文件（失败必须回传，否则界面会谎报「已禁用」）
   let new_content = new_lines.join("\n");
 
-  #[cfg(debug_assertions)]
-  {
-    match std::fs::write(HOSTS_PATH, new_content) {
-      Ok(_) => Ok("Hosts entries disabled successfully.".to_string()),
-      Err(e) => Err(format!("Failed to write hosts file: {}", e)),
-    }
-  }
+  std::fs::write(HOSTS_PATH, new_content)
+    .map_err(|e| format!("写入 hosts 文件失败（可能需要管理员权限）: {}", e))?;
 
-  #[cfg(not(debug_assertions))]
-  {
-    match std::fs::write(HOSTS_PATH, new_content) {
-      Ok(_) => Ok("Hosts entries disabled successfully.".to_string()),
-      Err(_) => {
-        // 在生产环境或CI环境中，如果无法写入hosts文件，不返回错误
-        // 这样可以避免在GitHub Actions等环境中因权限问题导致构建失败
-        Ok("Hosts entries would be disabled in production.".to_string())
-      }
-    }
-  }
+  Ok("Hosts entries disabled successfully.".to_string())
 }
 
 #[tauri::command]
@@ -345,22 +291,8 @@ pub fn get_hosts_path() -> String {
 #[tauri::command]
 pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
   // 读取系统hosts文件
-  let hosts_content = match std::fs::read_to_string(HOSTS_PATH) {
-    Ok(content) => content,
-    Err(_e) => {
-      #[cfg(debug_assertions)]
-      {
-        return Err(format!("Failed to read hosts file: {}", _e));
-      }
-
-      #[cfg(not(debug_assertions))]
-      {
-        // 在生产环境或CI环境中，如果无法读取hosts文件，返回空字符串
-        // 这样可以避免在GitHub Actions等环境中因权限问题导致构建失败
-        "".to_string()
-      }
-    }
-  };
+  let hosts_content = std::fs::read_to_string(HOSTS_PATH)
+    .map_err(|e| format!("读取 hosts 文件失败: {}", e))?;
 
   // 初始化一个空的结果数组，不再创建默认分组
   let mut result = Vec::new();

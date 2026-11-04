@@ -33,3 +33,6 @@ dist-ssr
 
 # ZCode agent session artifacts
 .zcode/
+
+# WorkBuddy agent artifacts
+.workbuddy-ai/

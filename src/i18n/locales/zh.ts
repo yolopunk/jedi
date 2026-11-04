@@ -378,6 +378,7 @@ export default {
       refresh: '同步远程数据源',
       editSource: '编辑数据源 URL',
       delete: '删除分组',
+      more: '更多操作',
     },
     empty: {
       title: '暂无解析配置',

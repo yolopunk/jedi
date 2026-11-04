@@ -391,6 +391,7 @@ export default {
       refresh: 'Sync remote source',
       editSource: 'Edit source URL',
       delete: 'Delete group',
+      more: 'More actions',
     },
     empty: {
       title: 'No Configurations',

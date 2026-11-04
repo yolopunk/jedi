@@ -407,8 +407,6 @@ export default {
       domain: 'Domain',
       status: 'Status',
       actions: 'Actions',
-      noMore: 'No more data',
-      loadMore: 'Load more',
       search: 'Search',
       entries: 'Entries',
       active: 'Active',

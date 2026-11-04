@@ -393,8 +393,6 @@ export default {
       domain: '域名',
       status: '状态',
       actions: '操作',
-      noMore: '没有更多数据了',
-      loadMore: '显示更多',
       search: '搜索',
       entries: '条目',
       active: '活跃',

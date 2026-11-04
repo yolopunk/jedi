@@ -101,14 +101,8 @@
                 <span>{{ $t("hosts.empty.noEntries") }}</span>
             </div>
 
-            <!-- Load more -->
-            <button
-                v-if="hasMore && !loading"
-                class="load-more"
-                @click="loadMore"
-            >
-                {{ $t("hosts.table.loadMore") }}
-            </button>
+            <!-- 无限滚动哨兵：进入可视区即续载下一页（不再需要“加载更多”按钮） -->
+            <div ref="sentinelRef" class="load-sentinel" aria-hidden="true"></div>
         </div>
 
         <!-- Status line -->
@@ -131,7 +125,7 @@ import {
   mdiServerNetworkOff,
   mdiTrashCanOutline,
 } from '@mdi/js'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Group, HostEntry } from '@/types/hosts'
 import { getHostsAsItems, openDomainLink } from '@/utils/hostsUtils'
@@ -220,33 +214,44 @@ function handleOpenDomain(domain: string) {
     })
 }
 
-let scrollHandler: (() => void) | null = null
+const sentinelRef = ref<HTMLElement | null>(null)
+let scrollObserver: IntersectionObserver | null = null
 
-function setupScrollListener() {
-  if (!tableWrapperRef.value) return
+/**
+ * 无限滚动：底部哨兵进入滚动容器可视区就补一页。
+ *
+ * 用 IntersectionObserver 而不是 scroll 事件，是因为内容不足一屏（大窗口、条目少）
+ * 时容器根本不会滚动、也就没有 scroll 事件；此时哨兵直接可见，观察器会立刻触发续载，
+ * 直到填满视口。这样就不需要保留“加载更多”按钮作为兜底。
+ */
+function setupInfiniteScroll() {
+  const root = tableWrapperRef.value
+  const target = sentinelRef.value
+  if (!root || !target || typeof IntersectionObserver === 'undefined') return
 
-  const wrapper = tableWrapperRef.value
-  scrollHandler = () => {
-    const { scrollTop, scrollHeight, clientHeight } = wrapper
-    if (scrollTop + clientHeight >= scrollHeight - 50) {
-      loadMore()
-    }
-  }
-  wrapper.addEventListener('scroll', scrollHandler)
+  scrollObserver = new IntersectionObserver(
+    entries => {
+      if (entries.some(entry => entry.isIntersecting)) {
+        loadMore()
+      }
+    },
+    { root, rootMargin: '0px 0px 240px 0px' }
+  )
+  scrollObserver.observe(target)
 }
 
-function removeScrollListener() {
-  if (!tableWrapperRef.value || !scrollHandler) return
-  tableWrapperRef.value.removeEventListener('scroll', scrollHandler)
-  scrollHandler = null
+function teardownInfiniteScroll() {
+  scrollObserver?.disconnect()
+  scrollObserver = null
 }
 
 onMounted(() => {
-  setTimeout(setupScrollListener, 100)
+  // 等首屏渲染完再观察，避免拿到空容器尺寸
+  nextTick(setupInfiniteScroll)
 })
 
 onUnmounted(() => {
-  removeScrollListener()
+  teardownInfiniteScroll()
 })
 </script>
 
@@ -486,19 +491,11 @@ onUnmounted(() => {
 
 .hosts-state.empty .v-icon { color: var(--text-subtle); opacity: 0.6; }
 
-.load-more {
-    display: block;
+/* 无限滚动哨兵：仅用于观察，不占视觉空间 */
+.load-sentinel {
     width: 100%;
-    padding: 10px;
-    background: none;
-    border: none;
-    border-top: 1px solid var(--border);
-    color: var(--accent);
-    font-size: 13px;
-    cursor: pointer;
+    height: 1px;
 }
-
-.load-more:hover { background: rgb(var(--ink-rgb) / 0.03); }
 
 /* Status line */
 .hosts-statusbar {

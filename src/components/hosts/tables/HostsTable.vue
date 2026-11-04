@@ -179,13 +179,52 @@ const hasMore = computed(() => {
 const searchPlaceholder = computed(() => t('common.search'))
 const addHostText = computed(() => t('hosts.table.addHost'))
 
-watch(filteredItems, () => {
-  currentDisplayCount.value = itemsPerPage
-})
+// 只在「换分组 / 条目数变化」时重置分页：开关某一条会重算 filteredItems，
+// 但那时不该把用户滚到的位置重置回第一页
+watch(
+  () => [props.currentGroup?.name, props.currentGroup?.hosts.length] as const,
+  () => {
+    currentDisplayCount.value = itemsPerPage
+    // 数据到达/切换分组后主动补一次视口：首次观察哨兵时可能还没有数据，
+    // 而哨兵此后一直可见、交叉状态不再变化，IO 不会再回调（会卡在第一页）
+    nextTick(() => {
+      void fillViewport()
+    })
+  }
+)
 
 function loadMore() {
   if (hasMore.value) {
     currentDisplayCount.value += itemsPerPage
+  }
+}
+
+/** 哨兵是否已进入（或接近）滚动容器可视区 */
+function isSentinelNearView(root: HTMLElement, sentinel: HTMLElement, margin = 240): boolean {
+  return sentinel.getBoundingClientRect().top <= root.getBoundingClientRect().bottom + margin
+}
+
+/**
+ * 内容不足一屏时主动续载，直到撑满视口（或没有更多数据）。
+ * 这是无限滚动的兜底：大窗口、条目少、容器不可滚动时不会有 scroll/交叉变化。
+ */
+let filling = false
+
+async function fillViewport() {
+  const root = tableWrapperRef.value
+  const sentinel = sentinelRef.value
+  if (!root || !sentinel || filling) return
+
+  filling = true
+  try {
+    let guard = 0
+    while (guard < 100 && hasMore.value && isSentinelNearView(root, sentinel)) {
+      loadMore()
+      guard += 1
+      await nextTick()
+    }
+  } finally {
+    filling = false
   }
 }
 
@@ -216,38 +255,54 @@ function handleOpenDomain(domain: string) {
 
 const sentinelRef = ref<HTMLElement | null>(null)
 let scrollObserver: IntersectionObserver | null = null
+let resizeObserver: ResizeObserver | null = null
 
 /**
  * 无限滚动：底部哨兵进入滚动容器可视区就补一页。
  *
  * 用 IntersectionObserver 而不是 scroll 事件，是因为内容不足一屏（大窗口、条目少）
- * 时容器根本不会滚动、也就没有 scroll 事件；此时哨兵直接可见，观察器会立刻触发续载，
- * 直到填满视口。这样就不需要保留“加载更多”按钮作为兜底。
+ * 时容器根本不会滚动、也就没有 scroll 事件；此时哨兵直接可见，观察器会立刻触发续载。
+ * 滚动/交叉变化之外，再由 fillViewport（数据到达、容器尺寸变化时调用）兜底。
  */
 function setupInfiniteScroll() {
   const root = tableWrapperRef.value
   const target = sentinelRef.value
-  if (!root || !target || typeof IntersectionObserver === 'undefined') return
+  if (!root || !target) return
 
-  scrollObserver = new IntersectionObserver(
-    entries => {
-      if (entries.some(entry => entry.isIntersecting)) {
-        loadMore()
-      }
-    },
-    { root, rootMargin: '0px 0px 240px 0px' }
-  )
-  scrollObserver.observe(target)
+  if (typeof IntersectionObserver !== 'undefined') {
+    scrollObserver = new IntersectionObserver(
+      entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          loadMore()
+        }
+      },
+      { root, rootMargin: '0px 0px 240px 0px' }
+    )
+    scrollObserver.observe(target)
+  }
+
+  // 窗口最大化/侧栏收起等让容器变高时，重新判断要不要续载
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(() => {
+      void fillViewport()
+    })
+    resizeObserver.observe(root)
+  }
 }
 
 function teardownInfiniteScroll() {
   scrollObserver?.disconnect()
   scrollObserver = null
+  resizeObserver?.disconnect()
+  resizeObserver = null
 }
 
 onMounted(() => {
   // 等首屏渲染完再观察，避免拿到空容器尺寸
-  nextTick(setupInfiniteScroll)
+  nextTick(() => {
+    setupInfiniteScroll()
+    void fillViewport()
+  })
 })
 
 onUnmounted(() => {

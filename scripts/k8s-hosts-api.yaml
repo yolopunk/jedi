@@ -25,12 +25,11 @@
 # - 权限只有 ingress 的 get/list（只读），Pod 内用自身 ServiceAccount 直连 K8s API
 # - NodePort 对能访问节点网络的用户暴露域名列表，开发集群可接受；
 #   如需收紧可改 ClusterIP 或自行加访问校验
-# - 镜像用的是 docker.io 的 python:3.12-alpine。若集群拉不到 Docker Hub
-#   （只能走内网 registry、或仓库里没有 python），把下面 Deployment 的 image
-#   换成集群内可达的等价 python 镜像即可，脚本本身只用标准库
-# - 集群内暂时没有可用镜像时，也可以直接在本机跑：从下面 ConfigMap 取出
-#   server.py，`PORT=18748 python3 server.py`；它检测不到 KUBERNETES_SERVICE_HOST
-#   时会退回调用本机 kubectl，功能与集群内运行时完全一致
+# - 本集群拉不到 Docker Hub，内网 registry（docker.dtc.io）里也没有 python 镜像，
+#   所以 Deployment 借用了 langflowai/langflow:1.4.2 自带的 python3，并用 nodeAffinity
+#   钉在缓存了该镜像的节点上。换成集群可达的 python 镜像后，请把 affinity 段一并删掉
+# - 也可以直接在本机跑：从下面 ConfigMap 取出 server.py，`PORT=18748 python3 server.py`；
+#   它检测不到 KUBERNETES_SERVICE_HOST 时会退回调用本机 kubectl，输出完全一致
 # - 卸载：kubectl delete -f scripts/k8s-hosts-api.yaml
 #
 # --- 只读 ServiceAccount + RBAC（仅 ingress 的 get/list） ---
@@ -200,10 +199,23 @@ spec:
         app: jedi-hosts-api
     spec:
       serviceAccountName: jedi-hosts-api
+      # 该镜像只缓存在 10-50-128-32 上（集群拉不到 docker.io，内网 registry 里也没有
+      # python 镜像），所以钉死节点复用本地镜像。等内网仓库有了 python 镜像，把
+      # image 换成它、并把下面 affinity 整段删掉即可。
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/hostname
+                    operator: In
+                    values: ["10-50-128-32"]
       containers:
         - name: server
-          image: python:3.12-alpine
-          command: ["python", "/app/server.py"]
+          # Langflow 镜像自带 python3（/app/.venv/bin/python3），仅借用解释器
+          image: langflowai/langflow:1.4.2
+          imagePullPolicy: IfNotPresent
+          command: ["python3", "/app/server.py"]
           env:
             - name: PORT
               value: "18748"

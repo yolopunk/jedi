@@ -61,13 +61,24 @@
         >
           <v-icon :icon="mdiPencil" size="x-small"></v-icon>
         </v-btn>
+        <v-btn
+          icon
+          size="x-small"
+          variant="text"
+          class="ml-1 group-rename-btn"
+          :aria-label="$t('hosts.groups.delete')"
+          :title="$t('hosts.groups.delete')"
+          @click.stop="$emit('delete-group', group.name)"
+        >
+          <v-icon :icon="mdiDeleteOutline" size="x-small"></v-icon>
+        </v-btn>
       </v-tab>
     </v-tabs>
   </div>
 </template>
 
 <script setup lang="ts">
-import { mdiDomain, mdiLinkVariant, mdiPencil, mdiRefresh } from '@mdi/js'
+import { mdiDeleteOutline, mdiDomain, mdiLinkVariant, mdiPencil, mdiRefresh } from '@mdi/js'
 import { computed } from 'vue'
 import type { Group } from '@/types/hosts'
 
@@ -96,6 +107,7 @@ const emit = defineEmits<{
   (e: 'rename-group', value: string): void
   (e: 'refresh-group', value: string): void
   (e: 'edit-source', value: string): void
+  (e: 'delete-group', value: string): void
 }>()
 
 // 计算属性：当前选中的标签

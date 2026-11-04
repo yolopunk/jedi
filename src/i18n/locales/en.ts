@@ -390,6 +390,7 @@ export default {
       add: 'Add Group',
       refresh: 'Sync remote source',
       editSource: 'Edit source URL',
+      delete: 'Delete group',
     },
     empty: {
       title: 'No Configurations',
@@ -454,6 +455,11 @@ export default {
       editSourceSubtitle: 'Change the remote URL this group subscribes to',
       remoteUrlInvalid: 'URL must start with http:// or https://',
       saveAndSync: 'Save and sync',
+      deleteGroupTitle: 'Delete Group',
+      deleteGroupConfirm: 'Delete group "{name}"? Its {count} entries will be removed as well.',
+      deleteGroupRemoteHint:
+        'This group is subscribed to a remote source; the subscription is removed too.',
+      deleteGroupBtn: 'Delete',
     },
     // Table UI
     console: {

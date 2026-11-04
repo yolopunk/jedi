@@ -520,6 +520,43 @@ export function useHostsData(notify: NotifyFunction) {
     }
   }
 
+  /** 删除整个分组；同时解除其远程数据源订阅，否则下次自动同步会把它重新建出来 */
+  async function deleteGroup(name: string) {
+    const index = groups.value.findIndex((g: Group) => g.name === name)
+    if (index === -1) {
+      notify('分组不存在', 'error')
+      return
+    }
+
+    const wasSelected = selectedGroup.value === name
+    const [removed] = groups.value.splice(index, 1)
+    if (wasSelected) {
+      selectedGroup.value = groups.value[0]?.name ?? ''
+    }
+    updateGlobalSwitchState(groups.value)
+
+    try {
+      await debouncedUpdateHosts()
+    } catch (error) {
+      // 写 hosts 失败就恢复分组，避免界面和文件不一致
+      groups.value.splice(index, 0, removed)
+      if (wasSelected) selectedGroup.value = name
+      updateGlobalSwitchState(groups.value)
+      notify(`删除分组失败: ${(error as Error).message}`, 'error')
+      return
+    }
+
+    if (remoteSources.value.some((s: HostsSource) => s.name === name)) {
+      try {
+        remoteSources.value = await removeHostsSource(name)
+      } catch (error) {
+        console.error('移除远程数据源失败:', error)
+      }
+    }
+
+    notify(`分组「${name}」已删除`, 'success')
+  }
+
   async function renameGroup(oldName: string, newName: string) {
     const trimmed = newName.trim()
     if (!trimmed) {
@@ -604,6 +641,7 @@ export function useHostsData(notify: NotifyFunction) {
     editHost,
     updateHostStatus,
     confirmDeleteHost,
+    deleteGroup,
     renameGroup,
     refreshSource,
     syncRemoteSources,

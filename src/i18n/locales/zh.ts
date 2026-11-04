@@ -377,6 +377,7 @@ export default {
       add: '添加分组',
       refresh: '同步远程数据源',
       editSource: '编辑数据源 URL',
+      delete: '删除分组',
     },
     empty: {
       title: '暂无解析配置',
@@ -441,6 +442,10 @@ export default {
       editSourceSubtitle: '修改该分组订阅的远程 URL',
       remoteUrlInvalid: 'URL 需以 http:// 或 https:// 开头',
       saveAndSync: '保存并同步',
+      deleteGroupTitle: '删除分组',
+      deleteGroupConfirm: '确定要删除分组「{name}」吗？该分组下的 {count} 条记录会一并移除。',
+      deleteGroupRemoteHint: '该分组绑定了远程数据源，删除后订阅也会一并解除。',
+      deleteGroupBtn: '确认删除',
     },
     // Table UI
     console: {

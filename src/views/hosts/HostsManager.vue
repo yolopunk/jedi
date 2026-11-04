@@ -45,6 +45,7 @@
         @rename-group="openRenameGroupDialog"
         @refresh-group="handleRefreshGroup"
         @edit-source="openEditSourceDialog"
+        @delete-group="openDeleteGroupDialog"
         class="fade-in flex-shrink-0"
       />
 
@@ -116,6 +117,36 @@
     </v-card>
   </v-dialog>
 
+  <v-dialog v-model="dialogs.deleteGroup" max-width="420">
+    <v-card class="scifi-card">
+      <v-card-title class="console-title-bar">
+        <span class="dialog-title">{{ $t('hosts.dialog.deleteGroupTitle') }}</span>
+      </v-card-title>
+      <v-card-text class="console-card-text">
+        <p class="delete-group-text">
+          {{
+            $t('hosts.dialog.deleteGroupConfirm', {
+              name: groupToDelete,
+              count: groupToDeleteCount,
+            })
+          }}
+        </p>
+        <p v-if="groupToDeleteIsRemote" class="delete-group-hint">
+          {{ $t('hosts.dialog.deleteGroupRemoteHint') }}
+        </p>
+      </v-card-text>
+      <v-card-actions class="console-card-actions">
+        <v-spacer />
+        <button class="console-btn" @click="dialogs.deleteGroup = false">
+          <span class="btn-text">{{ t('common.cancel') }}</span>
+        </button>
+        <button class="console-btn danger" @click="handleConfirmDeleteGroup">
+          <span class="btn-text">{{ t('hosts.dialog.deleteGroupBtn') }}</span>
+        </button>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
   <add-host-dialog
     v-model="dialogs.addHost"
     :group-name="currentAddGroupName"
@@ -173,12 +204,16 @@ const dialogs = ref({
   deleteConfirm: false,
   renameGroup: false,
   editSource: false,
+  deleteGroup: false,
 })
 
 const currentAddGroupName = ref('')
 const currentEditHost = ref<HostEntry | null>(null)
 const hostToDelete = ref<HostEntry | null>(null)
 const currentSource = ref<HostsSource | null>(null)
+const groupToDelete = ref('')
+const groupToDeleteCount = ref(0)
+const groupToDeleteIsRemote = ref(false)
 const renameGroupOriginalName = ref('')
 const renameGroupName = ref('')
 
@@ -207,6 +242,7 @@ const {
   editHost,
   updateHostStatus,
   confirmDeleteHost,
+  deleteGroup,
   renameGroup,
   refreshSource,
 } = useHostsData(showNotification)
@@ -266,6 +302,22 @@ function openRenameGroupDialog(name: string) {
   dialogs.value.renameGroup = true
 }
 
+function openDeleteGroupDialog(name: string) {
+  const group = groups.value.find(item => item.name === name)
+  if (!group) return
+  groupToDelete.value = name
+  groupToDeleteCount.value = group.hosts.length
+  groupToDeleteIsRemote.value = remoteSources.value.some(source => source.name === name)
+  dialogs.value.deleteGroup = true
+}
+
+async function handleConfirmDeleteGroup() {
+  const name = groupToDelete.value
+  if (!name) return
+  dialogs.value.deleteGroup = false
+  await deleteGroup(name)
+}
+
 async function handleConfirmRenameGroup() {
   const trimmed = renameGroupName.value.trim()
   if (!trimmed) {
@@ -283,6 +335,20 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.delete-group-text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgb(var(--text-rgb) / 0.85);
+}
+
+.delete-group-hint {
+  margin: 10px 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgb(var(--danger-rgb) / 0.75);
+}
+
 .hosts-container {
   display: flex;
   flex-direction: column;

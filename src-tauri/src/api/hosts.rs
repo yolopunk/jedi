@@ -288,14 +288,39 @@ pub fn get_hosts_path() -> String {
   HOSTS_PATH.to_string()
 }
 
+/// 保存当前累积的分组（空分组直接丢弃），解析与收尾共用。
+fn flush_group(
+  result: &mut Vec<GroupHosts>,
+  current_group: &mut Option<String>,
+  current_hosts: &mut Vec<HostEntry>,
+) {
+  if let Some(name) = current_group.take() {
+    if !current_hosts.is_empty() {
+      result.push(GroupHosts {
+        name,
+        hosts: std::mem::take(current_hosts),
+      });
+    }
+  }
+  current_hosts.clear();
+}
+
 #[tauri::command]
 pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
   // 读取系统hosts文件
   let hosts_content = std::fs::read_to_string(HOSTS_PATH)
     .map_err(|e| format!("读取 hosts 文件失败: {}", e))?;
 
-  // 初始化一个空的结果数组，不再创建默认分组
-  let mut result = Vec::new();
+  Ok(parse_hosts_groups(&hosts_content))
+}
+
+/// 解析 hosts 文件内容里 Jedi 管理的分组。
+///
+/// 只认 `# === JEDI HOSTS MANAGER ===` 与结束标记之间的内容；文件里没有这一段、
+/// 或者这一段没有任何条目时返回空列表 —— 不再凭空造一个 "System Default" 分组：
+/// 那会让界面显示文件里并不存在的条目，并在下一次写入时把它们真的写进 hosts。
+fn parse_hosts_groups(hosts_content: &str) -> Vec<GroupHosts> {
+  let mut result: Vec<GroupHosts> = Vec::new();
 
   let mut current_group: Option<String> = None;
   let mut current_hosts: Vec<HostEntry> = Vec::new();
@@ -307,45 +332,17 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
 
     // 检查是否进入Jedi管理的部分
     if trimmed.starts_with("# === JEDI HOSTS MANAGER ===") {
-      // 如果已经在Jedi部分中，先完成当前部分的处理
-      if in_jedi_section {
-        // 保存最后一个分组的数据
-        if let Some(name) = current_group.take() {
-          if !current_hosts.is_empty() {
-            result.push(GroupHosts {
-              name,
-              hosts: current_hosts,
-            });
-            current_hosts = Vec::new();
-          }
-        }
-      }
-
-      // 开始新的Jedi部分
+      // 出现新的起始标记（例如手工追加过重复段）：只认最后一段
+      flush_group(&mut result, &mut current_group, &mut current_hosts);
+      result.clear();
       in_jedi_section = true;
-
-      // 清除之前的结果，只保留默认分组
-      if result.len() > 1 {
-        result.truncate(1);
-      }
-
       continue;
     }
 
     // 检查是否离开Jedi管理的部分
     if trimmed.starts_with("# === END JEDI HOSTS MANAGER ===") {
       in_jedi_section = false;
-
-      // 保存最后一个分组的数据
-      if let Some(name) = current_group.take() {
-        if !current_hosts.is_empty() {
-          result.push(GroupHosts {
-            name,
-            hosts: current_hosts,
-          });
-          current_hosts = Vec::new();
-        }
-      }
+      flush_group(&mut result, &mut current_group, &mut current_hosts);
       continue;
     }
 
@@ -355,25 +352,14 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
     }
 
     // 解析分组行
-    if trimmed.starts_with("# +") && trimmed.ends_with("+") {
+    if trimmed.starts_with("# +") && trimmed.ends_with('+') && trimmed.len() > 3 {
       // 保存之前的分组数据（如果有）
-      if let Some(name) = current_group.take() {
-        if !current_hosts.is_empty() {
-          result.push(GroupHosts {
-            name,
-            hosts: current_hosts,
-          });
-          current_hosts = Vec::new();
-        }
-      }
+      flush_group(&mut result, &mut current_group, &mut current_hosts);
 
-      // 提取新分组
-      // 从分组行提取分组名称
+      // 从分组行提取分组名称（去掉 "# +" 前缀与末尾的 "+"）
       let start_idx = "# +".len();
-      let end_idx = trimmed.len() - 1; // 去除右加号
-      let name = trimmed[start_idx..end_idx].trim().to_string();
-
-      current_group = Some(name);
+      let end_idx = trimmed.len() - 1;
+      current_group = Some(trimmed[start_idx..end_idx].trim().to_string());
       continue;
     }
 
@@ -427,42 +413,10 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
     }
   }
 
-  // 如果文件结束时还有未保存的分组数据，保存它
-  if let Some(name) = current_group {
-    if !current_hosts.is_empty() {
-      result.push(GroupHosts {
-        name,
-        hosts: current_hosts,
-      });
-    }
-  }
+  // 文件结束时收尾（最后一段可能缺少结束标记）
+  flush_group(&mut result, &mut current_group, &mut current_hosts);
 
-  if result.is_empty() {
-    let default_hosts = vec![
-      HostEntry {
-        ip: "127.0.0.1".to_string(),
-        domain: "localhost".to_string(),
-        disabled: false,
-      },
-      HostEntry {
-        ip: "255.255.255.255".to_string(),
-        domain: "broadcasthost".to_string(),
-        disabled: false,
-      },
-      HostEntry {
-        ip: "::1".to_string(),
-        domain: "localhost".to_string(),
-        disabled: false,
-      },
-    ];
-
-    result.push(GroupHosts {
-      name: "System Default".to_string(),
-      hosts: default_hosts,
-    });
-  }
-
-  Ok(result)
+  result
 }
 
 // ==================== 远程数据源 ====================
@@ -555,5 +509,63 @@ mod tests {
     // lastSyncedAt 缺省时可解析（向前兼容）
     let legacy: HostsSource = serde_json::from_str(r#"{"name":"g","url":"http://x"}"#).unwrap();
     assert_eq!(legacy.last_synced_at, None);
+  }
+
+  #[test]
+  fn test_parse_hosts_groups_without_jedi_section_is_empty() {
+    // 没有 Jedi 段时不能凭空造分组（旧实现会返回一个假的 "System Default"）
+    assert!(parse_hosts_groups("").is_empty());
+    assert!(parse_hosts_groups("127.0.0.1 localhost\n::1 localhost\n").is_empty());
+  }
+
+  #[test]
+  fn test_parse_hosts_groups_drops_empty_section() {
+    let content = "# === JEDI HOSTS MANAGER ===\n# +空分组+\n# === END JEDI HOSTS MANAGER ===\n";
+    assert!(parse_hosts_groups(content).is_empty());
+  }
+
+  #[test]
+  fn test_parse_hosts_groups_entries_and_disabled_state() {
+    let content = "\
+127.0.0.1 localhost
+# === JEDI HOSTS MANAGER ===
+# +开发环境+
+10.0.0.1 a.io
+# 10.0.0.2 b.io
+# +测试+
+10.0.0.3 c.io d.io
+# === END JEDI HOSTS MANAGER ===
+10.0.0.9 ignored.io
+";
+
+    let groups = parse_hosts_groups(content);
+    assert_eq!(groups.len(), 2);
+
+    assert_eq!(groups[0].name, "开发环境");
+    assert_eq!(groups[0].hosts.len(), 2);
+    assert!(!groups[0].hosts[0].disabled);
+    assert!(groups[0].hosts[1].disabled);
+
+    // 一行多域名会展开成多条
+    assert_eq!(groups[1].hosts.len(), 2);
+    assert_eq!(groups[1].hosts[1].domain, "d.io");
+  }
+
+  #[test]
+  fn test_parse_hosts_groups_last_section_wins() {
+    let content = "\
+# === JEDI HOSTS MANAGER ===
+# +旧分组+
+10.0.0.1 old.io
+# === END JEDI HOSTS MANAGER ===
+# === JEDI HOSTS MANAGER ===
+# +新分组+
+10.0.0.2 new.io
+# === END JEDI HOSTS MANAGER ===
+";
+
+    let groups = parse_hosts_groups(content);
+    assert_eq!(groups.len(), 1);
+    assert_eq!(groups[0].name, "新分组");
   }
 }

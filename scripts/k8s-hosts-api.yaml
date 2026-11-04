@@ -1,0 +1,237 @@
+# Jedi Hosts 远程数据源 —— 集群内统一 API 适配器
+#
+# 作用：把集群内全部 ingress 自定义域名，按 Jedi 定义的 JSON 分组格式统一返回：
+#   [{"name":"<分组名>","hosts":[{"ip":"1.2.3.4","domain":"a.com","disabled":false}]}]
+# Jedi 侧只需在「Hosts → 添加分组 → 远程 URL」填入该服务的 URL，即可订阅并自动同步，
+# 不需要在本地/WSL 运行任何服务。
+#
+# 一次性部署（在能访问集群的环境执行，如 WSL 内）：
+#   kubectl apply -f scripts/k8s-hosts-api.yaml
+#
+# 数据源 URL（<node-ip> 为任意节点 IP，NodePort 固定 30180）：
+#   http://<node-ip>:30180/hosts.json?ip=<目标IP>&name=<分组名>&namespace=<ns>
+#
+# URL 参数（必要字段全部由 URL 携带，Jedi 无需其他配置）：
+#   ip        统一指向的 IP（强制覆盖，k3s 的 Traefik 通常不上报 LB IP，一般必填，
+#             如节点 IP / WSL IP / 公司入口 IP）
+#   name      返回的分组名，默认 k8s-ingress
+#   namespace 仅统计该命名空间，默认全集群
+#
+# 示例：
+#   curl http://10.0.0.5:30180/hosts.json?ip=10.0.0.5
+#   → [{"name":"k8s-ingress","hosts":[{"ip":"10.0.0.5","domain":"app.example.com","disabled":false}, ...]}]
+#
+# 说明：
+# - 权限只有 ingress 的 get/list（只读），Pod 内用自身 ServiceAccount 直连 K8s API
+# - NodePort 对能访问节点网络的用户暴露域名列表，开发集群可接受；
+#   如需收紧可改 ClusterIP 或自行加访问校验
+# - 卸载：kubectl delete -f scripts/k8s-hosts-api.yaml
+#
+# --- 只读 ServiceAccount + RBAC（仅 ingress 的 get/list） ---
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jedi-hosts-api
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: jedi-hosts-api-ingress-reader
+rules:
+  - apiGroups: ["networking.k8s.io", "extensions"]
+    resources: ["ingresses"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jedi-hosts-api-ingress-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: jedi-hosts-api-ingress-reader
+subjects:
+  - kind: ServiceAccount
+    name: jedi-hosts-api
+    namespace: default
+---
+# --- 适配器脚本（纯 Python 标准库，ConfigMap 挂载，无需构建镜像） ---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jedi-hosts-api-script
+  namespace: default
+data:
+  server.py: |
+    #!/usr/bin/env python3
+    """Jedi hosts 数据源适配器：ingress 域名 -> Jedi JSON 分组格式。
+
+    集群内运行时使用 Pod 自身 ServiceAccount 直连 K8s API；
+    集群外运行（需 kubectl + kubeconfig，便于调试）时退回执行 kubectl。
+    """
+    import ipaddress
+    import json
+    import os
+    import ssl
+    import subprocess
+    import urllib.parse
+    import urllib.request
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    LISTEN_PORT = int(os.environ.get("PORT", "18748"))
+    SA_DIR = "/var/run/secrets/kubernetes.io/serviceaccount"
+
+
+    def list_ingresses(namespace=None):
+        host = os.environ.get("KUBERNETES_SERVICE_HOST")
+        if host:
+            port = os.environ.get("KUBERNETES_SERVICE_PORT_HTTPS", "443")
+            with open(os.path.join(SA_DIR, "token"), encoding="utf-8") as f:
+                token = f.read().strip()
+            ctx = ssl.create_default_context(cafile=os.path.join(SA_DIR, "ca.crt"))
+            if namespace:
+                path = "/apis/networking.k8s.io/v1/namespaces/%s/ingresses" % namespace
+            else:
+                path = "/apis/networking.k8s.io/v1/ingresses"
+            req = urllib.request.Request(
+                "https://%s:%s%s" % (host, port, path),
+                headers={"Authorization": "Bearer %s" % token},
+            )
+            with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+                return json.load(resp).get("items", [])
+        cmd = ["kubectl", "get", "ingress", "-o", "json"]
+        cmd += ["-n", namespace] if namespace else ["-A"]
+        return json.loads(subprocess.check_output(cmd, timeout=30)).get("items", [])
+
+
+    def collect(items):
+        """域名 -> IP（status.loadBalancer.ingress[].ip），跳过通配符与 IP 型 host。"""
+        mapping = {}
+        for item in items:
+            status_ip = ""
+            for entry in (item.get("status", {}).get("loadBalancer", {}).get("ingress") or []):
+                ip = (entry.get("ip") or "").strip()
+                if ip:
+                    status_ip = ip
+                    break
+            spec = item.get("spec", {})
+            hosts = [r.get("host") for r in (spec.get("rules") or [])]
+            for tls in (spec.get("tls") or []):
+                hosts.extend(tls.get("hosts") or [])
+            for h in hosts:
+                domain = (h or "").strip().lower()
+                if not domain or domain == "*" or domain.startswith("*."):
+                    continue
+                try:
+                    ipaddress.ip_address(domain)
+                    continue
+                except ValueError:
+                    pass
+                if domain not in mapping and status_ip:
+                    mapping[domain] = status_ip
+        return mapping
+
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            parsed = urllib.parse.urlparse(self.path)
+            if parsed.path not in ("/hosts.json", "/"):
+                self.send_error(404)
+                return
+            query = urllib.parse.parse_qs(parsed.query)
+            ip_param = (query.get("ip") or [""])[0].strip()
+            name = (query.get("name") or ["k8s-ingress"])[0]
+            namespace = (query.get("namespace") or [""])[0].strip() or None
+            try:
+                items = list_ingresses(namespace)
+            except Exception as exc:
+                self._json(502, {"error": "查询 K8s API 失败: %s" % exc})
+                return
+            mapping = collect(items)
+            # ip 参数强制统一指向；未指定时用 ingress 上报的 LB IP
+            hosts = [
+                {"ip": ip_param or mapping[domain], "domain": domain, "disabled": False}
+                for domain in sorted(mapping)
+            ]
+            self._json(200, [{"name": name, "hosts": hosts}] if hosts else [])
+
+        def _json(self, code, payload):
+            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(code)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, fmt, *args):
+            print("%s - %s" % (self.address_string(), fmt % args), flush=True)
+
+
+    if __name__ == "__main__":
+        print("jedi hosts api listening on 0.0.0.0:%d" % LISTEN_PORT, flush=True)
+        ThreadingHTTPServer(("0.0.0.0", LISTEN_PORT), Handler).serve_forever()
+---
+# --- 适配器 Deployment ---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jedi-hosts-api
+  namespace: default
+  labels:
+    app: jedi-hosts-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jedi-hosts-api
+  template:
+    metadata:
+      labels:
+        app: jedi-hosts-api
+    spec:
+      serviceAccountName: jedi-hosts-api
+      containers:
+        - name: server
+          image: python:3.12-alpine
+          command: ["python", "/app/server.py"]
+          env:
+            - name: PORT
+              value: "18748"
+          ports:
+            - containerPort: 18748
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: script
+              mountPath: /app
+      volumes:
+        - name: script
+          configMap:
+            name: jedi-hosts-api-script
+---
+# --- 对外暴露（NodePort 30180） ---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: jedi-hosts-api
+  namespace: default
+  labels:
+    app: jedi-hosts-api
+spec:
+  type: NodePort
+  selector:
+    app: jedi-hosts-api
+  ports:
+    - port: 18748
+      targetPort: 18748
+      nodePort: 30180

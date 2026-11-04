@@ -39,6 +39,18 @@
           ></v-icon>
         </v-btn>
         <v-btn
+          v-if="remoteGroupNames.includes(group.name)"
+          icon
+          size="x-small"
+          variant="text"
+          class="ml-1 group-rename-btn"
+          :aria-label="$t('hosts.groups.editSource')"
+          :title="$t('hosts.groups.editSource')"
+          @click.stop="$emit('edit-source', group.name)"
+        >
+          <v-icon :icon="mdiLinkVariant" size="x-small"></v-icon>
+        </v-btn>
+        <v-btn
           icon
           size="x-small"
           variant="text"
@@ -55,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { mdiDomain, mdiPencil, mdiRefresh } from '@mdi/js'
+import { mdiDomain, mdiLinkVariant, mdiPencil, mdiRefresh } from '@mdi/js'
 import { computed } from 'vue'
 import type { Group } from '@/types/hosts'
 
@@ -83,6 +95,7 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
   (e: 'rename-group', value: string): void
   (e: 'refresh-group', value: string): void
+  (e: 'edit-source', value: string): void
 }>()
 
 // 计算属性：当前选中的标签

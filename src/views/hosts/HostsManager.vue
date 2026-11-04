@@ -44,6 +44,7 @@
         :refreshing-name="syncingSource"
         @rename-group="openRenameGroupDialog"
         @refresh-group="handleRefreshGroup"
+        @edit-source="openEditSourceDialog"
         class="fade-in flex-shrink-0"
       />
 
@@ -135,6 +136,13 @@
     @delete="confirmDeleteHost"
   />
 
+  <edit-source-dialog
+    v-model="dialogs.editSource"
+    :source="currentSource"
+    @save="handleSaveSource"
+    @error="showNotification($event, 'error')"
+  />
+
   <AppNotification />
 </template>
 
@@ -150,10 +158,11 @@ import AddGroupDialog from '@/components/hosts/dialogs/AddGroupDialog.vue'
 import AddHostDialog from '@/components/hosts/dialogs/AddHostDialog.vue'
 import DeleteConfirmDialog from '@/components/hosts/dialogs/DeleteConfirmDialog.vue'
 import EditHostDialog from '@/components/hosts/dialogs/EditHostDialog.vue'
+import EditSourceDialog from '@/components/hosts/dialogs/EditSourceDialog.vue'
 import HostsTable from '@/components/hosts/tables/HostsTable.vue'
 import { useAppNotification } from '@/composables/useAppNotification'
 import { useHostsData } from '@/composables/useHostsData'
-import type { HostEntry } from '@/types/hosts'
+import type { HostEntry, HostsSource } from '@/types/hosts'
 
 const { t } = useI18n()
 
@@ -163,11 +172,13 @@ const dialogs = ref({
   editHost: false,
   deleteConfirm: false,
   renameGroup: false,
+  editSource: false,
 })
 
 const currentAddGroupName = ref('')
 const currentEditHost = ref<HostEntry | null>(null)
 const hostToDelete = ref<HostEntry | null>(null)
+const currentSource = ref<HostsSource | null>(null)
 const renameGroupOriginalName = ref('')
 const renameGroupName = ref('')
 
@@ -207,6 +218,20 @@ async function handleRefreshGroup(name: string) {
   const source = remoteSources.value.find(item => item.name === name)
   if (!source) return
   await refreshSource(source)
+}
+
+function openEditSourceDialog(name: string) {
+  const source = remoteSources.value.find(item => item.name === name)
+  if (!source) return
+  currentSource.value = source
+  dialogs.value.editSource = true
+}
+
+async function handleSaveSource(payload: { name: string; url: string }) {
+  const source = remoteSources.value.find(item => item.name === payload.name)
+  if (!source) return
+  // 换 URL 后立即按新地址同步一次：只有同步成功才会持久化新地址，失败保留旧地址
+  await refreshSource({ ...source, url: payload.url })
 }
 
 function openAddHostDialog(groupName: string) {

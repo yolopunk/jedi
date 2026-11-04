@@ -389,6 +389,7 @@ export default {
     groups: {
       add: 'Add Group',
       refresh: 'Sync remote source',
+      editSource: 'Edit source URL',
     },
     empty: {
       title: 'No Configurations',
@@ -449,6 +450,10 @@ export default {
       sourceType: 'Source Type',
       sourceManual: 'Manual',
       sourceUrl: 'Remote URL',
+      editSourceTitle: 'Edit Source',
+      editSourceSubtitle: 'Change the remote URL this group subscribes to',
+      remoteUrlInvalid: 'URL must start with http:// or https://',
+      saveAndSync: 'Save and sync',
     },
     // Table UI
     console: {

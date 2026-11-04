@@ -137,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { fetchRemoteConfig } from '@/api/hosts'
 import type { HostEntry } from '@/types/hosts'
@@ -166,10 +166,11 @@ const sourceType = ref<SourceType>('manual')
 const remoteUrl = ref('')
 const hostsContent = ref('')
 
-const sourceTypeOptions = [
+// 用 computed 而不是一次性求值，切换语言时按钮文案才会跟着变
+const sourceTypeOptions = computed(() => [
   { value: 'manual' as const, label: t('hosts.dialog.sourceManual') },
   { value: 'url' as const, label: t('hosts.dialog.sourceUrl') },
-]
+])
 
 function closeDialog() {
   emit('update:modelValue', false)

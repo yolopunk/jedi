@@ -376,6 +376,7 @@ export default {
     groups: {
       add: '添加分组',
       refresh: '同步远程数据源',
+      editSource: '编辑数据源 URL',
     },
     empty: {
       title: '暂无解析配置',
@@ -436,6 +437,10 @@ export default {
       sourceType: '数据源类型',
       sourceManual: '手动输入',
       sourceUrl: '远程 URL',
+      editSourceTitle: '编辑数据源',
+      editSourceSubtitle: '修改该分组订阅的远程 URL',
+      remoteUrlInvalid: 'URL 需以 http:// 或 https:// 开头',
+      saveAndSync: '保存并同步',
     },
     // Table UI
     console: {

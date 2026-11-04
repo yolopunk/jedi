@@ -25,6 +25,12 @@
 # - 权限只有 ingress 的 get/list（只读），Pod 内用自身 ServiceAccount 直连 K8s API
 # - NodePort 对能访问节点网络的用户暴露域名列表，开发集群可接受；
 #   如需收紧可改 ClusterIP 或自行加访问校验
+# - 镜像用的是 docker.io 的 python:3.12-alpine。若集群拉不到 Docker Hub
+#   （只能走内网 registry、或仓库里没有 python），把下面 Deployment 的 image
+#   换成集群内可达的等价 python 镜像即可，脚本本身只用标准库
+# - 集群内暂时没有可用镜像时，也可以直接在本机跑：从下面 ConfigMap 取出
+#   server.py，`PORT=18748 python3 server.py`；它检测不到 KUBERNETES_SERVICE_HOST
+#   时会退回调用本机 kubectl，功能与集群内运行时完全一致
 # - 卸载：kubectl delete -f scripts/k8s-hosts-api.yaml
 #
 # --- 只读 ServiceAccount + RBAC（仅 ingress 的 get/list） ---

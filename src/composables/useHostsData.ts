@@ -20,6 +20,19 @@ import {
 
 export type NotifyFunction = (text: string, color: 'success' | 'error' | 'info' | 'warning') => void
 
+/**
+ * 条目的内容指纹（顺序无关）。
+ *
+ * hosts 文件写入时会按域名重排，因此不能按数组下标比较；用它判断
+ * 「远端合并结果是否与当前一致」，避免数据没变时也重写 hosts 文件。
+ */
+function hostsSignature(hosts: HostEntry[]): string {
+  return hosts
+    .map(host => `${host.ip} ${host.domain} ${host.disabled ? 1 : 0}`)
+    .sort()
+    .join('\n')
+}
+
 export function useHostsData(notify: NotifyFunction) {
   // ===== 状态变量 =====
   const groups = ref<Group[]>([])
@@ -29,6 +42,8 @@ export function useHostsData(notify: NotifyFunction) {
   // 远程数据源（URL），与分组一一对应
   const remoteSources = ref<HostsSource[]>([])
   const syncing = shallowRef(false)
+  // 正在手动刷新的分组名（用于按钮转圈/禁用，与后台批量同步的 syncing 区分）
+  const syncingSource = ref<string | null>(null)
 
   // 批量更新状态
   const pendingUpdates = ref(false)
@@ -77,24 +92,57 @@ export function useHostsData(notify: NotifyFunction) {
     source: HostsSource,
     options?: { silent?: boolean }
   ): Promise<boolean> {
+    syncingSource.value = source.name
     try {
       const result = await fetchRemoteConfig(source.url)
 
-      if (!Array.isArray(result) || result.length === 0) {
-        if (!options?.silent) notify('远程数据为空或格式不正确', 'error')
+      if (!Array.isArray(result)) {
+        if (!options?.silent) notify('远程配置格式无效', 'error')
         return false
       }
 
       const matchedGroup =
         result.find((g: Group) => g.name === source.name) ||
         (result.length === 1 ? result[0] : null)
-      if (!matchedGroup || !Array.isArray(matchedGroup.hosts)) {
+      // 返回了多个分组但没有一个叫这名：这是真的配置错误，不能当成「空数据」
+      if (result.length > 0 && (!matchedGroup || !Array.isArray(matchedGroup?.hosts))) {
         if (!options?.silent) notify(`远程数据中未找到分组 ${source.name}`, 'error')
         return false
       }
 
-      // 保留本地手动禁用/启用的状态，其余跟随远端
       const localGroup = groups.value.find((g: Group) => g.name === source.name)
+      const remoteHosts: HostEntry[] = (matchedGroup?.hosts ?? []).filter(
+        (host: HostEntry) => host && host.domain && host.ip
+      )
+      const syncedAt = Math.floor(Date.now() / 1000)
+
+      // 远端合法但当前没有任何条目（如集群里 ingress 全被删除）。
+      // hosts 文件不保存空分组（Rust 侧读回时会丢弃），所以这里清掉该分组的
+      // 条目让它在文件和 UI 中消失，但保留订阅 —— 远端恢复后会自动重建。
+      if (remoteHosts.length === 0) {
+        let removed = false
+        if (localGroup) {
+          const index = groups.value.findIndex((g: Group) => g.name === source.name)
+          if (index !== -1) {
+            groups.value.splice(index, 1)
+            removed = true
+            if (selectedGroup.value === source.name) {
+              selectedGroup.value = groups.value[0]?.name ?? ''
+            }
+          }
+        }
+        if (removed) await debouncedUpdateHosts()
+        remoteSources.value = await saveHostsSource({ ...source, lastSyncedAt: syncedAt })
+        if (!options?.silent) {
+          notify(
+            removed ? `远端暂无条目，已清空分组 ${source.name}（订阅保留）` : '远端暂无条目',
+            'info'
+          )
+        }
+        return true
+      }
+
+      // 保留本地手动禁用/启用的状态，其余跟随远端
       const localDisabled = new Map<string, boolean>()
       if (localGroup) {
         for (const host of localGroup.hosts) {
@@ -106,43 +154,58 @@ export function useHostsData(notify: NotifyFunction) {
       // 远端新增条目也必须保持禁用，否则自动同步会把「全部关闭」状态悄悄打破
       const globalResolveOff = groups.value.length > 0 && !hostsResolveSwitch.value
 
-      const mergedHosts: HostEntry[] = matchedGroup.hosts
-        .filter((host: HostEntry) => host && host.domain && host.ip)
-        .map((host: HostEntry) => {
-          if (localDisabled.has(host.domain)) {
-            return {
-              ip: host.ip,
-              domain: host.domain,
-              disabled: localDisabled.get(host.domain) as boolean,
-            }
-          }
+      const mergedHosts: HostEntry[] = remoteHosts.map((host: HostEntry) => {
+        if (localDisabled.has(host.domain)) {
           return {
             ip: host.ip,
             domain: host.domain,
-            disabled: globalResolveOff ? true : !!host.disabled,
+            disabled: localDisabled.get(host.domain) as boolean,
           }
-        })
+        }
+        return {
+          ip: host.ip,
+          domain: host.domain,
+          disabled: globalResolveOff ? true : !!host.disabled,
+        }
+      })
+
+      // hosts 文件按域名唯一读回，重复域名会让我们每次都判定「有变化」而反复重写
+      const seenDomains = new Set<string>()
+      const uniqueHosts = mergedHosts.filter(host => {
+        if (seenDomains.has(host.domain)) return false
+        seenDomains.add(host.domain)
+        return true
+      })
 
       if (localGroup) {
-        localGroup.hosts = mergedHosts
+        // 内容没变就不重写 hosts（写系统文件需要管理员权限，无谓的写入不该发生）
+        if (hostsSignature(localGroup.hosts) === hostsSignature(uniqueHosts)) {
+          remoteSources.value = await saveHostsSource({ ...source, lastSyncedAt: syncedAt })
+          if (!options?.silent) {
+            notify(`分组 ${source.name} 已是最新（${uniqueHosts.length} 条）`, 'success')
+          }
+          return true
+        }
+        localGroup.hosts = uniqueHosts
       } else {
         // 分组被手动清空过：按数据源重建
-        groups.value.push({ name: source.name, hosts: mergedHosts })
+        groups.value.push({ name: source.name, hosts: uniqueHosts })
       }
 
       await debouncedUpdateHosts()
 
-      const syncedAt = Math.floor(Date.now() / 1000)
       remoteSources.value = await saveHostsSource({ ...source, lastSyncedAt: syncedAt })
 
       if (!options?.silent) {
-        notify(`已同步分组 ${source.name}（${mergedHosts.length} 条）`, 'success')
+        notify(`已同步分组 ${source.name}（${uniqueHosts.length} 条）`, 'success')
       }
       return true
     } catch (error) {
       console.error('同步远程数据源失败:', error)
       notify(`同步 ${source.name} 失败: ${(error as Error).message || error}`, 'error')
       return false
+    } finally {
+      if (syncingSource.value === source.name) syncingSource.value = null
     }
   }
 
@@ -530,6 +593,7 @@ export function useHostsData(notify: NotifyFunction) {
     currentGroup,
     remoteSources,
     syncing,
+    syncingSource,
 
     // Actions
     loadSystemHosts,

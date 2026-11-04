@@ -41,6 +41,7 @@
         :groups="groups"
         :remote-group-names="remoteGroupNames"
         :syncing="syncing"
+        :refreshing-name="syncingSource"
         @rename-group="openRenameGroupDialog"
         @refresh-group="handleRefreshGroup"
         class="fade-in flex-shrink-0"
@@ -186,6 +187,7 @@ const {
   currentGroup,
   remoteSources,
   syncing,
+  syncingSource,
   loadSystemHosts,
   handleHostsSwitch,
   initializeDefaultConfig,

@@ -29,10 +29,14 @@
           class="ml-1 group-rename-btn"
           :aria-label="$t('hosts.groups.refresh')"
           :title="$t('hosts.groups.refresh')"
-          :disabled="syncing"
+          :disabled="syncing || refreshingName === group.name"
           @click.stop="$emit('refresh-group', group.name)"
         >
-          <v-icon :icon="mdiRefresh" size="x-small" :class="{ spinning: syncing }"></v-icon>
+          <v-icon
+            :icon="mdiRefresh"
+            size="x-small"
+            :class="{ spinning: syncing || refreshingName === group.name }"
+          ></v-icon>
         </v-btn>
         <v-btn
           icon
@@ -64,10 +68,13 @@ const props = withDefaults(
     remoteGroupNames?: string[]
     /** 后台同步中（禁用刷新按钮并旋转图标） */
     syncing?: boolean
+    /** 正在手动刷新的分组名（只让该分组的按钮转圈） */
+    refreshingName?: string | null
   }>(),
   {
     remoteGroupNames: () => [],
     syncing: false,
+    refreshingName: null,
   }
 )
 

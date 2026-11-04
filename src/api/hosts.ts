@@ -3,7 +3,7 @@
  * 封装与Tauri后端的交互
  */
 import { invoke } from '@tauri-apps/api/core'
-import type { Group } from '@/types/hosts'
+import type { Group, HostsSource } from '@/types/hosts'
 import type { OsInfo } from '@/types/os'
 
 /**
@@ -65,9 +65,35 @@ export async function initializeDefaultConfig(): Promise<string> {
 
 /**
  * 获取远程配置
- * @param url 远程配置URL
+ * @param url 远程配置URL（返回 Jedi JSON 分组格式，必要参数由 URL 自身携带）
  * @returns 远程配置数据
  */
-export async function fetchRemoteConfig(url: string): Promise<string> {
-  return await invoke<string>('fetch_remote_config', { url })
+export async function fetchRemoteConfig(url: string): Promise<Group[]> {
+  return await invoke<Group[]>('fetch_remote_config', { url })
+}
+
+/**
+ * 读取远程数据源列表
+ * @returns 数据源列表
+ */
+export async function getHostsSources(): Promise<HostsSource[]> {
+  return await invoke<HostsSource[]>('get_hosts_sources')
+}
+
+/**
+ * 保存/更新远程数据源（按分组名 upsert）
+ * @param source 数据源
+ * @returns 最新数据源列表
+ */
+export async function saveHostsSource(source: HostsSource): Promise<HostsSource[]> {
+  return await invoke<HostsSource[]>('save_hosts_source', { source })
+}
+
+/**
+ * 删除远程数据源
+ * @param name 分组名
+ * @returns 最新数据源列表
+ */
+export async function removeHostsSource(name: string): Promise<HostsSource[]> {
+  return await invoke<HostsSource[]>('remove_hosts_source', { name })
 }

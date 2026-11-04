@@ -22,6 +22,19 @@
         <v-icon :icon="mdiDomain" size="small" class="mr-1"></v-icon>
         <span class="group-name">{{ group.name }}</span>
         <v-btn
+          v-if="remoteGroupNames.includes(group.name)"
+          icon
+          size="x-small"
+          variant="text"
+          class="ml-1 group-rename-btn"
+          :aria-label="$t('hosts.groups.refresh')"
+          :title="$t('hosts.groups.refresh')"
+          :disabled="syncing"
+          @click.stop="$emit('refresh-group', group.name)"
+        >
+          <v-icon :icon="mdiRefresh" size="x-small" :class="{ spinning: syncing }"></v-icon>
+        </v-btn>
+        <v-btn
           icon
           size="x-small"
           variant="text"
@@ -38,20 +51,31 @@
 </template>
 
 <script setup lang="ts">
-import { mdiDomain, mdiPencil } from '@mdi/js'
+import { mdiDomain, mdiPencil, mdiRefresh } from '@mdi/js'
 import { computed } from 'vue'
 import type { Group } from '@/types/hosts'
 
 // 定义组件属性
-const props = defineProps<{
-  modelValue: string
-  groups: Group[]
-}>()
+const props = withDefaults(
+  defineProps<{
+    modelValue: string
+    groups: Group[]
+    /** 远程数据源对应的分组名（显示刷新按钮） */
+    remoteGroupNames?: string[]
+    /** 后台同步中（禁用刷新按钮并旋转图标） */
+    syncing?: boolean
+  }>(),
+  {
+    remoteGroupNames: () => [],
+    syncing: false,
+  }
+)
 
 // 定义组件事件
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void
   (e: 'rename-group', value: string): void
+  (e: 'refresh-group', value: string): void
 }>()
 
 // 计算属性：当前选中的标签
@@ -109,5 +133,18 @@ const selectedTab = computed({
 .group-tab.v-tab--selected {
   color: var(--jedi-text-primary) !important;
   font-weight: 600;
+}
+
+.spinning {
+  animation: group-refresh-spin 1s linear infinite;
+}
+
+@keyframes group-refresh-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

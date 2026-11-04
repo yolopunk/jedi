@@ -39,7 +39,10 @@
         v-if="groups.length"
         v-model="selectedGroup"
         :groups="groups"
+        :remote-group-names="remoteGroupNames"
+        :syncing="syncing"
         @rename-group="openRenameGroupDialog"
+        @refresh-group="handleRefreshGroup"
         class="fade-in flex-shrink-0"
       />
 
@@ -136,7 +139,7 @@
 
 <script setup lang="ts">
 import { mdiDomain, mdiPlus, mdiPowerPlugOffOutline, mdiPowerPlugOutline } from '@mdi/js'
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getOsInfo } from '@/api/hosts'
 import AppNotification from '@/components/common/AppNotification.vue'
@@ -181,6 +184,8 @@ const {
   hostsResolveSwitch,
   loading,
   currentGroup,
+  remoteSources,
+  syncing,
   loadSystemHosts,
   handleHostsSwitch,
   initializeDefaultConfig,
@@ -190,7 +195,17 @@ const {
   updateHostStatus,
   confirmDeleteHost,
   renameGroup,
+  refreshSource,
 } = useHostsData(showNotification)
+
+// 远程数据源对应的分组名（用于显示刷新按钮）
+const remoteGroupNames = computed(() => remoteSources.value.map(source => source.name))
+
+async function handleRefreshGroup(name: string) {
+  const source = remoteSources.value.find(item => item.name === name)
+  if (!source) return
+  await refreshSource(source)
+}
 
 function openAddHostDialog(groupName: string) {
   currentAddGroupName.value = groupName

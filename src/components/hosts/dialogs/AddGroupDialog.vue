@@ -51,25 +51,34 @@
           </div>
         </div>
 
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <span class="toggle-label">{{ $t('hosts.dialog.useRemote') }}</span>
-            <span class="toggle-hint">{{ $t('hosts.dialog.remoteToggleHint') }}</span>
+        <!-- 数据源类型 -->
+        <div class="form-group">
+          <label class="form-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            {{ $t('hosts.dialog.sourceType') }}
+          </label>
+          <div class="source-type-row" role="tablist">
+            <button
+              v-for="opt in sourceTypeOptions"
+              :key="opt.value"
+              type="button"
+              class="source-type-btn"
+              :class="{ active: sourceType === opt.value }"
+              role="tab"
+              :aria-selected="sourceType === opt.value"
+              @click="sourceType = opt.value"
+            >
+              {{ opt.label }}
+            </button>
           </div>
-          <button
-            class="toggle-switch"
-            :class="{ active: isRemote }"
-            role="switch"
-            :aria-checked="isRemote"
-            :aria-label="$t('hosts.dialog.useRemote')"
-            @click="isRemote = !isRemote"
-          >
-            <span class="toggle-handle"></span>
-          </button>
         </div>
 
+        <!-- 远程 URL 数据源 -->
         <v-expand-transition>
-          <div v-if="isRemote" class="form-group">
+          <div v-if="sourceType === 'url'" class="form-group">
             <label class="form-label">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2"/>
@@ -87,11 +96,13 @@
                 @keyup.enter="confirmAdd"
               />
             </div>
+            <div class="input-hint">{{ $t('hosts.dialog.remoteToggleHint') }}</div>
           </div>
         </v-expand-transition>
 
+        <!-- 手动输入数据源 -->
         <v-expand-transition>
-          <div v-if="!isRemote" class="form-group">
+          <div v-if="sourceType === 'manual'" class="form-group">
             <label class="form-label">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5"/>
@@ -136,14 +147,29 @@ const { t } = useI18n()
 defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
-  (e: 'add', data: { name: string; isRemote: boolean; url?: string; hosts?: HostEntry[] }): void
+  (
+    e: 'add',
+    data: {
+      name: string
+      isRemote: boolean
+      url?: string
+      hosts?: HostEntry[]
+    }
+  ): void
   (e: 'error', message: string): void
 }>()
 
+type SourceType = 'manual' | 'url'
+
 const groupName = ref('')
-const isRemote = ref(false)
+const sourceType = ref<SourceType>('manual')
 const remoteUrl = ref('')
 const hostsContent = ref('')
+
+const sourceTypeOptions = [
+  { value: 'manual' as const, label: t('hosts.dialog.sourceManual') },
+  { value: 'url' as const, label: t('hosts.dialog.sourceUrl') },
+]
 
 function closeDialog() {
   emit('update:modelValue', false)
@@ -152,9 +178,14 @@ function closeDialog() {
 
 function resetForm() {
   groupName.value = ''
-  isRemote.value = false
+  sourceType.value = 'manual'
   remoteUrl.value = ''
   hostsContent.value = ''
+}
+
+function errorMessage(error: unknown): string {
+  if (typeof error === 'string') return error
+  return (error as Error).message || String(error)
 }
 
 async function confirmAdd() {
@@ -163,7 +194,7 @@ async function confirmAdd() {
     return
   }
 
-  if (isRemote.value) {
+  if (sourceType.value === 'url') {
     if (!remoteUrl.value) {
       emit('error', t('hosts.dialog.remoteUrlRequired'))
       return
@@ -174,7 +205,10 @@ async function confirmAdd() {
         emit('error', t('hosts.dialog.remoteInvalid'))
         return
       }
-      const matchedGroup = result.find((g: any) => g.name === groupName.value)
+      // 按分组名匹配；远端只返回一个分组时直接采用
+      const matchedGroup =
+        result.find((g: any) => g.name === groupName.value) ??
+        (result.length === 1 ? result[0] : null)
       if (matchedGroup) {
         emit('add', {
           name: groupName.value,
@@ -187,7 +221,7 @@ async function confirmAdd() {
         emit('error', t('hosts.dialog.remoteGroupNotFound'))
       }
     } catch (error) {
-      emit('error', t('hosts.dialog.remoteFetchFailed', { message: (error as Error).message }))
+      emit('error', t('hosts.dialog.remoteFetchFailed', { message: errorMessage(error) }))
     }
   } else {
     const parsedLines = hostsContent.value
@@ -403,6 +437,40 @@ async function confirmAdd() {
   font-size: 11px;
   color: rgb(var(--text-rgb) / 0.3);
   margin-top: 4px;
+}
+
+.source-type-row {
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+  background: rgb(var(--ink-rgb) / 0.02);
+  border: 1px solid rgb(var(--text-rgb) / 0.08);
+  border-radius: 10px;
+}
+
+.source-type-btn {
+  flex: 1;
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgb(var(--text-rgb) / 0.55);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.source-type-btn:hover {
+  color: rgb(var(--text-rgb) / 0.85);
+}
+
+.source-type-btn.active {
+  color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.08);
+  border-color: rgb(var(--accent-rgb) / 0.35);
 }
 
 .toggle-row {

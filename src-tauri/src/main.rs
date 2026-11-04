@@ -43,7 +43,8 @@ use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
 };
 use crate::api::hosts::{
-  get_hosts_path, read_system_hosts, revert_hosts, update_hosts_with_groups,
+  fetch_remote_config, get_hosts_path, get_hosts_sources, read_system_hosts, remove_hosts_source,
+  revert_hosts, save_hosts_source, update_hosts_with_groups,
 };
 use crate::api::memory::{memory_delete, memory_list, memory_recall, memory_save};
 use crate::api::os::{get_os_info, SystemState};
@@ -245,6 +246,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       revert_hosts,
       read_system_hosts,
       get_hosts_path,
+      fetch_remote_config,
+      get_hosts_sources,
+      save_hosts_source,
+      remove_hosts_source,
       get_os_info,
       get_app_info,
       enable_autostart,

@@ -1,6 +1,9 @@
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use tauri::AppHandle;
+use std::path::PathBuf;
+use std::time::Duration;
+use tauri::{AppHandle, Manager};
 
 pub const HOSTS_PATH: &str = if cfg!(any(target_os = "linux", target_os = "macos")) {
   "/etc/hosts"
@@ -51,11 +54,29 @@ pub fn load_local_config(_app: &AppHandle) -> Result<Vec<GroupHosts>, Box<dyn Er
   Ok(vec![default_group])
 }
 
-pub async fn fetch_remote_config(url: &str) -> Result<Vec<GroupHosts>, Box<dyn Error>> {
-  let resp = reqwest::get(url).await?;
+const HOSTS_REQUEST_TIMEOUT_SECS: u64 = 20;
+const HOSTS_USER_AGENT: &str = "Jedi/1.0";
+
+/// 拉取 URL 远程配置并解析为分组数据（URL 需返回 Jedi JSON 分组格式）
+async fn fetch_url_groups(url: &str) -> Result<Vec<GroupHosts>, Box<dyn Error>> {
+  let client = Client::builder()
+    .user_agent(HOSTS_USER_AGENT)
+    .timeout(Duration::from_secs(HOSTS_REQUEST_TIMEOUT_SECS))
+    .build()?;
+  let resp = client.get(url).send().await?;
+  let status = resp.status();
+  if !status.is_success() {
+    return Err(format!("HTTP {}", status).into());
+  }
   let text = resp.text().await?;
   let groups: Vec<GroupHosts> = serde_json::from_str(&text)?;
   Ok(groups)
+}
+
+/// 获取远程 hosts 分组配置
+#[tauri::command]
+pub async fn fetch_remote_config(url: String) -> Result<Vec<GroupHosts>, String> {
+  fetch_url_groups(&url).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -67,7 +88,7 @@ pub async fn update_hosts_with_groups(
 ) -> Result<String, String> {
   let groups_result = if source == "remote" {
     if let Some(u) = url {
-      fetch_remote_config(&u).await.map_err(|e| e.to_string())
+      fetch_url_groups(&u).await.map_err(|e| e.to_string())
     } else {
       return Err("Remote source requires URL".to_string());
     }
@@ -510,4 +531,97 @@ pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
   }
 
   Ok(result)
+}
+
+// ==================== 远程数据源 ====================
+
+/// 远程 hosts 数据源：一个返回 Jedi JSON 分组格式的 URL，
+/// 与分组一一对应。URL 本身携带全部必要参数（如兜底 IP、命名空间），
+/// Jedi 不感知数据源背后的实现细节。
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct HostsSource {
+  /// 分组名
+  pub name: String,
+  /// 数据源 URL
+  pub url: String,
+  /// 上次同步时间（Unix 秒）
+  #[serde(default)]
+  pub last_synced_at: Option<u64>,
+}
+
+// ==================== 远程数据源持久化 ====================
+
+fn get_hosts_sources_path(app: &AppHandle) -> Result<PathBuf, String> {
+  let app_data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+  if !app_data_dir.exists() {
+    std::fs::create_dir_all(&app_data_dir).map_err(|e| e.to_string())?;
+  }
+  Ok(app_data_dir.join("hosts_sources.json"))
+}
+
+fn read_hosts_sources(path: &PathBuf) -> Result<Vec<HostsSource>, String> {
+  if !path.exists() {
+    return Ok(Vec::new());
+  }
+  let content = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+  if content.trim().is_empty() {
+    return Ok(Vec::new());
+  }
+  serde_json::from_str(&content).map_err(|e| format!("hosts_sources.json 解析失败: {}", e))
+}
+
+fn write_hosts_sources(path: &PathBuf, sources: &[HostsSource]) -> Result<(), String> {
+  let content = serde_json::to_string_pretty(sources).map_err(|e| e.to_string())?;
+  std::fs::write(path, content).map_err(|e| e.to_string())
+}
+
+/// 读取远程数据源列表
+#[tauri::command]
+pub fn get_hosts_sources(app: AppHandle) -> Result<Vec<HostsSource>, String> {
+  read_hosts_sources(&get_hosts_sources_path(&app)?)
+}
+
+/// 保存/更新远程数据源（按分组名 upsert），返回最新列表
+#[tauri::command]
+pub fn save_hosts_source(app: AppHandle, source: HostsSource) -> Result<Vec<HostsSource>, String> {
+  let path = get_hosts_sources_path(&app)?;
+  let mut sources = read_hosts_sources(&path)?;
+  match sources.iter().position(|s| s.name == source.name) {
+    Some(idx) => sources[idx] = source,
+    None => sources.push(source),
+  }
+  write_hosts_sources(&path, &sources)?;
+  Ok(sources)
+}
+
+/// 删除远程数据源，返回最新列表
+#[tauri::command]
+pub fn remove_hosts_source(app: AppHandle, name: String) -> Result<Vec<HostsSource>, String> {
+  let path = get_hosts_sources_path(&app)?;
+  let mut sources = read_hosts_sources(&path)?;
+  sources.retain(|s| s.name != name);
+  write_hosts_sources(&path, &sources)?;
+  Ok(sources)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_hosts_source_serde_camel_case() {
+    // 持久化格式与前端字段（camelCase）保持一致
+    let json = r#"{"name":"k8s-ingress","url":"http://10.0.0.5:30180/hosts.json?ip=10.0.0.5","lastSyncedAt":1730000000}"#;
+    let source: HostsSource = serde_json::from_str(json).unwrap();
+    assert_eq!(source.name, "k8s-ingress");
+    assert!(source.url.contains("hosts.json"));
+    assert_eq!(source.last_synced_at, Some(1730000000));
+
+    let out = serde_json::to_string(&source).unwrap();
+    assert!(out.contains("\"lastSyncedAt\":1730000000"));
+    // lastSyncedAt 缺省时可解析（向前兼容）
+    let legacy: HostsSource = serde_json::from_str(r#"{"name":"g","url":"http://x"}"#).unwrap();
+    assert_eq!(legacy.last_synced_at, None);
+  }
 }

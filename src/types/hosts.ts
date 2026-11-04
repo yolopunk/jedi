@@ -21,3 +21,16 @@ export interface Group {
   name: string
   hosts: HostEntry[]
 }
+
+/**
+ * 远程 hosts 数据源（与分组一一对应）
+ *
+ * 一个返回 Jedi JSON 分组格式的 URL；URL 本身携带全部必要参数
+ * （如兜底 IP、命名空间等），Jedi 不感知数据源背后的实现细节。
+ */
+export interface HostsSource {
+  name: string
+  url: string
+  /** 上次同步时间（Unix 秒） */
+  lastSyncedAt?: number | null
+}

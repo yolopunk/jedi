@@ -375,6 +375,7 @@ export default {
     },
     groups: {
       add: '添加分组',
+      refresh: '同步远程数据源',
     },
     empty: {
       title: '暂无解析配置',
@@ -412,7 +413,6 @@ export default {
       deleteBtn: '确认删除',
       groupNameLabel: '分组名称',
       groupNamePlaceholder: '例如: 开发环境',
-      useRemote: '使用远程配置',
       remoteUrlLabel: '远程配置URL',
       remoteUrlPlaceholder: '例如: https://example.com/hosts.json',
       hostsListLabel: 'Hosts 列表',
@@ -425,13 +425,17 @@ export default {
       hostDataLost: '主机数据已丢失',
       deleteSubtitle: '此操作无法撤销',
       createGroupSubtitle: '创建新的主机分组',
-      remoteToggleHint: '从远程 URL 加载 hosts 配置',
+      remoteToggleHint:
+        'URL 需返回 JSON 分组格式：[{"name":"分组名","hosts":[{"ip":"1.2.3.4","domain":"a.com","disabled":false}]}]',
       hostsContentLabel: 'Hosts 内容',
       onePerLineHint: '每行一条：IP + 空格 + 域名',
       remoteUrlRequired: '远程 URL 不能为空',
       remoteInvalid: '远程配置格式无效',
       remoteGroupNotFound: '远程配置中未找到该分组',
       remoteFetchFailed: '拉取失败：{message}',
+      sourceType: '数据源类型',
+      sourceManual: '手动输入',
+      sourceUrl: '远程 URL',
     },
     // Table UI
     console: {

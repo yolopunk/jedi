@@ -388,6 +388,7 @@ export default {
     },
     groups: {
       add: 'Add Group',
+      refresh: 'Sync remote source',
     },
     empty: {
       title: 'No Configurations',
@@ -425,7 +426,6 @@ export default {
       deleteBtn: 'Delete',
       groupNameLabel: 'Group Name',
       groupNamePlaceholder: 'e.g. Development',
-      useRemote: 'Use Remote Config',
       remoteUrlLabel: 'Remote Config URL',
       remoteUrlPlaceholder: 'e.g. https://example.com/hosts.json',
       hostsListLabel: 'Hosts List',
@@ -438,13 +438,17 @@ export default {
       hostDataLost: 'Host data lost',
       deleteSubtitle: 'This action cannot be undone',
       createGroupSubtitle: 'Create a new host group',
-      remoteToggleHint: 'Load hosts from a remote URL',
+      remoteToggleHint:
+        'URL must return Jedi JSON groups: [{"name":"group","hosts":[{"ip":"1.2.3.4","domain":"a.com","disabled":false}]}]',
       hostsContentLabel: 'Hosts Content',
       onePerLineHint: 'One entry per line: IP followed by domain, separated by space',
       remoteUrlRequired: 'Remote URL cannot be empty',
       remoteInvalid: 'Invalid remote config format',
       remoteGroupNotFound: 'Group not found in remote config',
       remoteFetchFailed: 'Fetch failed: {message}',
+      sourceType: 'Source Type',
+      sourceManual: 'Manual',
+      sourceUrl: 'Remote URL',
     },
     // Table UI
     console: {

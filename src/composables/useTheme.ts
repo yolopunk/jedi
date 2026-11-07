@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core'
 import { mdiThemeLightDark, mdiWeatherNight, mdiWeatherSunny } from '@mdi/js'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useStorage } from '@/composables/useStorage'
@@ -28,6 +29,8 @@ const updateSystemTheme = () => {
 const applyTheme = () => {
   // 应用到文档根元素
   if (isDark.value) {
+    // 同步任务栏 / 托盘图标（深色主题用深底白标，浅色主题用白底黑标）
+    invoke('set_icon_theme', { dark: isDark.value }).catch(() => {})
     document.documentElement.classList.add('dark-theme')
     document.documentElement.classList.remove('light-theme')
     // 更新 Vuetify 主题

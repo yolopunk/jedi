@@ -17,6 +17,12 @@ pub fn get_app_info() -> Result<AppInfo, String> {
   })
 }
 
+/// 按应用主题切换窗口/任务栏与托盘图标（dark=true 使用深底白标，浅色主题用白底黑标）
+#[tauri::command]
+pub fn set_icon_theme(app: AppHandle, dark: bool) {
+  crate::config::app::apply_icon_variant(&app, dark);
+}
+
 /// 启用开机自启动
 #[tauri::command]
 pub fn enable_autostart(app: AppHandle) -> Result<(), String> {

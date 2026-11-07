@@ -179,7 +179,7 @@
 
 <script setup lang="ts">
 import { mdiDomain, mdiPlus, mdiPowerPlugOffOutline, mdiPowerPlugOutline } from '@mdi/js'
-import { computed, onMounted, ref } from 'vue'
+import { nextTick, computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getOsInfo } from '@/api/hosts'
 import AppNotification from '@/components/common/AppNotification.vue'
@@ -260,7 +260,13 @@ function openEditSourceDialog(name: string) {
   const source = remoteSources.value.find(item => item.name === name)
   if (!source) return
   currentSource.value = source
-  dialogs.value.editSource = true
+  // 等三点菜单（v-menu）完全关闭后再打开弹框：生产构建中 menu→dialog 同帧
+  // 切换会让 overlay 焦点竞态吃掉弹框（dev 下不复现）
+  void nextTick(() => {
+    setTimeout(() => {
+      dialogs.value.editSource = true
+    }, 350)
+  })
 }
 
 async function handleSaveSource(payload: { name: string; url: string }) {

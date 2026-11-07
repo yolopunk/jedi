@@ -36,3 +36,6 @@ dist-ssr
 
 # WorkBuddy agent artifacts
 .workbuddy-ai/
+
+# agent scratch / installer preview artifacts
+.tmp/

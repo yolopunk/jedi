@@ -4,6 +4,7 @@
     @update:model-value="$emit('update:modelValue', $event)"
     max-width="480"
     persistent
+    attach="body"
   >
     <v-card class="model-settings-card">
       <!-- Header -->

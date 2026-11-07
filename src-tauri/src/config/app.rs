@@ -1,9 +1,74 @@
 use crate::api::app::get_app_info;
+use std::sync::Mutex;
 use sysinfo::System;
 use tauri::image::Image;
 use tauri::menu::{MenuBuilder, MenuItem, PredefinedMenuItem};
-use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{App, Emitter, Manager};
+use tauri::tray::{MouseButton, MouseButtonState, TrayIcon, TrayIconBuilder, TrayIconEvent};
+use tauri::{App, AppHandle, Emitter, Manager};
+
+/// 主题跟随的图标素材：
+/// - dark：深底白标（深色主题，深色任务栏上醒目）
+/// - light：白底黑标（浅色主题，浅色任务栏上醒目）
+const TRAY_ICON_DARK: &[u8] = include_bytes!("../../icons/tray-icon-dark.png");
+const TRAY_ICON_LIGHT: &[u8] = include_bytes!("../../icons/tray-icon-light.png");
+const WINDOW_ICON_DARK: &[u8] = include_bytes!("../../icons/app-icon-dark-32.png");
+const WINDOW_ICON_LIGHT: &[u8] = include_bytes!("../../icons/app-icon-light-32.png");
+
+/// 托盘句柄缓存：主题切换命令运行时用它更新托盘图标
+pub struct TrayState {
+  pub tray: Mutex<Option<TrayIcon>>,
+}
+
+/// 按主题应用窗口/任务栏图标与托盘图标（Windows/Linux；macOS 托盘用模板图标不变）
+pub fn apply_icon_variant(app: &AppHandle, dark: bool) {
+  // macOS 托盘走模板图标，由系统按外观反色；窗口图标保持不变
+  #[cfg(target_os = "macos")]
+  {
+    let _ = app;
+    let _ = dark;
+  }
+
+  #[cfg(not(target_os = "macos"))]
+  {
+    let tray_bytes: &[u8] = if dark {
+      TRAY_ICON_DARK
+    } else {
+      TRAY_ICON_LIGHT
+    };
+    let window_bytes: &[u8] = if dark {
+      WINDOW_ICON_DARK
+    } else {
+      WINDOW_ICON_LIGHT
+    };
+
+    let tray_icon = match Image::from_bytes(tray_bytes) {
+      Ok(icon) => icon,
+      Err(e) => {
+        eprintln!("set tray icon failed: {}", e);
+        return;
+      }
+    };
+    let window_icon = match Image::from_bytes(window_bytes) {
+      Ok(icon) => icon,
+      Err(e) => {
+        eprintln!("set window icon failed: {}", e);
+        return;
+      }
+    };
+
+    if let Some(state) = app.try_state::<TrayState>() {
+      if let Ok(guard) = state.tray.lock() {
+        if let Some(tray) = guard.as_ref() {
+          let _ = tray.set_icon(Some(tray_icon));
+        }
+      }
+    }
+
+    if let Some(window) = app.get_webview_window("main") {
+      let _ = window.set_icon(window_icon);
+    }
+  }
+}
 
 pub fn load_tray_config(app: &App) {
   let nav_chat = match MenuItem::with_id(app, "nav_chat", "💬 AI Chat", true, None::<&str>) {
@@ -128,7 +193,7 @@ pub fn load_tray_config(app: &App) {
     }
   };
 
-  let _ = TrayIconBuilder::new()
+  let tray = TrayIconBuilder::new()
     .menu(&menu)
     .icon(icon)
     .tooltip(&tooltip)
@@ -182,4 +247,16 @@ pub fn load_tray_config(app: &App) {
     })
     .icon_as_template(cfg!(target_os = "macos"))
     .build(app);
+
+  match tray {
+    Ok(tray) => {
+      app.manage(TrayState {
+        tray: Mutex::new(Some(tray)),
+      });
+      apply_icon_variant(&app.handle(), true);
+    }
+    Err(e) => {
+      eprintln!("failed to build tray icon: {}", e);
+    }
+  }
 }

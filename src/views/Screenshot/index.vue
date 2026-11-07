@@ -339,7 +339,9 @@ h1, h2, h3, p { margin: 0; }
 h1 { margin-top: 8px; font-size: clamp(27px, 3vw, 38px); font-weight: 650; letter-spacing: -1.4px; }
 .heading p { max-width: 520px; margin-top: 10px; color: var(--text-muted); font-size: 13px; line-height: 1.7; }
 .capture-actions { display: flex; flex-direction: column; align-items: center; gap: 9px; flex-shrink: 0; }
-.capture-button { min-width: 142px; box-shadow: 0 10px 30px rgb(var(--accent-rgb) / 0.22); }
+.capture-button { min-width: 142px; box-shadow: 0 10px 30px rgb(var(--accent-rgb) / 0.22); transition: box-shadow var(--motion-fast), transform var(--motion-fast); }
+.capture-button:hover { box-shadow: 0 14px 36px rgb(var(--accent-rgb) / 0.3); transform: translateY(-1px); }
+.capture-button:active { transform: translateY(0); }
 .shortcut { display: flex; align-items: center; gap: 4px; color: var(--text-muted); font: 10px var(--jedi-font-mono); }
 .shortcut kbd { min-width: 22px; padding: 2px 6px; border: 1px solid var(--border); border-bottom-color: var(--border-strong); border-radius: 5px; background: var(--surface-raised); color: var(--text-muted); font: inherit; text-align: center; box-shadow: 0 1px 0 rgb(var(--text-rgb) / 0.08); }
 .gallery-alert { margin-bottom: 18px; }
@@ -374,7 +376,7 @@ h1 { margin-top: 8px; font-size: clamp(27px, 3vw, 38px); font-weight: 650; lette
 .capture-card:hover .thumbnail img { filter: saturate(1.03); transform: scale(1.012); box-shadow: 0 14px 30px rgb(var(--ink-rgb) / 0.28); }
 .thumb-broken { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px; text-align: center; color: var(--text-muted); }
 .thumb-broken-text { font-size: 12px; line-height: 1.6; }
-.thumb-retry { position: absolute; top: 18px; right: 18px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-raised); color: var(--text-muted); font-size: 11px; cursor: pointer; }
+.thumb-retry { position: absolute; top: 18px; right: 18px; cursor: pointer; padding: 5px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-raised); color: var(--text-muted); font-size: 11px; cursor: pointer; }
 .thumb-retry:hover { border-color: var(--accent); color: var(--text); }
 .thumb-retry:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .preview-hint { position: absolute; right: 10px; bottom: 10px; display: flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid rgb(var(--text-rgb) / 0.12); border-radius: 8px; background: rgb(var(--bg-rgb) / 0.84); color: var(--text); font-size: 11px; opacity: 0; transform: translateY(5px); backdrop-filter: blur(12px); transition: opacity var(--motion-fast), transform var(--motion-fast); }
@@ -400,8 +402,8 @@ h1 { margin-top: 8px; font-size: clamp(27px, 3vw, 38px); font-weight: 650; lette
 .preview-header h2 { max-width: 520px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 650; }
 .pixel-size { display: block; margin-top: 3px; color: var(--text-muted); font: 10px var(--jedi-font-mono); }
 .mode-switch { display: flex; gap: 3px; padding: 4px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-canvas); }
-.mode-switch button { display: flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 13px; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); font: 600 11px var(--jedi-font-ui); cursor: pointer; transition: color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast); }
-.mode-switch button:hover { color: var(--text); }
+.mode-switch button { display: flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 13px; cursor: pointer; border: 0; border-radius: 7px; background: transparent; color: var(--text-muted); font: 600 11px var(--jedi-font-ui); cursor: pointer; transition: color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast); }
+.mode-switch button:hover { color: var(--text); background: rgb(var(--text-rgb) / 0.05); }
 .mode-switch button.active { background: var(--surface-raised); color: var(--text); box-shadow: 0 3px 10px rgb(var(--ink-rgb) / 0.14); }
 .mode-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .close-preview { margin-left: auto; }

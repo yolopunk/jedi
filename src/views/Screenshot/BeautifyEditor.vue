@@ -985,7 +985,7 @@ onUnmounted(() => {
 .anno-divider { width: 1px; height: 20px; background: var(--border); }
 .anno-spacer { flex: 1; }
 .color-dot { width: 20px; height: 20px; padding: 0; border: 2px solid transparent; border-radius: 50%; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.28); cursor: pointer; transition: border-color var(--motion-fast), transform var(--motion-fast); }
-.color-dot:hover { transform: scale(1.1); }
+.color-dot:hover:not(.active) { transform: scale(1.1); }
 .color-dot.active { border-color: var(--text); transform: scale(1.08); }
 .color-dot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .width-ctrl { display: flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 10px; }

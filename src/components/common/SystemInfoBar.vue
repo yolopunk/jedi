@@ -307,7 +307,7 @@ const getMemoryUsagePercentage = _getMemoryUsagePercentage
 
 /* Podcast Player Section */
 .player-section {
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
     overflow: hidden;
 }

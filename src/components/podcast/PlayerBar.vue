@@ -200,12 +200,12 @@ function onSeekInput(event: Event) {
 .volume-group {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   flex-shrink: 0;
 }
 
 .volume-track {
-  width: 54px;
+  width: 46px;
   height: 3px;
   margin: 0;
   -webkit-appearance: none;
@@ -248,8 +248,9 @@ function onSeekInput(event: Event) {
 .player-title {
   font-size: 10px;
   color: rgba(var(--v-theme-on-surface), 0.7);
-  max-width: 180px;
-  flex-shrink: 1;
+  width: 140px;
+  max-width: 140px;
+  flex-shrink: 0;
   min-width: 0;
 }
 
@@ -258,7 +259,7 @@ function onSeekInput(event: Event) {
   align-items: center;
   gap: 4px;
   flex: 1;
-  min-width: 80px;
+  min-width: 104px;
 }
 
 .player-time {

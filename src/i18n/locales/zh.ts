@@ -498,6 +498,9 @@ export default {
     volume: '音量',
     mute: '静音',
     unmute: '取消静音',
+    progress: '播放进度',
+    seekBack: '后退 {n} 秒',
+    seekForward: '快进 {n} 秒',
   },
   common: {
     confirm: '确认',

@@ -510,6 +510,9 @@ export default {
     volume: 'Volume',
     mute: 'Mute',
     unmute: 'Unmute',
+    progress: 'Playback progress',
+    seekBack: 'Back {n} seconds',
+    seekForward: 'Forward {n} seconds',
   },
   common: {
     confirm: 'Confirm',

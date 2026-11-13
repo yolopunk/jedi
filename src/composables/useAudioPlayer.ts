@@ -8,6 +8,8 @@ const currentPlayingSubUrl = ref<string | null>(null) // To track which subscrip
 const isPaused = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
+// 已缓冲百分比，用于进度条显示缓冲区间
+const bufferedPercent = ref(0)
 const audioRef = ref<HTMLAudioElement | null>(null)
 // 播放失败原因（空音频地址 / 加载失败 / 被自动播放策略拦截），由 UI 层提示用户
 const playbackError = ref<string | null>(null)
@@ -27,6 +29,7 @@ let playHandler: (() => void) | null = null
 let endedHandler: (() => void) | null = null
 let timeUpdateHandler: (() => void) | null = null
 let loadedMetadataHandler: (() => void) | null = null
+let progressHandler: (() => void) | null = null
 let errorHandler: (() => void) | null = null
 
 const MEDIA_ERROR_MESSAGES: Record<number, string> = {
@@ -119,6 +122,16 @@ function seek(seconds: number) {
   el.currentTime = Number.isFinite(el.duration) ? Math.min(target, el.duration) : target
 }
 
+/** 跳到绝对时间点（秒） */
+function seekToAbsolute(seconds: number) {
+  const el = audioRef.value
+  if (!el) return
+  const total = Number.isFinite(el.duration) && el.duration > 0 ? el.duration : seconds
+  const target = Math.min(Math.max(seconds, 0), total)
+  el.currentTime = target
+  currentTime.value = target
+}
+
 // ==================== Volume ====================
 
 function clampVolume(v: number) {
@@ -200,6 +213,14 @@ function setAudioRef(el: HTMLAudioElement) {
   loadedMetadataHandler = () => {
     duration.value = el.duration
   }
+  progressHandler = () => {
+    const { buffered, duration: total } = el
+    if (!buffered.length || !Number.isFinite(total) || total <= 0) {
+      bufferedPercent.value = 0
+      return
+    }
+    bufferedPercent.value = Math.min(100, (buffered.end(buffered.length - 1) / total) * 100)
+  }
   errorHandler = () => {
     // 没有在播节目时（src 被清空 / 停止播放）浏览器也会触发 error，忽略
     if (!currentPlaying.value || !el.getAttribute('src')) return
@@ -215,6 +236,7 @@ function setAudioRef(el: HTMLAudioElement) {
   el.addEventListener('ended', endedHandler)
   el.addEventListener('timeupdate', timeUpdateHandler)
   el.addEventListener('loadedmetadata', loadedMetadataHandler)
+  el.addEventListener('progress', progressHandler)
   el.addEventListener('error', errorHandler)
 
   // 恢复上次的音量/静音状态
@@ -246,6 +268,10 @@ function cleanupAudioRef() {
     el.removeEventListener('loadedmetadata', loadedMetadataHandler)
     loadedMetadataHandler = null
   }
+  if (progressHandler) {
+    el.removeEventListener('progress', progressHandler)
+    progressHandler = null
+  }
   if (errorHandler) {
     el.removeEventListener('error', errorHandler)
     errorHandler = null
@@ -265,6 +291,7 @@ export function useAudioPlayer() {
     isPaused,
     currentTime,
     duration,
+    bufferedPercent,
     audioRef,
     playbackError,
     volume,
@@ -273,6 +300,7 @@ export function useAudioPlayer() {
     togglePlay,
     stop,
     seek,
+    seekToAbsolute,
     setVolume,
     toggleMute,
     setAudioRef,

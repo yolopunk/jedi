@@ -74,7 +74,7 @@
     <audio
       ref="audioEl"
       class="d-none"
-      :src="currentPlaying?.audio_url || ''"
+      :src="currentPlaying?.audio_url"
       autoplay
     ></audio>
 

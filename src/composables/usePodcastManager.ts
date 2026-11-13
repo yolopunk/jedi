@@ -1,4 +1,4 @@
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import {
   fetchEpisodes,
   getSubscriptions,
@@ -25,8 +25,20 @@ export function usePodcastManager() {
   const episodesLoadMoreTrigger = ref<HTMLElement | null>(null)
   let episodesObserver: IntersectionObserver | null = null
 
-  const { currentPlaying, currentPlayingSubUrl, playEpisode: globalPlayEpisode } = useAudioPlayer()
+  const {
+    currentPlaying,
+    currentPlayingSubUrl,
+    playbackError,
+    playEpisode: globalPlayEpisode,
+  } = useAudioPlayer()
   const { show: snackbar, text: snackbarText, color: snackbarColor, notify } = useSnackbar()
+
+  // 播放失败（无音频地址 / 网络错误 / 被拦截）时给用户明确提示，而不是静默无声
+  watch(playbackError, err => {
+    if (err) {
+      notify(err, 'error')
+    }
+  })
 
   const currentView = ref<'library' | 'detail'>('library')
 

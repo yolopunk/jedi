@@ -3,8 +3,10 @@ use regex::Regex;
 use reqwest::Client;
 use rss::Channel;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
+use std::time::Duration;
 use tauri::AppHandle;
 use tauri::Manager;
 
@@ -23,6 +25,25 @@ pub struct PodcastEpisode {
   pub pub_date: Option<String>,
   pub duration: Option<String>,
   pub chapters: Vec<String>, // Placeholder for now
+  /// 小宇宙付费单集（payType != FREE 或 isPrivateMedia）
+  #[serde(default)]
+  pub is_paid: bool,
+}
+
+/// 小宇宙播客的付费信息（来自播客网页的 __NEXT_DATA__）
+#[derive(Debug, Default, Clone)]
+struct PayInfo {
+  pay_type: String,
+  paid_episode_count: u32,
+  paid_eids: HashSet<String>,
+}
+
+/// fetch_episodes 的返回体：剧集 + 播客级付费信息
+#[derive(Debug, Serialize)]
+pub struct EpisodesPayload {
+  pub episodes: Vec<PodcastEpisode>,
+  pub pay_type: String,
+  pub paid_episode_count: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -46,6 +67,11 @@ pub struct PodcastSubscription {
   pub owner_email: String,
   #[serde(default)]
   pub podcast_type: String,
+  /// FREE / PAY_EPISODE_PODCAST / ...
+  #[serde(default)]
+  pub pay_type: String,
+  #[serde(default)]
+  pub paid_episode_count: u32,
 }
 
 // ==================== Helper Functions ====================
@@ -99,6 +125,8 @@ fn parse_subscription_from_channel(channel: &Channel, rss_url: &str) -> PodcastS
     owner_name,
     owner_email,
     podcast_type,
+    pay_type: "FREE".to_string(),
+    paid_episode_count: 0,
   }
 }
 
@@ -170,6 +198,7 @@ fn parse_episodes_from_channel(channel: &Channel) -> Vec<PodcastEpisode> {
         pub_date: item.pub_date.clone(),
         duration,
         chapters: Vec::new(), // TODO: Parse chapters if available
+        is_paid: false,
       }
     })
     .collect()
@@ -192,6 +221,88 @@ async fn fetch_rss_content(url: &str) -> Result<Channel, String> {
   Channel::read_from(&content[..]).map_err(|e| e.to_string())
 }
 
+// ==================== Paid Episode Support ====================
+
+/// 从频道 link 中取出小宇宙播客 id
+fn xiaoyuzhou_podcast_id(channel_link: &str) -> Option<String> {
+  let re = Regex::new(r"xiaoyuzhoufm\.com/podcast/([0-9a-f]+)").ok()?;
+  re.captures(channel_link)
+    .and_then(|cap| cap.get(1))
+    .map(|m| m.as_str().to_string())
+}
+
+/// 抓取小宇宙播客网页并解析付费信息（网页内嵌的 __NEXT_DATA__）。
+/// 只有小宇宙来源的播客才有，其它来源返回 None。
+async fn fetch_pay_info(channel_link: &str) -> Option<PayInfo> {
+  let pid = xiaoyuzhou_podcast_id(channel_link)?;
+  let client = Client::builder()
+    .timeout(Duration::from_secs(12))
+    .build()
+    .ok()?;
+
+  let html = client
+    .get(format!("https://www.xiaoyuzhoufm.com/podcast/{pid}"))
+    .header(
+      "User-Agent",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
+       (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    )
+    .send()
+    .await
+    .ok()?
+    .text()
+    .await
+    .ok()?;
+
+  let re = Regex::new(
+    r#"(?s)<script id="__NEXT_DATA__" type="application/json">(.*?)</script>"#,
+  )
+  .ok()?;
+  let json: serde_json::Value = serde_json::from_str(re.captures(&html)?.get(1)?.as_str()).ok()?;
+  let podcast = json.pointer("/props/pageProps/podcast")?;
+
+  let pay_type = podcast
+    .get("payType")
+    .and_then(|v| v.as_str())
+    .unwrap_or("FREE")
+    .to_string();
+  let paid_episode_count = podcast
+    .get("payEpisodeCount")
+    .and_then(|v| v.as_u64())
+    .unwrap_or(0) as u32;
+
+  // 播客页只内嵌最近若干集，能确认付费的就先标记出来
+  let mut paid_eids = HashSet::new();
+  if let Some(episodes) = podcast.get("episodes").and_then(|v| v.as_array()) {
+    for ep in episodes {
+      let ep_pay = ep.get("payType").and_then(|v| v.as_str()).unwrap_or("FREE");
+      let private = ep
+        .get("isPrivateMedia")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+      if ep_pay != "FREE" || private {
+        if let Some(eid) = ep.get("eid").and_then(|v| v.as_str()) {
+          paid_eids.insert(eid.to_string());
+        }
+      }
+    }
+  }
+
+  Some(PayInfo {
+    pay_type,
+    paid_episode_count,
+    paid_eids,
+  })
+}
+
+/// 把付费信息补充到订阅对象上
+async fn apply_pay_info(sub: &mut PodcastSubscription, channel_link: &str) {
+  if let Some(info) = fetch_pay_info(channel_link).await {
+    sub.pay_type = info.pay_type;
+    sub.paid_episode_count = info.paid_episode_count;
+  }
+}
+
 // ==================== Tauri Commands ====================
 
 #[tauri::command]
@@ -201,7 +312,8 @@ pub async fn refresh_subscription(
 ) -> Result<PodcastSubscription, String> {
   // 1. Fetch latest info
   let channel = fetch_rss_content(&rss_url).await?;
-  let new_sub = parse_subscription_from_channel(&channel, &rss_url);
+  let mut new_sub = parse_subscription_from_channel(&channel, &rss_url);
+  apply_pay_info(&mut new_sub, &channel.link).await;
 
   // 2. Update storage
   save_subscription(app, new_sub.clone()).await?;
@@ -219,20 +331,41 @@ pub async fn resolve_xiaoyuzhou_podcast(url: String) -> Result<PodcastSubscripti
   };
 
   let channel = fetch_rss_content(&rss_url).await?;
-  Ok(parse_subscription_from_channel(&channel, &rss_url))
+  let mut sub = parse_subscription_from_channel(&channel, &rss_url);
+  apply_pay_info(&mut sub, &channel.link).await;
+  Ok(sub)
 }
 
 #[tauri::command]
 pub async fn fetch_rss_channel(rss_url: String) -> Result<PodcastSubscription, String> {
   let resolved_url = resolve_rss_url(&rss_url).await?;
   let channel = fetch_rss_content(&resolved_url).await?;
-  Ok(parse_subscription_from_channel(&channel, &resolved_url))
+  let mut sub = parse_subscription_from_channel(&channel, &resolved_url);
+  apply_pay_info(&mut sub, &channel.link).await;
+  Ok(sub)
 }
 
 #[tauri::command]
-pub async fn fetch_episodes(rss_url: String) -> Result<Vec<PodcastEpisode>, String> {
+pub async fn fetch_episodes(rss_url: String) -> Result<EpisodesPayload, String> {
   let channel = fetch_rss_content(&rss_url).await?;
-  Ok(parse_episodes_from_channel(&channel))
+  let mut episodes = parse_episodes_from_channel(&channel);
+
+  let mut pay_type = "FREE".to_string();
+  let mut paid_episode_count = 0u32;
+  if let Some(info) = fetch_pay_info(&channel.link).await {
+    pay_type = info.pay_type;
+    paid_episode_count = info.paid_episode_count;
+    // RSS 的 guid 与接口的 eid 一致，可直接对齐
+    for ep in &mut episodes {
+      ep.is_paid = info.paid_eids.contains(&ep.guid);
+    }
+  }
+
+  Ok(EpisodesPayload {
+    episodes,
+    pay_type,
+    paid_episode_count,
+  })
 }
 
 #[tauri::command]

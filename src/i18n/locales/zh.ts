@@ -493,6 +493,11 @@ export default {
     exportGuideStep2: '点击右上角【我的订阅】按钮',
     exportGuideStep3: '点击【我的订阅】页面右上角的分享按钮',
     exportGuideStep4: '选择要订阅的播客，然后点击底部的【导出OPML】按钮',
+    paid: '付费',
+    paidEpisodes: '{count} 集付费',
+    volume: '音量',
+    mute: '静音',
+    unmute: '取消静音',
   },
   common: {
     confirm: '确认',

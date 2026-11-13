@@ -33,6 +33,34 @@
       <span class="player-time">{{ formatTime(duration) }}</span>
     </div>
 
+    <!-- Volume -->
+    <div class="volume-group">
+      <v-btn
+        icon
+        size="x-small"
+        variant="text"
+        class="volume-btn"
+        :title="volumeTitle"
+        :aria-label="volumeTitle"
+        @click.stop="toggleMute"
+      >
+        <v-icon :icon="volumeIcon" size="14" aria-hidden="true" />
+      </v-btn>
+      <input
+        type="range"
+        class="volume-track"
+        min="0"
+        max="100"
+        step="1"
+        :value="Math.round(volume * 100)"
+        :aria-label="t('podcast.volume')"
+        :title="t('podcast.volume')"
+        :style="{ '--volume-fill': `${Math.round(volume * 100)}%` }"
+        @input="onVolumeInput"
+        @click.stop
+      />
+    </div>
+
     <!-- Time Wheel Toggle -->
     <v-btn
       icon
@@ -77,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { mdiPause, mdiPlay } from '@mdi/js'
+import { mdiPause, mdiPlay, mdiVolumeHigh, mdiVolumeLow, mdiVolumeMedium, mdiVolumeOff } from '@mdi/js'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
@@ -85,9 +113,37 @@ import { formatTime, parseTimestamps } from '@/utils/timestampParser'
 import TimeWheel from './TimeWheel.vue'
 
 const { t } = useI18n()
-const { currentPlaying, isPaused, currentTime, duration, togglePlay, seek, stop } = useAudioPlayer()
+const {
+  currentPlaying,
+  isPaused,
+  currentTime,
+  duration,
+  volume,
+  isMuted,
+  togglePlay,
+  seek,
+  stop,
+  setVolume,
+  toggleMute,
+} = useAudioPlayer()
 
 const showWheel = ref(false)
+
+const volumeIcon = computed(() => {
+  if (isMuted.value || volume.value === 0) return mdiVolumeOff
+  if (volume.value < 0.34) return mdiVolumeLow
+  if (volume.value < 0.67) return mdiVolumeMedium
+  return mdiVolumeHigh
+})
+
+const volumeTitle = computed(() =>
+  isMuted.value || volume.value === 0 ? t('podcast.unmute') : t('podcast.mute')
+)
+
+function onVolumeInput(event: Event) {
+  const target = event.target as HTMLInputElement
+  setVolume(Number(target.value) / 100)
+}
 
 const progressPercent = computed(() => {
   if (!duration.value || duration.value <= 0) return 0
@@ -131,12 +187,62 @@ function onSeekInput(event: Event) {
 }
 
 .player-btn,
+.volume-btn,
 .wheel-btn,
 .close-btn {
   width: 18px !important;
   height: 18px !important;
   min-width: 18px !important;
   flex-shrink: 0;
+}
+
+/* Volume */
+.volume-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.volume-track {
+  width: 54px;
+  height: 3px;
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(
+    to right,
+    rgb(var(--v-theme-primary)) var(--volume-fill, 100%),
+    rgba(var(--v-theme-on-surface), 0.12) var(--volume-fill, 100%)
+  );
+  border-radius: 2px;
+  cursor: pointer;
+  outline-offset: 2px;
+  transition: height 0.12s ease;
+}
+
+.volume-track:hover {
+  height: 5px;
+}
+
+.volume-track::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgb(var(--v-theme-primary));
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.volume-track:hover::-webkit-slider-thumb,
+.volume-track:focus-visible::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+.volume-track:focus-visible {
+  outline: 1px solid rgb(var(--v-theme-primary) / 0.6);
 }
 
 .player-title {

@@ -505,6 +505,11 @@ export default {
     exportGuideStep2: 'Tap the [My Subscriptions] button at the top right',
     exportGuideStep3: 'Tap the share button at the top right',
     exportGuideStep4: 'Select podcasts and tap [Export OPML] at the bottom',
+    paid: 'Paid',
+    paidEpisodes: '{count} paid episodes',
+    volume: 'Volume',
+    mute: 'Mute',
+    unmute: 'Unmute',
   },
   common: {
     confirm: 'Confirm',

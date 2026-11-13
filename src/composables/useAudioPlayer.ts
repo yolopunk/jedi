@@ -1,5 +1,6 @@
 import { nextTick, ref } from 'vue'
 import type { PodcastEpisode } from '@/api/podcast'
+import { useStorage } from '@/composables/useStorage'
 
 // Global state
 const currentPlaying = ref<PodcastEpisode | null>(null)
@@ -10,6 +11,15 @@ const duration = ref(0)
 const audioRef = ref<HTMLAudioElement | null>(null)
 // 播放失败原因（空音频地址 / 加载失败 / 被自动播放策略拦截），由 UI 层提示用户
 const playbackError = ref<string | null>(null)
+
+// 音量（0~1）与静音状态，跨会话持久化
+const volume = ref(1)
+const isMuted = ref(false)
+
+const VOLUME_KEY = 'podcastVolume'
+const MUTE_KEY = 'podcastMuted'
+let volumeLoaded = false
+let persistTimer: ReturnType<typeof setTimeout> | null = null
 
 // Handler references for cleanup
 let pauseHandler: (() => void) | null = null
@@ -109,6 +119,68 @@ function seek(seconds: number) {
   el.currentTime = Number.isFinite(el.duration) ? Math.min(target, el.duration) : target
 }
 
+// ==================== Volume ====================
+
+function clampVolume(v: number) {
+  return Math.min(1, Math.max(0, v))
+}
+
+function applyVolume() {
+  const el = audioRef.value
+  if (!el) return
+  el.volume = volume.value
+  el.muted = isMuted.value
+}
+
+async function loadVolumePrefs() {
+  if (volumeLoaded) return
+  volumeLoaded = true
+  const { getItem } = useStorage()
+  const savedVolume = await getItem<number>(VOLUME_KEY)
+  const savedMuted = await getItem<boolean>(MUTE_KEY)
+  if (typeof savedVolume === 'number' && Number.isFinite(savedVolume)) {
+    volume.value = clampVolume(savedVolume)
+  }
+  if (typeof savedMuted === 'boolean') {
+    isMuted.value = savedMuted
+  }
+  applyVolume()
+}
+
+function persistVolumePrefs() {
+  if (persistTimer) clearTimeout(persistTimer)
+  // 拖动滑块时高频触发，稍作合并再落盘
+  persistTimer = setTimeout(() => {
+    const { setItem } = useStorage()
+    void setItem(VOLUME_KEY, volume.value)
+    void setItem(MUTE_KEY, isMuted.value)
+  }, 400)
+}
+
+function setVolume(value: number) {
+  volume.value = clampVolume(value)
+  if (volume.value > 0 && isMuted.value) {
+    isMuted.value = false
+  }
+  applyVolume()
+  persistVolumePrefs()
+}
+
+function toggleMute() {
+  const effectivelyMuted = isMuted.value || volume.value === 0
+  if (effectivelyMuted) {
+    isMuted.value = false
+    // 之前拖到 0 的话，取消静音时恢复一个可听的音量
+    if (volume.value === 0) {
+      volume.value = 0.8
+    }
+  } else {
+    isMuted.value = true
+  }
+  applyVolume()
+  persistVolumePrefs()
+}
+
 function setAudioRef(el: HTMLAudioElement) {
   audioRef.value = el
 
@@ -144,6 +216,10 @@ function setAudioRef(el: HTMLAudioElement) {
   el.addEventListener('timeupdate', timeUpdateHandler)
   el.addEventListener('loadedmetadata', loadedMetadataHandler)
   el.addEventListener('error', errorHandler)
+
+  // 恢复上次的音量/静音状态
+  void loadVolumePrefs()
+  applyVolume()
 }
 
 function cleanupAudioRef() {
@@ -191,10 +267,14 @@ export function useAudioPlayer() {
     duration,
     audioRef,
     playbackError,
+    volume,
+    isMuted,
     playEpisode,
     togglePlay,
     stop,
     seek,
+    setVolume,
+    toggleMute,
     setAudioRef,
     cleanupAudioRef,
     clearPlaybackError,

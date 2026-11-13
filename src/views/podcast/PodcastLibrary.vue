@@ -29,6 +29,9 @@
               </template>
             </v-img>
 
+            <!-- Paid Badge -->
+            <span v-if="isPaidPodcast(sub)" class="paid-badge">{{ $t('podcast.paid') }}</span>
+
             <!-- Playing Indicator -->
             <div
               v-if="currentPlaying && currentPlayingSubUrl === sub.rss_url"
@@ -85,4 +88,9 @@ const filteredSubscriptions = computed(() => {
       sub.description?.toLowerCase().includes(q)
   )
 })
+
+/** 小宇宙付费播客（payType 非 FREE） */
+function isPaidPodcast(sub: PodcastSubscription) {
+  return !!sub.pay_type && sub.pay_type !== 'FREE'
+}
 </script>

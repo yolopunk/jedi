@@ -7,6 +7,7 @@ import {
   type PodcastSubscription,
   refreshSubscription,
   removeSubscription,
+  saveSubscription,
 } from '@/api/podcast'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useSnackbar } from '@/composables/useSnackbar'
@@ -69,7 +70,24 @@ export function usePodcastManager() {
     visibleEpisodeCount.value = EpisodesPageSize
 
     try {
-      episodes.value = await fetchEpisodes(sub.rss_url)
+      const payload = await fetchEpisodes(sub.rss_url)
+      episodes.value = payload.episodes
+
+      // 小宇宙付费信息回填到订阅并持久化，节目库/详情页才能显示付费标记
+      if (payload.pay_type && payload.pay_type !== sub.pay_type) {
+        const updated: PodcastSubscription = {
+          ...sub,
+          pay_type: payload.pay_type,
+          paid_episode_count: payload.paid_episode_count,
+        }
+        currentSub.value = updated
+        const index = subscriptions.value.findIndex(s => s.rss_url === sub.rss_url)
+        if (index !== -1) {
+          subscriptions.value[index] = updated
+        }
+        saveSubscription(updated).catch(err => console.error('保存付费信息失败:', err))
+      }
+
       await nextTick()
       setupEpisodesObserver()
     } catch (e: unknown) {

@@ -46,6 +46,13 @@
             >
               {{ cat }}
             </span>
+            <span v-if="isPaidPodcast" class="paid-badge-inline">
+              {{
+                currentSub.paid_episode_count
+                  ? $t('podcast.paidEpisodes', { count: currentSub.paid_episode_count })
+                  : $t('podcast.paid')
+              }}
+            </span>
           </div>
         </div>
 
@@ -153,6 +160,7 @@
               <span v-if="ep.episode_number" class="meta-item">
                 <span class="meta-tag">EP {{ ep.episode_number }}</span>
               </span>
+              <span v-if="ep.is_paid" class="paid-badge-inline meta-item">{{ $t('podcast.paid') }}</span>
             </div>
           </div>
 
@@ -167,9 +175,10 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { PodcastEpisode, PodcastSubscription } from '@/api/podcast'
 
-defineProps<{
+const props = defineProps<{
   currentSub: PodcastSubscription
   episodes: PodcastEpisode[]
   visibleEpisodes: PodcastEpisode[]
@@ -182,6 +191,11 @@ defineProps<{
   formatMonth: (dateStr?: string) => string
   formatDay: (dateStr?: string) => string
 }>()
+
+/** 小宇宙付费播客（payType 非 FREE） */
+const isPaidPodcast = computed(
+  () => !!props.currentSub.pay_type && props.currentSub.pay_type !== 'FREE'
+)
 
 defineEmits<{
   (e: 'play-episode', ep: PodcastEpisode): void

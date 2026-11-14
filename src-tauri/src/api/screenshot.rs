@@ -623,17 +623,9 @@ pub fn get_capture_hotkey(app: AppHandle) -> String {
   current_capture_hotkey(&app)
 }
 
-/// 隐藏全部覆盖窗口（进入滚动/录制模式时让出屏幕）。
-pub(crate) fn hide_overlays(app: &AppHandle) {
-  for window in app.webview_windows().values() {
-    if window.label().starts_with(OVERLAY_LABEL_PREFIX) {
-      let _ = window.hide();
-    }
-  }
-}
-
-/// 录制模式：保留选区所在覆盖窗（点击穿透 + 排除捕获），隐藏其余显示器覆盖窗。
-pub(crate) fn prepare_overlays_for_record(app: &AppHandle, monitor_index: usize) {
+/// 滚动/录制模式：保留选区所在覆盖窗（点击穿透 + 排除捕获），隐藏其余显示器覆盖窗。
+/// 用户能看到真实画面、能用鼠标滚动/操作底下的应用，覆盖窗只画一个选区边框。
+pub(crate) fn keep_selection_overlay(app: &AppHandle, monitor_index: usize) {
   let keep_label = format!("{}{}", OVERLAY_LABEL_PREFIX, monitor_index);
   for window in app.webview_windows().values() {
     if !window.label().starts_with(OVERLAY_LABEL_PREFIX) {
@@ -949,7 +941,8 @@ pub async fn screenshot_scroll_begin(
     frames: vec![frame],
   });
 
-  hide_overlays(&app);
+  // 保留选区框（点击穿透 + 排除捕获），让用户看得见截取范围并自由滚动页面
+  keep_selection_overlay(&app, monitor_index);
   show_toolbar(&app, geometry, (rx, ry, rw, rh));
   register_scroll_hotkeys(&app);
   Ok(ScrollStatus { frame_count: 1 })
@@ -1143,6 +1136,28 @@ pub async fn screenshot_save_styled(app: AppHandle, data_url: String) -> Result<
   .map_err(|e| e.to_string())??;
   let _ = app.emit_to("main", "screenshot-saved", &path);
   Ok(path)
+}
+
+/// 删除截图库中的一条记录（图片/视频）。
+/// 只允许删除截图目录内的文件，避免被当作任意文件删除接口。
+#[tauri::command]
+pub fn screenshot_delete(app: AppHandle, path: String) -> Result<(), String> {
+  let dir = screenshots_dir(&app)?;
+  let target = PathBuf::from(&path);
+
+  // 规范化后必须仍在截图目录内（同时挡住 ../ 与符号链接逃逸）
+  let canon_dir = fs::canonicalize(&dir).map_err(|e| format!("截图目录不可用: {}", e))?;
+  let canon = fs::canonicalize(&target).map_err(|e| format!("文件不存在: {}", e))?;
+  if !canon.starts_with(&canon_dir) {
+    return Err("只能删除截图库中的文件".to_string());
+  }
+  if canon.is_dir() {
+    return Err("目标是目录，拒绝删除".to_string());
+  }
+
+  fs::remove_file(&canon).map_err(|e| format!("删除失败: {}", e))?;
+  let _ = app.emit_to("main", "screenshot-deleted", &path);
+  Ok(())
 }
 
 /// 读取图片文件为 data URL，供 AI 聊天发送多模态消息使用。

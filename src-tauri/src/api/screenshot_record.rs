@@ -5,7 +5,7 @@
 // stop + join 干净收尾并产出文件，不泄漏线程。
 
 use crate::api::screenshot::{
-  clamp_crop_rect, prepare_overlays_for_record, screenshots_dir, session_monitor_geometry,
+  clamp_crop_rect, keep_selection_overlay, screenshots_dir, session_monitor_geometry,
   show_toolbar, teardown_all, timestamped_filename, TOOLBAR_LABEL,
 };
 use serde::Serialize;
@@ -376,7 +376,7 @@ pub async fn start_region_record(
     return Err("已有录制进行中".to_string());
   }
 
-  prepare_overlays_for_record(&app, monitor_index);
+  keep_selection_overlay(&app, monitor_index);
   show_toolbar(&app, (mx, my, mw, mh), (rx, ry, w, h));
 
   let stop = Arc::new(AtomicBool::new(false));

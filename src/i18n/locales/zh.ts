@@ -774,6 +774,10 @@ export default {
     collectionLabel: '个人影像库',
     galleryTitle: '截图库',
     thumbnailSize: '缩略图大小',
+    delete: '删除',
+    deleteTitle: '删除这条记录？',
+    deleteConfirm: '「{name}」会从截图库和磁盘上永久删除，无法撤销。',
+    deleteFailed: '删除失败：{message}',
 
     original: '查看原图',
     beautify: '图片编辑',
@@ -837,6 +841,7 @@ export default {
       cancel: '取消',
       frames: '已捕获 {count} 屏',
       hint: '在目标页面滚动后，按空格或点击按钮捕获下一屏',
+      frameHint: '滚动页面后按 Space 捕获 · Enter 完成 · Esc 取消',
       failed: '截长图失败：{message}',
     },
 

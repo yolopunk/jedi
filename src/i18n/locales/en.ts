@@ -781,6 +781,10 @@ export default {
     collectionLabel: 'Personal collection',
     galleryTitle: 'Capture gallery',
     thumbnailSize: 'Thumbnail size',
+    delete: 'Delete',
+    deleteTitle: 'Delete this item?',
+    deleteConfirm: '"{name}" will be permanently deleted from the gallery and from disk. This cannot be undone.',
+    deleteFailed: 'Delete failed: {message}',
 
     original: 'View original',
     beautify: 'Edit image',
@@ -845,6 +849,7 @@ export default {
       cancel: 'Cancel',
       frames: '{count} screens captured',
       hint: 'Scroll the target page, then press Space or click the button to capture the next screen',
+      frameHint: 'Scroll, then Space to capture · Enter to finish · Esc to cancel',
       failed: 'Long capture failed: {message}',
     },
 

@@ -5,6 +5,7 @@
       'is-selecting': drag && drag.mode === 'new',
       'has-selection': !!selection && mode === 'select',
       'is-recording': mode === 'record',
+      'is-scrolling': mode === 'scroll',
     }"
     @mousedown="onMouseDown"
     @mousemove="onMouseMove"
@@ -12,7 +13,7 @@
     @dblclick="confirmCopy"
   >
     <!-- 冻结帧：窗口物理尺寸 = 显示器物理尺寸，CSS 视口按 scaleFactor 缩放后 1:1 铺满 -->
-    <img v-if="frameSrc && mode !== 'record'" class="frozen-frame" :src="frameSrc" @load="revealOverlay" @error="cancel" draggable="false" alt="" />
+    <img v-if="frameSrc && mode !== 'record' && mode !== 'scroll'" class="frozen-frame" :src="frameSrc" @load="revealOverlay" @error="cancel" draggable="false" alt="" />
 
     <!-- 未开始框选时的十字引导线 -->
     <template v-if="!selection && !drag">
@@ -44,6 +45,18 @@
       <div class="rec-badge" :class="{ flipped: badgeFlipped }">
         <span class="rec-dot"></span>REC {{ recordElapsedLabel }}
       </div>
+    </div>
+
+    <!-- 滚动截长图：保留选区边框（画面实时可见、可自由滚动），窗口已点击穿透并排除出捕获 -->
+    <div v-if="mode === 'scroll' && selection" class="scroll-frame" :style="selectionStyle">
+      <span class="scroll-badge" :class="{ flipped: badgeFlipped }">
+        <span class="scroll-dot" aria-hidden="true"></span>
+        {{ t('screenshot.scrolling.frameHint') }}
+      </span>
+      <span class="scroll-corner tl" aria-hidden="true"></span>
+      <span class="scroll-corner tr" aria-hidden="true"></span>
+      <span class="scroll-corner bl" aria-hidden="true"></span>
+      <span class="scroll-corner br" aria-hidden="true"></span>
     </div>
 
     <!-- 操作条：阻止 mousedown 冒泡到根节点，否则按下按钮会先清空选区 -->
@@ -169,7 +182,7 @@ const busy = ref(false)
 const errorText = ref('')
 let errorTimer: number | null = null
 // 录制模式：覆盖窗切换为透明 + 点击穿透（由后端设置），仅渲染边框与 REC 徽标
-const mode = ref<'select' | 'record'>('select')
+const mode = ref<'select' | 'record' | 'scroll'>('select')
 const recordElapsedMs = ref(0)
 let recordStartAt = 0
 let recordTimer: number | null = null
@@ -356,17 +369,22 @@ async function finish(action: 'copy' | 'save' | 'chat' | 'ocr') {
   }
 }
 
-/** 进入滚动截长图：后端隐藏覆盖窗并弹出悬浮控制条，本窗口随之隐藏 */
+/**
+ * 进入滚动截长图：后端把本覆窗切成「点击穿透 + 排除捕获」，只保留选区边框；
+ * 画面实时可见，用户可以直接在框内滚动页面。
+ */
 async function startScrolling() {
   if (!selection.value || busy.value) return
   busy.value = true
   try {
     await screenshotScrollBegin(monitorIndex, physicalRect())
-    // 后端隐藏全部覆盖窗口；失败兜底恢复交互
+    mode.value = 'scroll'
+    // 后端已接管窗口；失败兜底恢复交互
     window.setTimeout(() => {
       busy.value = false
     }, 2000)
   } catch (err) {
+    mode.value = 'select'
     busy.value = false
     showError(t('screenshot.scrolling.failed', { message: String(err) }))
   }
@@ -519,6 +537,84 @@ onUnmounted(() => {
 .overlay-root.is-recording {
   cursor: default;
   background: transparent;
+}
+
+/* 滚动截长图：画面实时可见，只画一个「取景框」 */
+.overlay-root.is-scrolling {
+  cursor: default;
+  background: transparent;
+}
+
+.scroll-frame {
+  position: absolute;
+  border: 1px dashed rgb(var(--accent-rgb) / 0.9);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.28),
+    0 0 22px rgb(var(--accent-rgb) / 0.18);
+}
+
+.scroll-corner {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgb(var(--accent-rgb));
+  filter: drop-shadow(0 0 6px rgb(var(--accent-rgb) / 0.55));
+}
+
+.scroll-corner.tl { top: -2px; left: -2px; border-right: 0; border-bottom: 0; border-radius: 3px 0 0 0; }
+.scroll-corner.tr { top: -2px; right: -2px; border-left: 0; border-bottom: 0; border-radius: 0 3px 0 0; }
+.scroll-corner.bl { bottom: -2px; left: -2px; border-right: 0; border-top: 0; border-radius: 0 0 0 3px; }
+.scroll-corner.br { bottom: -2px; right: -2px; border-left: 0; border-top: 0; border-radius: 0 0 3px 0; }
+
+.scroll-badge {
+  position: absolute;
+  top: -30px;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  background: rgb(var(--accent-rgb));
+  color: #fff;
+  font-family: var(--jedi-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgb(var(--accent-rgb) / 0.45);
+}
+
+.scroll-badge.flipped {
+  top: auto;
+  bottom: -30px;
+}
+
+.scroll-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  animation: scroll-dot-pulse 1.3s ease-in-out infinite;
+}
+
+@keyframes scroll-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-dot {
+    animation: none;
+  }
 }
 
 .record-frame {

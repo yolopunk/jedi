@@ -55,8 +55,8 @@ use crate::api::podcast::{
 };
 use crate::api::screenshot::{
   get_capture_hotkey, list_screenshots, read_image_data_url, screenshot_begin, screenshot_cancel,
-  screenshot_finish, screenshot_frame_info, screenshot_open_file, screenshot_save_styled,
-  screenshot_scroll_begin, screenshot_scroll_cancel, screenshot_scroll_capture,
+  screenshot_delete, screenshot_finish, screenshot_frame_info, screenshot_open_file,
+  screenshot_save_styled, screenshot_scroll_begin, screenshot_scroll_cancel, screenshot_scroll_capture,
   screenshot_scroll_finish, screenshot_toolbar_info, set_capture_hotkey, ScreenshotState,
 };
 use crate::api::screenshot_ocr::{screenshot_copy_text, screenshot_ocr};
@@ -364,6 +364,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       start_region_record,
       stop_region_record,
       screenshot_open_file,
+      screenshot_delete,
       list_screenshots,
       read_image_data_url
     ])

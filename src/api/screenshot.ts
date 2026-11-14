@@ -124,6 +124,11 @@ export function getCaptureHotkey(): Promise<string> {
   return invoke('get_capture_hotkey')
 }
 
+/** 删除截图库中的一条记录（仅限截图目录内） */
+export function deleteScreenshot(path: string): Promise<void> {
+  return invoke('screenshot_delete', { path })
+}
+
 /** 悬浮控制条查询当前模式（scroll / record）与状态 */
 export function screenshotToolbarInfo(): Promise<ToolbarInfo> {
   return invoke('screenshot_toolbar_info')

@@ -59,6 +59,15 @@
                   <div class="card-info"><span class="capture-name" :title="item.name">{{ item.name }}</span><span class="card-meta"><time>{{ formatDate(item.modifiedMs) }}</time><span>{{ formatSize(item.size) }}</span></span></div>
                 </button>
                 <button v-if="brokenImages.has(item.path)" type="button" class="thumb-retry" @click="retryThumb(item.path)">{{ t('screenshot.retryImage') }}</button>
+                <button
+                  type="button"
+                  class="card-delete"
+                  :aria-label="`${t('screenshot.delete')} ${item.name}`"
+                  :title="t('screenshot.delete')"
+                  @click.stop="askDelete(item)"
+                >
+                  <v-icon :icon="mdiTrashCanOutline" size="15" aria-hidden="true" />
+                </button>
               </article>
             </div>
           </section>
@@ -114,9 +123,25 @@
               <v-btn variant="tonal" :prepend-icon="mdiTextRecognition" :aria-pressed="showOcr" @click="showOcr = !showOcr">{{ t('screenshot.ocr.title') }}</v-btn>
               <v-btn variant="text" :prepend-icon="mdiFolderOpenOutline" @click="openFolder(selected.path)">{{ t('screenshot.openFolder') }}</v-btn>
             </template>
+            <span class="footer-divider" aria-hidden="true"></span>
+            <v-btn variant="text" color="error" :prepend-icon="mdiTrashCanOutline" @click="askDelete(selected)">{{ t('screenshot.delete') }}</v-btn>
           </div>
           <span v-else>{{ t('screenshot.saveAsCopy') }}</span>
         </footer>
+      </div>
+    </v-dialog>
+
+    <!-- 删除确认 -->
+    <v-dialog :model-value="!!deleting" max-width="400" @update:model-value="v => { if (!v) deleting = null }">
+      <div v-if="deleting" class="delete-panel" role="alertdialog" :aria-label="t('screenshot.deleteTitle')">
+        <h3 class="delete-title">{{ t('screenshot.deleteTitle') }}</h3>
+        <p class="delete-text">{{ t('screenshot.deleteConfirm', { name: deleting.name }) }}</p>
+        <div class="delete-actions">
+          <button class="console-btn" type="button" @click="deleting = null">{{ t('common.cancel') }}</button>
+          <button class="console-btn danger" type="button" :disabled="deleteBusy" @click="confirmDelete">
+            {{ deleteBusy ? '…' : t('screenshot.delete') }}
+          </button>
+        </div>
       </div>
     </v-dialog>
   </main>
@@ -139,6 +164,7 @@ import {
   mdiPlayCircleOutline,
   mdiRefresh,
   mdiTextRecognition,
+  mdiTrashCanOutline,
   mdiViewGridOutline,
 } from '@mdi/js'
 import { convertFileSrc } from '@tauri-apps/api/core'
@@ -146,6 +172,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
+  deleteScreenshot,
   listScreenshots,
   openScreenshotFile,
   type ScreenshotItem,
@@ -332,6 +359,33 @@ async function openFolder(path: string) {
   }
 }
 
+// ---- 删除 ----
+const deleting = ref<ScreenshotItem | null>(null)
+const deleteBusy = ref(false)
+
+function askDelete(item: ScreenshotItem) {
+  if (!item) return
+  deleting.value = item
+}
+
+async function confirmDelete() {
+  const target = deleting.value
+  if (!target || deleteBusy.value) return
+  deleteBusy.value = true
+  try {
+    await deleteScreenshot(target.path)
+    recent.value = recent.value.filter(i => i.path !== target.path)
+    brokenImages.value.delete(target.path)
+    if (selected.value?.path === target.path) selected.value = null
+    deleting.value = null
+  } catch (err) {
+    error.value = t('screenshot.deleteFailed', { message: String(err) })
+    deleting.value = null
+  } finally {
+    deleteBusy.value = false
+  }
+}
+
 /** 用系统默认播放器打开录屏 MP4 */
 async function openVideo(path: string) {
   try {
@@ -425,8 +479,80 @@ h1 { margin-top: 8px; font-size: clamp(27px, 3vw, 38px); font-weight: 650; lette
 .photo-columns { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--thumbnail-size), 100%), 1fr)); gap: clamp(16px, 2vw, 24px); }
 .capture-card { position: relative; min-width: 0; border: 1px solid rgb(var(--text-rgb) / 0.08); border-radius: 16px; background: rgb(var(--text-rgb) / 0.025); overflow: hidden; animation: photo-reveal var(--motion-enter) var(--ease-out) var(--card-delay) backwards; transition: border-color var(--motion-fast), background var(--motion-fast), transform var(--motion-fast), box-shadow var(--motion-normal); }
 .capture-card:hover { border-color: rgb(var(--accent-rgb) / 0.32); background: rgb(var(--text-rgb) / 0.045); transform: translateY(-3px); box-shadow: 0 16px 38px rgb(var(--ink-rgb) / 0.16); }
-.capture-open { display: block; width: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; color: inherit; text-align: left; cursor: pointer; }
-.capture-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.capture-open { display: block; width: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; color: inherit; text-align: left; cursor: pointer; }.capture-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* 卡片删除：悬停或键盘聚焦时浮出 */
+.card-delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid rgb(var(--text-rgb) / 0.16);
+  border-radius: 7px;
+  background: rgb(var(--bg-rgb) / 0.86);
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-3px);
+  transition:
+    opacity 0.14s ease,
+    transform 0.14s ease,
+    color 0.14s ease,
+    border-color 0.14s ease,
+    background 0.14s ease;
+}
+
+.capture-card:hover .card-delete,
+.capture-card:focus-within .card-delete,
+.card-delete:focus-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.card-delete:hover {
+  color: var(--danger);
+  border-color: rgb(var(--danger-rgb) / 0.55);
+  background: rgb(var(--danger-rgb) / 0.12);
+}
+
+.card-delete:focus-visible {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
+}
+
+/* 删除确认 */
+.delete-panel {
+  padding: 22px 22px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--surface-raised);
+  color: var(--text);
+  box-shadow: var(--shadow-dialog, 0 24px 60px rgb(var(--ink-rgb) / 0.32));
+}
+
+.delete-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.2px;
+}
+
+.delete-text {
+  margin: 0 0 18px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
 .thumbnail { position: relative; aspect-ratio: 16 / 10; margin: 8px 8px 0; border-radius: 11px; overflow: hidden; background:
     linear-gradient(135deg, rgb(var(--text-rgb) / 0.035), transparent 60%),
     var(--surface-canvas); }

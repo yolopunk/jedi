@@ -170,7 +170,7 @@ export default {
     resize: 'Resize sidebar',
     resizeHint:
       'Drag to resize · Double-click to reset · Arrow keys to adjust · Enter to collapse/expand',
-    title: 'Jedi Command',
+    title: 'Jedi Forge',
     subtitle: 'Force for Developers',
     hostsManager: 'Hosts Manager',
     github: 'GitHub Repository',
@@ -216,10 +216,10 @@ export default {
     upload: 'Upload',
   },
   about: {
-    title: 'About Jedi Command',
+    title: 'About Jedi Forge',
     website: 'Website',
     email: 'Contact us',
-    appName: 'Jedi Command',
+    appName: 'Jedi Forge',
     version: 'Version v{version}',
     description: 'Multi-functional development utility kit',
     techStack: 'Built with Tauri + Vue + Vuetify',
@@ -757,6 +757,7 @@ export default {
   screenshot: {
     ocr: {
       title: 'Recognize text',
+      offlineBadge: 'Local · offline',
       local:
         'Cross-platform Rust OCR runs offline. Images are never uploaded and no system language pack is required.',
       shortcut: 'Recognize text (Shift+C)',
@@ -765,6 +766,9 @@ export default {
       empty: 'No text found. Try a clearer capture.',
       copy: 'Copy text',
       copied: 'Copied',
+      copyAll: 'Copy all text',
+      copying: 'Copying…',
+      linesFound: 'Found {count} lines of text in this capture',
       errors: {
         unsupported: 'Local OCR is not supported on this system.',
         engineUnavailable:
@@ -783,8 +787,45 @@ export default {
     thumbnailSize: 'Thumbnail size',
     delete: 'Delete',
     deleteTitle: 'Delete this item?',
-    deleteConfirm: '"{name}" will be permanently deleted from the gallery and from disk. This cannot be undone.',
+    deleteConfirm:
+      '"{name}" will be permanently deleted from the gallery and from disk. This cannot be undone.',
     deleteFailed: 'Delete failed: {message}',
+    deleteBatchTitle: 'Delete these {count} items?',
+    deleteBatchConfirm:
+      '{count} items will be permanently deleted from the gallery and from disk. This cannot be undone.',
+    import: 'Import images',
+    importFailed: 'Could not import image: {message}',
+    select: 'Select',
+    selectedCount: '{count} selected',
+    filter: {
+      label: 'Filter by type',
+      all: 'All',
+      image: 'Images',
+      long: 'Long shots',
+      video: 'Videos',
+    },
+    longBadge: 'Long',
+    freshBadge: 'Just captured',
+    savedToast: 'Saved to library',
+    backToLibrary: 'Back to library',
+    copyImage: 'Copy image',
+    copyImageFailed: 'Could not copy image: {message}',
+    pin: {
+      action: 'Pin to screen',
+      pinned: 'Pinned',
+      hint: 'Scroll to zoom · Drag to move · Esc to unpin',
+      zoomOut: 'Zoom out',
+      zoomIn: 'Zoom in',
+      opacity: 'Opacity {value}%',
+      opacityLabel: 'Opacity',
+      unpin: 'Unpin',
+      failed: 'Could not pin: {message}',
+    },
+    viewfinder: {
+      label: 'VIEWFINDER · DISPLAY {display}',
+      doubleClick: 'Double-click',
+      copyClose: 'copy & close',
+    },
 
     original: 'View original',
     beautify: 'Edit image',
@@ -824,7 +865,8 @@ export default {
     description:
       'Freeze the screen, drag to select a region, then copy, save or send it to AI chat.',
     start: 'Start Capture',
-    shortcutHint: 'Customizable in Settings · Screenshot shortcut (default F1); also available from the tray menu',
+    shortcutHint:
+      'Customizable in Settings · Screenshot shortcut (default F1); also available from the tray menu',
     overlayHint: 'Drag to select · Shift+C recognizes text · Enter copies · Esc cancels',
     copy: 'Copy',
     save: 'Save',
@@ -848,8 +890,12 @@ export default {
       finish: 'Done',
       cancel: 'Cancel',
       frames: '{count} screens captured',
+      unit: 'screens',
       hint: 'Scroll the target page, then press Space or click the button to capture the next screen',
-      frameHint: 'Scroll, then Space to capture · Enter to finish · Esc to cancel',
+      frameHint: 'Scrolling · {count} frames captured',
+      frameScrollHint: 'Scroll the page inside the frame',
+      instruction:
+        'Scroll inside the frame → Space captures a screen; repeat to cover everything → Enter stitches the long shot',
       failed: 'Long capture failed: {message}',
     },
 

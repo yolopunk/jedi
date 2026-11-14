@@ -1,5 +1,5 @@
 ; =============================================================================
-; Jedi 工具箱 —— Windows 安装包界面模板（NSIS 3 / MUI2，单窗口无向导 v2）
+; Jedi Forge —— Windows 安装包界面模板（NSIS 3 / MUI2，单窗口无向导 v2）
 ; -----------------------------------------------------------------------------
 ; 基线：Tauri CLI 2.10.1 内置 NSIS 模板
 ;   https://raw.githubusercontent.com/tauri-apps/tauri/tauri-cli-v2.10.1/
@@ -553,33 +553,33 @@ LangString ^FontSize ${LANG_ENGLISH} "9"
 ; -----------------------------------------------------------------------------
 ; Jedi：自有文案（SimpChinese + English 必须成对）
 ; -----------------------------------------------------------------------------
-LangString jediSetupCaption ${LANG_SIMPCHINESE} "Jedi 工具箱 安装程序"
-LangString jediSetupCaption ${LANG_ENGLISH} "Jedi Toolbox Setup"
-LangString jediUninstallCaption ${LANG_SIMPCHINESE} "Jedi 工具箱 卸载程序"
-LangString jediUninstallCaption ${LANG_ENGLISH} "Jedi Toolbox Uninstall"
-LangString ^UninstallCaption ${LANG_SIMPCHINESE} "Jedi 工具箱 卸载程序"
-LangString ^UninstallCaption ${LANG_ENGLISH} "Jedi Toolbox Uninstall"
-LangString jediBrandingText ${LANG_SIMPCHINESE} "Jedi 工具箱 · 开发者实用工具集"
-LangString jediBrandingText ${LANG_ENGLISH} "Jedi Toolbox · Developer utilities"
+LangString jediSetupCaption ${LANG_SIMPCHINESE} "Jedi Forge 安装程序"
+LangString jediSetupCaption ${LANG_ENGLISH} "Jedi Forge Setup"
+LangString jediUninstallCaption ${LANG_SIMPCHINESE} "Jedi Forge 卸载程序"
+LangString jediUninstallCaption ${LANG_ENGLISH} "Jedi Forge Uninstall"
+LangString ^UninstallCaption ${LANG_SIMPCHINESE} "Jedi Forge 卸载程序"
+LangString ^UninstallCaption ${LANG_ENGLISH} "Jedi Forge Uninstall"
+LangString jediBrandingText ${LANG_SIMPCHINESE} "Jedi Forge · 开发者实用工具集"
+LangString jediBrandingText ${LANG_ENGLISH} "Jedi Forge · Developer utilities"
 
-LangString jediBrandName ${LANG_SIMPCHINESE} "Jedi 工具箱"
-LangString jediBrandName ${LANG_ENGLISH} "Jedi Toolbox"
+LangString jediBrandName ${LANG_SIMPCHINESE} "Jedi Forge"
+LangString jediBrandName ${LANG_ENGLISH} "Jedi Forge"
 LangString jediVersionPrefix ${LANG_SIMPCHINESE} "版本"
 LangString jediVersionPrefix ${LANG_ENGLISH} "Version"
 
 ; 待安装态
-LangString jediReadyTitle ${LANG_SIMPCHINESE} "安装 Jedi 工具箱"
-LangString jediReadyTitle ${LANG_ENGLISH} "Install Jedi Toolbox"
+LangString jediReadyTitle ${LANG_SIMPCHINESE} "安装 Jedi Forge"
+LangString jediReadyTitle ${LANG_ENGLISH} "Install Jedi Forge"
 LangString jediReadySubtitle ${LANG_SIMPCHINESE} "本地优先的开发者工具箱：Hosts 管理、知识壁纸、播客与 AI 助手。"
 LangString jediReadySubtitle ${LANG_ENGLISH} "A local-first toolbox for developers: hosts, wallpapers, podcasts and AI."
 LangString jediInstallLocationLabel ${LANG_SIMPCHINESE} "安装位置"
 LangString jediInstallLocationLabel ${LANG_ENGLISH} "Install location"
 LangString jediChangeLocation ${LANG_SIMPCHINESE} "更改"
 LangString jediChangeLocation ${LANG_ENGLISH} "Change"
-LangString jediSelectFolderTitle ${LANG_SIMPCHINESE} "选择 Jedi 工具箱的安装位置"
-LangString jediSelectFolderTitle ${LANG_ENGLISH} "Choose the install location for Jedi Toolbox"
-LangString jediWindowTitle ${LANG_SIMPCHINESE} "Jedi 工具箱 安装程序"
-LangString jediWindowTitle ${LANG_ENGLISH} "Jedi Toolbox Setup"
+LangString jediSelectFolderTitle ${LANG_SIMPCHINESE} "选择 Jedi Forge的安装位置"
+LangString jediSelectFolderTitle ${LANG_ENGLISH} "Choose the install location for Jedi Forge"
+LangString jediWindowTitle ${LANG_SIMPCHINESE} "Jedi Forge 安装程序"
+LangString jediWindowTitle ${LANG_ENGLISH} "Jedi Forge Setup"
 
 LangString jediInstallNow ${LANG_SIMPCHINESE} "立即安装"
 LangString jediInstallNow ${LANG_ENGLISH} "Install now"
@@ -611,14 +611,14 @@ LangString jediStepFinish ${LANG_ENGLISH} "Finishing up…"
 ; 完成态
 LangString jediDoneTitle ${LANG_SIMPCHINESE} "安装完成"
 LangString jediDoneTitle ${LANG_ENGLISH} "Installation complete"
-LangString jediDoneSubtitle ${LANG_SIMPCHINESE} "Jedi 工具箱已就绪，可以从开始菜单或桌面快捷方式启动。"
-LangString jediDoneSubtitle ${LANG_ENGLISH} "Jedi Toolbox is ready — launch it from the Start Menu or your desktop shortcut."
-LangString jediRunApp ${LANG_SIMPCHINESE} "启动 Jedi 工具箱"
-LangString jediRunApp ${LANG_ENGLISH} "Launch Jedi Toolbox"
+LangString jediDoneSubtitle ${LANG_SIMPCHINESE} "Jedi Forge已就绪，可以从开始菜单或桌面快捷方式启动。"
+LangString jediDoneSubtitle ${LANG_ENGLISH} "Jedi Forge is ready — launch it from the Start Menu or your desktop shortcut."
+LangString jediRunApp ${LANG_SIMPCHINESE} "启动 Jedi Forge"
+LangString jediRunApp ${LANG_ENGLISH} "Launch Jedi Forge"
 LangString jediClose ${LANG_SIMPCHINESE} "完成"
 LangString jediClose ${LANG_ENGLISH} "Done"
-LangString jediDoneHint ${LANG_SIMPCHINESE} "感谢使用 Jedi 工具箱！"
-LangString jediDoneHint ${LANG_ENGLISH} "Thanks for using Jedi Toolbox!"
+LangString jediDoneHint ${LANG_SIMPCHINESE} "感谢使用 Jedi Forge！"
+LangString jediDoneHint ${LANG_ENGLISH} "Thanks for using Jedi Forge!"
 
 ; 失败态
 LangString jediFailedTitle ${LANG_SIMPCHINESE} "安装失败"
@@ -627,10 +627,10 @@ LangString jediFailedDefault ${LANG_SIMPCHINESE} "安装过程中出现问题，
 LangString jediFailedDefault ${LANG_ENGLISH} "Something went wrong during the installation. Please try again."
 
 ; 卸载器
-LangString jediUninstallTitle ${LANG_SIMPCHINESE} "卸载 Jedi 工具箱"
-LangString jediUninstallTitle ${LANG_ENGLISH} "Uninstall Jedi Toolbox"
-LangString jediUninstallSubtitle ${LANG_SIMPCHINESE} "将从本机移除 Jedi 工具箱，以及安装时创建的快捷方式。"
-LangString jediUninstallSubtitle ${LANG_ENGLISH} "This removes Jedi Toolbox and the shortcuts created during installation."
+LangString jediUninstallTitle ${LANG_SIMPCHINESE} "卸载 Jedi Forge"
+LangString jediUninstallTitle ${LANG_ENGLISH} "Uninstall Jedi Forge"
+LangString jediUninstallSubtitle ${LANG_SIMPCHINESE} "将从本机移除 Jedi Forge，以及安装时创建的快捷方式。"
+LangString jediUninstallSubtitle ${LANG_ENGLISH} "This removes Jedi Forge and the shortcuts created during installation."
 LangString jediUninstallConfirmText ${LANG_SIMPCHINESE} "卸载会移除程序文件，以及安装时创建的快捷方式。"
 LangString jediUninstallConfirmText ${LANG_ENGLISH} "This removes the program files and the shortcuts created during installation."
 LangString jediDeleteAppDataOff ${LANG_SIMPCHINESE} "☐  同时删除应用数据（设置、缓存与日志）"
@@ -651,8 +651,8 @@ LangString jediUninstallStepFinish ${LANG_SIMPCHINESE} "正在完成收尾工作
 LangString jediUninstallStepFinish ${LANG_ENGLISH} "Finishing up…"
 LangString jediUninstallDoneTitle ${LANG_SIMPCHINESE} "卸载完成"
 LangString jediUninstallDoneTitle ${LANG_ENGLISH} "Uninstall complete"
-LangString jediUninstallDoneSubtitle ${LANG_SIMPCHINESE} "Jedi 工具箱已从本机移除。"
-LangString jediUninstallDoneSubtitle ${LANG_ENGLISH} "Jedi Toolbox has been removed from this computer."
+LangString jediUninstallDoneSubtitle ${LANG_SIMPCHINESE} "Jedi Forge已从本机移除。"
+LangString jediUninstallDoneSubtitle ${LANG_ENGLISH} "Jedi Forge has been removed from this computer."
 
 ; =============================================================================
 ; Jedi：单窗口 UI 基础件（同一份实现同时装到安装器与卸载器，PFX 为空或 "un."）
@@ -1076,7 +1076,7 @@ Function JediHoverTick
   ${AndIf} $R9 u<= 40
       ${If} $JediTitleShown = 0
         StrCpy $JediTitleShown 1
-        System::Call 'user32::SetWindowTextW(p $HWNDPARENT, w "Jedi 工具箱 安装程序")'
+        System::Call 'user32::SetWindowTextW(p $HWNDPARENT, w "Jedi Forge 安装程序")'
         ; 首次悬停：剥离按钮 EXSTYLE 穿透位（一次性）
         System::Call 'user32::SetWindowLongW(p $JediPrimary, i -20, i 0x00000004)'
         System::Call 'user32::SetWindowLongW(p $JediSecondary, i -20, i 0x00000004)'

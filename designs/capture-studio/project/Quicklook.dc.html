@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>快速预览 · 空格</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#ffffff}
+*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="position:relative;width:1280px;height:800px;overflow:hidden;background:#fff;font-family:'Microsoft YaHei','PingFang SC','Segoe UI',system-ui,sans-serif;color:#27282e;display:flex;flex-direction:column">
+
+  <!-- 顶栏 -->
+  <div style="height:56px;flex:none;display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid #dfe1e5;background:#fff">
+    <span style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:7px;background:#f7f8fa;border:1px solid #dfe1e5;font-size:11.5px;color:#6c707e">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      返回库
+    </span>
+    <span style="width:1px;height:22px;background:#dfe1e5"></span>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <span style="font-size:12.5px;font-weight:600">Jedi_20261114_1905.png</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6c707e">1044 × 525 · 50 KB · 今天 19:05</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+      <span style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:7px;background:#2f68e0;color:#fff;font-size:11.5px;font-weight:600">复制图片</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:7px;border:1px solid #dfe1e5;font-size:11.5px;color:#27282e">贴住屏幕</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:7px;border:1px solid #dfe1e5;font-size:11.5px;color:#27282e">图片编辑</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:7px;border:1px solid #f0cdd1;background:#fff7f8;font-size:11.5px;color:#c9323f">删除</span>
+    </div>
+  </div>
+
+  <div style="flex:1;min-height:0;display:flex">
+
+    <!-- 左侧时间轴 -->
+    <div style="width:56px;flex:none;border-right:1px solid #eceef2;background:#fcfdfe;display:flex;flex-direction:column;align-items:center;padding:14px 0;gap:0">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:#6c707e;margin-bottom:8px">2026</span>
+      <sc-for list="{{ rail }}" as="r" hint-placeholder-count="7">
+        <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;background:{{ r.bg }};border-left:2px solid {{ r.edge }}">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:8.5px;color:{{ r.fg }};font-weight:{{ r.weight }}">{{ r.label }}</span>
+          <span style="width:4px;height:4px;border-radius:999px;background:{{ r.dot }}"></span>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- 画面 -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#f1f3f7">
+      <div style="flex:1;min-height:0;display:grid;place-items:center;padding:26px 30px">
+        <div style="width:760px;background:#fff;border:1px solid #e3e6ec;border-radius:8px;box-shadow:0 18px 44px rgba(39,40,46,0.16);overflow:hidden">
+          <div style="height:30px;border-bottom:1px solid #f0f2f6;display:flex;align-items:center;gap:5px;padding:0 11px">
+            <span style="width:5px;height:5px;border-radius:999px;background:#dfe1e5"></span>
+            <span style="width:5px;height:5px;border-radius:999px;background:#dfe1e5"></span>
+            <span style="width:5px;height:5px;border-radius:999px;background:#dfe1e5"></span>
+            <span style="margin-left:8px;font-family:'JetBrains Mono',monospace;font-size:9px;color:#9aa0ab">jedi · hosts 切换失败</span>
+          </div>
+          <div style="padding:22px 26px">
+            <div style="font-size:17px;font-weight:700;letter-spacing:-0.01em">权限不足，无法写入 hosts</div>
+            <div style="margin-top:8px;font-size:11.5px;color:#6c707e;line-height:1.7">需要管理员权限才能修改系统 hosts 文件。请以管理员身份重新启动 Jedi，或在设置中改用用户级 hosts。</div>
+            <div style="margin-top:16px;padding:12px 14px;border-radius:8px;background:#fdf3f4;border:1px solid #f3d3d7">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#c9323f;line-height:1.8">Error: EACCES: permission denied, open<br/>'C:\Windows\System32\drivers\etc\hosts'</div>
+            </div>
+            <div style="margin-top:16px;display:flex;gap:8px">
+              <span style="display:inline-flex;align-items:center;height:30px;padding:0 14px;border-radius:7px;background:#2f68e0;color:#fff;font-size:11.5px;font-weight:600">以管理员重启</span>
+              <span style="display:inline-flex;align-items:center;height:30px;padding:0 14px;border-radius:7px;border:1px solid #dfe1e5;font-size:11.5px;color:#27282e">稍后</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 胶片条 -->
+      <div style="flex:none;height:86px;border-top:1px solid #dfe1e5;background:#fff;display:flex;align-items:center;gap:10px;padding:0 18px">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6c707e;white-space:nowrap">← →</span>
+        <div style="flex:1;display:flex;align-items:center;gap:8px;min-width:0">
+          <sc-for list="{{ strip }}" as="s" hint-placeholder-count="6">
+            <div style="position:relative;width:104px;height:58px;flex:none;border-radius:6px;border:1px solid {{ s.border }};background:#fcfdfe;overflow:hidden;box-shadow:{{ s.shadow }}">
+              <div style="position:absolute;inset:6px;border-radius:3px;background:{{ s.c }}"></div>
+              <sc-if value="{{ s.current }}" hint-placeholder-val="{{ false }}">
+                <span style="position:absolute;left:0;right:0;bottom:0;height:2px;background:#3574f0"></span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6c707e;white-space:nowrap">03 / 11</span>
+      </div>
+    </div>
+
+    <!-- 右侧：识别文字 -->
+    <div style="width:296px;flex:none;border-left:1px solid #dfe1e5;background:#fff;display:flex;flex-direction:column">
+      <div style="height:44px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #eceef2">
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 3h10M8 3v7m-3.4 0h6.8M4 13.4h8" stroke="#3574f0" stroke-width="1.4" stroke-linecap="round"/></svg>
+          识别文字
+        </span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#6c707e">本地 · 离线</span>
+      </div>
+
+      <div style="flex:1;min-height:0;padding:14px;overflow:hidden">
+        <div style="font-size:10.5px;color:#6c707e;line-height:1.7">在截图中找到 4 行文字</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ lines }}" as="l" hint-placeholder-count="4">
+            <div style="padding:8px 10px;border-radius:7px;background:#f7f8fa;border:1px solid #eceef2">
+              <div style="font-size:11px;line-height:1.65;color:#27282e">{{ l.text }}</div>
+              <div style="margin-top:5px;font-family:'JetBrains Mono',monospace;font-size:8.5px;color:#9aa0ab">{{ l.pos }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:6px">
+          <span style="display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border-radius:6px;background:#2f68e0;color:#fff;font-size:11px;font-weight:600">复制全部文字</span>
+          <span style="display:inline-flex;align-items:center;height:28px;padding:0 10px;border-radius:6px;border:1px solid #dfe1e5;font-size:11px;color:#6c707e">搜索这张图</span>
+        </div>
+      </div>
+
+      <div style="flex:none;border-top:1px solid #eceef2;padding:12px 14px;background:#fcfdfe">
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#6c707e">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="7" cy="7" r="4" stroke="currentColor" stroke-width="1.4"/><path d="m10.5 10.5 3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          搜索会同时匹配文件名与识别文字
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const rail = [
+      { label: '11·14', dot: '#3574f0', fg: '#2b5fc4', weight: 700, bg: '#eef4ff', edge: '#3574f0' },
+      { label: '11·10', dot: '#c9ccd6', fg: '#6c707e', weight: 400, bg: 'transparent', edge: 'transparent' },
+      { label: '10·26', dot: '#c9ccd6', fg: '#6c707e', weight: 400, bg: 'transparent', edge: 'transparent' },
+      { label: '10·25', dot: '#c9ccd6', fg: '#6c707e', weight: 400, bg: 'transparent', edge: 'transparent' },
+      { label: '10·23', dot: '#c9ccd6', fg: '#6c707e', weight: 400, bg: 'transparent', edge: 'transparent' },
+      { label: '10·22', dot: '#c9ccd6', fg: '#6c707e', weight: 400, bg: 'transparent', edge: 'transparent' },
+      { label: '10·19', dot: '#c9ccd6', fg: '#6c707e', weight: 400, bg: 'transparent', edge: 'transparent' }
+    ];
+    const strip = [
+      { c: 'linear-gradient(135deg,#f4f6fa,#e7ebf2)', border: '#e6e8ee', shadow: 'none', current: false },
+      { c: 'linear-gradient(135deg,#eef4ff,#dde9ff)', border: '#e6e8ee', shadow: 'none', current: false },
+      { c: 'linear-gradient(135deg,#fdf3f4,#f7e4e7)', border: '#3574f0', shadow: '0 0 0 2px rgba(53,116,240,0.18)', current: true },
+      { c: 'linear-gradient(135deg,#f4f6fa,#e7ebf2)', border: '#e6e8ee', shadow: 'none', current: false },
+      { c: 'linear-gradient(135deg,#f2f7f3,#e4efe7)', border: '#e6e8ee', shadow: 'none', current: false },
+      { c: 'linear-gradient(135deg,#f7f2f4,#efe4e8)', border: '#e6e8ee', shadow: 'none', current: false }
+    ];
+    const lines = [
+      { text: '权限不足，无法写入 hosts', pos: 'L1 · 100%' },
+      { text: 'Error: EACCES: permission denied, open', pos: 'L4 · 96%' },
+      { text: "'C:\\Windows\\System32\\drivers\\etc\\hosts'", pos: 'L5 · 94%' },
+      { text: '以管理员重启 · 稍后', pos: 'L7 · 91%' }
+    ];
+    return { rail, strip, lines };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Jedi README 重设计</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;background:#0d1117}
+a{color:#2f81f7;text-decoration:none}
+a:hover{color:#4493f8;text-decoration:underline}
+</style>
+</helmet>
+
+<div style="width:100%;box-sizing:border-box;background:#0d1117;color:#e6edf3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji'">
+  <div style="max-width:1012px;margin:0 auto;padding:48px 32px 64px;box-sizing:border-box">
+
+    <!-- 语言切换 -->
+    <p style="margin:0 0 32px;text-align:right;font-size:13px;color:#8b949e"><a href="#">English</a> · <span style="color:#e6edf3;font-weight:600">简体中文</span></p>
+
+    <!-- ============ HERO ============ -->
+    <div style="text-align:center">
+      <img src="/_blob/f53dafde2f8cbc026b10dfa5213b3f84" alt="Jedi Forge 应用图标" style="width:108px;height:108px">
+      <h1 style="margin:22px 0 12px;font-size:42px;line-height:1.2;font-weight:800;color:#f0f6fc;letter-spacing:-0.5px">Jedi Forge</h1>
+      <p style="margin:0;font-size:19px;line-height:1.6;color:#8b949e">开发者的原力 —— 一站式开源开发者工作台<br>
+      <span style="color:#a0a8b3">Hosts 切换 · AI 对话 · 技能系统 · 知识壁纸 · 播客 · 智能截图</span></p>
+
+      <!-- 徽章 -->
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:26px">
+        <span style="display:inline-flex;border-radius:3px;overflow:hidden;font-size:12px;line-height:24px;font-weight:500"><span style="background:#21262d;color:#8b949e;padding:0 8px">release</span><span style="background:#1f6feb;color:#ffffff;padding:0 8px">{{version}}</span></span>
+        <span style="display:inline-flex;border-radius:3px;overflow:hidden;font-size:12px;line-height:24px;font-weight:500"><span style="background:#21262d;color:#8b949e;padding:0 8px">license</span><span style="background:#30363d;color:#c9d1d9;padding:0 8px">MIT</span></span>
+        <span style="display:inline-flex;border-radius:3px;overflow:hidden;font-size:12px;line-height:24px;font-weight:500"><span style="background:#21262d;color:#8b949e;padding:0 8px">platform</span><span style="background:#30363d;color:#c9d1d9;padding:0 8px">Windows · macOS · Linux</span></span>
+        <span style="display:inline-flex;border-radius:3px;overflow:hidden;font-size:12px;line-height:24px;font-weight:500"><span style="background:#21262d;color:#8b949e;padding:0 8px">tauri</span><span style="background:#ffc131;color:#0d1117;padding:0 8px">2.x</span></span>
+        <span style="display:inline-flex;border-radius:3px;overflow:hidden;font-size:12px;line-height:24px;font-weight:500"><span style="background:#21262d;color:#8b949e;padding:0 8px">vue</span><span style="background:#42b883;color:#0d1117;padding:0 8px">3.x</span></span>
+        <span style="display:inline-flex;border-radius:3px;overflow:hidden;font-size:12px;line-height:24px;font-weight:500"><span style="background:#21262d;color:#8b949e;padding:0 8px">typescript</span><span style="background:#3178c6;color:#ffffff;padding:0 8px">5.x</span></span>
+        <span style="display:inline-flex;border-radius:3px;overflow:hidden;font-size:12px;line-height:24px;font-weight:500"><span style="background:#21262d;color:#8b949e;padding:0 8px">rust</span><span style="background:#ce422b;color:#ffffff;padding:0 8px">1.70+</span></span>
+      </div>
+
+      <!-- CTA -->
+      <div style="display:flex;justify-content:center;gap:14px;margin-top:30px">
+        <a href="#" style="display:inline-flex;align-items:center;gap:9px;height:44px;padding:0 22px;border-radius:6px;background:#238636;color:#ffffff;font-size:15px;font-weight:600">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2.75 14A1.75 1.75 0 0 1 1 12.25v-2.5a.75.75 0 0 1 1.5 0v2.5c0 .138.112.25.25.25h10.5a.25.25 0 0 0 .25-.25v-2.5a.75.75 0 0 1 1.5 0v2.5A1.75 1.75 0 0 1 13.25 14Z"/><path d="M7.25 7.689V2a.75.75 0 0 1 1.5 0v5.689l1.97-1.969a.749.749 0 1 1 1.06 1.06l-3.25 3.25a.749.749 0 0 1-1.06 0L4.22 6.78a.749.749 0 1 1 1.06-1.06Z"/></svg>
+          下载最新版
+        </a>
+        <a href="#" style="display:inline-flex;align-items:center;gap:9px;height:44px;padding:0 22px;border-radius:6px;background:#21262d;border:1px solid #30363d;color:#c9d1d9;font-size:15px;font-weight:600">快速开始</a>
+      </div>
+    </div>
+
+    <!-- 主视觉截图 -->
+    <img src="/_blob/9bf88f0034184a711e25f9908677bbd6" alt="Jedi AI 对话界面：内置 Agent 直接更新 Hosts 并生成验证脚本" style="display:block;width:100%;border-radius:12px;margin-top:52px">
+
+    <!-- ============ 核心功能 ============ -->
+    <h2 style="margin:64px 0 0;padding-bottom:10px;font-size:26px;font-weight:700;color:#f0f6fc;border-bottom:1px solid #21262d">核心功能</h2>
+
+    <!-- AI 对话与技能 -->
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:44px;align-items:center;margin-top:44px">
+      <img src="/_blob/3f24103e88e2cbef3688acc68c823a07" alt="技能页：内置工具、MCP 工具与 SKILL.md 技能包" style="display:block;width:100%;border-radius:10px">
+      <div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:2px;color:#539bf5">AI 对话 · 技能系统</div>
+        <h3 style="margin:8px 0 12px;font-size:22px;font-weight:700;color:#f0f6fc">会说话的工作台，对话即操作</h3>
+        <ul style="margin:0;padding-left:20px;font-size:15px;line-height:1.8;color:#c9d1d9">
+          <li>内置 Agent：让 AI 直接改 Hosts、跑验证脚本</li>
+          <li>OpenAI 等多服务商自由接入，随会话切换</li>
+          <li>工具调用 + MCP 服务器扩展能力</li>
+          <li>技能 = SKILL.md 指令包，<code style="background:rgba(110,118,129,0.4);border-radius:4px;padding:1px 5px;font-size:13px">/命令</code>一键复用</li>
+          <li>长期记忆，跨会话记住你的偏好</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Hosts 管理 -->
+    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:44px;align-items:center;margin-top:48px">
+      <div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:2px;color:#a371f7">HOSTS 管理</div>
+        <h3 style="margin:8px 0 12px;font-size:22px;font-weight:700;color:#f0f6fc">环境切换，一键完成</h3>
+        <ul style="margin:0;padding-left:20px;font-size:15px;line-height:1.8;color:#c9d1d9">
+          <li>按项目/环境分组，一键切换生效</li>
+          <li>条目级开关 + 全局总开关，精细可控</li>
+          <li>远程订阅：分组绑定数据源 URL，域名清单自动同步</li>
+          <li>点击域名直达浏览器，省去复制粘贴</li>
+        </ul>
+      </div>
+      <img src="/_blob/ddc30b227ccd65a20d765e4cccb74bed" alt="Hosts 管理界面：分组切换与条目开关" style="display:block;width:100%;border-radius:10px">
+    </div>
+
+    <!-- 知识壁纸 -->
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:44px;align-items:center;margin-top:48px">
+      <img src="/_blob/cce61dbc7ce727d2d9cea64db5ca1d7c" alt="知识壁纸页面：System Design、Kubernetes、Git 等技术知识卡片" style="display:block;width:100%;border-radius:10px">
+      <div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:2px;color:#539bf5">知识壁纸</div>
+        <h3 style="margin:8px 0 12px;font-size:22px;font-weight:700;color:#f0f6fc">把技术图谱贴上桌面</h3>
+        <ul style="margin:0;padding-left:20px;font-size:15px;line-height:1.8;color:#c9d1d9">
+          <li>精选技术知识卡片：架构、网络、数据库…</li>
+          <li>分类与标签筛选，想看什么一搜即得</li>
+          <li>预览详情，一键设为桌面壁纸</li>
+          <li>图文内容支持深入阅读</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 小宇宙播客 -->
+    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:44px;align-items:center;margin-top:48px">
+      <div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:2px;color:#a371f7">小宇宙播客</div>
+        <h3 style="margin:8px 0 12px;font-size:22px;font-weight:700;color:#f0f6fc">把小宇宙装进桌面</h3>
+        <ul style="margin:0;padding-left:20px;font-size:15px;line-height:1.8;color:#c9d1d9">
+          <li>订阅管理：添加、刷新、退订一步到位</li>
+          <li>导入 OPML，播客库无缝迁移</li>
+          <li>播放最新节目，进度快速定位续播</li>
+          <li>Show Notes 完整展示，链接一键跳转</li>
+        </ul>
+      </div>
+      <img src="/_blob/97d4925b4595e57c1b8de88a77d45444" alt="小宇宙播客页面：订阅播客卡片墙" style="display:block;width:100%;border-radius:10px">
+    </div>
+
+    <!-- 截图工作坊 -->
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:44px;align-items:center;margin-top:48px">
+      <img src="/_blob/39d1e1daffca599b7d764ae724bb3751" alt="截图库页面：按日期归档的截图集合" style="display:block;width:100%;border-radius:10px">
+      <div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:2px;color:#539bf5">截图工作坊</div>
+        <h3 style="margin:8px 0 12px;font-size:22px;font-weight:700;color:#f0f6fc">取景、长截图、归档一条龙</h3>
+        <ul style="margin:0;padding-left:20px;font-size:15px;line-height:1.8;color:#c9d1d9">
+          <li>全局快捷键（默认 F1）随时唤起</li>
+          <li>框选取景，所见即所得</li>
+          <li>滚动截长图，整页内容一图收纳</li>
+          <li>截图库按日期归档，支持删除与缩略图调节</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ============ 细节体验 ============ -->
+    <h2 style="margin:64px 0 0;padding-bottom:10px;font-size:26px;font-weight:700;color:#f0f6fc;border-bottom:1px solid #21262d">细节体验</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:28px">
+      <span style="display:inline-flex;align-items:center;gap:9px;border:1px solid #30363d;border-radius:999px;padding:9px 18px;font-size:14px;color:#c9d1d9"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:#539bf5"></span>系统信息栏：CPU / 内存 / 网络</span>
+      <span style="display:inline-flex;align-items:center;gap:9px;border:1px solid #30363d;border-radius:999px;padding:9px 18px;font-size:14px;color:#c9d1d9"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:#a371f7"></span>深色 / 浅色 / 跟随系统</span>
+      <span style="display:inline-flex;align-items:center;gap:9px;border:1px solid #30363d;border-radius:999px;padding:9px 18px;font-size:14px;color:#c9d1d9"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:#539bf5"></span>系统托盘常驻</span>
+      <span style="display:inline-flex;align-items:center;gap:9px;border:1px solid #30363d;border-radius:999px;padding:9px 18px;font-size:14px;color:#c9d1d9"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:#a371f7"></span>中英双语界面</span>
+      <span style="display:inline-flex;align-items:center;gap:9px;border:1px solid #30363d;border-radius:999px;padding:9px 18px;font-size:14px;color:#c9d1d9"><span aria-hidden="true" style="width:8px;height:8px;border-radius:50%;background:#539bf5"></span>Windows · macOS · Linux</span>
+    </div>
+
+    <!-- ============ 快速开始 ============ -->
+    <h2 style="margin:64px 0 0;padding-bottom:10px;font-size:26px;font-weight:700;color:#f0f6fc;border-bottom:1px solid #21262d">快速开始</h2>
+    <p style="margin:20px 0 0;font-size:15px;line-height:1.7;color:#8b949e">到 <a href="#">GitHub Releases</a> 下载安装包，开箱即用：</p>
+    <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:18px">
+      <a href="#" style="display:inline-flex;align-items:center;height:44px;padding:0 20px;border-radius:6px;background:#21262d;border:1px solid #30363d;color:#c9d1d9;font-size:14px;font-weight:600">Windows · .msi</a>
+      <a href="#" style="display:inline-flex;align-items:center;height:44px;padding:0 20px;border-radius:6px;background:#21262d;border:1px solid #30363d;color:#c9d1d9;font-size:14px;font-weight:600">macOS · .dmg</a>
+      <a href="#" style="display:inline-flex;align-items:center;height:44px;padding:0 20px;border-radius:6px;background:#21262d;border:1px solid #30363d;color:#c9d1d9;font-size:14px;font-weight:600">Linux · .AppImage / .deb</a>
+    </div>
+
+    <h3 style="margin:36px 0 0;font-size:18px;font-weight:700;color:#f0f6fc">从源码构建</h3>
+    <div style="margin-top:14px;background:#161b22;border:1px solid #30363d;border-radius:6px;padding:16px 20px;font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace;font-size:14px;line-height:1.8;color:#c9d1d9">
+      <div><span style="color:#8b949e">$</span> git clone https://github.com/yolopunk/jedi.git</div>
+      <div><span style="color:#8b949e">$</span> cd jedi &amp;&amp; pnpm install</div>
+      <div><span style="color:#8b949e">$</span> pnpm tauri dev</div>
+    </div>
+
+    <!-- 折叠详情 -->
+    <div style="margin-top:32px;border:1px solid #30363d;border-radius:6px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#161b22;color:#c9d1d9;font-size:14px;font-weight:600">
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#8b949e" stroke-width="1.5"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+        使用指南 · Hosts 文件格式与远程数据源订阅
+      </div>
+    </div>
+    <div style="margin-top:12px;border:1px solid #30363d;border-radius:6px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:#161b22;color:#c9d1d9;font-size:14px;font-weight:600">
+        <svg aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#8b949e" stroke-width="1.5"><path d="M3 4.5 6 7.5 9 4.5"/></svg>
+        项目结构
+      </div>
+    </div>
+
+    <!-- ============ 技术栈 ============ -->
+    <h2 style="margin:64px 0 0;padding-bottom:10px;font-size:26px;font-weight:700;color:#f0f6fc;border-bottom:1px solid #21262d">技术栈</h2>
+    <p style="margin:20px 0 0;text-align:center;font-size:15px;color:#8b949e">Vue 3 · TypeScript · Vuetify 3 · Vite · Tauri 2 · Rust · pnpm</p>
+
+    <!-- ============ FOOTER ============ -->
+    <div style="margin-top:64px;padding-top:24px;border-top:1px solid #21262d;text-align:center">
+      <p style="margin:0;font-size:14px;color:#8b949e"><a href="#">MIT License</a> © 2026 Jedi Contributors</p>
+      <p style="margin:10px 0 0;font-size:14px;color:#8b949e">如果 Jedi 帮到了你，欢迎到 <a href="#">GitHub</a> 点一个 Star</p>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"version":{"editor":"text","default":"v0.8.1"},"$preview":{"width":1440,"height":3950}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { version: this.props.version ?? 'v0.8.1' };
+  }
+}
+</script>
+</body>
+</html>

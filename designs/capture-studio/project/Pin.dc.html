@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>贴图 · Pin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#ffffff}
+*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="position:relative;width:1280px;height:800px;overflow:hidden;background:#fff;font-family:'Microsoft YaHei','PingFang SC','Segoe UI',system-ui,sans-serif;color:#27282e">
+
+  <!-- 底层：正常工作的应用 -->
+  <div style="position:absolute;inset:0;display:flex">
+    <div style="width:200px;flex:none;background:#f7f8fa;border-right:1px solid #dfe1e5"></div>
+    <div style="flex:1;padding:30px 34px">
+      <div style="width:280px;height:26px;border-radius:5px;background:#e9ebf0"></div>
+      <div style="margin-top:12px;width:420px;height:9px;border-radius:3px;background:#f0f2f6"></div>
+      <div style="margin-top:26px;display:flex;gap:16px">
+        <div style="width:236px;height:150px;border-radius:12px;border:1px solid #e6e8ee;background:#fcfdfe"></div>
+        <div style="width:236px;height:150px;border-radius:12px;border:1px solid #e6e8ee;background:#fcfdfe"></div>
+        <div style="width:236px;height:150px;border-radius:12px;border:1px solid #e6e8ee;background:#fcfdfe"></div>
+      </div>
+      <div style="margin-top:22px;width:640px;height:9px;border-radius:3px;background:#f0f2f6"></div>
+      <div style="margin-top:10px;width:580px;height:9px;border-radius:3px;background:#f0f2f6"></div>
+      <div style="margin-top:10px;width:610px;height:9px;border-radius:3px;background:#f0f2f6"></div>
+    </div>
+  </div>
+
+  <!-- 贴住的截图 -->
+  <div style="position:absolute;right:74px;top:118px;width:432px;border-radius:9px;background:#fff;border:1.5px solid #3574f0;box-shadow:0 26px 64px rgba(39,40,46,0.28), 0 2px 8px rgba(53,116,240,0.18)">
+    <div style="position:absolute;inset:6px;border-radius:5px;overflow:hidden;background:#fff;border:1px solid #eceef2">
+      <div style="height:20px;border-bottom:1px solid #f0f2f6;display:flex;align-items:center;gap:3px;padding:0 7px">
+        <span style="width:4px;height:4px;border-radius:999px;background:#dfe1e5"></span>
+        <span style="width:4px;height:4px;border-radius:999px;background:#dfe1e5"></span>
+        <span style="width:4px;height:4px;border-radius:999px;background:#dfe1e5"></span>
+      </div>
+      <div style="padding:12px 14px">
+        <div style="width:150px;height:13px;border-radius:4px;background:#3574f0;opacity:0.16"></div>
+        <div style="margin-top:10px;width:280px;height:8px;border-radius:3px;background:#eceef2"></div>
+        <div style="margin-top:7px;width:240px;height:8px;border-radius:3px;background:#eceef2"></div>
+        <div style="margin-top:14px;display:flex;gap:8px">
+          <div style="width:92px;height:30px;border-radius:7px;background:#2f68e0"></div>
+          <div style="width:92px;height:30px;border-radius:7px;border:1px solid #dfe1e5"></div>
+        </div>
+        <div style="margin-top:14px;width:340px;height:56px;border-radius:7px;background:#f7f8fa;border:1px solid #eceef2"></div>
+      </div>
+    </div>
+
+    <span style="position:absolute;left:10px;top:-13px;display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 9px;border-radius:6px;background:#3574f0;color:#fff;font-size:10.5px;font-weight:600;box-shadow:0 6px 16px rgba(53,116,240,0.35)">
+      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 1.4 7.3 4l2.9.4-2.1 2 .5 2.9L6 8l-2.6 1.3L3.9 6.4l-2.1-2L4.7 4Z" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/></svg>
+      已贴住
+    </span>
+
+    <span style="position:absolute;right:8px;bottom:8px;width:12px;height:12px;border-right:2px solid #3574f0;border-bottom:2px solid #3574f0;border-radius:0 0 2px 0;opacity:0.7"></span>
+
+    <!-- 悬停工具条 -->
+    <div style="position:absolute;left:50%;transform:translateX(-50%);top:-46px;display:flex;align-items:center;gap:2px;height:34px;padding:0 6px;border-radius:9px;background:#fff;border:1px solid #dfe1e5;box-shadow:0 10px 26px rgba(39,40,46,0.16)">
+      <span style="display:grid;place-items:center;width:26px;height:24px;border-radius:6px;color:#6c707e">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 8h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#27282e;padding:0 2px">100%</span>
+      <span style="display:grid;place-items:center;width:26px;height:24px;border-radius:6px;color:#6c707e">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 4v8M4 8h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </span>
+      <span style="width:1px;height:16px;background:#dfe1e5;margin:0 3px"></span>
+      <span style="display:inline-flex;align-items:center;gap:5px;height:24px;padding:0 8px;border-radius:6px;background:#eef4ff;color:#2b5fc4;font-size:10.5px;font-weight:600">不透明度 100%</span>
+      <span style="width:1px;height:16px;background:#dfe1e5;margin:0 3px"></span>
+      <span style="display:grid;place-items:center;width:26px;height:24px;border-radius:6px;color:#6c707e">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5.5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8A1.3 1.3 0 0 0 2.5 3.8v5.4a1.3 1.3 0 0 0 1.3 1.3h1.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+      </span>
+      <span style="display:grid;place-items:center;width:26px;height:24px;border-radius:6px;color:#c9323f">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- 说明 -->
+  <div style="position:absolute;left:34px;bottom:34px;display:flex;flex-direction:column;gap:10px;width:300px">
+    <div style="display:inline-flex;align-items:center;gap:7px">
+      <span style="display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#eef4ff;color:#2b5fc4;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700">1</span>
+      <span style="font-size:12px;color:#27282e">框选后按 <span style="font-family:'JetBrains Mono',monospace;color:#2b5fc4">P</span>，或右键任意截图 → 贴住屏幕</span>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:7px">
+      <span style="display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#eef4ff;color:#2b5fc4;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700">2</span>
+      <span style="font-size:12px;color:#27282e">贴住的图置顶于所有窗口，可拖动、滚轮缩放、调透明度</span>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:7px">
+      <span style="display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:#eef4ff;color:#2b5fc4;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700">3</span>
+      <span style="font-size:12px;color:#27282e">写代码时把设计稿/接口文档贴在旁边，<span style="font-family:'JetBrains Mono',monospace;color:#2b5fc4">Esc</span> 收掉</span>
+    </div>
+  </div>
+
+  <div style="position:absolute;right:74px;top:470px;display:inline-flex;align-items:center;gap:7px;height:26px;padding:0 10px;border-radius:7px;background:#f7f8fa;border:1px solid #dfe1e5;font-family:'JetBrains Mono',monospace;font-size:10px;color:#6c707e">
+    滚轮 缩放 · 拖动 移动 · Esc 取消贴住
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

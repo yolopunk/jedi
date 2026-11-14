@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "threads": [
+    {
+      "id": "c_d8c1d507d3",
+      "anchor": "#dc-root > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(2) > a:nth-of-type(1) > dcfx1rc9epn:nth-of-type(1) > dct:nth-of-type(37) > dce15dd8cd198dd67185415:nth-of-type(1)",
+      "label": "README · GitHub 深色预览 › shape \"下载 {{version}}\"",
+      "detail": "Main.dc.html: #36:1/0/1/4/0 shape \"下载 {{version}}\"",
+      "location": {
+        "file": "project/Main.dc.html",
+        "board": "Main.dc.html"
+      },
+      "status": "resolved",
+      "createdAt": "2026-11-14T11:26:05.824Z",
+      "updatedAt": "2026-11-14T11:45:06.525Z",
+      "messages": [
+        {
+          "id": "m_b89948bfd8",
+          "author": {
+            "kind": "user",
+            "name": "epoch"
+          },
+          "text": "这个版本号是读取的最新版本吧？",
+          "at": "2026-11-14T11:26:05.824Z"
+        },
+        {
+          "id": "m_c91be8868e",
+          "author": {
+            "kind": "agent",
+            "name": "agent"
+          },
+          "text": "是的，README 里是动态的：release 徽章通过 shields.io 实时读取 GitHub 最新 release，发版自动更新；下载按钮不带固定版本号，链接指向 releases/latest。设计稿按钮文案也已同步改成「下载最新版」。",
+          "at": "2026-11-14T11:38:43.834Z"
+        }
+      ],
+      "resolvedAt": "2026-11-14T11:45:06.525Z"
+    },
+    {
+      "id": "c_af5715cd47",
+      "anchor": "#dc-root > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > h1:nth-of-type(1) > dcfx1qmq0t5:nth-of-type(1) > dct:nth-of-type(10) > dce15dd8cd198dd54426747:nth-of-type(1)",
+      "label": "README · GitHub 深色预览 › text \"Jedi 工具箱\"",
+      "detail": "Main.dc.html: #9:1/0/1/1 text \"Jedi 工具箱\"",
+      "location": {
+        "file": "project/Main.dc.html",
+        "board": "Main.dc.html"
+      },
+      "status": "resolved",
+      "createdAt": "2026-11-14T11:26:48.191Z",
+      "updatedAt": "2026-11-14T11:45:06.804Z",
+      "messages": [
+        {
+          "id": "m_52740b33cc",
+          "author": {
+            "kind": "user",
+            "name": "epoch"
+          },
+          "text": "工具箱的文案想换一下  Jedi Command 也想换一下 Jedi Builder 合适吗？",
+          "at": "2026-11-14T11:26:48.191Z"
+        },
+        {
+          "id": "m_5aaef82f48",
+          "author": {
+            "kind": "agent",
+            "name": "agent"
+          },
+          "text": "Builder 偏「搭建类」产品的语感（容易联想到 website builder），所以用了 Jedi Forge —— Forge（锻造场）与 Force（原力）谐音双关，正好接住「开发者的原力」这句定位。已同步改了 README 标题、应用内 i18n / 启动屏 / 安装包文案，截图也重截了。想换别的名字随时说，改动集中在 4 个文件。",
+          "at": "2026-11-14T11:38:44.096Z"
+        }
+      ],
+      "resolvedAt": "2026-11-14T11:45:06.804Z"
+    },
+    {
+      "id": "c_88b0de7204",
+      "anchor": "#dc-root > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(3) > div:nth-of-type(1) > ul:nth-of-type(1) > li:nth-of-type(3) > dct:nth-of-type(63) > dce15dd8cd198dd41954270:nth-of-type(1)",
+      "label": "README · GitHub 深色预览 › text \"远程订阅：自动同步 K8s ingress 域名清单（附适配器）\"",
+      "detail": "Main.dc.html: #62:1/0/5/0/2/2 text \"远程订阅：自动同步 K8s ingress 域名清单（附适配器）\"",
+      "location": {
+        "file": "project/Main.dc.html",
+        "board": "Main.dc.html"
+      },
+      "status": "resolved",
+      "createdAt": "2026-11-14T11:27:19.778Z",
+      "updatedAt": "2026-11-14T11:45:07.029Z",
+      "messages": [
+        {
+          "id": "m_ae6395e1d3",
+          "author": {
+            "kind": "user",
+            "name": "epoch"
+          },
+          "text": "不要强调 k8s ingress",
+          "at": "2026-11-14T11:27:19.778Z"
+        },
+        {
+          "id": "m_331d1baec5",
+          "author": {
+            "kind": "agent",
+            "name": "agent"
+          },
+          "text": "已改：亮点区不再点名 K8s ingress，改为「分组绑定远程数据源，域名清单自动同步」；k8s-hosts-api.yaml 只保留在折叠的使用指南里作为示例说明。",
+          "at": "2026-11-14T11:38:44.350Z"
+        }
+      ],
+      "resolvedAt": "2026-11-14T11:45:07.029Z"
+    },
+    {
+      "id": "c_f58b6468c9",
+      "anchor": "#dc-root > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(5) > div:nth-of-type(1) > h3:nth-of-type(1) > dcfx1uoq3gb:nth-of-type(1) > dct:nth-of-type(79) > dce15dd8cd198dd36987690:nth-of-type(1)",
+      "label": "README · GitHub 深色预览 › text \"通勤路上的技术电台\"",
+      "detail": "Main.dc.html: #78:1/0/7/0/1 text \"通勤路上的技术电台\"",
+      "location": {
+        "file": "project/Main.dc.html",
+        "board": "Main.dc.html"
+      },
+      "status": "resolved",
+      "createdAt": "2026-11-14T11:40:56.967Z",
+      "updatedAt": "2026-11-14T11:45:07.303Z",
+      "messages": [
+        {
+          "id": "m_7a378b77a8",
+          "author": {
+            "kind": "user",
+            "name": "epoch"
+          },
+          "text": "这个是桌面应用  通勤路上不合适",
+          "at": "2026-11-14T11:40:56.967Z"
+        },
+        {
+          "id": "m_77fe3f6c7a",
+          "author": {
+            "kind": "agent",
+            "name": "agent"
+          },
+          "text": "有道理，桌面应用不是通勤场景。已改为「工位上的技术电台」——保留电台语感，贴合在工位边写代码边听的使用场景。README 同步更新。",
+          "at": "2026-11-14T11:41:41.707Z"
+        },
+        {
+          "id": "m_a9f5b0970c",
+          "author": {
+            "kind": "agent",
+            "name": "agent"
+          },
+          "text": "哈哈批评到位——通勤、工位确实是牛马叙事。改成「把小宇宙装进桌面」：小宇宙一语双关（应用名 + 自己的小天地），保留场景感但不再有打工味，桌面客户端的定位也更准。README 已同步。",
+          "at": "2026-11-14T11:43:59.433Z"
+        }
+      ],
+      "resolvedAt": "2026-11-14T11:45:07.303Z"
+    }
+  ]
+}

@@ -45,3 +45,7 @@ dist-ssr
 
 # agent scratch / installer preview artifacts
 .tmp/
+
+# 设计画布的截图资源与截图工作台中间产物（可再生成，不入库）
+designs/readme-redesign/project/assets/
+scripts/screenshot-rig/output/

@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>捕捉反馈 · 三帧</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#ffffff}
+*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="position:relative;width:1280px;height:800px;overflow:hidden;background:#fff;font-family:'Microsoft YaHei','PingFang SC','Segoe UI',system-ui,sans-serif;color:#27282e">
+
+  <div style="padding:40px 44px 0">
+    <div style="display:flex;align-items:baseline;gap:12px">
+      <span style="font-size:22px;font-weight:700;letter-spacing:-0.02em">按一次 F1，界面做三件事</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#6c707e">flash → develop → settle · 共 900ms</span>
+    </div>
+    <div style="margin-top:6px;font-size:12px;color:#6c707e">不是弹窗、不是跳转：用一次光和一次显影告诉用户"拍到了"，然后立刻可以继续干活。</div>
+  </div>
+
+  <div style="position:absolute;left:44px;top:126px;display:flex;gap:24px">
+
+    <sc-for list="{{ frames }}" as="f" hint-placeholder-count="3">
+      <div style="width:374px">
+        <div style="position:relative;width:374px;height:500px;border-radius:12px;border:1px solid #dfe1e5;background:#fff;overflow:hidden;box-shadow:0 14px 34px rgba(39,40,46,0.1)">
+
+          <!-- 工具条 -->
+          <div style="height:44px;display:flex;align-items:center;gap:9px;padding:0 12px;border-bottom:1px solid #eceef2">
+            <span style="width:22px;height:22px;border-radius:6px;background:#eef4ff"></span>
+            <span style="font-size:11px;font-weight:600">最近截图</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#6c707e">{{ f.count }}</span>
+            <span style="margin-left:auto;width:64px;height:3px;border-radius:999px;background:#dfe1e5;position:relative">
+              <span style="position:absolute;left:0;top:0;width:62%;height:3px;border-radius:999px;background:#3574f0"></span>
+            </span>
+          </div>
+
+          <!-- 两列卡片 -->
+          <div style="padding:14px;display:flex;gap:12px">
+            <sc-for list="{{ shots }}" as="s" hint-placeholder-count="4">
+              <div style="position:relative;width:162px">
+                <div style="position:relative;aspect-ratio:16/10;border-radius:7px;border:1px solid {{ s.border }};background:{{ s.bg }};overflow:hidden;filter:{{ s.filter }};opacity:{{ s.opacity }}">
+                  <div style="position:absolute;inset:7px;border-radius:3px;background:#fff;padding:6px;display:flex;flex-direction:column;gap:3px">
+                    <div style="height:3px;width:62%;border-radius:2px;background:#d7dae1"></div>
+                    <div style="height:3px;width:84%;border-radius:2px;background:#eceef2"></div>
+                    <div style="flex:1;border-radius:2px;background:{{ s.block }}"></div>
+                  </div>
+                  <sc-if value="{{ s.badge }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute;left:0;top:0;right:0;height:16px;display:flex;align-items:center;gap:4px;padding:0 5px;background:#2f68e0;color:#fff;font-size:7.5px;font-weight:600">
+                      <span style="width:3px;height:3px;border-radius:999px;background:#fff"></span>刚刚取景
+                    </span>
+                  </sc-if>
+                  <sc-if value="{{ s.sweep }}" hint-placeholder-val="{{ false }}">
+                    <span style="position:absolute;left:0;right:0;top:0;height:38px;background:linear-gradient(180deg,rgba(53,116,240,0.22),rgba(53,116,240,0))"></span>
+                  </sc-if>
+                </div>
+                <div style="margin-top:5px;display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:7.5px;color:#6c707e">
+                  <span>{{ s.t1 }}</span><span>{{ s.t2 }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- 第 1 帧：闪白 -->
+          <sc-if value="{{ f.flash }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;inset:0;background:#fff;opacity:0.86"></div>
+            <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:150px;height:96px;border:1.5px solid #3574f0;border-radius:4px">
+              <span style="position:absolute;left:50%;top:-11px;transform:translateX(-50%);padding:1px 7px;border-radius:5px;background:#fff;border:1px solid #3574f0;font-family:'JetBrains Mono',monospace;font-size:8px;color:#2b5fc4">F 1</span>
+            </div>
+          </sc-if>
+
+          <!-- 第 3 帧：提示 -->
+          <sc-if value="{{ f.toast }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border-radius:9px;background:#27282e;box-shadow:0 10px 24px rgba(39,40,46,0.24)">
+              <span style="display:grid;place-items:center;width:14px;height:14px;border-radius:999px;background:#3574f0">
+                <svg width="8" height="8" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.4 6.3 4.8 8.7 9.6 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <span style="font-size:10.5px;color:#fff">已存入截图库</span>
+              <span style="margin-left:auto;font-size:10.5px;font-weight:600;color:#9cc2ff">贴住屏幕</span>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="margin-top:14px;display:flex;align-items:baseline;gap:8px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:{{ f.accent }}">{{ f.time }}</span>
+          <span style="font-size:12px;font-weight:600">{{ f.title }}</span>
+        </div>
+        <div style="margin-top:5px;font-size:11px;line-height:1.65;color:#6c707e">{{ f.desc }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="position:absolute;left:44px;bottom:34px;display:flex;align-items:center;gap:10px">
+    <span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:6px;background:#f7f8fa;border:1px solid #dfe1e5;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6c707e">prefers-reduced-motion</span>
+    <span style="font-size:11px;color:#6c707e">下直接落终态：不闪白、不显影，只留 3 的提示条</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const frames = [
+      {
+        time: '0 ms', title: '快门闪白', accent: '#3574f0',
+        desc: '整屏一次性 8% 白闪（120ms 淡出）。告诉用户"按到了"，不需要动画队列。',
+        count: '12', flash: true, toast: false,
+        shots: [
+          { border: '#e6e8ee', bg: '#fcfdfe', filter: 'none', opacity: 1, block: '#f2f4f8', badge: false, sweep: false, t1: '18:30', t2: '91 KB' },
+          { border: '#e6e8ee', bg: '#fcfdfe', filter: 'none', opacity: 1, block: '#f4f6fa', badge: false, sweep: false, t1: '18:32', t2: '58 KB' }
+        ]
+      },
+      {
+        time: '+180 ms', title: '新卡片显影', accent: '#3574f0',
+        desc: '新卡片从模糊 40% 到清晰、从 84% 到 100% 不透明度，蓝色扫描线扫过 320ms。',
+        count: '12', flash: false, toast: false,
+        shots: [
+          { border: '#3574f0', bg: '#f6f9ff', filter: 'blur(1.2px)', opacity: 0.86, block: '#dfe9ff', badge: false, sweep: true, t1: '刚刚', t2: '64 KB' },
+          { border: '#e6e8ee', bg: '#fcfdfe', filter: 'none', opacity: 1, block: '#f2f4f8', badge: false, sweep: false, t1: '18:32', t2: '58 KB' },
+          { border: '#e6e8ee', bg: '#fcfdfe', filter: 'none', opacity: 1, block: '#f4f6fa', badge: false, sweep: false, t1: '18:30', t2: '91 KB' },
+          { border: '#e6e8ee', bg: '#fcfdfe', filter: 'none', opacity: 1, block: '#f7f2f4', badge: false, sweep: false, t1: '18:28', t2: '72 KB' }
+        ]
+      },
+      {
+        time: '+900 ms', title: '落位 + 一条提示', accent: '#2f68e0',
+        desc: '卡片带「刚刚取景」顶标停 5 分钟；底部一条深色提示，直接把下一步（贴住屏幕）递到手边。',
+        count: '13', flash: false, toast: true,
+        shots: [
+          { border: '#3574f0', bg: '#fcfdfe', filter: 'none', opacity: 1, block: '#dfe9ff', badge: true, sweep: false, t1: '刚刚', t2: '64 KB' },
+          { border: '#e6e8ee', bg: '#fcfdfe', filter: 'none', opacity: 1, block: '#f4f6fa', badge: false, sweep: false, t1: '18:32', t2: '58 KB' },
+          { border: '#e6e8ee', bg: '#fcfdfe', filter: 'none', opacity: 1, block: '#f2f4f8', badge: false, sweep: false, t1: '18:30', t2: '91 KB' },
+          { border: '#e6e8ee', bg: '#fcfdfe', filter: 'none', opacity: 1, block: '#f7f2f4', badge: false, sweep: false, t1: '18:28', t2: '72 KB' }
+        ]
+      }
+    ];
+    return { frames };
+  }
+}
+</script>
+</body>
+</html>

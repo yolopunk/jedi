@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>长截图 · 滚动取景</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#ffffff}
+*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="position:relative;width:1280px;height:800px;overflow:hidden;background:#fff;font-family:'Microsoft YaHei','PingFang SC','Segoe UI',system-ui,sans-serif;color:#27282e">
+
+  <!-- 被截取的页面：清晰可见，不做压暗 -->
+  <div style="position:absolute;inset:0;background:#fff">
+    <div style="position:absolute;left:0;top:0;bottom:0;width:186px;background:#f7f8fa;border-right:1px solid #dfe1e5"></div>
+    <div style="position:absolute;left:186px;top:0;right:0;height:44px;border-bottom:1px solid #eceef2"></div>
+
+    <div style="position:absolute;left:226px;top:70px;width:340px;height:20px;border-radius:4px;background:#e9ebf0"></div>
+    <sc-for list="{{ rows }}" as="r" hint-placeholder-count="9">
+      <div style="position:absolute;left:226px;top:{{ r.y }};display:flex;align-items:center;gap:11px">
+        <span style="width:30px;height:30px;border-radius:8px;background:{{ r.thumb }}"></span>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <span style="width:{{ r.w1 }};height:8px;border-radius:3px;background:#e6e9ef"></span>
+          <span style="width:{{ r.w2 }};height:7px;border-radius:3px;background:#f0f2f6"></span>
+        </div>
+      </div>
+    </sc-for>
+
+    <div style="position:absolute;right:14px;top:120px;bottom:120px;width:8px;border-radius:999px;background:#f0f2f6">
+      <div style="width:8px;height:38%;border-radius:999px;background:#d3d8e2"></div>
+    </div>
+  </div>
+
+  <!-- 取景框：滚动模式保留 -->
+  <div style="position:absolute;left:300px;top:180px;width:620px;height:390px;border:1.5px dashed #3574f0;box-shadow:0 0 0 1px rgba(255,255,255,0.9), 0 10px 30px rgba(53,116,240,0.12)">
+    <span style="position:absolute;top:-3px;left:-3px;width:18px;height:18px;border-top:3px solid #3574f0;border-left:3px solid #3574f0;border-radius:3px 0 0 0"></span>
+    <span style="position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-top:3px solid #3574f0;border-right:3px solid #3574f0;border-radius:0 3px 0 0"></span>
+    <span style="position:absolute;bottom:-3px;left:-3px;width:18px;height:18px;border-bottom:3px solid #3574f0;border-left:3px solid #3574f0;border-radius:0 0 0 3px"></span>
+    <span style="position:absolute;bottom:-3px;right:-3px;width:18px;height:18px;border-bottom:3px solid #3574f0;border-right:3px solid #3574f0;border-radius:0 0 3px 0"></span>
+
+    <span style="position:absolute;left:-1px;top:-30px;display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:6px;background:#3574f0;color:#fff;font-size:10.5px;font-weight:600;box-shadow:0 6px 16px rgba(53,116,240,0.35)">
+      <span style="width:5px;height:5px;border-radius:999px;background:#fff"></span>
+      滚动中 · 已捕获 3 屏
+    </span>
+
+    <span style="position:absolute;right:0;bottom:-27px;display:inline-flex;align-items:center;gap:5px;height:20px;padding:0 7px;border-radius:5px;background:#fff;border:1px solid #dfe1e5;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6c707e">
+      <svg width="10" height="10" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M4 9l3 3 3-3" stroke="#6c707e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      在框内滚动页面
+    </span>
+
+    <!-- 已捕获帧，叠在框右侧 -->
+    <div style="position:absolute;right:-88px;top:2px;width:72px;display:flex;flex-direction:column;gap:6px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#6c707e;letter-spacing:0.1em">NEG 03</span>
+      <sc-for list="{{ shots }}" as="s" hint-placeholder-count="3">
+        <div style="position:relative;aspect-ratio:4/3;border-radius:5px;background:#fff;border:1px solid #dfe1e5;box-shadow:0 3px 10px rgba(39,40,46,0.1);overflow:hidden">
+          <div style="position:absolute;inset:5px;display:flex;flex-direction:column;gap:3px">
+            <span style="height:3px;width:{{ s.w }};border-radius:2px;background:#d7dae1"></span>
+            <span style="height:3px;width:78%;border-radius:2px;background:#eceef2"></span>
+            <span style="height:3px;width:52%;border-radius:2px;background:#eceef2"></span>
+          </div>
+          <span style="position:absolute;right:3px;bottom:2px;font-family:'JetBrains Mono',monospace;font-size:7.5px;color:#3574f0;font-weight:700">{{ s.no }}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- 悬浮控制条 -->
+  <div style="position:absolute;left:50%;transform:translateX(-50%);top:610px;display:flex;align-items:center;gap:6px;height:46px;padding:0 8px;border-radius:13px;background:rgba(15,18,24,0.94);border:1px solid rgba(255,255,255,0.12);box-shadow:0 20px 46px rgba(0,0,0,0.4)">
+
+    <div style="display:flex;align-items:center;gap:8px;padding:0 10px 0 6px">
+      <span style="display:grid;place-items:center;width:17px;height:17px;border-radius:999px;background:rgba(53,116,240,0.2);border:1px solid rgba(53,116,240,0.55)">
+        <span style="width:6px;height:6px;border-radius:999px;background:#539bf5"></span>
+      </span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#fff"><span style="font-weight:700">03</span> <span style="color:rgba(255,255,255,0.55)">屏</span></span>
+    </div>
+
+    <span style="width:1px;height:20px;background:rgba(255,255,255,0.16)"></span>
+
+    <div style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:8px;background:#3574f0;color:#fff;font-size:12px;font-weight:600;box-shadow:0 4px 12px rgba(53,116,240,0.4)">
+      捕获一屏
+      <span style="padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.22);font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700">SPACE</span>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:12px">
+      完成
+      <span style="padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.12);font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,0.6)">ENTER</span>
+    </div>
+    <div style="display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 10px;border-radius:8px;color:rgba(255,255,255,0.6);font-size:12px">
+      取消
+      <span style="padding:1px 5px;border-radius:4px;background:rgba(255,255,255,0.07);font-family:'JetBrains Mono',monospace;font-size:9px">ESC</span>
+    </div>
+
+    <span style="width:1px;height:20px;background:rgba(255,255,255,0.16)"></span>
+
+    <div style="display:flex;align-items:center;gap:5px;padding:0 8px 0 2px">
+      <span style="width:20px;height:3px;border-radius:2px;background:#3574f0"></span>
+      <span style="width:20px;height:3px;border-radius:2px;background:#3574f0"></span>
+      <span style="width:20px;height:3px;border-radius:2px;background:rgba(255,255,255,0.16)"></span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,0.5);margin-left:3px">2/3</span>
+    </div>
+  </div>
+
+  <div style="position:absolute;left:50%;transform:translateX(-50%);top:668px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#6c707e">
+    框内滚动 → Space 捕获一段，重复到覆盖完整内容 → Enter 拼成一张长图
+  </div>
+
+  <div style="position:absolute;left:34px;top:28px;display:inline-flex;align-items:center;gap:8px;height:26px;padding:0 10px;border-radius:7px;background:#eef4ff;border:1px solid #d6e4ff">
+    <span style="width:5px;height:5px;border-radius:999px;background:#3574f0"></span>
+    <span style="font-size:10.5px;font-weight:600;color:#2b5fc4">长截图 · 滚动模式</span>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#5b7fb8">620 × 390</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const widths = ['86%', '74%', '92%', '64%', '80%', '70%', '88%', '58%', '76%'];
+    const rows = widths.map((w, i) => ({
+      y: (96 + i * 44) + 'px',
+      w1: w,
+      w2: i % 3 === 0 ? '58%' : '44%',
+      thumb: i % 4 === 0 ? '#eef4ff' : '#f2f4f8'
+    }));
+    const shots = [
+      { no: '01', w: '86%' },
+      { no: '02', w: '72%' },
+      { no: '03', w: '80%' }
+    ];
+    return { rows, shots };
+  }
+}
+</script>
+</body>
+</html>

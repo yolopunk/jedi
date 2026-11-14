@@ -1,0 +1,81 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-14T10:52:00Z"
+  },
+  "title": "截图模块 · 重新设计",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1280,
+      "h": 800,
+      "title": "截图库"
+    },
+    "Capture.dc.html": {
+      "x": 1360,
+      "y": 0,
+      "w": 1280,
+      "h": 800,
+      "title": "框选覆盖层"
+    },
+    "Film.dc.html": {
+      "x": 2720,
+      "y": 0,
+      "w": 1280,
+      "h": 800,
+      "title": "长截图 · 滚动取景"
+    },
+    "Pin.dc.html": {
+      "x": 0,
+      "y": 920,
+      "w": 1280,
+      "h": 800,
+      "title": "贴图 · Pin"
+    },
+    "Quicklook.dc.html": {
+      "x": 1360,
+      "y": 920,
+      "w": 1280,
+      "h": 800,
+      "title": "快速预览 · 空格"
+    },
+    "Feedback.dc.html": {
+      "x": 2720,
+      "y": 920,
+      "w": 1280,
+      "h": 800,
+      "title": "捕捉反馈 · 三帧"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Capture.dc.html",
+    "Film.dc.html",
+    "Pin.dc.html",
+    "Quicklook.dc.html",
+    "Feedback.dc.html"
+  ],
+  "notes": {
+    "board-title": {
+      "x": 0,
+      "y": -300,
+      "text": "截图模块 · 重新设计",
+      "kind": "title1",
+      "maxW": 4000
+    },
+    "note-idea": {
+      "x": 0,
+      "y": 1800,
+      "w": 300,
+      "text": "第一行：同一界面做得更好。第二行：三件让它更有意思的事——贴图、空格快速预览、捕捉反馈。",
+      "fill": "blue"
+    }
+  },
+  "designSystems": []
+}

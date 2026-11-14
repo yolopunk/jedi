@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>截图库 · 日常</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#ffffff}
+*{box-sizing:border-box}
+</style>
+</helmet>
+<div style="position:relative;width:1280px;height:800px;overflow:hidden;background:#ffffff;color:#27282e;font-family:'Microsoft YaHei','PingFang SC','Segoe UI',system-ui,sans-serif;display:flex">
+
+  <!-- 侧边栏：沿用现有结构 -->
+  <aside style="width:200px;flex:none;background:#f7f8fa;border-right:1px solid #dfe1e5;display:flex;flex-direction:column">
+    <div style="padding:26px 18px 20px;display:flex;flex-direction:column;align-items:center;gap:10px">
+      <div style="width:38px;height:38px;border-radius:11px;background:#fff;border:1px solid #dfe1e5;display:grid;place-items:center">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 7.5V5.5A1.5 1.5 0 0 1 5.5 4h11A1.5 1.5 0 0 1 18 5.5v9A1.5 1.5 0 0 1 16.5 16h-11A1.5 1.5 0 0 1 4 14.5v-2" stroke="#3574f0" stroke-width="1.4" stroke-linecap="round"/><circle cx="10.5" cy="10" r="2.6" stroke="#3574f0" stroke-width="1.4"/><path d="M2 10h2.5" stroke="#3574f0" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:13px;font-weight:600;letter-spacing:0.02em">Jedi Command</div>
+        <div style="margin-top:2px;font-size:10px;color:#6c707e">开发者的原力</div>
+      </div>
+    </div>
+    <nav style="padding:6px 10px;display:flex;flex-direction:column;gap:2px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="6">
+        <div style="display:flex;align-items:center;gap:10px;height:38px;padding:0 12px;border-radius:9px;background:{{ n.bg }};color:{{ n.fg }}">
+          <span style="width:15px;height:15px;border-radius:4px;background:{{ n.dot }}"></span>
+          <span style="font-size:12.5px;font-weight:{{ n.weight }}">{{ n.label }}</span>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="margin-top:auto;padding:10px 18px;border-top:1px solid #dfe1e5;font-family:'JetBrains Mono',monospace;font-size:10px;color:#6c707e">19:52:04</div>
+  </aside>
+
+  <!-- 内容区 -->
+  <main style="flex:1;min-width:0;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;overflow:hidden;padding:26px 34px 0">
+
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px">
+        <div>
+          <div style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 7px;border-radius:999px;background:#eef4ff;border:1px solid #d6e4ff">
+            <span style="width:12px;height:12px;border-radius:3px;background:#3574f0"></span>
+            <span style="font-size:10px;font-weight:600;letter-spacing:0.06em;color:#2b5fc4">个人影像库</span>
+          </div>
+          <h1 style="margin:12px 0 0;font-size:30px;line-height:1.16;font-weight:700;letter-spacing:-0.02em">截图库</h1>
+          <p style="margin:8px 0 0;font-size:12.5px;color:#6c707e">灵感、片段与重要瞬间，收进你的截图库。</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding-top:4px">
+          <div style="display:flex;align-items:center;gap:8px;height:38px;padding:0 6px 0 14px;border-radius:9px;background:#2f68e0;color:#fff">
+            <span style="font-size:12.5px;font-weight:600">开始截图</span>
+            <span style="padding:2px 6px;border-radius:5px;background:rgba(255,255,255,0.22);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700">F1</span>
+          </div>
+          <div style="display:flex;align-items:center;height:38px;padding:0 14px;border-radius:9px;border:1px solid #dfe1e5;background:#fff;font-size:12.5px;color:#27282e">导入图片</div>
+        </div>
+      </div>
+
+      <!-- 工具条 -->
+      <div style="margin-top:20px;display:flex;align-items:center;gap:14px;height:58px;padding:0 14px 0 16px;border:1px solid #dfe1e5;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(39,40,46,0.04)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:#eef4ff">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2" y="2" width="5" height="5" rx="1.4" fill="#3574f0"/><rect x="9" y="2" width="5" height="5" rx="1.4" fill="#3574f0" opacity="0.45"/><rect x="2" y="9" width="5" height="5" rx="1.4" fill="#3574f0" opacity="0.45"/><rect x="9" y="9" width="5" height="5" rx="1.4" fill="#3574f0" opacity="0.45"/></svg>
+          </span>
+          <div style="display:flex;flex-direction:column;gap:1px">
+            <span style="font-size:13px;font-weight:600">最近截图</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6c707e">11 张 · 1.4 MB</span>
+          </div>
+        </div>
+
+        <span style="width:1px;height:24px;background:#dfe1e5"></span>
+
+        <div style="display:flex;align-items:center;gap:4px">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+            <span style="display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border-radius:6px;background:{{ f.bg }};color:{{ f.fg }};font-size:11.5px;font-weight:{{ f.weight }}">
+              {{ f.label }}
+              <span style="font-family:'JetBrains Mono',monospace;font-size:10px;opacity:0.72">{{ f.count }}</span>
+            </span>
+          </sc-for>
+        </div>
+
+        <div style="margin-left:auto;display:flex;align-items:center;gap:14px">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:#6c707e">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M2 4h12M4 8h8M6 12h4" stroke="#6c707e" stroke-width="1.3" stroke-linecap="round"/></svg>
+            缩略图大小
+            <span style="position:relative;display:block;width:96px;height:3px;border-radius:999px;background:#dfe1e5">
+              <span style="position:absolute;left:0;top:0;height:3px;width:62%;border-radius:999px;background:#3574f0"></span>
+              <span style="position:absolute;left:62%;top:-4px;width:11px;height:11px;margin-left:-5px;border-radius:999px;background:#fff;border:2px solid #3574f0;box-shadow:0 1px 3px rgba(39,40,46,0.18)"></span>
+            </span>
+          </div>
+          <span style="width:1px;height:22px;background:#dfe1e5"></span>
+          <span style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 11px;border-radius:7px;background:#2f68e0;color:#fff;font-size:11.5px;font-weight:600">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 4.5h10M3 8h10M3 11.5h10" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+            选择
+          </span>
+          <span style="display:grid;place-items:center;width:30px;height:30px;border-radius:7px;border:1px solid #dfe1e5">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.7-3.97M13.5 2.5V5h-2.5" stroke="#6c707e" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
+      </div>
+
+      <!-- 列表 -->
+      <div style="margin-top:22px;display:flex;flex-wrap:wrap;gap:18px 16px">
+        <sc-for list="{{ items }}" as="it" hint-placeholder-count="8">
+          <div style="display:contents">
+            <sc-if value="{{ it.groupHead }}" hint-placeholder-val="{{ false }}">
+              <div style="width:100%;display:flex;align-items:center;gap:9px;margin:2px 0 -4px">
+                <span style="width:6px;height:6px;border-radius:999px;background:#3574f0"></span>
+                <span style="font-size:12px;font-weight:600;color:#27282e">{{ it.day }}</span>
+                <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#6c707e">{{ it.dayCount }}</span>
+                <span style="flex:1;height:1px;background:#eceef2"></span>
+              </div>
+            </sc-if>
+
+            <div style="width:calc(25% - 12px);min-width:0;position:relative;border:1px solid {{ it.border }};border-radius:13px;background:#fcfdfe;box-shadow:{{ it.shadow }};overflow:hidden">
+              <div style="position:relative;aspect-ratio:16/10;margin:8px 8px 0;border-radius:8px;background:{{ it.mat }};overflow:hidden">
+                <div style="position:absolute;inset:10px;background:#fff;border-radius:4px;box-shadow:0 2px 7px rgba(39,40,46,0.12);padding:8px;display:flex;flex-direction:column;gap:4px">
+                  <div style="display:flex;align-items:center;gap:3px">
+                    <span style="width:3px;height:3px;border-radius:999px;background:#c9ccd6"></span>
+                    <span style="width:3px;height:3px;border-radius:999px;background:#c9ccd6"></span>
+                    <span style="width:3px;height:3px;border-radius:999px;background:#c9ccd6"></span>
+                  </div>
+                  <div style="height:4px;width:{{ it.w1 }};border-radius:2px;background:#d7dae1"></div>
+                  <div style="height:3px;width:{{ it.w2 }};border-radius:2px;background:#eceef2"></div>
+                  <div style="height:3px;width:{{ it.w3 }};border-radius:2px;background:#eceef2"></div>
+                  <div style="flex:1;border-radius:3px;background:{{ it.block }}"></div>
+                </div>
+
+                <sc-if value="{{ it.kind }}" hint-placeholder-val="{{ '' }}">
+                  <span style="position:absolute;left:6px;bottom:6px;display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border-radius:5px;background:rgba(255,255,255,0.94);border:1px solid rgba(39,40,46,0.1);font-size:9.5px;font-weight:600;color:#3f424b">{{ it.kind }}</span>
+                </sc-if>
+
+                <sc-if value="{{ it.isNew }}" hint-placeholder-val="{{ false }}">
+                  <span style="position:absolute;left:0;top:0;right:0;display:flex;align-items:center;gap:5px;height:20px;padding:0 7px;background:#2f68e0;color:#fff;font-size:9.5px;font-weight:600">
+                    <span style="width:4px;height:4px;border-radius:999px;background:#fff"></span>刚刚取景
+                  </span>
+                </sc-if>
+
+                <span style="position:absolute;right:6px;top:6px;display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:#fff;border:1px solid #dfe1e5;color:#c9323f;box-shadow:0 2px 6px rgba(39,40,46,0.12)">
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 5h9M6.5 5V3.5h3V5M5 5l.6 7h4.8L11 5" stroke="#c9323f" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+
+                <sc-if value="{{ it.selected }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;inset:0;background:rgba(53,116,240,0.12);border:2px solid #3574f0;border-radius:8px"></div>
+                  <span style="position:absolute;left:6px;top:6px;display:grid;place-items:center;width:19px;height:19px;border-radius:999px;background:#3574f0">
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2.4 6.3 4.8 8.7 9.6 3.5" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </span>
+                </sc-if>
+              </div>
+
+              <div style="padding:9px 11px 11px;display:flex;flex-direction:column;gap:3px">
+                <span style="font-size:11.5px;font-weight:500;color:#27282e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ it.name }}</span>
+                <span style="display:flex;align-items:center;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:#6c707e">
+                  <span>{{ it.time }}</span>
+                  <span>{{ it.size }}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- 多选操作条 -->
+    <div style="position:absolute;left:50%;transform:translateX(-50%);bottom:22px;display:flex;align-items:center;gap:14px;height:44px;padding:0 8px 0 16px;border-radius:11px;background:#27282e;box-shadow:0 14px 34px rgba(39,40,46,0.28)">
+      <span style="font-size:12px;color:#fff">已选 <span style="font-family:'JetBrains Mono',monospace;font-weight:700">2</span> 项</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10.5px;color:rgba(255,255,255,0.6)">1.4 MB</span>
+      <span style="width:1px;height:18px;background:rgba(255,255,255,0.2)"></span>
+      <span style="display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:7px;background:rgba(219,59,75,0.16);color:#ff8a95;font-size:11.5px;font-weight:600">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3.5 5h9M6.5 5V3.5h3V5M5 5l.6 7h4.8L11 5" stroke="#ff8a95" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        删除
+      </span>
+      <span style="height:30px;padding:0 12px;display:inline-flex;align-items:center;border-radius:7px;background:rgba(255,255,255,0.1);color:#fff;font-size:11.5px">取消</span>
+      <span style="padding-right:4px;font-family:'JetBrains Mono',monospace;font-size:9.5px;color:rgba(255,255,255,0.45)">Del</span>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const nav = [
+      { label: '对话', bg: 'transparent', fg: '#27282e', dot: '#c9ccd6', weight: 400 },
+      { label: '技能', bg: 'transparent', fg: '#27282e', dot: '#c9ccd6', weight: 400 },
+      { label: 'Hosts 管理', bg: 'transparent', fg: '#27282e', dot: '#c9ccd6', weight: 400 },
+      { label: '知识壁纸', bg: 'transparent', fg: '#27282e', dot: '#c9ccd6', weight: 400 },
+      { label: '小宇宙', bg: 'transparent', fg: '#27282e', dot: '#c9ccd6', weight: 400 },
+      { label: '截图', bg: '#e8f0fe', fg: '#1e5cc4', dot: '#3574f0', weight: 600 }
+    ];
+    const filters = [
+      { label: '全部', count: '11', bg: '#e8f0fe', fg: '#1e5cc4', weight: 600 },
+      { label: '图片', count: '08', bg: 'transparent', fg: '#6c707e', weight: 400 },
+      { label: '长图', count: '02', bg: 'transparent', fg: '#6c707e', weight: 400 },
+      { label: '视频', count: '01', bg: 'transparent', fg: '#6c707e', weight: 400 }
+    ];
+    const raw = [
+      { g: 0, name: 'Scroll_Jedi_20261114_1830.png', time: '今天 18:30', size: '91 KB', kind: '长图', isNew: true, selected: true },
+      { g: 0, name: 'Jedi_20261114_1832.png', time: '今天 18:32', size: '58 KB', kind: '', isNew: false, selected: false },
+      { g: 0, name: 'Screen_Recording_1834.mp4', time: '今天 18:34', size: '4.2 MB', kind: '视频', isNew: false, selected: true },
+      { g: 0, name: 'Jedi_20261114_1836.png', time: '今天 18:36', size: '64 KB', kind: '', isNew: false, selected: false },
+      { g: 1, name: 'Styled_Jedi_20261023_0106.png', time: '10月23日 01:06', size: '184 KB', kind: '', isNew: false, selected: false },
+      { g: 1, name: 'Jedi_20261023_0059.png', time: '10月23日 00:59', size: '74 KB', kind: '', isNew: false, selected: false },
+      { g: 1, name: 'Jedi_20261022_2211.png', time: '10月22日 22:11', size: '112 KB', kind: '', isNew: false, selected: false },
+      { g: 1, name: 'Jedi_20261022_2130.png', time: '10月22日 21:30', size: '96 KB', kind: '', isNew: false, selected: false }
+    ];
+    const looks = [
+      { w1: '72%', w2: '46%', w3: '62%', block: '#eef4ff' },
+      { w1: '58%', w2: '80%', w3: '38%', block: '#f2f4f8' },
+      { w1: '46%', w2: '62%', w3: '30%', block: '#f6eff2' },
+      { w1: '80%', w2: '34%', w3: '56%', block: '#f1f6f2' },
+      { w1: '64%', w2: '74%', w3: '44%', block: '#f2f4f8' },
+      { w1: '52%', w2: '60%', w3: '40%', block: '#f6f1e8' },
+      { w1: '76%', w2: '42%', w3: '58%', block: '#eef4ff' },
+      { w1: '60%', w2: '70%', w3: '36%', block: '#f2f4f8' }
+    ];
+    const items = [];
+    let lastGroup = -1;
+    raw.forEach((r, i) => {
+      const g = r.g;
+      const look = looks[i % looks.length];
+      items.push({
+        ...r,
+        ...look,
+        groupHead: g !== lastGroup,
+        day: g === 0 ? '2026年11月14日' : '2026年10月23日',
+        dayCount: g === 0 ? '04' : '04',
+        border: r.selected ? '#3574f0' : '#e6e8ee',
+        shadow: r.isNew ? '0 6px 18px rgba(53,116,240,0.14)' : 'none',
+        mat: 'linear-gradient(135deg,#f7f8fa,#eef1f6)'
+      });
+      lastGroup = g;
+    });
+    return { nav, filters, items };
+  }
+}
+</script>
+</body>
+</html>

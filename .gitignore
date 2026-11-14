@@ -37,5 +37,11 @@ dist-ssr
 # WorkBuddy agent artifacts
 .workbuddy-ai/
 
+# Agent tool machine-local state：本机密钥与会话状态不入库
+# （.tauri/ 内是更新器签名私钥，只应存在于本机与 CI Secrets）
+.claude/settings.local.json
+.opencode/
+.tauri/
+
 # agent scratch / installer preview artifacts
 .tmp/

@@ -36,13 +36,19 @@
                 <button class="capture-open" type="button" @click="selected = item; beautifying = false">
                   <div class="thumbnail">
                     <div class="image-mat">
-                      <img v-if="!brokenImages.has(item.path)" :key="`${item.path}:${imageRetries[item.path] || 0}`" :src="thumbSrc(item.path)" :alt="item.name" loading="lazy" draggable="false" @error="onThumbError(item.path)" />
+                      <template v-if="item.kind === 'video'">
+                        <div class="thumb-video">
+                          <v-icon :icon="mdiFileVideoOutline" size="30" aria-hidden="true" />
+                          <span>{{ t('screenshot.videoBadge') }}</span>
+                        </div>
+                      </template>
+                      <img v-else-if="!brokenImages.has(item.path)" :key="`${item.path}:${imageRetries[item.path] || 0}`" :src="thumbSrc(item.path)" :alt="item.name" loading="lazy" draggable="false" @error="onThumbError(item.path)" />
                       <div v-else class="thumb-broken">
                         <v-icon :icon="mdiImageOffOutline" size="24" aria-hidden="true" />
                         <span class="thumb-broken-text">{{ t('screenshot.imageMissing') }}</span>
                       </div>
                     </div>
-                    <span v-if="!brokenImages.has(item.path)" class="preview-hint"><v-icon :icon="mdiMagnifyPlusOutline" size="17" aria-hidden="true" />{{ t('screenshot.preview') }}</span>
+                    <span v-if="item.kind === 'video' || !brokenImages.has(item.path)" class="preview-hint"><v-icon :icon="mdiMagnifyPlusOutline" size="17" aria-hidden="true" />{{ t('screenshot.preview') }}</span>
                   </div>
                   <div class="card-info"><span class="capture-name" :title="item.name">{{ item.name }}</span><span class="card-meta"><time>{{ formatDate(item.modifiedMs) }}</time><span>{{ formatSize(item.size) }}</span></span></div>
                 </button>
@@ -67,13 +73,18 @@
             <h2>{{ selected.name }}</h2>
             <span class="pixel-size"><template v-if="previewPixelLabel">{{ previewPixelLabel }} · </template>{{ formatSize(selected.size) }}</span>
           </div>
-          <div class="mode-switch" :aria-label="t('screenshot.preview')">
+          <div v-if="selected.kind !== 'video'" class="mode-switch" :aria-label="t('screenshot.preview')">
             <button type="button" :class="{ active: !beautifying }" :aria-pressed="!beautifying" @click="beautifying = false"><v-icon :icon="mdiEyeOutline" size="16" aria-hidden="true" />{{ t('screenshot.preview') }}</button>
             <button type="button" :class="{ active: beautifying }" :aria-pressed="beautifying" @click="beautifying = true"><v-icon :icon="mdiAutoFix" size="16" aria-hidden="true" />{{ t('screenshot.beautify') }}</button>
           </div>
           <v-btn class="close-preview" :icon="mdiClose" variant="text" :aria-label="t('screenshot.closePreview')" @click="selected = null" />
         </header>
-        <BeautifyEditor v-if="beautifying" :path="selected.path" @saved="onStyledSaved" />
+        <BeautifyEditor v-if="beautifying && selected.kind !== 'video'" :path="selected.path" @saved="onStyledSaved" />
+        <div v-else-if="selected.kind === 'video'" class="preview-workspace video-workspace">
+          <div class="preview-video-stage">
+            <video class="preview-video" :src="thumbSrc(selected.path)" controls playsinline></video>
+          </div>
+        </div>
         <div v-else class="preview-workspace" :class="{ 'has-ocr': showOcr }">
           <div class="preview-image" tabindex="0" :aria-label="t('screenshot.preview')" :class="{ 'is-actual': previewZoom === 'actual', 'is-panning': panning }" @pointerdown="onPanStart" @pointermove="onPanMove" @pointerup="onPanEnd" @pointercancel="onPanEnd" @lostpointercapture="onPanEnd">
             <div v-if="previewFailed" role="alert" class="thumb-broken"><span>{{ t('screenshot.imageMissing') }}</span><v-btn variant="text" @click="retryThumb(selected.path); previewFailed = false">{{ t('screenshot.retryImage') }}</v-btn></div>
@@ -84,13 +95,19 @@
         <footer class="preview-footer">
           <span>{{ formatDate(selected.modifiedMs) }}</span>
           <div v-if="!beautifying" class="preview-actions">
-            <div v-if="!beautifying" class="zoom-toggle">
-              <v-btn size="small" :variant="previewZoom === 'fit' ? 'tonal' : 'text'" :color="previewZoom === 'fit' ? 'primary' : undefined" @click="previewZoom = 'fit'">{{ t('screenshot.fitWindow') }}</v-btn>
-              <v-btn size="small" :variant="previewZoom === 'actual' ? 'tonal' : 'text'" :color="previewZoom === 'actual' ? 'primary' : undefined" :disabled="!previewPixels" @click="previewZoom = 'actual'">{{ t('screenshot.actualSize') }}</v-btn>
-            </div>
-            <span class="footer-divider" aria-hidden="true"></span>
-            <v-btn variant="tonal" :prepend-icon="mdiTextRecognition" :aria-pressed="showOcr" @click="showOcr = !showOcr">{{ t('screenshot.ocr.title') }}</v-btn>
-            <v-btn variant="text" :prepend-icon="mdiFolderOpenOutline" @click="openFolder(selected.path)">{{ t('screenshot.openFolder') }}</v-btn>
+            <template v-if="selected.kind === 'video'">
+              <v-btn variant="tonal" :prepend-icon="mdiPlayCircleOutline" @click="openVideo(selected.path)">{{ t('screenshot.openFile') }}</v-btn>
+              <v-btn variant="text" :prepend-icon="mdiFolderOpenOutline" @click="openFolder(selected.path)">{{ t('screenshot.openFolder') }}</v-btn>
+            </template>
+            <template v-else>
+              <div class="zoom-toggle">
+                <v-btn size="small" :variant="previewZoom === 'fit' ? 'tonal' : 'text'" :color="previewZoom === 'fit' ? 'primary' : undefined" @click="previewZoom = 'fit'">{{ t('screenshot.fitWindow') }}</v-btn>
+                <v-btn size="small" :variant="previewZoom === 'actual' ? 'tonal' : 'text'" :color="previewZoom === 'actual' ? 'primary' : undefined" :disabled="!previewPixels" @click="previewZoom = 'actual'">{{ t('screenshot.actualSize') }}</v-btn>
+              </div>
+              <span class="footer-divider" aria-hidden="true"></span>
+              <v-btn variant="tonal" :prepend-icon="mdiTextRecognition" :aria-pressed="showOcr" @click="showOcr = !showOcr">{{ t('screenshot.ocr.title') }}</v-btn>
+              <v-btn variant="text" :prepend-icon="mdiFolderOpenOutline" @click="openFolder(selected.path)">{{ t('screenshot.openFolder') }}</v-btn>
+            </template>
           </div>
           <span v-else>{{ t('screenshot.saveAsCopy') }}</span>
         </footer>
@@ -106,12 +123,14 @@ import {
   mdiCrop,
   mdiCropFree,
   mdiEyeOutline,
+  mdiFileVideoOutline,
   mdiFolderOpenOutline,
   mdiImageMultipleOutline,
   mdiImageOffOutline,
   mdiImageSizeSelectLarge,
   mdiKeyboardOutline,
   mdiMagnifyPlusOutline,
+  mdiPlayCircleOutline,
   mdiRefresh,
   mdiTextRecognition,
   mdiViewGridOutline,
@@ -120,7 +139,12 @@ import { convertFileSrc } from '@tauri-apps/api/core'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { listScreenshots, type ScreenshotItem, screenshotBegin } from '@/api/screenshot'
+import {
+  listScreenshots,
+  openScreenshotFile,
+  type ScreenshotItem,
+  screenshotBegin,
+} from '@/api/screenshot'
 import { showInFolder } from '@/api/wallpaper'
 import BeautifyEditor from './BeautifyEditor.vue'
 import OcrPanel from './OcrPanel.vue'
@@ -164,8 +188,18 @@ let panOrigin = { x: 0, y: 0, left: 0, top: 0 }
 const imageRetries = ref<Record<string, number>>({})
 const brokenImages = ref(new Set<string>())
 let unlisten: UnlistenFn | undefined
+let unlistenNotice: UnlistenFn | undefined
 let disposed = false
 let pendingOcrPath = ''
+
+/** 后端警告码（拼接降级、录屏失败等）映射为可见提示 */
+function showNoticeCodes(codes: unknown) {
+  if (!Array.isArray(codes) || codes.length === 0) return
+  const messages = codes
+    .map(code => t(`screenshot.warnings.${String(code)}`))
+    .filter(message => !message.startsWith('screenshot.warnings.'))
+  if (messages.length > 0) error.value = messages.join(' ')
+}
 
 async function openCapturedOcr(event: Event) {
   const path = (event as CustomEvent<string>).detail
@@ -288,6 +322,15 @@ async function openFolder(path: string) {
   }
 }
 
+/** 用系统默认播放器打开录屏 MP4 */
+async function openVideo(path: string) {
+  try {
+    await openScreenshotFile(path)
+  } catch (err) {
+    error.value = t('screenshot.openFileFailed', { message: String(err) })
+  }
+}
+
 function formatSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`
@@ -308,6 +351,11 @@ onMounted(async () => {
     const stop = await listen('screenshot-saved', loadRecent)
     if (disposed) stop()
     else unlisten = stop
+    const stopNotice = await listen<string[]>('screenshot-notice', event =>
+      showNoticeCodes(event.payload)
+    )
+    if (disposed) stopNotice()
+    else unlistenNotice = stopNotice
   } catch (err) {
     console.error('Screenshot listener failed:', err)
   }
@@ -316,6 +364,7 @@ onMounted(async () => {
 onUnmounted(() => {
   disposed = true
   unlisten?.()
+  unlistenNotice?.()
   window.removeEventListener('focus', loadRecent)
   window.removeEventListener('jedi-screenshot-ocr', openCapturedOcr)
 })
@@ -376,6 +425,8 @@ h1 { margin-top: 8px; font-size: clamp(27px, 3vw, 38px); font-weight: 650; lette
 .capture-card:hover .thumbnail img { filter: saturate(1.03); transform: scale(1.012); box-shadow: 0 14px 30px rgb(var(--ink-rgb) / 0.28); }
 .thumb-broken { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 16px; text-align: center; color: var(--text-muted); }
 .thumb-broken-text { font-size: 12px; line-height: 1.6; }
+.thumb-video { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--accent); }
+.thumb-video span { font: 600 11px/1.4 var(--jedi-font-mono); letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted); }
 .thumb-retry { position: absolute; top: 18px; right: 18px; cursor: pointer; padding: 5px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-raised); color: var(--text-muted); font-size: 11px; cursor: pointer; }
 .thumb-retry:hover { border-color: var(--accent); color: var(--text); }
 .thumb-retry:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -408,6 +459,12 @@ h1 { margin-top: 8px; font-size: clamp(27px, 3vw, 38px); font-weight: 650; lette
 .mode-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .close-preview { margin-left: auto; }
 .preview-workspace { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.video-workspace { padding: clamp(26px, 4vw, 56px); background:
+    radial-gradient(circle at 50% 35%, rgb(var(--accent-rgb) / 0.075), transparent 34rem),
+    radial-gradient(rgb(var(--text-rgb) / 0.07) 0.7px, transparent 0.7px),
+    var(--surface-canvas); background-size: auto, 12px 12px, auto; }
+.preview-video-stage { display: grid; place-items: center; min-width: 0; }
+.preview-video { max-width: 100%; max-height: 68vh; border-radius: 10px; background: #000; box-shadow: 0 24px 64px rgb(var(--ink-rgb) / 0.34), 0 0 0 1px rgb(var(--text-rgb) / 0.1); }
 .preview-workspace.has-ocr { grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); }
 .preview-image { min-width: 0; min-height: 320px; display: grid; place-items: center; overflow: auto; padding: clamp(26px, 4vw, 56px); background:
     radial-gradient(circle at 50% 35%, rgb(var(--accent-rgb) / 0.075), transparent 34rem),

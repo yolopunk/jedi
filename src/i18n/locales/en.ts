@@ -828,6 +828,36 @@ export default {
     recent: 'Recent Captures',
     recentEmpty: 'No captures yet — take one first',
     openFolder: 'Open in folder',
+    openFile: 'Open file',
+    openFileFailed: 'Could not open file: {message}',
+    videoBadge: 'Video',
+
+    scrolling: {
+      title: 'Long capture',
+      action: 'Long capture',
+      capture: 'Capture screen',
+      finish: 'Done',
+      cancel: 'Cancel',
+      frames: '{count} screens captured',
+      hint: 'Scroll the target page, then press Space or click the button to capture the next screen',
+      failed: 'Long capture failed: {message}',
+    },
+
+    record: {
+      title: 'Recording',
+      action: 'Record video',
+      recording: 'Recording',
+      stop: 'Stop',
+      maxDuration: 'Records up to 10 minutes, then stops automatically',
+      failed: 'Recording failed: {message}',
+    },
+
+    warnings: {
+      stitch_fallback:
+        'Scrolling overlap could not be detected between some screens; they were joined directly — check the seams for duplicates or gaps.',
+      record_failed: 'Recording failed and no video file was created.',
+    },
+
     fitWindow: 'Fit window',
     actualSize: 'Actual size',
     pixelSize: '{w} × {h} px',

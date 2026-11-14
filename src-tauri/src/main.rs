@@ -55,9 +55,12 @@ use crate::api::podcast::{
 };
 use crate::api::screenshot::{
   list_screenshots, read_image_data_url, screenshot_begin, screenshot_cancel, screenshot_finish,
-  screenshot_frame_info, screenshot_save_styled, ScreenshotState,
+  screenshot_frame_info, screenshot_open_file, screenshot_save_styled, screenshot_scroll_begin,
+  screenshot_scroll_cancel, screenshot_scroll_capture, screenshot_scroll_finish,
+  screenshot_toolbar_info, ScreenshotState,
 };
 use crate::api::screenshot_ocr::{screenshot_copy_text, screenshot_ocr};
+use crate::api::screenshot_record::{start_region_record, stop_region_record, RecordState};
 use crate::api::skills::{
   skill_stats_clear, skill_stats_list, skill_stats_save, skills_delete, skills_list, skills_read,
   skills_read_file, skills_save,
@@ -169,6 +172,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .manage(McpManager::new())
     // Screenshot capture session
     .manage(ScreenshotState::default())
+    // Region recording session
+    .manage(RecordState::default())
     .setup(|app| {
       // 创建主窗口
       let mut win_builder =
@@ -344,6 +349,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       screenshot_finish,
       screenshot_save_styled,
       screenshot_cancel,
+      // Scrolling long-capture commands
+      screenshot_scroll_begin,
+      screenshot_scroll_capture,
+      screenshot_scroll_finish,
+      screenshot_scroll_cancel,
+      screenshot_toolbar_info,
+      // Region recording commands
+      start_region_record,
+      stop_region_record,
+      screenshot_open_file,
       list_screenshots,
       read_image_data_url
     ])
@@ -379,6 +394,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       if code.is_none() {
         api.prevent_exit();
       }
+
+      // 截屏会话收尾：停掉录屏线程（产出文件）、拆除覆盖窗与临时帧
+      crate::api::screenshot_record::shutdown(_app_handle);
+      crate::api::screenshot::teardown_all(_app_handle);
 
       if let Err(e) = revert_hosts() {
         eprintln!("failed to revert hosts on exit: {}", e);

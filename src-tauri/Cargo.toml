@@ -47,6 +47,10 @@ gray_matter = "0.3.2"
 # 截图裁剪依赖
 xcap = "0.9"
 image = { version = "0.25", default-features = false, features = ["png"] }
+# 截长图/选区录屏：openh264 自带 Cisco 源码编译，无系统依赖；mp4 纯 Rust 封装 MP4
+openh264 = "0.9"
+mp4 = "0.14"
+bytes = "1"
 rusto-rs = { version = "0.3.2", default-features = false }
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-global-shortcut = "2"
@@ -72,3 +76,7 @@ tauri-plugin-updater = "2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.26"
+
+# 录屏时把覆盖窗口排除出系统捕获（WDA_EXCLUDEFROMCAPTURE），避免边框入镜
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_UI_WindowsAndMessaging"] }

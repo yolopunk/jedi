@@ -1,14 +1,18 @@
 <template>
   <div
     class="overlay-root"
-    :class="{ 'is-selecting': drag && drag.mode === 'new', 'has-selection': !!selection }"
+    :class="{
+      'is-selecting': drag && drag.mode === 'new',
+      'has-selection': !!selection && mode === 'select',
+      'is-recording': mode === 'record',
+    }"
     @mousedown="onMouseDown"
     @mousemove="onMouseMove"
     @mouseup="onMouseUp"
     @dblclick="confirmCopy"
   >
     <!-- 冻结帧：窗口物理尺寸 = 显示器物理尺寸，CSS 视口按 scaleFactor 缩放后 1:1 铺满 -->
-    <img v-if="frameSrc" class="frozen-frame" :src="frameSrc" @load="revealOverlay" @error="cancel" draggable="false" alt="" />
+    <img v-if="frameSrc && mode !== 'record'" class="frozen-frame" :src="frameSrc" @load="revealOverlay" @error="cancel" draggable="false" alt="" />
 
     <!-- 未开始框选时的十字引导线 -->
     <template v-if="!selection && !drag">
@@ -18,7 +22,7 @@
 
     <!-- 选区：box-shadow 大扩散实现外部压暗 -->
     <div
-      v-if="selection"
+      v-if="selection && mode === 'select'"
       class="selection"
       :style="selectionStyle"
       @mousedown.stop="onSelectionMouseDown"
@@ -35,9 +39,16 @@
       <div class="size-badge" :class="{ flipped: badgeFlipped }">{{ sizeLabel }}</div>
     </div>
 
+    <!-- 录制模式：保留选区边框 + REC 徽标与已录时长（窗口已点击穿透且排除出捕获） -->
+    <div v-if="mode === 'record' && selection" class="record-frame" :style="selectionStyle">
+      <div class="rec-badge" :class="{ flipped: badgeFlipped }">
+        <span class="rec-dot"></span>REC {{ recordElapsedLabel }}
+      </div>
+    </div>
+
     <!-- 操作条：阻止 mousedown 冒泡到根节点，否则按下按钮会先清空选区 -->
     <div
-      v-if="selection && !busy"
+      v-if="selection && !busy && mode === 'select'"
       ref="toolbarRef"
       class="toolbar"
       role="toolbar"
@@ -63,6 +74,14 @@
         {{ t('screenshot.ocr.title') }}
         <kbd>⇧C</kbd>
       </button>
+      <button class="tb-btn" type="button" @click.stop="startScrolling">
+        <v-icon :icon="mdiArrowCollapseDown" size="17" aria-hidden="true" />
+        {{ t('screenshot.scrolling.action') }}
+      </button>
+      <button class="tb-btn" type="button" @click.stop="startRecording">
+        <v-icon :icon="mdiVideoOutline" size="17" aria-hidden="true" />
+        {{ t('screenshot.record.action') }}
+      </button>
       <button class="tb-btn tb-primary" type="button" @click.stop="finish('chat')">
         <v-icon :icon="mdiRobotOutline" size="16" aria-hidden="true" />
         {{ t('screenshot.sendToChat') }}
@@ -82,17 +101,25 @@
 
 <script setup lang="ts">
 import {
+  mdiArrowCollapseDown,
   mdiClose,
   mdiContentCopy,
   mdiContentSaveOutline,
   mdiRobotOutline,
   mdiTextRecognition,
+  mdiVideoOutline,
 } from '@mdi/js'
 import { convertFileSrc } from '@tauri-apps/api/core'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { screenshotCancel, screenshotFinish, screenshotFrameInfo } from '@/api/screenshot'
+import {
+  screenshotCancel,
+  screenshotFinish,
+  screenshotFrameInfo,
+  screenshotScrollBegin,
+  startRegionRecord,
+} from '@/api/screenshot'
 
 const { t } = useI18n()
 
@@ -141,6 +168,18 @@ const cursor = ref<{ x: number; y: number } | null>(null)
 const busy = ref(false)
 const errorText = ref('')
 let errorTimer: number | null = null
+// 录制模式：覆盖窗切换为透明 + 点击穿透（由后端设置），仅渲染边框与 REC 徽标
+const mode = ref<'select' | 'record'>('select')
+const recordElapsedMs = ref(0)
+let recordStartAt = 0
+let recordTimer: number | null = null
+
+const recordElapsedLabel = computed(() => {
+  const total = Math.floor(recordElapsedMs.value / 1000)
+  const m = Math.floor(total / 60)
+  const s = total % 60
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+})
 
 const selectionStyle = computed(() =>
   selection.value
@@ -291,22 +330,22 @@ function onMouseUp() {
   }
 }
 
+function physicalRect() {
+  const { x, y, w, h } = selection.value!
+  const scale = scaleFactor.value
+  return {
+    x: Math.round(x * scale),
+    y: Math.round(y * scale),
+    width: Math.round(w * scale),
+    height: Math.round(h * scale),
+  }
+}
+
 async function finish(action: 'copy' | 'save' | 'chat' | 'ocr') {
   if (!selection.value || busy.value) return
   busy.value = true
-  const { x, y, w, h } = selection.value
-  const scale = scaleFactor.value
   try {
-    await screenshotFinish(
-      monitorIndex,
-      {
-        x: Math.round(x * scale),
-        y: Math.round(y * scale),
-        width: Math.round(w * scale),
-        height: Math.round(h * scale),
-      },
-      action
-    )
+    await screenshotFinish(monitorIndex, physicalRect(), action)
     // 成功后 Rust 会关闭所有覆盖窗口；窗口若仍在（异常路径）则兜底取消
     window.setTimeout(() => {
       busy.value = false
@@ -315,6 +354,52 @@ async function finish(action: 'copy' | 'save' | 'chat' | 'ocr') {
     busy.value = false
     showError(t('screenshot.captureFailed', { message: String(err) }))
   }
+}
+
+/** 进入滚动截长图：后端隐藏覆盖窗并弹出悬浮控制条，本窗口随之隐藏 */
+async function startScrolling() {
+  if (!selection.value || busy.value) return
+  busy.value = true
+  try {
+    await screenshotScrollBegin(monitorIndex, physicalRect())
+    // 后端隐藏全部覆盖窗口；失败兜底恢复交互
+    window.setTimeout(() => {
+      busy.value = false
+    }, 2000)
+  } catch (err) {
+    busy.value = false
+    showError(t('screenshot.scrolling.failed', { message: String(err) }))
+  }
+}
+
+/** 进入选区录屏：本窗口切为透明穿透（后端设置），仅渲染边框与 REC 徽标 */
+async function startRecording() {
+  if (!selection.value || busy.value) return
+  busy.value = true
+  const rect = physicalRect()
+  mode.value = 'record'
+  recordStartAt = Date.now()
+  recordElapsedMs.value = 0
+  if (recordTimer) window.clearInterval(recordTimer)
+  recordTimer = window.setInterval(() => {
+    recordElapsedMs.value = Date.now() - recordStartAt
+  }, 250)
+  try {
+    await startRegionRecord(monitorIndex, rect)
+    busy.value = false
+  } catch (err) {
+    stopRecordUi()
+    showError(t('screenshot.record.failed', { message: String(err) }))
+  }
+}
+
+function stopRecordUi() {
+  if (recordTimer) {
+    window.clearInterval(recordTimer)
+    recordTimer = null
+  }
+  mode.value = 'select'
+  busy.value = false
 }
 
 function confirmCopy() {
@@ -333,6 +418,11 @@ async function cancel() {
 }
 
 function onKeyDown(e: KeyboardEvent) {
+  // 录制模式由悬浮控制条接管键盘，覆盖窗此时也不持有焦点
+  if (mode.value === 'record') {
+    if (e.key === 'Escape' || e.key === 'Enter' || e.code === 'Space') e.preventDefault()
+    return
+  }
   if (e.key === 'Escape') {
     e.preventDefault()
     cancel()
@@ -411,6 +501,7 @@ onUnmounted(() => {
   toolbarObserver?.disconnect()
   window.removeEventListener('keydown', onKeyDown)
   if (errorTimer) window.clearTimeout(errorTimer)
+  if (recordTimer) window.clearInterval(recordTimer)
 })
 </script>
 
@@ -422,6 +513,59 @@ onUnmounted(() => {
   user-select: none;
   cursor: crosshair;
   background: #05070a;
+}
+
+/* 录制模式：窗口透明化（后端同时开启点击穿透与捕获排除），只留边框与徽标 */
+.overlay-root.is-recording {
+  cursor: default;
+  background: transparent;
+}
+
+.record-frame {
+  position: absolute;
+  border: 2px solid rgba(255, 82, 82, 0.95);
+  outline: 1px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 1px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.rec-badge {
+  position: absolute;
+  top: -34px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(15, 18, 24, 0.92);
+  color: #ff8a80;
+  font: 700 12px/1.4 var(--jedi-font-mono, monospace);
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  white-space: nowrap;
+}
+
+.rec-badge.flipped {
+  top: 7px;
+  right: 7px;
+}
+
+.rec-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff5252;
+  box-shadow: 0 0 8px rgba(255, 82, 82, 0.8);
+  animation: rec-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes rec-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
 
 .frozen-frame {

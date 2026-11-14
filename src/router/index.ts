@@ -4,6 +4,7 @@ import HostsManager from '@/views/hosts/HostsManager.vue'
 import PodcastManager from '@/views/podcast/PodcastManager.vue'
 import ScreenshotManager from '@/views/Screenshot/index.vue'
 import ScreenshotOverlay from '@/views/Screenshot/Overlay.vue'
+import ScreenshotToolbar from '@/views/Screenshot/Toolbar.vue'
 import SkillsManager from '@/views/skills/SkillsManager.vue'
 import WallpaperManager from '@/views/wallpapers/WallpaperManager.vue'
 
@@ -59,6 +60,16 @@ const routes: Array<RouteRecordRaw> = [
     component: ScreenshotOverlay,
     meta: {
       title: 'Screenshot Overlay',
+      bare: true,
+    },
+  },
+  {
+    // 截图悬浮控制条窗口：滚动截长图 / 录屏模式由 Rust 创建
+    path: '/screenshot-toolbar',
+    name: 'ScreenshotToolbar',
+    component: ScreenshotToolbar,
+    meta: {
+      title: 'Screenshot Toolbar',
       bare: true,
     },
   },

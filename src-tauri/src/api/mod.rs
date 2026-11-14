@@ -7,6 +7,7 @@ pub(crate) mod os;
 pub(crate) mod podcast;
 pub(crate) mod screenshot;
 pub(crate) mod screenshot_ocr;
+pub(crate) mod screenshot_record;
 pub(crate) mod skills;
 pub(crate) mod terminal;
 pub(crate) mod wallpapers;

@@ -820,6 +820,35 @@ export default {
     recent: '最近截图',
     recentEmpty: '还没有截图，先截一张吧',
     openFolder: '打开所在文件夹',
+    openFile: '打开文件',
+    openFileFailed: '打开文件失败：{message}',
+    videoBadge: '视频',
+
+    scrolling: {
+      title: '截长图',
+      action: '截长图',
+      capture: '捕获一屏',
+      finish: '完成',
+      cancel: '取消',
+      frames: '已捕获 {count} 屏',
+      hint: '在目标页面滚动后，按空格或点击按钮捕获下一屏',
+      failed: '截长图失败：{message}',
+    },
+
+    record: {
+      title: '录屏',
+      action: '录视频',
+      recording: '录制中',
+      stop: '停止',
+      maxDuration: '最长录制 10 分钟，到时自动停止',
+      failed: '录屏失败：{message}',
+    },
+
+    warnings: {
+      stitch_fallback: '部分相邻画面未能识别滚动重叠，已直接拼接，请检查接缝处是否重复或缺失。',
+      record_failed: '录屏失败，未生成视频文件。',
+    },
+
     fitWindow: '适合窗口',
     actualSize: '原始大小',
     pixelSize: '{w} × {h} px',

@@ -1,6 +1,6 @@
 {
   "productName": "Jedi",
-  "version": "0.8.1",
+  "version": "0.8.2",
   "identifier": "io.jedi",
   "build": {
     "beforeDevCommand": "pnpm dev:prepare && pnpm dev",

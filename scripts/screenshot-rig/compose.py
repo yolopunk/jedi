@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Compose raw rig screenshots into README-ready PNGs.
 
-Rounded window + hairline border + soft shadow on a dark brand backdrop
-(Jedi dark theme: bg #0d0d11, accent #539bf5 blue, accent-2 #a371f7 purple).
+Rounded window + hairline border + soft shadow on a light neutral backdrop
+(Jedi light theme: bg #ffffff, elevated #f7f8fa, accent #3574f0 blue).
 
 Run: python scripts/screenshot-rig/compose.py
 """
@@ -29,17 +29,17 @@ MAP = {
 MARGIN = 110          # backdrop padding around the window (2x scale)
 RADIUS = 26           # window corner radius
 BORDER = 2
-BORDER_ALPHA = 34
+BORDER_ALPHA = 46
 SHADOW_BLUR = 64
-SHADOW_ALPHA = 150
+SHADOW_ALPHA = 80
 SHADOW_OFFSET_Y = 28
 FINAL_WIDTH = 2560    # downscale target (crisp at GitHub display sizes)
 
 
 def backdrop(w, h):
-    """Dark gradient + two soft brand-color glows."""
+    """Light neutral gradient + soft brand-blue glows."""
     img = Image.new("RGB", (w, h))
-    top, bottom = (10, 12, 20), (15, 18, 30)
+    top, bottom = (251, 252, 254), (231, 236, 243)
     px = img.load()
     for y in range(h):
         t = y / max(1, h - 1)
@@ -47,8 +47,8 @@ def backdrop(w, h):
         for x in range(w):
             px[x, y] = row
     for center, radius, color, strength in (
-        ((int(w * 0.16), int(h * 0.18)), int(h * 0.75), (83, 155, 245), 34),
-        ((int(w * 0.86), int(h * 0.85)), int(h * 0.8), (163, 113, 247), 30),
+        ((int(w * 0.16), int(h * 0.18)), int(h * 0.75), (53, 116, 240), 22),
+        ((int(w * 0.86), int(h * 0.85)), int(h * 0.8), (131, 77, 240), 14),
     ):
         glow = Image.new("L", (w, h), 0)
         gd = ImageDraw.Draw(glow)
@@ -86,7 +86,7 @@ def compose(src_path, dest_path):
     ImageDraw.Draw(win).rounded_rectangle(
         [BORDER // 2, BORDER // 2, sw - 1 - BORDER // 2, sh - 1 - BORDER // 2],
         radius=RADIUS - BORDER // 2,
-        outline=(255, 255, 255, BORDER_ALPHA),
+        outline=(39, 40, 46, BORDER_ALPHA),
         width=BORDER,
     )
     canvas.alpha_composite(win, (MARGIN, MARGIN))

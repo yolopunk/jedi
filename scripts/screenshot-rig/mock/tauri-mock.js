@@ -19,7 +19,7 @@
 
   // ---------- seeded preferences (localStorage, JSON-encoded like useStorage) ----------
   const seed = {
-    'theme-mode': JSON.stringify('dark'),
+    'theme-mode': JSON.stringify('light'),
     language: JSON.stringify('zh'),
     'jedi-last-model': JSON.stringify({ providerId: 'openai', modelId: 'gpt-5.1' }),
     'agent-hub-engine': JSON.stringify('builtin'),

@@ -53,6 +53,7 @@ mp4 = "0.14"
 bytes = "1"
 rusto-rs = { version = "0.3.2", default-features = false }
 tauri-plugin-clipboard-manager = "2"
+tauri-plugin-dialog = "2"
 tauri-plugin-global-shortcut = "2"
 # AI Chat 安全依赖
 rusqlite = { version = "0.31", features = ["bundled"] }

@@ -4,6 +4,7 @@ import HostsManager from '@/views/hosts/HostsManager.vue'
 import PodcastManager from '@/views/podcast/PodcastManager.vue'
 import ScreenshotManager from '@/views/Screenshot/index.vue'
 import ScreenshotOverlay from '@/views/Screenshot/Overlay.vue'
+import ScreenshotPin from '@/views/Screenshot/PinWindow.vue'
 import ScreenshotToolbar from '@/views/Screenshot/Toolbar.vue'
 import SkillsManager from '@/views/skills/SkillsManager.vue'
 import WallpaperManager from '@/views/wallpapers/WallpaperManager.vue'
@@ -70,6 +71,16 @@ const routes: Array<RouteRecordRaw> = [
     component: ScreenshotToolbar,
     meta: {
       title: 'Screenshot Toolbar',
+      bare: true,
+    },
+  },
+  {
+    // 贴图窗口（置顶无边框）：贴图时由 Rust 创建，可同时存在多个
+    path: '/screenshot-pin',
+    name: 'ScreenshotPin',
+    component: ScreenshotPin,
+    meta: {
+      title: 'Screenshot Pin',
       bare: true,
     },
   },

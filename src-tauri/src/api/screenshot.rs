@@ -7,6 +7,7 @@
 use crate::api::wallpapers;
 use image::RgbaImage;
 use serde::Serialize;
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -17,6 +18,7 @@ use tauri::{
 
 pub const OVERLAY_LABEL_PREFIX: &str = "screenshot-overlay-";
 pub const TOOLBAR_LABEL: &str = "screenshot-toolbar";
+pub const PIN_LABEL_PREFIX: &str = "screenshot-pin-";
 pub const SCREENSHOTS_DIR_NAME: &str = "screenshots";
 pub const FRAME_CACHE_DIR_NAME: &str = "screenshot-frames";
 /// 滚动截长图模式注册的全局快捷键（Space=捕获 / Enter=完成 / Esc=取消）
@@ -86,12 +88,17 @@ pub struct ScrollSession {
   width: u32,
   height: u32,
   frames: Vec<RgbaImage>,
+  /// 每帧对应的缩略图 data URL（悬浮条 NEG 胶片条用），与 frames 对齐
+  thumbs: Vec<String>,
 }
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ScrollStatus {
   pub frame_count: u32,
+  /// 已捕获帧的缩略图（data URL 序列，与帧序号对应）
+  #[serde(default)]
+  pub thumbs: Vec<String>,
 }
 
 /// 全局会话状态；同一时刻只允许一轮截图。
@@ -100,6 +107,8 @@ pub struct ScreenshotState {
   pub(crate) scroll: Mutex<Option<ScrollSession>>,
   /// 当前生效的截图全局快捷键（accelerator 字符串）
   pub(crate) hotkey: Mutex<String>,
+  /// 贴图窗口待领取的图片路径：窗口 label -> 图片绝对路径
+  pub(crate) pin_paths: Mutex<HashMap<String, String>>,
 }
 
 impl Default for ScreenshotState {
@@ -110,6 +119,7 @@ impl Default for ScreenshotState {
       // 空串 = 尚未注册任何快捷键；启动时会注册默认值。
       // 这里若填默认值，register_capture_hotkey 的「同值跳过」会让启动注册被跳过。
       hotkey: Mutex::new(String::new()),
+      pin_paths: Mutex::new(HashMap::new()),
     }
   }
 }
@@ -153,6 +163,98 @@ pub fn clamp_crop_rect(
 pub(crate) fn timestamped_filename(ext: &str) -> String {
   let now = chrono::Local::now();
   format!("Jedi_{}.{}", now.format("%Y%m%d_%H%M%S%3f"), ext)
+}
+
+/// 把一帧缩成小尺寸 PNG data URL，供悬浮条 NEG 胶片条展示。
+fn thumb_data_url(img: &RgbaImage) -> Option<String> {
+  use base64::Engine;
+  const THUMB_W: u32 = 144;
+  let scale = if img.width() > THUMB_W {
+    THUMB_W as f32 / img.width() as f32
+  } else {
+    1.0
+  };
+  let thumb = image::imageops::resize(
+    img,
+    ((img.width() as f32 * scale).round() as u32).max(1),
+    ((img.height() as f32 * scale).round() as u32).max(1),
+    image::imageops::FilterType::Triangle,
+  );
+  let mut png = Vec::new();
+  image::DynamicImage::ImageRgba8(thumb)
+    .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+    .ok()?;
+  Some(format!(
+    "data:image/png;base64,{}",
+    base64::engine::general_purpose::STANDARD.encode(png)
+  ))
+}
+
+/// 用一张已入库的图片开一个置顶贴图窗口（Pin）。
+/// 路径放进 pin_paths 由贴图窗口挂载后用 `screenshot_pin_take` 领取，
+/// 避免 Windows 路径进 URL query 的编码问题。
+pub(crate) async fn spawn_pin_window(app: &AppHandle, path: &str) -> Result<(), String> {
+  let (img_w, img_h) = tauri::async_runtime::spawn_blocking({
+    let path = path.to_string();
+    move || -> Result<(u32, u32), String> {
+      let reader =
+        image::ImageReader::open(&path).map_err(|e| format!("读取图片失败: {}", e))?;
+      reader
+        .with_guessed_format()
+        .map_err(|e| e.to_string())?
+        .into_dimensions()
+        .map_err(|e| format!("读取图片尺寸失败: {}", e))
+    }
+  })
+  .await
+  .map_err(|e| format!("读取任务异常: {}", e))??;
+
+  // 初始窗口尺寸（逻辑像素）：默认 1:1，过大时按比例缩到 760×520 以内
+  let mut w = img_w as f64;
+  let mut h = img_h as f64;
+  let fit = (760.0 / w).min(520.0 / h).min(1.0);
+  w *= fit;
+  h *= fit;
+
+  let label = format!(
+    "{}{}",
+    PIN_LABEL_PREFIX,
+    std::time::SystemTime::now()
+      .duration_since(std::time::UNIX_EPOCH)
+      .map(|d| d.as_millis())
+      .unwrap_or_default()
+  );
+  app
+    .state::<ScreenshotState>()
+    .pin_paths
+    .lock()
+    .unwrap()
+    .insert(label.clone(), path.to_string());
+
+  let app_for_window = app.clone();
+  let _ = app.run_on_main_thread(move || {
+    let builder = WebviewWindowBuilder::new(
+      &app_for_window,
+      &label,
+      WebviewUrl::App("screenshot-pin".into()),
+    )
+    .title("Jedi Pin")
+    .visible(true)
+    .decorations(false)
+    .resizable(false)
+    .minimizable(false)
+    .maximizable(false)
+    .skip_taskbar(true)
+    .always_on_top(true)
+    .shadow(false)
+    .transparent(true)
+    .focused(true)
+    .inner_size(w.max(120.0), h.max(80.0));
+    if let Ok(window) = builder.build() {
+      exclude_from_capture(&window);
+    }
+  });
+  Ok(())
 }
 
 /// 拆除会话：关闭所有覆盖窗口并删除冻结帧临时文件。
@@ -315,7 +417,7 @@ async fn finish_capture(
     .await
     .map_err(|e| format!("裁剪任务异常: {}", e))??;
 
-    if !matches!(action.as_str(), "copy" | "save" | "chat" | "ocr") {
+    if !matches!(action.as_str(), "copy" | "save" | "chat" | "ocr" | "pin") {
       return Err(format!("未知输出动作: {}", action));
     }
     let path = screenshots_dir(&app)?.join(timestamped_filename("png"));
@@ -361,6 +463,15 @@ async fn finish_capture(
           .map_err(|e| format!("通知主窗口失败: {}", e))?;
         Ok(ScreenshotOutcome {
           action: "ocr".into(),
+          saved_path: Some(path_str),
+          warnings: Vec::new(),
+        })
+      }
+      "pin" => {
+        // 贴图：截图照常入库，同时弹出置顶贴图窗口
+        spawn_pin_window(&app, &path_str).await?;
+        Ok(ScreenshotOutcome {
+          action: "pin".into(),
           saved_path: Some(path_str),
           warnings: Vec::new(),
         })
@@ -932,6 +1043,7 @@ pub async fn screenshot_scroll_begin(
   .await
   .map_err(|e| format!("捕获任务异常: {}", e))??;
 
+  let thumbs: Vec<String> = thumb_data_url(&frame).into_iter().collect();
   *state.scroll.lock().unwrap() = Some(ScrollSession {
     monitor_index,
     x: rx,
@@ -939,13 +1051,17 @@ pub async fn screenshot_scroll_begin(
     width: rw,
     height: rh,
     frames: vec![frame],
+    thumbs: thumbs.clone(),
   });
 
   // 保留选区框（点击穿透 + 排除捕获），让用户看得见截取范围并自由滚动页面
   keep_selection_overlay(&app, monitor_index);
   show_toolbar(&app, geometry, (rx, ry, rw, rh));
   register_scroll_hotkeys(&app);
-  Ok(ScrollStatus { frame_count: 1 })
+  Ok(ScrollStatus {
+    frame_count: 1,
+    thumbs,
+  })
 }
 
 /// 捕获一屏：把当前屏幕同一区域追加进帧序列。
@@ -972,20 +1088,38 @@ pub async fn screenshot_scroll_capture(app: AppHandle) -> Result<ScrollStatus, S
   .await
   .map_err(|e| format!("捕获任务异常: {}", e))??;
 
-  let count = {
+  let (count, thumbs) = {
     let mut guard = state.scroll.lock().unwrap();
     let session = guard
       .as_mut()
       .ok_or_else(|| "没有正在进行的滚动截取".to_string())?;
     session.frames.push(frame);
-    session.frames.len() as u32
+    // NEG 胶片条最多展示 12 帧，超出后停在最后一帧
+    if let Some(thumb) = thumb_data_url(session.frames.last().expect("frame just pushed")) {
+      if session.thumbs.len() < 12 {
+        session.thumbs.push(thumb);
+      }
+    }
+    (session.frames.len() as u32, session.thumbs.clone())
   };
   let _ = app.emit_to(
     TOOLBAR_LABEL,
     "scroll-frame",
-    &ScrollStatus { frame_count: count },
+    &ScrollStatus {
+      frame_count: count,
+      thumbs: thumbs.clone(),
+    },
   );
-  Ok(ScrollStatus { frame_count: count })
+  // 同步给保留的取景覆盖窗：NEG 胶片条跟随帧数增长
+  let _ = app.emit_to(
+    format!("{}{}", OVERLAY_LABEL_PREFIX, monitor_index),
+    "scroll-frame",
+    &ScrollStatus {
+      frame_count: count,
+      thumbs: thumbs.clone(),
+    },
+  );
+  Ok(ScrollStatus { frame_count: count, thumbs })
 }
 
 /// 完成滚动截取：重叠检测拼接为单张长图并入库。
@@ -1158,6 +1292,101 @@ pub fn screenshot_delete(app: AppHandle, path: String) -> Result<(), String> {
   fs::remove_file(&canon).map_err(|e| format!("删除失败: {}", e))?;
   let _ = app.emit_to("main", "screenshot-deleted", &path);
   Ok(())
+}
+
+/// 弹出系统文件选择器，把选中的图片导入截图库（统一转存为 PNG）。
+/// 用户取消时返回空字符串。
+#[tauri::command]
+pub async fn screenshot_import(app: AppHandle) -> Result<String, String> {
+  let dialog_app = app.clone();
+  let picked = tauri::async_runtime::spawn_blocking(move || -> Option<std::path::PathBuf> {
+    use tauri_plugin_dialog::DialogExt;
+    dialog_app
+      .dialog()
+      .file()
+      .add_filter("图片 / Image", &["png", "jpg", "jpeg", "webp", "gif", "bmp"])
+      .blocking_pick_file()
+      .and_then(|p| p.as_path().map(|path| path.to_path_buf()))
+  })
+  .await
+  .map_err(|e| format!("选择任务异常: {}", e))?;
+
+  let Some(picked) = picked else {
+    return Ok(String::new());
+  };
+
+  let png_bytes = tauri::async_runtime::spawn_blocking(
+    move || -> Result<Vec<u8>, String> {
+      let mut reader = image::ImageReader::open(&picked)
+        .map_err(|e| format!("读取图片失败: {}", e))?;
+      reader = reader
+        .with_guessed_format()
+        .map_err(|e| e.to_string())?;
+      reader.limits(image::Limits::default());
+      let img = reader
+        .decode()
+        .map_err(|e| format!("图片格式无效: {}", e))?
+        .to_rgba8();
+      let mut png = Vec::new();
+      img
+        .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .map_err(|e| format!("PNG 编码失败: {}", e))?;
+      Ok(png)
+    },
+  )
+  .await
+  .map_err(|e| format!("导入任务异常: {}", e))??;
+
+  let path = screenshots_dir(&app)?.join(format!("Import_{}", timestamped_filename("png")));
+  fs::write(&path, &png_bytes).map_err(|e| format!("保存导入图片失败: {}", e))?;
+  let path_str = path.to_string_lossy().into_owned();
+  let _ = app.emit_to("main", "screenshot-saved", &path_str);
+  Ok(path_str)
+}
+
+/// 把截图库中的图片复制到系统剪贴板（快速预览「复制图片」用）。
+#[tauri::command]
+pub async fn screenshot_copy_file(app: AppHandle, path: String) -> Result<(), String> {
+  let img = tauri::async_runtime::spawn_blocking(move || -> Result<RgbaImage, String> {
+    let mut reader =
+      image::ImageReader::open(&path).map_err(|e| format!("读取图片失败: {}", e))?;
+    reader = reader
+      .with_guessed_format()
+      .map_err(|e| e.to_string())?;
+    reader.limits(image::Limits::default());
+    reader
+      .decode()
+      .map(|dyn_img| dyn_img.to_rgba8())
+      .map_err(|e| format!("解码图片失败: {}", e))
+  })
+  .await
+  .map_err(|e| format!("读取任务异常: {}", e))??;
+  use tauri_plugin_clipboard_manager::ClipboardExt;
+  let (width, height) = (img.width(), img.height());
+  let raw = img.into_raw();
+  let image = tauri::image::Image::new(&raw, width, height);
+  app
+    .clipboard()
+    .write_image(&image)
+    .map_err(|e| format!("写入剪贴板失败: {}", e))
+}
+
+/// 把一张图片贴到屏幕上：置顶无边框悬浮窗展示，可拖动 / 滚轮缩放 / Esc 收起。
+#[tauri::command]
+pub async fn screenshot_pin_file(app: AppHandle, path: String) -> Result<(), String> {
+  let canon = fs::canonicalize(&path).map_err(|e| format!("文件不存在: {}", e))?;
+  if canon.is_dir() {
+    return Err("目标是目录".into());
+  }
+  spawn_pin_window(&app, &canon.to_string_lossy()).await
+}
+
+/// 贴图窗口挂载时领取自己的图片路径（由 spawn_pin_window 预先登记）。
+#[tauri::command]
+pub fn screenshot_pin_take(app: AppHandle, window: tauri::WebviewWindow) -> Result<String, String> {
+  let state = app.state::<ScreenshotState>();
+  let path = state.pin_paths.lock().unwrap().remove(window.label());
+  path.ok_or_else(|| "没有待贴图的图片".to_string())
 }
 
 /// 读取图片文件为 data URL，供 AI 聊天发送多模态消息使用。

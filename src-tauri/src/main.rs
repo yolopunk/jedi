@@ -55,7 +55,8 @@ use crate::api::podcast::{
 };
 use crate::api::screenshot::{
   get_capture_hotkey, list_screenshots, read_image_data_url, screenshot_begin, screenshot_cancel,
-  screenshot_delete, screenshot_finish, screenshot_frame_info, screenshot_open_file,
+  screenshot_copy_file, screenshot_delete, screenshot_finish, screenshot_frame_info,
+  screenshot_import, screenshot_open_file, screenshot_pin_file, screenshot_pin_take,
   screenshot_save_styled, screenshot_scroll_begin, screenshot_scroll_cancel, screenshot_scroll_capture,
   screenshot_scroll_finish, screenshot_toolbar_info, set_capture_hotkey, ScreenshotState,
 };
@@ -136,6 +137,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .plugin(tauri_plugin_process::init())
     .plugin(tauri_plugin_http::init())
     .plugin(tauri_plugin_clipboard_manager::init())
+    .plugin(tauri_plugin_dialog::init())
     // 全局快捷键触发截图；具体快捷键在 setup 中注册
     .plugin(
       tauri_plugin_global_shortcut::Builder::new()
@@ -365,6 +367,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       stop_region_record,
       screenshot_open_file,
       screenshot_delete,
+      // Library extras: import / copy-to-clipboard / pin windows
+      screenshot_import,
+      screenshot_copy_file,
+      screenshot_pin_file,
+      screenshot_pin_take,
       list_screenshots,
       read_image_data_url
     ])

@@ -1,27 +1,57 @@
 <template>
   <section ref="panel" class="ocr-panel" :aria-label="t('screenshot.ocr.title')" :aria-busy="busy">
-    <header>
-      <div><h3>{{ t('screenshot.ocr.title') }}</h3><p>{{ t('screenshot.ocr.local') }}</p></div>
-      <v-btn variant="text" size="small" :loading="busy" @click="recognize">{{ t('common.retry') }}</v-btn>
+    <header class="ocr-header">
+      <span class="ocr-title">
+        <v-icon :icon="mdiTextRecognition" size="14" aria-hidden="true" />
+        {{ t('screenshot.ocr.title') }}
+      </span>
+      <span class="ocr-badge">{{ t('screenshot.ocr.offlineBadge') }}</span>
     </header>
-    <p v-if="busy" role="status">{{ t('screenshot.ocr.loading') }}</p>
-    <v-alert v-else-if="error" type="error" variant="tonal" role="alert">{{ error }}</v-alert>
-    <template v-else>
-      <p v-if="!text.trim()" role="status">{{ t('screenshot.ocr.empty') }}</p>
-      <label class="result-label" for="ocr-result">{{ t('screenshot.ocr.result') }}</label>
-      <textarea id="ocr-result" v-model="text" spellcheck="false" />
-      <footer>
-        <span>{{ engine }}<template v-if="language"> · {{ language }}</template></span>
-        <span role="status">{{ copied ? t('screenshot.ocr.copied') : '' }}</span>
-        <v-btn variant="tonal" color="primary" :disabled="!text.trim()" :loading="copying" @click="copy">{{ t('screenshot.ocr.copy') }}</v-btn>
-      </footer>
-      <p v-if="copyError" role="alert">{{ copyError }}</p>
-    </template>
+
+    <div v-if="busy" class="ocr-body" role="status">
+      <p class="ocr-note">{{ t('screenshot.ocr.loading') }}</p>
+    </div>
+
+    <div v-else-if="error" class="ocr-body">
+      <v-alert type="error" variant="tonal" density="compact" role="alert">{{ error }}</v-alert>
+      <div class="ocr-actions">
+        <button class="ocr-btn primary" type="button" @click="recognize">{{ t('common.retry') }}</button>
+      </div>
+    </div>
+
+    <div v-else class="ocr-body">
+      <template v-if="lines.length">
+        <p class="ocr-note">{{ t('screenshot.ocr.linesFound', { count: lines.length }) }}</p>
+        <div class="ocr-lines">
+          <div v-for="(line, index) in lines" :key="index" class="ocr-line">
+            <div class="ocr-line-text">{{ line }}</div>
+            <div class="ocr-line-pos">L{{ index + 1 }}</div>
+          </div>
+        </div>
+      </template>
+      <p v-else class="ocr-note">{{ t('screenshot.ocr.empty') }}</p>
+
+      <div class="ocr-actions">
+        <button
+          class="ocr-btn primary"
+          type="button"
+          :disabled="!text.trim() || copying"
+          @click="copy"
+        >
+          {{ copying ? t('screenshot.ocr.copying') : copied ? t('screenshot.ocr.copied') : t('screenshot.ocr.copyAll') }}
+        </button>
+      </div>
+    </div>
+
+    <footer v-if="engine && !busy && !error" class="ocr-footer">
+      {{ engine }}<template v-if="language"> · {{ language }}</template>
+    </footer>
   </section>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { mdiTextRecognition } from '@mdi/js'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { copyScreenshotText, recognizeScreenshot } from '@/api/screenshot'
 
@@ -35,8 +65,15 @@ const engine = ref('')
 const error = ref('')
 const copied = ref(false)
 const copying = ref(false)
-const copyError = ref('')
 let request = 0
+
+/** 识别结果按行拆分，供逐行卡片展示 */
+const lines = computed(() =>
+  text.value
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+)
 
 async function recognize() {
   const version = ++request
@@ -46,7 +83,6 @@ async function recognize() {
   language.value = ''
   engine.value = ''
   copied.value = false
-  copyError.value = ''
   try {
     const result = await recognizeScreenshot(props.path)
     if (version !== request) return
@@ -65,12 +101,14 @@ async function recognize() {
 async function copy() {
   if (copying.value) return
   copying.value = true
-  copyError.value = ''
   try {
     await copyScreenshotText(text.value)
     copied.value = true
+    window.setTimeout(() => {
+      copied.value = false
+    }, 2200)
   } catch {
-    copyError.value = t('screenshot.ocr.errors.copyFailed')
+    error.value = t('screenshot.ocr.errors.copyFailed')
   } finally {
     copying.value = false
   }
@@ -78,27 +116,157 @@ async function copy() {
 
 onMounted(() => panel.value?.scrollIntoView({ block: 'nearest' }))
 watch(() => props.path, recognize, { immediate: true })
-watch(text, () => {
-  copied.value = false
-})
 onBeforeUnmount(() => {
   request++
 })
 </script>
 
 <style scoped>
-.ocr-panel { min-width: 0; min-height: 0; overflow: auto; padding: 22px; border-left: 1px solid var(--border); background: linear-gradient(180deg, rgb(var(--accent-rgb) / 0.045), transparent 180px), var(--bg); }
-header, footer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-header { justify-content: space-between; margin-bottom: 18px; }
-header > div { min-width: 0; }
-h3 { margin: 0 0 5px; font-size: 14px; font-weight: 650; }
-p, footer { color: var(--text-muted); font-size: 11px; line-height: 1.65; }
-header p { max-width: 250px; margin: 0; }
-.result-label { display: block; margin: 12px 0 8px; color: var(--text-muted); font-size: 10px; font-weight: 600; letter-spacing: 0.7px; text-transform: uppercase; }
-textarea { display: block; width: 100%; min-height: 230px; max-height: 48vh; padding: 13px 14px; resize: vertical; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-canvas); color: var(--text); font: 13px/1.72 var(--jedi-font-ui); transition: border-color var(--motion-fast), box-shadow var(--motion-fast); }
-textarea:focus-visible { border-color: rgb(var(--accent-rgb) / 0.65); outline: 0; box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.12); }
-footer { margin-top: 13px; }
-footer > :first-child { width: 100%; overflow-wrap: anywhere; font: 9px/1.6 var(--jedi-font-mono); }
-footer > :nth-child(2) { margin-right: auto; color: var(--success); }
-@media (max-width: 880px) { .ocr-panel { min-height: 360px; border-top: 1px solid var(--border); border-left: 0; } }
+.ocr-panel {
+  width: 296px;
+  flex: none;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.ocr-header {
+  height: 44px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.ocr-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.ocr-title :deep(.v-icon) {
+  color: var(--accent);
+}
+
+.ocr-badge {
+  font: 400 9px var(--jedi-font-mono);
+  color: var(--text-muted);
+}
+
+.ocr-body {
+  flex: 1;
+  min-height: 0;
+  padding: 14px;
+  overflow-y: auto;
+}
+
+.ocr-note {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.ocr-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ocr-line {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgb(var(--ink-rgb) / 0.03);
+}
+
+.ocr-line-text {
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.ocr-line-pos {
+  margin-top: 5px;
+  font: 400 8.5px var(--jedi-font-mono);
+  color: rgb(var(--ink-rgb) / 0.45);
+}
+
+.ocr-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.ocr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font: 400 11px var(--jedi-font-ui);
+  cursor: pointer;
+  transition: background var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+
+.ocr-btn:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.ocr-btn.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.ocr-btn.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--on-accent);
+}
+
+.ocr-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.ocr-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.ocr-footer {
+  flex: none;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  background: rgb(var(--ink-rgb) / 0.015);
+  font: 400 9px var(--jedi-font-mono);
+  color: rgb(var(--ink-rgb) / 0.45);
+}
+
+@media (max-width: 880px) {
+  .ocr-panel {
+    width: 100%;
+    min-height: 360px;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
+}
 </style>

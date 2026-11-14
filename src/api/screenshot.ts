@@ -14,7 +14,7 @@ export interface MonitorFrameInfo {
 }
 
 export interface ScreenshotOutcome {
-  action: 'copy' | 'save' | 'chat' | 'ocr' | 'scroll'
+  action: 'copy' | 'save' | 'chat' | 'ocr' | 'pin' | 'scroll'
   savedPath: string | null
   /** 警告码（如 stitch_fallback），由前端映射 i18n 文案 */
   warnings: string[]
@@ -31,6 +31,8 @@ export interface ScreenshotItem {
 
 export interface ScrollStatus {
   frameCount: number
+  /** 已捕获帧的缩略图（data URL 序列），NEG 胶片条用 */
+  thumbs: string[]
 }
 
 export interface ToolbarInfo {
@@ -63,11 +65,11 @@ export function screenshotFrameInfo(monitorIndex: number): Promise<MonitorFrameI
   return invoke('screenshot_frame_info', { monitorIndex })
 }
 
-/** 确认选区并执行输出动作（copy / save / chat），坐标为物理像素 */
+/** 确认选区并执行输出动作（copy / save / chat / ocr / pin），坐标为物理像素 */
 export function screenshotFinish(
   monitorIndex: number,
   rect: { x: number; y: number; width: number; height: number },
-  action: 'copy' | 'save' | 'chat' | 'ocr'
+  action: 'copy' | 'save' | 'chat' | 'ocr' | 'pin'
 ): Promise<ScreenshotOutcome> {
   return invoke('screenshot_finish', { monitorIndex, ...rect, action })
 }
@@ -161,4 +163,24 @@ export function recognizeScreenshot(
 
 export function copyScreenshotText(text: string): Promise<void> {
   return invoke('screenshot_copy_text', { text })
+}
+
+/** 弹出系统文件选择器，把选中的图片导入截图库；取消时返回空串 */
+export function importScreenshot(): Promise<string> {
+  return invoke('screenshot_import')
+}
+
+/** 把截图库中的图片复制到系统剪贴板 */
+export function copyScreenshotFile(path: string): Promise<void> {
+  return invoke('screenshot_copy_file', { path })
+}
+
+/** 把一张图片贴到屏幕上：置顶悬浮窗，可拖动 / 缩放 / Esc 收起 */
+export function pinScreenshotFile(path: string): Promise<void> {
+  return invoke('screenshot_pin_file', { path })
+}
+
+/** 贴图窗口挂载时领取自己的图片路径 */
+export function takePinPath(): Promise<string> {
+  return invoke('screenshot_pin_take')
 }

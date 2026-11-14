@@ -39,7 +39,7 @@ dist-ssr
 
 # Agent tool machine-local state：本机密钥与会话状态不入库
 # （.tauri/ 内是更新器签名私钥，只应存在于本机与 CI Secrets）
-.claude/settings.local.json
+.claude/
 .opencode/
 .tauri/
 

@@ -54,10 +54,10 @@ use crate::api::podcast::{
   remove_subscription, resolve_xiaoyuzhou_podcast, save_subscription,
 };
 use crate::api::screenshot::{
-  list_screenshots, read_image_data_url, screenshot_begin, screenshot_cancel, screenshot_finish,
-  screenshot_frame_info, screenshot_open_file, screenshot_save_styled, screenshot_scroll_begin,
-  screenshot_scroll_cancel, screenshot_scroll_capture, screenshot_scroll_finish,
-  screenshot_toolbar_info, ScreenshotState,
+  get_capture_hotkey, list_screenshots, read_image_data_url, screenshot_begin, screenshot_cancel,
+  screenshot_finish, screenshot_frame_info, screenshot_open_file, screenshot_save_styled,
+  screenshot_scroll_begin, screenshot_scroll_cancel, screenshot_scroll_capture,
+  screenshot_scroll_finish, screenshot_toolbar_info, set_capture_hotkey, ScreenshotState,
 };
 use crate::api::screenshot_ocr::{screenshot_copy_text, screenshot_ocr};
 use crate::api::screenshot_record::{start_region_record, stop_region_record, RecordState};
@@ -139,16 +139,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 全局快捷键触发截图；具体快捷键在 setup 中注册
     .plugin(
       tauri_plugin_global_shortcut::Builder::new()
-        .with_handler(|app, _shortcut, event| {
+        .with_handler(|app, shortcut, event| {
           use tauri_plugin_global_shortcut::ShortcutState;
-          if event.state == ShortcutState::Pressed {
-            let app = app.clone();
-            tauri::async_runtime::spawn(async move {
-              if let Err(e) = crate::api::screenshot::begin_capture(app.clone()).await {
-                eprintln!("screenshot begin failed: {}", e);
-              }
-            });
+          if event.state != ShortcutState::Pressed {
+            return;
           }
+          // 插件对每个快捷键都会调用这个全局 handler（滚动模式的 Space/Enter/Esc
+          // 也会走到这里），必须只认当前截图快捷键，否则会误触发新一轮截图。
+          if !crate::api::screenshot::is_capture_hotkey(app, shortcut) {
+            return;
+          }
+          let app = app.clone();
+          tauri::async_runtime::spawn(async move {
+            if let Err(e) = crate::api::screenshot::begin_capture(app.clone()).await {
+              eprintln!("screenshot begin failed: {}", e);
+            }
+          });
         })
         .build(),
     )
@@ -203,18 +209,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
       config::app::load_tray_config(app);
 
-      // 注册截图全局快捷键（默认 Ctrl+Alt+S）
+      // 注册截图全局快捷键（默认 F1，可在设置里改；前端启动后会按保存值覆盖）
       #[cfg(desktop)]
       {
-        use tauri_plugin_global_shortcut::GlobalShortcutExt;
         let app_handle = app.handle().clone();
-        match "ctrl+alt+s".parse::<tauri_plugin_global_shortcut::Shortcut>() {
-          Ok(shortcut) => {
-            if let Err(e) = app_handle.global_shortcut().register(shortcut) {
-              eprintln!("failed to register screenshot shortcut: {}", e);
-            }
-          }
-          Err(e) => eprintln!("failed to parse screenshot shortcut: {}", e),
+        if let Err(e) = crate::api::screenshot::register_capture_hotkey(
+          &app_handle,
+          crate::api::screenshot::DEFAULT_CAPTURE_HOTKEY,
+        ) {
+          eprintln!("failed to register screenshot shortcut: {}", e);
         }
       }
       // 壁纸启动自愈：数据目录被外部清空后，注册表会指向已消失的壁纸文件，
@@ -343,6 +346,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       skill_stats_clear,
       // Screenshot capture commands
       screenshot_begin,
+      set_capture_hotkey,
+      get_capture_hotkey,
       screenshot_ocr,
       screenshot_copy_text,
       screenshot_frame_info,
@@ -374,12 +379,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } => {
       // release 隐藏到托盘；dev 直接退出——隐藏实例会锁住 WebView2 用户
       // 数据目录，让下一次 `tauri dev` 的新实例 panic 成白屏僵尸
+      //
+      // 只对主窗口生效：截图覆盖窗 / 悬浮控制条必须真正关闭，否则同名窗口残留，
+      // 下一次截图建窗会因 label 冲突失败，表现为「按了快捷键没反应」。
       #[cfg(not(debug_assertions))]
       {
-        api.prevent_close();
-        if let Some(window) = _app_handle.get_webview_window(label) {
-          if let Err(e) = window.hide() {
-            eprintln!("failed to hide window: {}", e);
+        if label == "main" {
+          api.prevent_close();
+          if let Some(window) = _app_handle.get_webview_window(label) {
+            if let Err(e) = window.hide() {
+              eprintln!("failed to hide window: {}", e);
+            }
           }
         }
       }

@@ -97,8 +97,20 @@ async function closeSelf() {
   }
 }
 
+// 同一按键会走两条通路：窗口内 keydown + 后端注册的全局快捷键事件。
+// 按动作类型做时间闩锁去重，避免一次 Space 捕两帧（不同动作之间互不影响）。
+const lastActionAt: Record<string, number> = {}
+
+function isDuplicateAction(action: string) {
+  const now = Date.now()
+  if (now - (lastActionAt[action] ?? 0) < 300) return true
+  lastActionAt[action] = now
+  return false
+}
+
 async function captureFrame() {
   if (mode.value !== 'scroll' || working.value) return
+  if (isDuplicateAction('capture')) return
   working.value = true
   try {
     const status = await screenshotScrollCapture()
@@ -112,6 +124,7 @@ async function captureFrame() {
 
 async function finish() {
   if (mode.value !== 'scroll' || working.value) return
+  if (isDuplicateAction('finish')) return
   working.value = true
   try {
     await screenshotScrollFinish()
@@ -125,6 +138,7 @@ async function finish() {
 
 async function cancel() {
   if (mode.value !== 'scroll' || working.value) return
+  if (isDuplicateAction('cancel')) return
   working.value = true
   try {
     await screenshotScrollCancel()

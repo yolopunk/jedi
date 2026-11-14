@@ -12,7 +12,13 @@
         </div>
         <div class="capture-actions">
           <v-btn class="capture-button" color="primary" rounded="lg" size="large" :prepend-icon="mdiCropFree" :loading="capturing" @click="startCapture">{{ t('screenshot.start') }}</v-btn>
-          <span class="shortcut"><v-icon :icon="mdiKeyboardOutline" size="15" aria-hidden="true" /><kbd>Ctrl</kbd><span>+</span><kbd>Alt</kbd><span>+</span><kbd>S</kbd></span>
+          <span class="shortcut">
+            <v-icon :icon="mdiKeyboardOutline" size="15" aria-hidden="true" />
+            <template v-for="(part, i) in hotkeyParts" :key="part">
+              <span v-if="i" class="shortcut-sep">+</span>
+              <kbd>{{ part }}</kbd>
+            </template>
+          </span>
         </div>
       </header>
       <v-alert v-if="error" class="gallery-alert" type="error" variant="tonal" closable @click:close="error = ''">{{ error }}</v-alert>
@@ -146,10 +152,14 @@ import {
   screenshotBegin,
 } from '@/api/screenshot'
 import { showInFolder } from '@/api/wallpaper'
+import { useScreenshotHotkey } from '@/composables/useScreenshotHotkey'
 import BeautifyEditor from './BeautifyEditor.vue'
 import OcrPanel from './OcrPanel.vue'
 
 const { t, locale } = useI18n()
+const { hotkey } = useScreenshotHotkey()
+/** F1 / Ctrl + Alt + S 的分段展示 */
+const hotkeyParts = computed(() => hotkey.value.split('+').map(p => p.trim()).filter(Boolean))
 const recent = ref<ScreenshotItem[]>([])
 const thumbnailSize = ref(280)
 const groups = computed(() => {
@@ -392,6 +402,7 @@ h1 { margin-top: 8px; font-size: clamp(27px, 3vw, 38px); font-weight: 650; lette
 .capture-button:hover { box-shadow: 0 14px 36px rgb(var(--accent-rgb) / 0.3); transform: translateY(-1px); }
 .capture-button:active { transform: translateY(0); }
 .shortcut { display: flex; align-items: center; gap: 4px; color: var(--text-muted); font: 10px var(--jedi-font-mono); }
+.shortcut-sep { color: var(--text-muted); opacity: 0.6; }
 .shortcut kbd { min-width: 22px; padding: 2px 6px; border: 1px solid var(--border); border-bottom-color: var(--border-strong); border-radius: 5px; background: var(--surface-raised); color: var(--text-muted); font: inherit; text-align: center; box-shadow: 0 1px 0 rgb(var(--text-rgb) / 0.08); }
 .gallery-alert { margin-bottom: 18px; }
 .gallery { padding-bottom: 40px; }

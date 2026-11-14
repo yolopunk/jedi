@@ -114,6 +114,16 @@ export function screenshotScrollCancel(): Promise<void> {
   return invoke('screenshot_scroll_cancel')
 }
 
+/** 注册（换绑）截图全局快捷键，accelerator 形如 "F1" / "Ctrl+Alt+S" */
+export function setCaptureHotkey(accelerator: string): Promise<void> {
+  return invoke('set_capture_hotkey', { accelerator })
+}
+
+/** 读取当前生效的截图快捷键 */
+export function getCaptureHotkey(): Promise<string> {
+  return invoke('get_capture_hotkey')
+}
+
 /** 悬浮控制条查询当前模式（scroll / record）与状态 */
 export function screenshotToolbarInfo(): Promise<ToolbarInfo> {
   return invoke('screenshot_toolbar_info')

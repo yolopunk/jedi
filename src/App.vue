@@ -98,6 +98,7 @@ import SettingsDialog from '@/components/dialogs/SettingsDialog.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
+import { initScreenshotHotkey } from '@/composables/useScreenshotHotkey'
 import { useStorage } from '@/composables/useStorage'
 import { initTheme } from '@/composables/useTheme'
 import { useUpdate } from '@/composables/useUpdate'
@@ -234,6 +235,9 @@ onMounted(async () => {
   initTheme()
   await initLanguage()
   await loadSidebarState()
+
+  // 把用户保存的截图快捷键同步给后端（后端启动时先注册了默认值 F1）
+  void initScreenshotHotkey()
 
   // Check and run wallpaper auto-update
   const { startAutoUpdateCheck } = useWallpaper()

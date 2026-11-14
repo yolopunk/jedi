@@ -21,6 +21,8 @@ pub const SCREENSHOTS_DIR_NAME: &str = "screenshots";
 pub const FRAME_CACHE_DIR_NAME: &str = "screenshot-frames";
 /// 滚动截长图模式注册的全局快捷键（Space=捕获 / Enter=完成 / Esc=取消）
 pub(crate) const SCROLL_HOTKEYS: [&str; 3] = ["Space", "Enter", "Escape"];
+/// 默认截图快捷键
+pub const DEFAULT_CAPTURE_HOTKEY: &str = "F1";
 
 /// 一轮截图会话：所有显示器的冻结帧与对应覆盖窗口。
 pub struct CaptureSession {
@@ -93,10 +95,23 @@ pub struct ScrollStatus {
 }
 
 /// 全局会话状态；同一时刻只允许一轮截图。
-#[derive(Default)]
 pub struct ScreenshotState {
   session: Mutex<Option<CaptureSession>>,
   pub(crate) scroll: Mutex<Option<ScrollSession>>,
+  /// 当前生效的截图全局快捷键（accelerator 字符串）
+  pub(crate) hotkey: Mutex<String>,
+}
+
+impl Default for ScreenshotState {
+  fn default() -> Self {
+    Self {
+      session: Mutex::new(None),
+      scroll: Mutex::new(None),
+      // 空串 = 尚未注册任何快捷键；启动时会注册默认值。
+      // 这里若填默认值，register_capture_hotkey 的「同值跳过」会让启动注册被跳过。
+      hotkey: Mutex::new(String::new()),
+    }
+  }
 }
 
 pub fn screenshots_dir(app: &AppHandle) -> Result<PathBuf, String> {
@@ -141,10 +156,12 @@ pub(crate) fn timestamped_filename(ext: &str) -> String {
 }
 
 /// 拆除会话：关闭所有覆盖窗口并删除冻结帧临时文件。
+/// 用 destroy 而非 close：close 会走 CloseRequested（主窗口的托盘逻辑），
+/// 辅助窗一旦被拦截成 hide，同名窗口残留会让下一轮截图的建窗失败。
 fn teardown(app: &AppHandle, session: CaptureSession) {
   for monitor in &session.monitors {
     if let Some(window) = app.get_webview_window(&monitor.label) {
-      let _ = window.close();
+      let _ = window.destroy();
     }
     let _ = fs::remove_file(&monitor.frame_path);
   }
@@ -154,10 +171,8 @@ fn teardown(app: &AppHandle, session: CaptureSession) {
 pub async fn begin_capture(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, String> {
   let state = app.state::<ScreenshotState>();
 
-  // 重复触发时先拆掉上一轮，保证幂等
-  if let Some(prev) = state.session.lock().unwrap().take() {
-    teardown(&app, prev);
-  }
+  // 重复触发时先拆掉上一轮（含滚动/录屏残留），保证幂等且不会两套 UI 打架
+  teardown_all(&app);
 
   let cache_dir = frame_cache_dir(&app)?;
 
@@ -217,9 +232,14 @@ pub async fn begin_capture(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, Stri
   app
     .run_on_main_thread(move || {
       for info in &labels {
+        let label = format!("{}{}", OVERLAY_LABEL_PREFIX, info.index);
+        // 上一轮若残留同名窗口，先销毁再建，避免 label 冲突导致建窗失败
+        if let Some(stale) = app_for_windows.get_webview_window(&label) {
+          let _ = stale.destroy();
+        }
         let builder = WebviewWindowBuilder::new(
           &app_for_windows,
-          format!("{}{}", OVERLAY_LABEL_PREFIX, info.index),
+          &label,
           WebviewUrl::App("screenshot-overlay".into()),
         )
         .title("Jedi Screenshot")
@@ -234,10 +254,14 @@ pub async fn begin_capture(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, Stri
         // 录制模式下覆盖窗口切换为透明+点击穿透，需要建窗时开启透明
         .transparent(true)
         // 只有主显示器的窗口接管键盘焦点，其余显示器仅展示冻结帧
-        .focused(format!("{}{}", OVERLAY_LABEL_PREFIX, info.index) == primary_label);
-        if let Ok(window) = builder.build() {
-          let _ = window.set_position(Position::Physical(PhysicalPosition::new(info.x, info.y)));
-          let _ = window.set_size(Size::Physical(PhysicalSize::new(info.width, info.height)));
+        .focused(label == primary_label);
+        match builder.build() {
+          Ok(window) => {
+            let _ = window.set_position(Position::Physical(PhysicalPosition::new(info.x, info.y)));
+            let _ =
+              window.set_size(Size::Physical(PhysicalSize::new(info.width, info.height)));
+          }
+          Err(e) => eprintln!("failed to create overlay window {}: {}", label, e),
         }
       }
     })
@@ -437,7 +461,7 @@ pub(crate) fn exclude_from_capture(_window: &tauri::WebviewWindow<tauri::Wry>) {
 /// 关闭悬浮控制条窗口（若存在）。
 pub(crate) fn close_toolbar(app: &AppHandle) {
   if let Some(toolbar) = app.get_webview_window(TOOLBAR_LABEL) {
-    let _ = toolbar.close();
+    let _ = toolbar.destroy();
   }
 }
 
@@ -531,6 +555,72 @@ fn unregister_scroll_hotkeys(app: &AppHandle) {
       }
     }
   }
+}
+
+// ---- 截图全局快捷键（可配置，默认 F1）----
+
+/// 注册（或换绑）截图全局快捷键，旧的会先注销。
+pub(crate) fn register_capture_hotkey(app: &AppHandle, accelerator: &str) -> Result<(), String> {
+  #[cfg(desktop)]
+  {
+    use tauri_plugin_global_shortcut::GlobalShortcutExt;
+    let accelerator = accelerator.trim();
+    if accelerator.is_empty() {
+      return Err("快捷键不能为空".to_string());
+    }
+    let shortcut = accelerator
+      .parse::<tauri_plugin_global_shortcut::Shortcut>()
+      .map_err(|e| format!("快捷键格式无效：{}", e))?;
+
+    let state = app.state::<ScreenshotState>();
+    let previous = state.hotkey.lock().unwrap().clone();
+    if previous == accelerator {
+      return Ok(());
+    }
+    // 先注册新键，成功后再注销旧键：新键被占用时旧键仍可用，不会两头落空
+    app
+      .global_shortcut()
+      .register(shortcut)
+      .map_err(|e| format!("注册快捷键失败：{}", e))?;
+    if let Ok(old) = previous.parse::<tauri_plugin_global_shortcut::Shortcut>() {
+      let _ = app.global_shortcut().unregister(old);
+    }
+    *state.hotkey.lock().unwrap() = accelerator.to_string();
+    Ok(())
+  }
+  #[cfg(not(desktop))]
+  {
+    let _ = (app, accelerator);
+    Err("当前平台不支持全局快捷键".to_string())
+  }
+}
+
+/// 当前生效的截图快捷键（accelerator 字符串）
+pub(crate) fn current_capture_hotkey(app: &AppHandle) -> String {
+  app.state::<ScreenshotState>().hotkey.lock().unwrap().clone()
+}
+
+/// 判断某个全局快捷键事件是否属于当前截图快捷键。
+/// 插件对每个快捷键都会同时调用专用 handler 与全局 handler，
+/// 必须在这里过滤，否则滚动模式下的 Space/Enter/Esc 会顺带重启一次截图。
+pub(crate) fn is_capture_hotkey(
+  app: &AppHandle,
+  shortcut: &tauri_plugin_global_shortcut::Shortcut,
+) -> bool {
+  current_capture_hotkey(app)
+    .parse::<tauri_plugin_global_shortcut::Shortcut>()
+    .map(|current| current == *shortcut)
+    .unwrap_or(false)
+}
+
+#[tauri::command]
+pub fn set_capture_hotkey(app: AppHandle, accelerator: String) -> Result<(), String> {
+  register_capture_hotkey(&app, &accelerator)
+}
+
+#[tauri::command]
+pub fn get_capture_hotkey(app: AppHandle) -> String {
+  current_capture_hotkey(&app)
 }
 
 /// 隐藏全部覆盖窗口（进入滚动/录制模式时让出屏幕）。

@@ -114,7 +114,7 @@ pub fn load_tray_config(app: &App) {
   };
 
   let screenshot_capture =
-    match MenuItem::with_id(app, "screenshot_capture", "📷 截图 (Ctrl+Alt+S)", true, None::<&str>) {
+    match MenuItem::with_id(app, "screenshot_capture", "📷 截图", true, None::<&str>) {
       Ok(item) => item,
       Err(e) => {
         eprintln!("failed to create screenshot_capture menu item: {}", e);

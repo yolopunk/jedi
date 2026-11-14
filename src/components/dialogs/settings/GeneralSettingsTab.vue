@@ -104,6 +104,38 @@
     </div>
 
     <div class="setting-item">
+      <div class="setting-icon"><v-icon :icon="mdiCameraOutline" size="18" /></div>
+      <div class="setting-info">
+        <div class="setting-label">{{ t('settings.screenshotHotkey') }}</div>
+        <div class="setting-subtitle">{{ t('settings.screenshotHotkeyHint') }}</div>
+      </div>
+      <div class="setting-action hotkey-action">
+        <button
+          ref="hotkeyRecorderEl"
+          type="button"
+          class="hotkey-recorder"
+          :class="{ recording: recordingHotkey, failed: !!hotkeyError }"
+          :disabled="hotkeyBusy"
+          :aria-label="t('settings.screenshotHotkey')"
+          @click="toggleHotkeyRecording"
+          @keydown="onHotkeyKeydown"
+          @blur="recordingHotkey = false"
+        >
+          {{ recordingHotkey ? t('settings.hotkeyRecording') : prettyHotkey }}
+        </button>
+        <button
+          type="button"
+          class="console-btn small"
+          :disabled="hotkey === defaultHotkey || hotkeyBusy"
+          @click="resetHotkey"
+        >
+          {{ t('settings.hotkeyReset') }}
+        </button>
+      </div>
+    </div>
+    <div v-if="hotkeyError" class="hotkey-error">{{ t('settings.hotkeyFailed', { message: hotkeyError }) }}</div>
+
+    <div class="setting-item">
       <div class="setting-icon"><v-icon :icon="mdiRefresh" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ $t('settings.checkUpdate') }}</div>
@@ -141,6 +173,7 @@
 <script setup lang="ts">
 import {
   mdiAutorenew,
+  mdiCameraOutline,
   mdiMonitor,
   mdiPaletteOutline,
   mdiRefresh,
@@ -153,6 +186,7 @@ import {
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { disableAutostart, enableAutostart, isAutostartEnabled } from '@/api/app'
+import { acceleratorFromEvent, useScreenshotHotkey } from '@/composables/useScreenshotHotkey'
 import { useStorage } from '@/composables/useStorage'
 import { useTheme } from '@/composables/useTheme'
 import { useUpdate } from '@/composables/useUpdate'
@@ -160,6 +194,40 @@ import { useUpdate } from '@/composables/useUpdate'
 const { locale, t } = useI18n()
 const { setItem } = useStorage()
 const { themeMode, setTheme } = useTheme()
+
+// ---- 截图快捷键 ----
+const { hotkey, hotkeyBusy, hotkeyError, applyHotkey, defaultHotkey } = useScreenshotHotkey()
+const recordingHotkey = ref(false)
+const hotkeyRecorderEl = ref<HTMLButtonElement | null>(null)
+
+/** "Ctrl+Alt+S" → "Ctrl + Alt + S"，纯文本展示更好读 */
+const prettyHotkey = computed(() => hotkey.value.split('+').join(' + '))
+
+function toggleHotkeyRecording() {
+  recordingHotkey.value = !recordingHotkey.value
+  if (recordingHotkey.value) {
+    hotkeyRecorderEl.value?.focus()
+  }
+}
+
+async function onHotkeyKeydown(event: KeyboardEvent) {
+  if (!recordingHotkey.value) return
+  event.preventDefault()
+  event.stopPropagation()
+  if (event.key === 'Escape') {
+    recordingHotkey.value = false
+    return
+  }
+  const accelerator = acceleratorFromEvent(event)
+  if (!accelerator) return
+  const ok = await applyHotkey(accelerator)
+  if (ok) recordingHotkey.value = false
+}
+
+async function resetHotkey() {
+  recordingHotkey.value = false
+  await applyHotkey(defaultHotkey)
+}
 
 const languages = computed(() => [
   { label: '简体中文', value: 'zh' },
@@ -264,6 +332,75 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* 截图快捷键：录制态高亮 + 失败提示 */
+.hotkey-action {
+  gap: 8px;
+}
+
+.hotkey-recorder {
+  min-width: 112px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.hotkey-recorder:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hotkey-recorder.recording {
+  border-color: var(--accent);
+  background: rgb(var(--accent-rgb) / 0.1);
+  color: var(--accent);
+  animation: hotkey-pulse 1.2s ease-in-out infinite;
+}
+
+.hotkey-recorder.failed {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.hotkey-recorder:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.hotkey-error {
+  margin: -4px 12px 6px 48px;
+  color: var(--danger);
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+@keyframes hotkey-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--accent-rgb) / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgb(var(--accent-rgb) / 0.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hotkey-recorder.recording {
+    animation: none;
+  }
+}
+
 .setting-item {
   display: flex;
   align-items: center;

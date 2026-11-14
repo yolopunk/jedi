@@ -1,145 +1,210 @@
-# Jedi 工具箱
-
-> 一个多功能开发辅助工具集，面向开发者的桌面生产力工具箱。
+<div align="right">
 
 [English](README.en.md) | 简体中文
 
-## 📷 应用截图
+</div>
 
-### 主界面 - Hosts 管理
-![Hosts 管理界面](public/images/screenshots/hosts-main.png)
+<div align="center">
 
-### 知识壁纸浏览
-![知识壁纸浏览](public/images/screenshots/wallpapers-grid.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/branding/jedi-app-icon-dark.png">
+  <img src="public/branding/jedi-app-icon.png" alt="Jedi Forge 应用图标" width="108">
+</picture>
 
-### 壁纸预览
-![壁纸预览](public/images/screenshots/wallpapers-preview.png)
+# Jedi Forge
 
-### 播客库
-![播客库](public/images/screenshots/podcastic-library.png)
+**开发者的原力 —— 一站式开源开发者工作台**
 
-### 播放中
-![播客播放中](public/images/screenshots/podcastic-playing.png)
+Hosts 切换 · AI 对话 · 技能系统 · 知识壁纸 · 播客 · 智能截图
 
-### 应用设置
-![应用设置](public/images/screenshots/settings-general.png)
+[![release](https://img.shields.io/github/v/release/yolopunk/jedi?style=flat-square&label=release&labelColor=21262d&color=1f6feb)](https://github.com/yolopunk/jedi/releases)
+[![license](https://img.shields.io/github/license/yolopunk/jedi?style=flat-square&labelColor=21262d&color=30363d)](https://github.com/yolopunk/jedi/blob/main/LICENSE)
+[![platform](https://img.shields.io/badge/Windows·macOS·Linux-30363d?style=flat-square&labelColor=21262d)](https://github.com/yolopunk/jedi/releases)
+[![tauri](https://img.shields.io/badge/tauri-2.x-ffc131?style=flat-square&labelColor=21262d)](https://tauri.app)
+[![vue](https://img.shields.io/badge/vue-3.x-42b883?style=flat-square&labelColor=21262d)](https://vuejs.org)
+[![typescript](https://img.shields.io/badge/typescript-5.x-3178c6?style=flat-square&labelColor=21262d)](https://www.typescriptlang.org)
+[![rust](https://img.shields.io/badge/rust-1.70%2B-ce422b?style=flat-square&labelColor=21262d)](https://www.rust-lang.org)
 
-### 深色主题
-![深色主题](public/images/screenshots/dark-theme-view.png)
+**[下载最新版](https://github.com/yolopunk/jedi/releases/latest)** · **[快速开始](#快速开始)** · **[核心功能](#核心功能)**
 
-## 📖 简介
+<img src="public/images/screenshots/ai-chat.png" alt="Jedi AI 对话：内置 Agent 直接更新 Hosts 分组并生成验证脚本" width="100%">
 
-Jedi 工具箱是一个基于 Tauri v2、Vue 3 与 Vuetify 构建的跨平台桌面应用，旨在为开发者提供一系列实用工具，提高日常开发效率。当前提供 Hosts 管理、知识壁纸、小宇宙播客、系统信息与设置等模块。
+</div>
 
-名称 "Jedi" 灵感来自《星球大战》中的绝地武士，象征着这个工具可以帮助开发者像绝地武士一样轻松掌控不同的开发环境配置。
+## 核心功能
 
-## ✨ 功能特性
+<table>
+<tr>
+<td width="58%">
 
-### Hosts 管理
+<img src="public/images/screenshots/skills.png" alt="技能页面：内置工具、MCP 工具与 SKILL.md 技能包" width="100%">
 
-- **分组管理**: 按项目或环境自由创建 hosts 配置组，让配置井井有条
-- **一键切换**: 快速在不同环境间切换，告别手动编辑的繁琐
-- **全局开关**: 一键启用/禁用所有 hosts 配置，快速切换工作模式
-- **单条目控制**: 精确控制每个 hosts 条目，灵活应对各种场景
-- **远程数据源订阅**: 分组可绑定一个返回 Jedi JSON 的 URL，进入页面自动同步、也可手动刷新；适合订阅集群 ingress 这类持续变化的域名清单（仓库内附 `scripts/k8s-hosts-api.yaml` 适配器）
-- **域名快速访问**: 直接点击域名即可在浏览器中打开，节省时间
+</td>
+<td width="42%">
 
-### 知识壁纸
+![AI 对话与技能系统](https://img.shields.io/badge/AI对话·技能系统-539bf5?style=flat-square)
 
-- **分类与标签筛选**: 快速定位你喜欢的壁纸主题，发现美好
-- **预览与一键设为壁纸**: 预览详情后一键设置，让桌面焕然一新
-- **内容详情展示**: 支持图文内容的深入阅读与查看
+### 会说话的工作台，对话即操作
 
-### 小宇宙播客
+- **内置 Agent**：让 AI 直接改 Hosts、跑验证脚本
+- **多 Agent 接入**：OpenCode / Goose / Crush 等自由切换
+- **多服务商模型**：模型目录任选，API Key 本地管理
+- **工具调用 + MCP**：连接 MCP 服务器，能力持续扩展
+- **技能系统**：SKILL.md 指令包，`/命令` 一键复用
+- **长期记忆**：跨会话记住你的偏好与配置
 
-- **订阅管理**: 轻松添加、刷新与取消播客订阅
-- **导入 OPML**: 一键导入已有订阅，无缝迁移你的播客库
-- **播放控制**: 播放最新节目并快速定位当前播放进度
-- **节目详情**: 完整展示 Show Notes，支持链接一键跳转
+</td>
+</tr>
+</table>
 
-### 系统与体验
+<br>
 
-- **系统信息栏**: 实时查看 CPU、内存、网络等关键指标
-- **主题切换**: 支持深色、浅色与跟随系统三种模式
-- **系统托盘**: 最小化到托盘，随时快速访问
-- **多语言**: 中英文界面自由切换
-- **跨平台支持**: 完美支持 Windows、macOS 和 Linux
-- **现代界面**: 基于 Vuetify 3 打造的一致视觉与流畅交互
+<table>
+<tr>
+<td width="42%">
 
-## ⚡ 快速开始
+![HOSTS 管理](https://img.shields.io/badge/HOSTS管理-a371f7?style=flat-square)
 
-1. **下载安装**: 从 [GitHub Releases](https://github.com/yolopunk/jedi/releases) 下载对应平台的安装包
-2. **一键运行**: 安装完成后直接启动应用，无需额外配置
-3. **开始使用**:
-   - Hosts 管理中添加你的开发环境配置
-   - 浏览知识壁纸找到喜欢的桌面背景
-   - 导入 OPML 开始订阅播客
+### 环境切换，一键完成
 
-### 适合谁使用？
+- **分组管理**：按项目 / 环境自由组织 hosts 配置
+- **一键切换**：本地 / 测试 / 线上环境秒级生效
+- **条目级控制**：单条开关 + 全局总开关，精细可控
+- **远程订阅**：分组绑定远程数据源，域名清单自动同步
+- **域名直达**：点击域名直接在浏览器打开
 
-- **前端开发者**: 频繁切换本地/测试/线上环境的 Hosts。配置
-- **全栈工程师**: 需要管理多个项目的域名解析
-- **播客爱好者**: 喜欢在小宇宙收听技术播客
-- **效率追求者**: 希望一个工具搞定多个开发辅助需求
+</td>
+<td width="58%">
 
-## 🚀 安装与运行
+<img src="public/images/screenshots/hosts-manager.png" alt="Hosts 管理界面：分组切换与条目级开关" width="100%">
 
-### 预先准备
+</td>
+</tr>
+</table>
 
-- [Node.js](https://nodejs.org/) (v18+)
-- [pnpm](https://pnpm.io/) (v8+)
-- [Rust](https://www.rust-lang.org/) (v1.70+)
-- [Tauri CLI](https://tauri.app/v2/guides/getting-started/prerequisites) (v2.x)
+<br>
 
-### 开发步骤
+<table>
+<tr>
+<td width="58%">
 
-1. 克隆仓库
+<img src="public/images/screenshots/knowledge-wallpapers.png" alt="知识壁纸页面：System Design、Kubernetes、Git 等技术知识卡片" width="100%">
+
+</td>
+<td width="42%">
+
+![知识壁纸](https://img.shields.io/badge/知识壁纸-539bf5?style=flat-square)
+
+### 把技术图谱贴上桌面
+
+- **知识卡片**：System Design / K8s / Git / SQL 等精选图谱
+- **分类与标签**：快速定位你喜欢的主题
+- **一键设为壁纸**：预览后即设，桌面焕然一新
+- **图文深读**：卡片内容支持深入阅读
+
+</td>
+</tr>
+</table>
+
+<br>
+
+<table>
+<tr>
+<td width="42%">
+
+![小宇宙播客](https://img.shields.io/badge/小宇宙播客-a371f7?style=flat-square)
+
+### 把小宇宙装进桌面
+
+- **订阅管理**：添加 / 刷新 / 退订一步到位
+- **OPML 导入**：已有播客库无缝迁移
+- **播放与续播**：最新节目即点即播，进度快速定位
+- **Show Notes**：完整展示，链接一键跳转
+
+</td>
+<td width="58%">
+
+<img src="public/images/screenshots/podcast.png" alt="小宇宙播客页面：订阅播客卡片墙" width="100%">
+
+</td>
+</tr>
+</table>
+
+<br>
+
+<table>
+<tr>
+<td width="58%">
+
+<img src="public/images/screenshots/screenshot-studio.png" alt="截图库页面：按日期归档的截图集合" width="100%">
+
+</td>
+<td width="42%">
+
+![截图工作坊](https://img.shields.io/badge/截图工作坊-539bf5?style=flat-square)
+
+### 取景、长截图、归档一条龙
+
+- **全局快捷键**：默认 F1，可自定义配置
+- **框选取景**：精确截取所需区域，保留取景框
+- **滚动长截图**：整页内容一图收纳
+- **截图库**：按日期归档，缩略图大小可调、支持删除
+
+</td>
+</tr>
+</table>
+
+## 细节体验
+
+<div align="center">
+
+![系统信息栏](https://img.shields.io/badge/系统信息栏·CPU·内存·网络-30363d?style=flat-square&labelColor=21262d)
+![主题切换](https://img.shields.io/badge/深色·浅色·跟随系统-30363d?style=flat-square&labelColor=21262d)
+![系统托盘](https://img.shields.io/badge/系统托盘常驻-30363d?style=flat-square&labelColor=21262d)
+![多语言](https://img.shields.io/badge/中英双语界面-30363d?style=flat-square&labelColor=21262d)
+![快捷键](https://img.shields.io/badge/全局快捷键·默认F1-30363d?style=flat-square&labelColor=21262d)
+
+</div>
+
+## 快速开始
+
+<div align="center">
+
+**[从 GitHub Releases 下载](https://github.com/yolopunk/jedi/releases/latest)**
+
+Windows `.msi` · macOS `.dmg` · Linux `.AppImage` / `.deb`
+
+下载安装后开箱即用，无需额外配置
+
+</div>
+
+### 从源码构建
+
+需要 Node.js 18+、pnpm 8+、Rust 1.70+ 与 [Tauri CLI v2](https://tauri.app/v2/guides/getting-started/prerequisites)：
 
 ```bash
 git clone https://github.com/yolopunk/jedi.git
 cd jedi
-```
-
-2. 安装依赖
-
-```bash
 pnpm install
+pnpm tauri dev     # 开发模式运行
+pnpm tauri build   # 构建生产版本
 ```
 
-3. 开发模式运行
-
-```bash
-pnpm tauri dev
-```
-
-4. 构建生产版本
-
-```bash
-pnpm tauri build
-```
-
-### 下载安装
-
-您也可以直接从 [GitHub Releases](https://github.com/yolopunk/jedi/releases) 页面下载预编译的安装包。
-
-- Windows: `.msi` 安装包
-- macOS: `.dmg` 安装包
-- Linux: `.AppImage` 或 `.deb` 包
-
-## 🔧 使用指南
+<details>
+<summary><strong>使用指南 · Hosts / 壁纸 / 播客</strong></summary>
 
 ### Hosts 管理
 
-1. **添加分组**: 点击 "+" 按钮创建新的 hosts 配置组
-2. **添加条目**: 在分组中点击 "添加条目" 按钮添加新的 hosts 条目
-3. **启用/禁用条目**: 使用每个条目旁边的开关控制其状态
-4. **全局开关**: 使用顶部的主开关控制所有 hosts 配置
-5. **访问域名**: 点击域名可在浏览器中直接访问
-6. **远程数据源**: 添加分组时选择「远程 URL」，填入一个返回 Jedi JSON 分组格式的地址即可；之后进入 Hosts 页会在后台自动同步，分组名旁的刷新按钮可手动同步，链形按钮可修改订阅地址
+1. **添加分组**：点击 "+" 按钮创建新的 hosts 配置组
+2. **添加条目**：在分组中点击 "添加条目" 添加新的 hosts 条目
+3. **启用 / 禁用条目**：使用条目旁边的开关控制其状态
+4. **全局开关**：使用顶部主开关控制所有 hosts 配置
+5. **访问域名**：点击域名可在浏览器中直接访问
+6. **远程数据源**：添加分组时选择「远程 URL」，填入一个返回 Jedi JSON 分组格式的地址即可；进入 Hosts 页会自动同步，分组旁的刷新按钮可手动同步
 
-> 修改 hosts 文件需要管理员/root 权限。没有权限时操作会明确报错（不会静默失败），请以管理员身份运行应用。
+> 修改 hosts 文件需要管理员 / root 权限。没有权限时操作会明确报错（不会静默失败），请以管理员身份运行应用。
 
-远程数据源按「分组名」与 URL 一一对应，URL 需要返回如下格式（本仓库的 `scripts/k8s-hosts-api.yaml` 就是一个把 K8s ingress 域名转成该格式的适配器）：
+远程数据源按「分组名」与 URL 一一对应，URL 需返回如下格式（仓库附带的 `scripts/k8s-hosts-api.yaml` 可将集群域名清单转成该格式）：
 
 ```json
 [
@@ -150,7 +215,7 @@ pnpm tauri build
 ]
 ```
 
-同步以远端为准覆盖域名列表，但会保留你在本地对同名条目的启用/禁用状态。远端当前没有任何条目时会清空该分组（订阅关系保留，远端恢复后自动重建），数据无变化时不会重复改写 hosts 文件。
+同步以远端为准覆盖域名列表，但会保留本地对同名条目的启用 / 禁用状态。远端没有任何条目时会清空该分组（订阅关系保留，远端恢复后自动重建），数据无变化时不会重复改写 hosts 文件。
 
 ### Hosts 文件格式
 
@@ -170,61 +235,73 @@ Jedi 只管理这些标记之间的内容，不会修改文件的其他部分。
 
 ### 知识壁纸
 
-1. **浏览与筛选**: 使用分类与标签筛选壁纸
-2. **预览壁纸**: 点击卡片查看完整内容
-3. **设为壁纸**: 一键设置当前壁纸
+1. **浏览与筛选**：使用分类与标签筛选壁纸
+2. **预览壁纸**：点击卡片查看完整内容
+3. **设为壁纸**：一键设置当前壁纸
 
 ### 小宇宙播客
 
-1. **添加订阅**: 输入 RSS 或导入 OPML
-2. **浏览节目**: 在节目库中查看与搜索
-3. **播放与定位**: 播放最新并定位当前播放
+1. **添加订阅**：输入 RSS 或导入 OPML
+2. **浏览节目**：在节目库中查看与搜索
+3. **播放与定位**：播放最新节目并快速定位当前播放进度
 
-## 🔐 权限说明
+</details>
 
-Jedi 需要管理员权限来修改 hosts 文件。在 Windows 上，它会请求 UAC 提升；在 macOS 和 Linux 上，您可能需要输入管理员密码。
-
-## 💻 技术栈
-
-- **前端**: Vue 3 + TypeScript + Vuetify 3
-- **后端**: Rust + Tauri v2
-- **构建工具**: Vite
-- **包管理器**: pnpm
-
-## 📚 项目结构
+<details>
+<summary><strong>项目结构</strong></summary>
 
 ```
 ├── src/               # 前端源代码
-│   ├── api/           # API 调用
-│   ├── assets/        # 静态资源
-│   ├── components/    # Vue 组件
+│   ├── api/           # Tauri invoke 调用封装
+│   ├── components/    # 通用 Vue 组件
+│   ├── views/         # 各功能模块页面
 │   ├── types/         # TypeScript 类型定义
 │   ├── utils/         # 工具函数
 │   ├── App.vue        # 主应用组件
 │   └── main.ts        # 应用入口
 ├── src-tauri/         # Tauri/Rust 后端
-│   ├── src/           # Rust 源代码
+│   ├── src/
 │   │   ├── api/       # API 实现
 │   │   ├── config/    # 配置相关
 │   │   └── utils/     # 工具函数
 │   ├── Cargo.toml     # Rust 依赖配置
 │   └── tauri.conf.json # Tauri 配置
-├── public/            # 公共资源
-├── index.html         # HTML 模板
-├── package.json       # 项目配置
+├── scripts/           # 构建、发布与截图 rig 脚本
+├── public/            # 静态资源
 └── vite.config.ts     # Vite 配置
 ```
 
-## 👨‍💻 贡献指南
+</details>
 
-欢迎对项目进行贡献！如果您想贡献代码，请遵循以下步骤：
+<details>
+<summary><strong>贡献指南</strong></summary>
+
+欢迎贡献代码！步骤：
 
 1. Fork 这个仓库
-2. 创建您的特性分支 (`git checkout -b feature/amazing-feature`)
-3. 提交您的更改 (`git commit -m 'Add some amazing feature'`)
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add some amazing feature'`)
 4. 推送到分支 (`git push origin feature/amazing-feature`)
 5. 打开一个 Pull Request
 
-## 📝 许可证
+</details>
 
-本项目采用 MIT 许可证。
+## 技术栈
+
+<div align="center">
+
+**Vue 3** · **TypeScript** · **Vuetify 3** · **Vite** · **Tauri 2** · **Rust** · **pnpm**
+
+</div>
+
+---
+
+<div align="center">
+
+**[MIT License](https://github.com/yolopunk/jedi)** © 2026 Jedi Contributors
+
+如果 Jedi 帮到了你，欢迎给这个仓库点一个 Star
+
+Jedi Forge —— 「锻造 Forge」与「原力 Force」的双关，愿原力与你同在
+
+</div>

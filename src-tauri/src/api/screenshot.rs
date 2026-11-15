@@ -12,7 +12,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
-use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 use tauri::webview::WebviewWindowBuilder;
 use tauri::{
@@ -121,8 +120,6 @@ pub struct ScrollStatus {
 pub struct ScreenshotState {
   session: Mutex<Option<CaptureSession>>,
   pub(crate) scroll: Mutex<Option<ScrollSession>>,
-  /// 滚动会话的自动捕获看守线程（会话结束/拆除时 join）
-  pub(crate) scroll_watcher: Mutex<Option<JoinHandle<()>>>,
   /// 当前生效的截图全局快捷键（accelerator 字符串）
   pub(crate) hotkey: Mutex<String>,
   /// 贴图窗口待领取的图片路径：窗口 label -> 图片绝对路径
@@ -134,7 +131,6 @@ impl Default for ScreenshotState {
     Self {
       session: Mutex::new(None),
       scroll: Mutex::new(None),
-      scroll_watcher: Mutex::new(None),
       // 空串 = 尚未注册任何快捷键；启动时会注册默认值。
       // 这里若填默认值，register_capture_hotkey 的「同值跳过」会让启动注册被跳过。
       hotkey: Mutex::new(String::new()),
@@ -852,8 +848,14 @@ pub(crate) fn keep_selection_overlay(app: &AppHandle, monitor_index: usize) {
   set_pins_excluded(app, true);
 }
 
-/// 停止滚动自动捕获看守线程（幂等：无线程时直接返回）。
-/// 阻塞至多一个轮询周期（~200ms），供会话结束/全量拆除调用。
+/// 停止滚动自动捕获看守线程（幂等：无会话时直接返回）。
+///
+/// 只置停止标志、绝不 join：tauri 启用 tracing feature 后，eval_script
+/// （emit 的底层）会阻塞等待主线程执行脚本；若本函数在主线程被调用
+/// （同步命令 screenshot_scroll_cancel、RunEvent::ExitRequested），
+/// join 会与「看守线程正阻塞等主线程」形成循环等待 → AppHang。
+/// 会话串行化由 scroll 互斥锁保证：看守线程下一轮发现会话已被取走
+/// （ptr_eq 失败）即自行退出，无需 join。
 fn stop_scroll_watcher(app: &AppHandle) {
   let state = app.state::<ScreenshotState>();
   let stop = state
@@ -864,10 +866,6 @@ fn stop_scroll_watcher(app: &AppHandle) {
     .map(|s| s.stop.clone());
   if let Some(stop) = stop {
     stop.store(true, Ordering::Release);
-  }
-  let handle = state.scroll_watcher.lock().unwrap().take();
-  if let Some(handle) = handle {
-    let _ = handle.join();
   }
 }
 
@@ -1260,15 +1258,18 @@ pub async fn screenshot_scroll_begin(
   keep_selection_overlay(&app, monitor_index);
   show_toolbar(&app, geometry, (rx, ry, rw, rh));
 
-  // 自动捕获看守线程：画面变化即追加帧（用户不再需要手动按键拍屏）
+  // 自动捕获看守线程：画面变化即追加帧（用户不再需要手动按键拍屏）。
+  // detached 线程，不存句柄不 join——退出由 stop 标志 + 会话消失驱动（见
+  // stop_scroll_watcher 的死锁注释）。
   let watcher_app = app.clone();
-  let handle = std::thread::spawn(move || scroll_watcher(watcher_app, stop));
-  *state.scroll_watcher.lock().unwrap() = Some(handle);
+  std::thread::spawn(move || scroll_watcher(watcher_app, stop));
   Ok(status)
 }
 
 /// 看守线程：轮询选区画面，与上次捕获的降采样基准做差分；
 /// 变化超阈值且距上次追加 ≥250ms 时捕获整帧并增量拼接，状态广播给悬浮条与取景框。
+/// 每一步都核对 `Arc::ptr_eq(&session.stop, stop)`：本线程可能比会话活得久
+/// （detached 不 join），teardown 后新开的滚动会话绝不能被旧线程写入。
 fn scroll_watcher(app: AppHandle, stop: Arc<AtomicBool>) {
   const POLL: Duration = Duration::from_millis(150);
   const MIN_GAP: Duration = Duration::from_millis(250);
@@ -1290,16 +1291,19 @@ fn scroll_watcher(app: AppHandle, stop: Arc<AtomicBool>) {
     let params = {
       let state = app.state::<ScreenshotState>();
       let guard = state.scroll.lock().unwrap();
-      let params = guard.as_ref().map(|s| {
-        (
-          s.monitor_index,
-          s.monitor_origin,
-          s.x,
-          s.y,
-          s.width,
-          s.height,
-        )
-      });
+      let params = guard
+        .as_ref()
+        .filter(|s| Arc::ptr_eq(&s.stop, &stop))
+        .map(|s| {
+          (
+            s.monitor_index,
+            s.monitor_origin,
+            s.x,
+            s.y,
+            s.width,
+            s.height,
+          )
+        });
       params
     };
     let Some((monitor_index, origin, x, y, w, h)) = params else {
@@ -1322,11 +1326,11 @@ fn scroll_watcher(app: AppHandle, stop: Arc<AtomicBool>) {
       let state = app.state::<ScreenshotState>();
       let mut guard = state.scroll.lock().unwrap();
       match guard.as_mut() {
-        Some(session) => {
+        Some(session) if Arc::ptr_eq(&session.stop, &stop) => {
           scroll_append_to_session(session, frame);
           scroll_status_of(session)
         }
-        None => break,
+        _ => break,
       }
     };
     let _ = app.emit_to(TOOLBAR_LABEL, "scroll-frame", &status);

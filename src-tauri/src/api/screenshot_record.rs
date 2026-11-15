@@ -31,6 +31,10 @@ struct ActiveRecord {
   started_at_ms: u64,
   handle: Option<JoinHandle<()>>,
   result: Arc<Mutex<Option<Result<String, String>>>>,
+  /// 线程收尾信号：ExitRequested（主线程）收尾时不能用 join——
+  /// 录制线程结束前会 emit_to（tauri tracing 下 eval_script 阻塞等主线程），
+  /// join 会与其形成循环等待 → AppHang。改用通道限时等待。
+  done: Option<std::sync::mpsc::Receiver<()>>,
 }
 
 impl Default for RecordState {
@@ -293,6 +297,7 @@ fn record_thread(
   stop: Arc<AtomicBool>,
   paused: Arc<AtomicBool>,
   result: Arc<Mutex<Option<Result<String, String>>>>,
+  done: std::sync::mpsc::Sender<()>,
 ) {
   let outcome = (|| -> Result<String, String> {
     // 按物理原点匹配显示器（多屏枚举顺序不稳定），找不到退回序号
@@ -419,6 +424,9 @@ fn record_thread(
     }
   }
   *result.lock().unwrap() = Some(outcome);
+  // 收尾信号最后发出：emit_to 在 tauri tracing 下会阻塞等主线程执行脚本，
+  // ExitRequested（主线程）的 shutdown 依赖本信号限时等待，绝不 join。
+  let _ = done.send(());
 }
 
 // ---- Tauri commands ----
@@ -469,6 +477,7 @@ pub async fn start_region_record(
   let stop = Arc::new(AtomicBool::new(false));
   let paused = Arc::new(AtomicBool::new(false));
   let result: Arc<Mutex<Option<Result<String, String>>>> = Arc::new(Mutex::new(None));
+  let (done_tx, done_rx) = std::sync::mpsc::channel::<()>();
   let thread_app = app.clone();
   let thread_stop = stop.clone();
   let thread_paused = paused.clone();
@@ -486,6 +495,7 @@ pub async fn start_region_record(
       thread_stop,
       thread_paused,
       thread_result,
+      done_tx,
     )
   });
   *active = Some(ActiveRecord {
@@ -494,6 +504,7 @@ pub async fn start_region_record(
     started_at_ms,
     handle: Some(handle),
     result,
+    done: Some(done_rx),
   });
   Ok(RecordStartInfo {
     width: w,
@@ -550,14 +561,19 @@ pub async fn stop_region_record(
   .map_err(|e| format!("停止任务异常: {}", e))?
 }
 
-/// 应用退出前收尾：停止线程并产出文件（ExitRequested 调用）。
+/// 应用退出前收尾：停止线程并产出文件（ExitRequested 在主线程调用）。
+///
+/// 不能 join：录制线程收尾时会 emit_to（tauri tracing 下 eval_script 阻塞
+/// 等主线程执行脚本），join 会与其形成循环等待 → AppHang。改为限时等待
+/// 线程的完成信号，超时则放弃（进程即将退出）。
 pub fn shutdown(app: &AppHandle) {
   let state = app.state::<RecordState>();
   let taken = state.active.lock().unwrap().take();
   if let Some(record) = taken {
     record.stop.store(true, Ordering::Release);
-    if let Some(handle) = record.handle {
-      let _ = handle.join();
+    if let Some(done) = record.done {
+      // 给封装留时间；emit 阻塞时信号不会到来，2s 后放弃
+      let _ = done.recv_timeout(Duration::from_secs(2));
     }
   }
 }

@@ -268,8 +268,7 @@ pub(crate) async fn spawn_pin_window(
   let (img_w, img_h) = tauri::async_runtime::spawn_blocking({
     let path = path.to_string();
     move || -> Result<(u32, u32), String> {
-      let reader =
-        image::ImageReader::open(&path).map_err(|e| format!("读取图片失败: {}", e))?;
+      let reader = image::ImageReader::open(&path).map_err(|e| format!("读取图片失败: {}", e))?;
       reader
         .with_guessed_format()
         .map_err(|e| e.to_string())?
@@ -445,8 +444,7 @@ pub async fn begin_capture(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, Stri
         match builder.build() {
           Ok(window) => {
             let _ = window.set_position(Position::Physical(PhysicalPosition::new(info.x, info.y)));
-            let _ =
-              window.set_size(Size::Physical(PhysicalSize::new(info.width, info.height)));
+            let _ = window.set_size(Size::Physical(PhysicalSize::new(info.width, info.height)));
           }
           Err(e) => eprintln!("failed to create overlay window {}: {}", label, e),
         }
@@ -732,6 +730,9 @@ pub(crate) fn show_toolbar(
     // 上一轮残留的悬浮条：复用窗口，通知其按新会话重新初始化并复位
     if let Some(existing) = app_for_window.get_webview_window(TOOLBAR_LABEL) {
       let _ = existing.set_position(Position::Physical(PhysicalPosition::new(px.max(mx), py)));
+      exclude_from_capture(&existing);
+      let _ = existing.show();
+      let _ = existing.set_focus();
       let _ = app_for_window.emit_to(TOOLBAR_LABEL, "toolbar-reactivate", ());
       return;
     }
@@ -802,7 +803,12 @@ pub(crate) fn register_capture_hotkey(app: &AppHandle, accelerator: &str) -> Res
 
 /// 当前生效的截图快捷键（accelerator 字符串）
 pub(crate) fn current_capture_hotkey(app: &AppHandle) -> String {
-  app.state::<ScreenshotState>().hotkey.lock().unwrap().clone()
+  app
+    .state::<ScreenshotState>()
+    .hotkey
+    .lock()
+    .unwrap()
+    .clone()
 }
 
 /// 判断某个全局快捷键事件是否属于当前截图快捷键。
@@ -1163,8 +1169,13 @@ pub async fn screenshot_begin(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, S
   begin_capture(app).await
 }
 
+/// 读取某个显示器的冻结帧信息。
+///
+/// 必须是 async：同步命令在**主线程**执行，而覆盖窗/悬浮条在挂载时会立刻调用本命令——
+/// 此刻主线程正卡在 `builder.build()` 里等这个窗口创建完成，命令排队等主线程 →
+/// 双方互等，进程挂死（0.9.0 实测点「截长图」即 AppHang）。
 #[tauri::command]
-pub fn screenshot_frame_info(
+pub async fn screenshot_frame_info(
   state: State<'_, ScreenshotState>,
   monitor_index: usize,
 ) -> Result<MonitorFrameInfo, String> {
@@ -1256,13 +1267,19 @@ pub async fn screenshot_scroll_begin(
 
   // 保留选区框（点击穿透 + 排除捕获），让用户看得见截取范围并自由滚动页面
   keep_selection_overlay(&app, monitor_index);
-  show_toolbar(&app, geometry, (rx, ry, rw, rh));
 
-  // 自动捕获看守线程：画面变化即追加帧（用户不再需要手动按键拍屏）。
-  // detached 线程，不存句柄不 join——退出由 stop 标志 + 会话消失驱动（见
-  // stop_scroll_watcher 的死锁注释）。
-  let watcher_app = app.clone();
-  std::thread::spawn(move || scroll_watcher(watcher_app, stop));
+  // 先返回，让覆盖窗的 await 立刻拿到结果。建悬浮条窗口会阻塞主线程，
+  // 若与「命令响应的脚本投递」同时发生，两边互等 → 进程挂死（AppHang）。
+  // 所以「建窗 + 启动看守线程」整体推到后台：窗口建好之后才开始 emit，
+  // 避免看守线程的 emit 撞上正在创建的 webview。
+  let deferred_app = app.clone();
+  let region = (rx, ry, rw, rh);
+  std::thread::spawn(move || {
+    std::thread::sleep(Duration::from_millis(350));
+    show_toolbar(&deferred_app, geometry, region);
+    std::thread::sleep(Duration::from_millis(350));
+    scroll_watcher(deferred_app, stop);
+  });
   Ok(status)
 }
 
@@ -1445,16 +1462,15 @@ pub async fn screenshot_scroll_finish(app: AppHandle) -> Result<ScreenshotOutcom
   }
 
   let stitched = session.stitched;
-  let png_bytes =
-    tauri::async_runtime::spawn_blocking(move || -> Result<Vec<u8>, String> {
-      let mut png = Vec::new();
-      stitched
-        .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
-        .map_err(|e| format!("PNG 编码失败: {}", e))?;
-      Ok(png)
-    })
-    .await
-    .map_err(|e| format!("拼接任务异常: {}", e))??;
+  let png_bytes = tauri::async_runtime::spawn_blocking(move || -> Result<Vec<u8>, String> {
+    let mut png = Vec::new();
+    stitched
+      .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+      .map_err(|e| format!("PNG 编码失败: {}", e))?;
+    Ok(png)
+  })
+  .await
+  .map_err(|e| format!("拼接任务异常: {}", e))??;
 
   let dir = screenshots_dir(&app)?;
   let path = dir.join(format!("Scroll_{}", timestamped_filename("png")));
@@ -1496,8 +1512,12 @@ pub struct ToolbarInfo {
   pub paused: bool,
 }
 
+/// 悬浮控制条挂载时读取会话状态。
+///
+/// 必须是 async：同 `screenshot_frame_info`，同步命令排在主线程上，
+/// 而窗口正在主线程的 `build()` 中创建 → 死锁。
 #[tauri::command]
-pub fn screenshot_toolbar_info(app: AppHandle) -> Result<ToolbarInfo, String> {
+pub async fn screenshot_toolbar_info(app: AppHandle) -> Result<ToolbarInfo, String> {
   let state = app.state::<ScreenshotState>();
   if let Some(scroll) = state.scroll.lock().unwrap().as_ref() {
     return Ok(ToolbarInfo {
@@ -1615,7 +1635,10 @@ pub async fn screenshot_import(app: AppHandle) -> Result<String, String> {
     dialog_app
       .dialog()
       .file()
-      .add_filter("图片 / Image", &["png", "jpg", "jpeg", "webp", "gif", "bmp"])
+      .add_filter(
+        "图片 / Image",
+        &["png", "jpg", "jpeg", "webp", "gif", "bmp"],
+      )
       .blocking_pick_file()
       .and_then(|p| p.as_path().map(|path| path.to_path_buf()))
   })
@@ -1626,25 +1649,21 @@ pub async fn screenshot_import(app: AppHandle) -> Result<String, String> {
     return Ok(String::new());
   };
 
-  let png_bytes = tauri::async_runtime::spawn_blocking(
-    move || -> Result<Vec<u8>, String> {
-      let mut reader = image::ImageReader::open(&picked)
-        .map_err(|e| format!("读取图片失败: {}", e))?;
-      reader = reader
-        .with_guessed_format()
-        .map_err(|e| e.to_string())?;
-      reader.limits(image::Limits::default());
-      let img = reader
-        .decode()
-        .map_err(|e| format!("图片格式无效: {}", e))?
-        .to_rgba8();
-      let mut png = Vec::new();
-      img
-        .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
-        .map_err(|e| format!("PNG 编码失败: {}", e))?;
-      Ok(png)
-    },
-  )
+  let png_bytes = tauri::async_runtime::spawn_blocking(move || -> Result<Vec<u8>, String> {
+    let mut reader =
+      image::ImageReader::open(&picked).map_err(|e| format!("读取图片失败: {}", e))?;
+    reader = reader.with_guessed_format().map_err(|e| e.to_string())?;
+    reader.limits(image::Limits::default());
+    let img = reader
+      .decode()
+      .map_err(|e| format!("图片格式无效: {}", e))?
+      .to_rgba8();
+    let mut png = Vec::new();
+    img
+      .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+      .map_err(|e| format!("PNG 编码失败: {}", e))?;
+    Ok(png)
+  })
   .await
   .map_err(|e| format!("导入任务异常: {}", e))??;
 
@@ -1659,11 +1678,8 @@ pub async fn screenshot_import(app: AppHandle) -> Result<String, String> {
 #[tauri::command]
 pub async fn screenshot_copy_file(app: AppHandle, path: String) -> Result<(), String> {
   let img = tauri::async_runtime::spawn_blocking(move || -> Result<RgbaImage, String> {
-    let mut reader =
-      image::ImageReader::open(&path).map_err(|e| format!("读取图片失败: {}", e))?;
-    reader = reader
-      .with_guessed_format()
-      .map_err(|e| e.to_string())?;
+    let mut reader = image::ImageReader::open(&path).map_err(|e| format!("读取图片失败: {}", e))?;
+    reader = reader.with_guessed_format().map_err(|e| e.to_string())?;
     reader.limits(image::Limits::default());
     reader
       .decode()

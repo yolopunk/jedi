@@ -63,11 +63,11 @@
       </div>
     </div>
 
-    <!-- 滚动截长图：保留取景框（画面实时可见、可自由滚动），窗口已点击穿透并排除出捕获 -->
+    <!-- 滚动截长图：保留取景框（画面实时可见、随滚自动捕获），窗口已点击穿透并排除出捕获 -->
     <div v-if="mode === 'scroll' && selection" class="scroll-frame" :style="selectionStyle">
       <span class="scroll-badge" :class="{ flipped: badgeFlipped }">
         <span class="scroll-dot" aria-hidden="true"></span>
-        {{ t('screenshot.scrolling.frameHint', { count: scrollFrameCount }) }}
+        {{ t('screenshot.scrolling.frameHint', { height: scrollStitchedHeight }) }}
       </span>
       <span class="scroll-corner tl" aria-hidden="true"></span>
       <span class="scroll-corner tr" aria-hidden="true"></span>
@@ -75,12 +75,16 @@
       <span class="scroll-corner br" aria-hidden="true"></span>
       <span class="scroll-hint" :class="{ flipped: badgeFlipped }">{{ t('screenshot.scrolling.frameScrollHint') }}</span>
 
-      <!-- NEG 胶片条：已捕获帧贴在取景框右侧 -->
-      <div v-if="scrollThumbs.length" class="neg-strip" :class="{ 'flip-x': negFlipped }">
-        <span class="neg-label">NEG {{ String(scrollThumbs.length).padStart(2, '0') }}</span>
-        <div v-for="(thumb, i) in scrollThumbs" :key="i" class="neg-frame">
-          <img :src="thumb" alt="" draggable="false" />
-          <span class="neg-no">{{ String(i + 1).padStart(2, '0') }}</span>
+      <!-- 匹配失败提示：滚太快或选区含固定元素，回滚一点即可恢复 -->
+      <span v-if="!scrollMatchOk" class="match-lost" :class="{ flipped: badgeFlipped }">
+        {{ t('screenshot.scrolling.matchLost') }}
+      </span>
+
+      <!-- NEG 预览条：累积长图实时预览，贴在取景框右侧 -->
+      <div v-if="scrollThumb" class="neg-strip" :class="{ 'flip-x': negFlipped }">
+        <span class="neg-label">NEG {{ String(scrollFrameCount).padStart(2, '0') }}</span>
+        <div class="neg-frame">
+          <img :src="scrollThumb" alt="" draggable="false" />
         </div>
       </div>
     </div>
@@ -113,6 +117,10 @@
         <v-icon :icon="mdiTextRecognition" size="16" aria-hidden="true" />
         {{ t('screenshot.ocr.title') }}
         <kbd>⇧C</kbd>
+      </button>
+      <button class="tb-btn" type="button" :title="t('screenshot.pin.shortcut')" @click.stop="finish('pin')">
+        <v-icon :icon="mdiPinOutline" size="15" aria-hidden="true" />
+        {{ t('screenshot.pin.action') }}
       </button>
       <button class="tb-btn tb-highlight" type="button" @click.stop="startScrolling">
         <v-icon :icon="mdiArrowCollapseDown" size="16" aria-hidden="true" />
@@ -159,6 +167,7 @@ import {
   mdiClose,
   mdiContentCopy,
   mdiContentSaveOutline,
+  mdiPinOutline,
   mdiRobotOutline,
   mdiTextRecognition,
   mdiVideoOutline,
@@ -231,7 +240,9 @@ let flashTimer: number | null = null
 // 录制模式：覆盖窗切换为透明 + 点击穿透（由后端设置），仅渲染边框与 REC 徽标
 const mode = ref<'select' | 'record' | 'scroll'>('select')
 const scrollFrameCount = ref(1)
-const scrollThumbs = ref<string[]>([])
+const scrollStitchedHeight = ref(0)
+const scrollThumb = ref('')
+const scrollMatchOk = ref(true)
 const recordElapsedMs = ref(0)
 let recordStartAt = 0
 let recordTimer: number | null = null
@@ -318,13 +329,14 @@ const loupeFlip = computed(() => {
 
 const loupeStyle = computed(() => undefined)
 
-/** NEG 胶片条挂在取景框右侧，贴近屏幕右缘时翻到左侧 */
+/** NEG 预览条挂在取景框右侧，贴近屏幕右缘时翻到左侧 */
 const negFlipped = computed(() => {
   if (!selection.value) return false
-  return selection.value.x + selection.value.w + 96 > window.innerWidth
+  return selection.value.x + selection.value.w + 110 > window.innerWidth
 })
 
 let unlistenScrollFrame: UnlistenFn | undefined
+let unlistenRecordFinished: UnlistenFn | undefined
 
 function sampleLoupe() {
   const canvas = loupeCanvas.value
@@ -517,7 +529,9 @@ async function startScrolling() {
   try {
     const status = await screenshotScrollBegin(monitorIndex, physicalRect())
     scrollFrameCount.value = status.frameCount
-    scrollThumbs.value = [...status.thumbs]
+    scrollStitchedHeight.value = status.stitchedHeight
+    scrollThumb.value = status.stitchedThumb
+    scrollMatchOk.value = status.matchOk
     mode.value = 'scroll'
     // 后端已接管窗口；失败兜底恢复交互
     window.setTimeout(() => {
@@ -637,12 +651,29 @@ async function revealOverlay(event: Event) {
 onMounted(async () => {
   window.addEventListener('keydown', onKeyDown)
   try {
-    // 滚动模式：NEG 胶片条跟随帧数增长（事件在滚动会话期间才发出）
-    unlistenScrollFrame = await listen<{ frameCount: number; thumbs: string[] }>(
-      'scroll-frame',
+    // 滚动模式：累积长图实时预览跟随增长（事件在滚动会话期间才发出）
+    unlistenScrollFrame = await listen<{
+      frameCount: number
+      stitchedHeight: number
+      stitchedThumb: string
+      matchOk: boolean
+    }>('scroll-frame', event => {
+      scrollFrameCount.value = event.payload.frameCount
+      scrollStitchedHeight.value = event.payload.stitchedHeight
+      if (event.payload.stitchedThumb) scrollThumb.value = event.payload.stitchedThumb
+      scrollMatchOk.value = event.payload.matchOk
+    })
+  } catch {
+    /* 事件监听失败不影响框选 */
+  }
+  try {
+    // 录屏失败：悬浮条可能已在关闭中，覆盖窗兜底展示错误
+    unlistenRecordFinished = await listen<{ ok: boolean; message?: string }>(
+      'record-finished',
       event => {
-        scrollFrameCount.value = event.payload.frameCount
-        if (event.payload.thumbs?.length) scrollThumbs.value = [...event.payload.thumbs]
+        if (!event.payload.ok) {
+          showError(t('screenshot.record.failed', { message: event.payload.message ?? '' }))
+        }
       }
     )
   } catch {
@@ -675,6 +706,7 @@ watch(toolbarRef, element => {
 onUnmounted(() => {
   toolbarObserver?.disconnect()
   unlistenScrollFrame?.()
+  unlistenRecordFinished?.()
   window.removeEventListener('keydown', onKeyDown)
   if (errorTimer) window.clearTimeout(errorTimer)
   if (flashTimer) window.clearTimeout(flashTimer)
@@ -833,12 +865,36 @@ onUnmounted(() => {
   top: -27px;
 }
 
-/* NEG 胶片条：已捕获帧贴在取景框右侧 */
+/* 匹配失败提示：取景框上方居中，回滚后自动消失 */
+.match-lost {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 6px;
+  background: #d32f2f;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 6px 16px rgba(211, 47, 47, 0.35);
+}
+
+.match-lost.flipped {
+  top: auto;
+  bottom: 4px;
+}
+
+/* NEG 预览条：累积长图实时预览，贴在取景框右侧 */
 .neg-strip {
   position: absolute;
-  right: -88px;
+  right: -104px;
   top: 2px;
-  width: 72px;
+  width: 88px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -847,7 +903,7 @@ onUnmounted(() => {
 
 .neg-strip.flip-x {
   right: auto;
-  left: -88px;
+  left: -104px;
 }
 
 .neg-label {
@@ -858,7 +914,7 @@ onUnmounted(() => {
 
 .neg-frame {
   position: relative;
-  aspect-ratio: 4 / 3;
+  max-height: 420px;
   border-radius: 5px;
   background: #fff;
   border: 1px solid var(--border);
@@ -867,19 +923,9 @@ onUnmounted(() => {
 }
 
 .neg-frame img {
-  position: absolute;
-  inset: 0;
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.neg-no {
-  position: absolute;
-  right: 3px;
-  bottom: 2px;
-  font: 700 7.5px var(--jedi-font-mono, monospace);
-  color: rgb(var(--accent-rgb));
+  height: auto;
 }
 
 /* 长截图操作指引：画面底部居中 */

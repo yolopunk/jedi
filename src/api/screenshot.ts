@@ -31,8 +31,12 @@ export interface ScreenshotItem {
 
 export interface ScrollStatus {
   frameCount: number
-  /** 已捕获帧的缩略图（data URL 序列），NEG 胶片条用 */
-  thumbs: string[]
+  /** 累积长图高度（物理像素） */
+  stitchedHeight: number
+  /** 累积长图缩略图 data URL，实时预览用 */
+  stitchedThumb: string
+  /** 最近一帧是否匹配成功（false = 提示回滚一点再继续） */
+  matchOk: boolean
 }
 
 export interface ToolbarInfo {
@@ -40,6 +44,10 @@ export interface ToolbarInfo {
   frameCount: number
   /** 录屏最长时长（毫秒），滚动模式为 0 */
   maxDurationMs: number
+  /** 录制开始时刻（Unix 毫秒，计时对表用），滚动模式为 0 */
+  startedAtMs: number
+  /** 录制当前是否暂停 */
+  paused: boolean
 }
 
 export interface RecordStartInfo {
@@ -47,6 +55,7 @@ export interface RecordStartInfo {
   height: number
   fps: number
   maxDurationMs: number
+  startedAtMs: number
 }
 
 export interface RecordOutcome {
@@ -93,7 +102,7 @@ export function saveStyledScreenshot(dataUrl: string): Promise<string> {
   return invoke('screenshot_save_styled', { dataUrl })
 }
 
-/** 进入滚动截取模式：固定选区并捕获第一屏（坐标为物理像素） */
+/** 进入滚动截取模式：固定选区并启动自动捕获（坐标为物理像素） */
 export function screenshotScrollBegin(
   monitorIndex: number,
   rect: PhysicalRect
@@ -101,7 +110,7 @@ export function screenshotScrollBegin(
   return invoke('screenshot_scroll_begin', { monitorIndex, ...rect })
 }
 
-/** 滚动截取：捕获一屏追加进帧序列 */
+/** 手动补拍一屏（自动捕获漏拍时的兜底） */
 export function screenshotScrollCapture(): Promise<ScrollStatus> {
   return invoke('screenshot_scroll_capture')
 }
@@ -136,13 +145,18 @@ export function screenshotToolbarInfo(): Promise<ToolbarInfo> {
   return invoke('screenshot_toolbar_info')
 }
 
-/** 开始选区录屏（fps 默认 15），返回实际尺寸与最长时长 */
+/** 开始选区录屏（fps 默认 24），返回实际尺寸与最长时长 */
 export function startRegionRecord(
   monitorIndex: number,
   rect: PhysicalRect,
   fps?: number
 ): Promise<RecordStartInfo> {
   return invoke('start_region_record', { monitorIndex, ...rect, fps })
+}
+
+/** 暂停/继续录屏，返回切换后的暂停态 */
+export function toggleRegionRecordPause(): Promise<boolean> {
+  return invoke('toggle_region_record_pause')
 }
 
 /** 停止录屏并等待封装完成，返回 MP4 路径 */

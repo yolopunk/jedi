@@ -61,7 +61,9 @@ use crate::api::screenshot::{
   screenshot_scroll_finish, screenshot_toolbar_info, set_capture_hotkey, ScreenshotState,
 };
 use crate::api::screenshot_ocr::{screenshot_copy_text, screenshot_ocr};
-use crate::api::screenshot_record::{start_region_record, stop_region_record, RecordState};
+use crate::api::screenshot_record::{
+  start_region_record, stop_region_record, toggle_region_record_pause, RecordState,
+};
 use crate::api::skills::{
   skill_stats_clear, skill_stats_list, skill_stats_save, skills_delete, skills_list, skills_read,
   skills_read_file, skills_save,
@@ -365,6 +367,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       // Region recording commands
       start_region_record,
       stop_region_record,
+      toggle_region_record_pause,
       screenshot_open_file,
       screenshot_delete,
       // Library extras: import / copy-to-clipboard / pin windows

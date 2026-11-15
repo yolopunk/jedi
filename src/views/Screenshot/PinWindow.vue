@@ -20,6 +20,9 @@
         <input v-model.number="opacity" class="pt-slider" type="range" min="20" max="100" step="5" :aria-label="t('screenshot.pin.opacityLabel')" />
       </span>
       <span class="pt-divider" aria-hidden="true"></span>
+      <button class="pt-btn" :class="{ active: alwaysOnTop }" type="button" :aria-label="t('screenshot.pin.alwaysOnTop')" :title="t('screenshot.pin.alwaysOnTop')" @click="toggleAlwaysOnTop">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M9.5 2.5 13.5 6.5 11.2 7.1 8.9 9.4C8.7 10.5 9 11.6 9.8 12.4L8.4 13.8C6.9 12.3 5.9 11 5.5 9.9L2.7 12.8 1.6 11.7 4.4 8.9C3.3 8.5 2 7.5 0.6 6L2 4.6C2.8 5.4 3.9 5.7 5 5.5L7.3 3.2Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" transform="translate(1 1)"/></svg>
+      </button>
       <button class="pt-btn" type="button" :aria-label="t('screenshot.copy')" :title="t('screenshot.copy')" @click="copyImage">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" stroke="currentColor" stroke-width="1.3"/><path d="M10.5 5.5V3.8A1.3 1.3 0 0 0 9.2 2.5H3.8A1.3 1.3 0 0 0 2.5 3.8v5.4a1.3 1.3 0 0 0 1.3 1.3h1.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
       </button>
@@ -30,7 +33,7 @@
 
     <!-- 贴住的截图本体 -->
     <div class="pin-card" :style="{ opacity: opacity / 100 }">
-      <div class="pin-stage">
+      <div class="pin-stage" @dblclick="closeSelf" @auxclick="onAuxClick">
         <div v-if="failed" class="pin-broken">
           <span>{{ t('screenshot.imageMissing') }}</span>
           <button class="console-btn" type="button" @click="closeSelf">{{ t('common.close') }}</button>
@@ -71,6 +74,7 @@ const failed = ref(false)
 const hovering = ref(false)
 const opacity = ref(100)
 const zoom = ref(1)
+const alwaysOnTop = ref(true)
 const imgEl = ref<HTMLImageElement | null>(null)
 const natural = ref<{ w: number; h: number } | null>(null)
 const hintHidden = ref(false)
@@ -110,16 +114,46 @@ function stepZoom(delta: number) {
   void applySize()
 }
 
+/** 滚轮缩放 / Ctrl+滚轮透明度（PixPin 交互） */
 function onWheel(event: WheelEvent) {
-  const step = event.deltaY < 0 ? 0.1 : -0.1
+  const up = event.deltaY < 0
+  if (event.ctrlKey || event.metaKey) {
+    const next = Math.min(100, Math.max(20, opacity.value + (up ? 5 : -5)))
+    if (next === opacity.value) return
+    opacity.value = next
+    return
+  }
+  const step = up ? 0.1 : -0.1
   const next = Math.min(4, Math.max(0.2, zoom.value + step))
   if (next === zoom.value) return
   zoom.value = next
   void applySize()
 }
 
+/** 中键：重置为 100% 原始大小 */
+function onAuxClick(event: MouseEvent) {
+  if (event.button !== 1) return
+  event.preventDefault()
+  zoom.value = 1
+  void applySize()
+}
+
+async function toggleAlwaysOnTop() {
+  alwaysOnTop.value = !alwaysOnTop.value
+  try {
+    await window_.setAlwaysOnTop(alwaysOnTop.value)
+  } catch {
+    alwaysOnTop.value = !alwaysOnTop.value
+  }
+}
+
 function onDragStart(event: PointerEvent) {
   if (event.button !== 0) return
+  // 双击关闭：系统拖拽循环可能吞掉 dblclick，用 detail 点击计数兜底
+  if ((event as MouseEvent).detail >= 2) {
+    void closeSelf()
+    return
+  }
   const target = event.target as HTMLElement
   if (target.closest('.pin-toolbar') || target.closest('input')) return
   void window_.startDragging()
@@ -287,6 +321,10 @@ onUnmounted(() => {
 .pt-btn:hover {
   background: rgb(var(--ink-rgb) / 0.06);
   color: var(--text);
+}
+
+.pt-btn.active {
+  color: rgb(var(--accent-rgb));
 }
 
 .pt-btn.pt-close {

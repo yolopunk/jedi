@@ -1,42 +1,39 @@
 <template>
   <div class="ctrl-root" :class="`mode-${mode}`">
-    <!-- 滚动截长图控制条 -->
+    <!-- 滚动截长图控制条：随滚自动捕获，这里只做完成/取消/手动补拍 -->
     <div v-if="mode === 'scroll'" class="ctrl-bar" role="toolbar" :aria-label="t('screenshot.scrolling.title')">
       <div class="frame-counter" :title="t('screenshot.scrolling.frames', { count: frameCount })">
-        <span class="fc-ring"><span class="fc-dot" aria-hidden="true"></span></span>
-        <span class="fc-label"><b>{{ paddedCount }}</b>&nbsp;{{ t('screenshot.scrolling.unit') }}</span>
+        <span class="fc-ring" :class="{ lost: !matchOk }"><span class="fc-dot" aria-hidden="true"></span></span>
+        <span class="fc-label">
+          <b>{{ stitchedHeightLabel }}</b>
+          <span v-if="!matchOk" class="fc-lost">&nbsp;{{ t('screenshot.scrolling.matchLostShort') }}</span>
+        </span>
       </div>
 
       <span class="cb-divider" aria-hidden="true"></span>
 
-      <button class="cb-btn cb-primary" type="button" :disabled="working" @click="captureFrame">
+      <button class="cb-btn" type="button" :disabled="working" @click="captureFrame">
         {{ t('screenshot.scrolling.capture') }}
-        <kbd>SPACE</kbd>
       </button>
-      <button class="cb-btn cb-tonal" type="button" :disabled="working" @click="finish">
+      <button class="cb-btn cb-primary" type="button" :disabled="working" @click="finish">
         {{ t('screenshot.scrolling.finish') }}
-        <kbd>ENTER</kbd>
       </button>
       <button class="cb-btn cb-ghost" type="button" :aria-label="t('screenshot.scrolling.cancel')" :disabled="working" @click="cancel">
         {{ t('common.cancel') }}
-        <kbd>ESC</kbd>
       </button>
-
-      <span class="cb-divider" aria-hidden="true"></span>
-
-      <div class="cb-progress" aria-hidden="true">
-        <span v-for="i in 3" :key="i" class="seg" :class="{ filled: i <= Math.min(frameCount, 3) }"></span>
-        <span class="seg-label">{{ Math.min(frameCount, 3) }}/3</span>
-      </div>
     </div>
 
     <!-- 录屏控制条 -->
     <div v-else-if="mode === 'record'" class="ctrl-bar" role="toolbar" :aria-label="t('screenshot.record.recording')">
       <span class="rec-indicator" :title="t('screenshot.record.maxDuration')">
-        <span class="rec-dot" aria-hidden="true"></span>
-        <span class="rec-label">REC</span>
+        <span class="rec-dot" :class="{ paused: paused }" aria-hidden="true"></span>
+        <span class="rec-label">{{ paused ? 'PAUSE' : 'REC' }}</span>
         <span class="rec-elapsed">{{ elapsedLabel }}</span>
       </span>
+      <button class="cb-btn cb-tonal" type="button" :disabled="working" @click="togglePause">
+        <v-icon :icon="paused ? mdiPlayCircleOutline : mdiPauseCircleOutline" size="17" aria-hidden="true" />
+        {{ paused ? t('screenshot.record.resume') : t('screenshot.record.pause') }}
+      </button>
       <button class="cb-btn cb-stop" type="button" :disabled="working" @click="stop">
         <v-icon :icon="mdiStopCircleOutline" size="17" aria-hidden="true" />
         {{ t('screenshot.record.stop') }}
@@ -48,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { mdiStopCircleOutline } from '@mdi/js'
+import { mdiPauseCircleOutline, mdiPlayCircleOutline, mdiStopCircleOutline } from '@mdi/js'
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -59,6 +56,7 @@ import {
   screenshotScrollFinish,
   screenshotToolbarInfo,
   stopRegionRecord,
+  toggleRegionRecordPause,
 } from '@/api/screenshot'
 
 const { t } = useI18n()
@@ -66,24 +64,34 @@ const window_ = getCurrentWindow()
 
 const mode = ref<'scroll' | 'record' | ''>('')
 const frameCount = ref(0)
+const stitchedHeight = ref(0)
+const matchOk = ref(true)
 const working = ref(false)
 const errorText = ref('')
 const elapsedMs = ref(0)
+const paused = ref(false)
 let maxDurationMs = 0
 let recordStartAt = 0
+let pausedMs = 0
+let pauseAnchor = 0
 let tickTimer: number | null = null
 let errorTimer: number | null = null
 let stopping = false
+let autoStopFired = false
 const unlisteners: UnlistenFn[] = []
 
-const paddedCount = computed(() => frameCount.value.toString().padStart(2, '0'))
+const stitchedHeightLabel = computed(() =>
+  t('screenshot.scrolling.height', { height: stitchedHeight.value })
+)
 
-function showError(message: string) {
+function showError(message: string, sticky = false) {
   errorText.value = message
   if (errorTimer) window.clearTimeout(errorTimer)
-  errorTimer = window.setTimeout(() => {
-    errorText.value = ''
-  }, 3000)
+  if (!sticky) {
+    errorTimer = window.setTimeout(() => {
+      errorText.value = ''
+    }, 3000)
+  }
 }
 
 const elapsedLabel = computed(() => {
@@ -101,8 +109,8 @@ async function closeSelf() {
   }
 }
 
-// 同一按键会走两条通路：窗口内 keydown + 后端注册的全局快捷键事件。
-// 按动作类型做时间闩锁去重，避免一次 Space 捕两帧（不同动作之间互不影响）。
+// 同一按键会走两条通路：窗口内 keydown + 按钮点击。
+// 按动作类型做时间闩锁去重，避免一次操作触发两次。
 const lastActionAt: Record<string, number> = {}
 
 function isDuplicateAction(action: string) {
@@ -153,6 +161,16 @@ async function cancel() {
   }
 }
 
+async function togglePause() {
+  if (mode.value !== 'record' || working.value) return
+  if (isDuplicateAction('pause')) return
+  try {
+    paused.value = await toggleRegionRecordPause()
+  } catch (err) {
+    showError(t('screenshot.record.failed', { message: String(err) }))
+  }
+}
+
 async function stop() {
   if (mode.value !== 'record' || working.value || stopping) return
   stopping = true
@@ -168,6 +186,7 @@ async function stop() {
 }
 
 function onKeyDown(event: KeyboardEvent) {
+  // 仅在本窗口持有焦点时生效（点击底层应用后焦点离开，全局不再吞键）
   if (mode.value === 'scroll') {
     if (event.code === 'Space') {
       event.preventDefault()
@@ -192,19 +211,32 @@ async function initFromBackend() {
     mode.value = info.mode === 'scroll' || info.mode === 'record' ? info.mode : ''
     frameCount.value = info.frameCount
     maxDurationMs = info.maxDurationMs
+    paused.value = info.paused
     stopping = false
+    autoStopFired = false
     working.value = false
     if (tickTimer) {
       window.clearInterval(tickTimer)
       tickTimer = null
     }
     if (info.mode === 'record') {
-      recordStartAt = Date.now()
-      elapsedMs.value = 0
+      // 用后端起始时刻对表，避免窗口复用导致计时漂移
+      recordStartAt = info.startedAtMs > 0 ? info.startedAtMs : Date.now()
+      pausedMs = 0
+      pauseAnchor = 0
       tickTimer = window.setInterval(() => {
-        elapsedMs.value = Date.now() - recordStartAt
-        if (maxDurationMs > 0 && elapsedMs.value >= maxDurationMs) {
-          // 后端 10 分钟自动停止；此处兜底触发一次 stop
+        const now = Date.now()
+        // 有效录制时长 = 墙钟时长 - 暂停累计（与后端视频时间轴一致）
+        if (paused.value) {
+          if (pauseAnchor === 0) pauseAnchor = now
+        } else if (pauseAnchor > 0) {
+          pausedMs += now - pauseAnchor
+          pauseAnchor = 0
+        }
+        elapsedMs.value = Math.max(0, now - recordStartAt - pausedMs)
+        if (!autoStopFired && maxDurationMs > 0 && elapsedMs.value >= maxDurationMs) {
+          // 到达最长时长：由这里触发 stop 命令统一收尾（后端只兜底停线程）
+          autoStopFired = true
           stop()
         }
       }, 250)
@@ -223,22 +255,24 @@ onMounted(async () => {
   if (mode.value === '') return
 
   unlisteners.push(
-    await listen<string>('scroll-hotkey', event => {
-      const action = event.payload
-      if (action === 'capture') captureFrame()
-      else if (action === 'finish') finish()
-      else if (action === 'cancel') cancel()
-    })
-  )
-  unlisteners.push(
-    await listen<{ frameCount: number }>('scroll-frame', event => {
-      frameCount.value = event.payload.frameCount
-    })
+    await listen<{ frameCount: number; stitchedHeight: number; matchOk: boolean }>(
+      'scroll-frame',
+      event => {
+        frameCount.value = event.payload.frameCount
+        stitchedHeight.value = event.payload.stitchedHeight
+        matchOk.value = event.payload.matchOk
+      }
+    )
   )
   unlisteners.push(
     await listen<{ ok: boolean; path?: string; message?: string }>('record-finished', event => {
       if (!event.payload.ok) {
-        showError(t('screenshot.record.failed', { message: event.payload.message ?? '' }))
+        // 录制线程失败：先让用户看到错误，再自动 stop 收尾（join 已死线程很快，
+        // 同时清理状态，保证下一次还能开始录制）
+        showError(t('screenshot.record.failed', { message: event.payload.message ?? '' }), true)
+        window.setTimeout(() => {
+          void stop()
+        }, 2500)
       }
     })
   )
@@ -298,11 +332,20 @@ onUnmounted(() => {
   border: 1px solid rgba(53, 116, 240, 0.55);
 }
 
+.fc-ring.lost {
+  background: rgba(211, 47, 47, 0.2);
+  border-color: rgba(211, 47, 47, 0.6);
+}
+
 .fc-dot {
   width: 6px;
   height: 6px;
   border-radius: 999px;
   background: #539bf5;
+}
+
+.fc-ring.lost .fc-dot {
+  background: #ff5252;
 }
 
 .fc-label {
@@ -313,6 +356,11 @@ onUnmounted(() => {
 .fc-label b {
   color: #fff;
   font-weight: 700;
+}
+
+.fc-lost {
+  color: #ff8a80;
+  font-weight: 600;
 }
 
 .cb-divider {
@@ -338,14 +386,6 @@ onUnmounted(() => {
   transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
 }
 
-.cb-btn kbd {
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.5);
-  font: 700 9px/1.5 var(--jedi-font-mono, monospace);
-}
-
 .cb-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
@@ -368,11 +408,6 @@ onUnmounted(() => {
   box-shadow: 0 4px 12px rgba(53, 116, 240, 0.4);
 }
 
-.cb-primary kbd {
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
-}
-
 .cb-primary:hover:not(:disabled) {
   background: #2f68e0;
   color: #fff;
@@ -383,11 +418,6 @@ onUnmounted(() => {
   color: #fff;
 }
 
-.cb-tonal kbd {
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.6);
-}
-
 .cb-stop {
   background: linear-gradient(135deg, rgba(211, 47, 47, 0.95), rgba(183, 28, 28, 0.95));
   color: #fff;
@@ -396,31 +426,6 @@ onUnmounted(() => {
 
 .cb-stop:hover:not(:disabled) {
   background: linear-gradient(135deg, rgba(229, 57, 53, 1), rgba(198, 40, 40, 1));
-}
-
-/* 拼接进度段：3 段蓝色小条 */
-.cb-progress {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 0 8px 0 2px;
-}
-
-.seg {
-  width: 20px;
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.seg.filled {
-  background: #3574f0;
-}
-
-.seg-label {
-  margin-left: 3px;
-  font: 400 9px var(--jedi-font-mono, monospace);
-  color: rgba(255, 255, 255, 0.5);
 }
 
 .rec-indicator {
@@ -438,6 +443,12 @@ onUnmounted(() => {
   background: #ff5252;
   box-shadow: 0 0 8px rgba(255, 82, 82, 0.8);
   animation: rec-pulse 1.2s ease-in-out infinite;
+}
+
+.rec-dot.paused {
+  background: #ffc107;
+  box-shadow: 0 0 8px rgba(255, 193, 7, 0.8);
+  animation: none;
 }
 
 .rec-label {

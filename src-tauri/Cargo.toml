@@ -78,6 +78,14 @@ tauri-plugin-updater = "2"
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.26"
 
-# 录屏时把覆盖窗口排除出系统捕获（WDA_EXCLUDEFROMCAPTURE），避免边框入镜
+# 录屏时把覆盖窗口排除出系统捕获（WDA_EXCLUDEFROMCAPTURE），避免边框入镜；
+# hosts 写入被拒（os error 5）时用 ShellExecuteExW(runas) 一次性提权
 [target.'cfg(target_os = "windows")'.dependencies]
-windows-sys = { version = "0.59", features = ["Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.59", features = [
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_UI_Shell",
+  # 0.59 里 SHELLEXECUTEINFOW 本体被门在这个 feature 后面
+  "Win32_System_Registry",
+  "Win32_System_Threading",
+  "Win32_Foundation",
+] }

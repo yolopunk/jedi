@@ -545,8 +545,8 @@ impl HostsMcpServer {
 
     let new_content = new_lines.join("\n") + "\n";
 
-    // 写入文件
-    std::fs::write(HOSTS_PATH, new_content)
+    // 写入文件（无权限时走 UAC 一次性提权，与主界面行为一致）
+    crate::api::hosts::write_hosts_content(&new_content, true)
       .map_err(|e| McpError::Io(format!("Failed to write hosts file: {}", e)))?;
 
     Ok(())

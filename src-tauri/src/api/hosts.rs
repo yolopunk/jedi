@@ -13,6 +13,19 @@ pub const HOSTS_PATH: &str = if cfg!(any(target_os = "linux", target_os = "macos
   "/etc/hosts"
 };
 
+/// 统一的 hosts 写入：先按当前权限直接写；被拒绝访问且允许提权时，
+/// 走 UAC 一次性提权（见 hosts_elevate）。写入失败必须回传给前端：
+/// 静默吞掉会让界面谎报「已生效」。
+pub(crate) fn write_hosts_content(content: &str, elevate: bool) -> Result<(), String> {
+  match std::fs::write(HOSTS_PATH, content) {
+    Ok(()) => Ok(()),
+    Err(e) if elevate && crate::api::hosts_elevate::is_access_denied(&e) => {
+      crate::api::hosts_elevate::write_elevated(content)
+    }
+    Err(e) => Err(format!("写入 hosts 文件失败（可能需要管理员权限）: {}", e)),
+  }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HostEntry {
   pub ip: String,
@@ -191,15 +204,41 @@ pub async fn update_hosts_with_groups(
 
   let new_content = new_lines.join("\n") + "\n";
 
-  // 写入失败必须回传：静默吞掉会让前端以为已经生效（例如没有管理员权限时）
-  std::fs::write(HOSTS_PATH, new_content)
-    .map_err(|e| format!("写入 hosts 文件失败（可能需要管理员权限）: {}", e))?;
+  // 写入失败必须回传：静默吞掉会让前端以为已经生效（例如没有管理员权限时）。
+  // 无权限时 write_hosts_content 会转 UAC 一次性提权（阻塞等待），放 spawn_blocking。
+  tokio::task::spawn_blocking(move || write_hosts_content(&new_content, true))
+    .await
+    .map_err(|e| format!("写入任务异常退出: {}", e))??;
 
   Ok("Hosts updated successfully".to_string())
 }
 
 #[tauri::command]
-pub fn revert_hosts() -> Result<String, String> {
+pub async fn revert_hosts() -> Result<String, String> {
+  // 没有 Jedi 段时无话可写，保持原有返回文案
+  let Some(content) = build_revert_content()? else {
+    return Ok("No Jedi section found in hosts file.".to_string());
+  };
+
+  // 写入可能触发 UAC 一次性提权（阻塞等待），放 spawn_blocking
+  tokio::task::spawn_blocking(move || write_hosts_content(&content, true))
+    .await
+    .map_err(|e| format!("写入任务异常退出: {}", e))??;
+
+  Ok("Hosts entries disabled successfully.".to_string())
+}
+
+/// 退出收尾（main.rs RunEvent::ExitRequested）专用：同步、尽力而为，
+/// 不提权（不能每次退出都弹 UAC），失败由调用方记录。
+pub fn revert_hosts_quiet() -> Result<(), String> {
+  let Some(content) = build_revert_content()? else {
+    return Ok(());
+  };
+  write_hosts_content(&content, false)
+}
+
+/// 读取系统 hosts 并把 Jedi 管理段整体注释掉；没有 Jedi 段时返回 None（无需写入）。
+fn build_revert_content() -> Result<Option<String>, String> {
   // 读取hosts文件
   let hosts_content = std::fs::read_to_string(HOSTS_PATH)
     .map_err(|e| format!("读取 hosts 文件失败（可能需要管理员权限）: {}", e))?;
@@ -235,7 +274,7 @@ pub fn revert_hosts() -> Result<String, String> {
 
   // 如果没有找到Jedi部分，直接返回
   if jedi_section_lines.is_empty() {
-    return Ok("No Jedi section found in hosts file.".to_string());
+    return Ok(None);
   }
 
   // 处理Jedi部分，确保所有hosts条目都被注释
@@ -274,13 +313,8 @@ pub fn revert_hosts() -> Result<String, String> {
     }
   }
 
-  // 写入新的hosts文件（失败必须回传，否则界面会谎报「已禁用」）
-  let new_content = new_lines.join("\n");
-
-  std::fs::write(HOSTS_PATH, new_content)
-    .map_err(|e| format!("写入 hosts 文件失败（可能需要管理员权限）: {}", e))?;
-
-  Ok("Hosts entries disabled successfully.".to_string())
+  // 写入新的hosts文件（失败必须回传，否则界面会谎报「已禁用」——由调用方保证）
+  Ok(Some(new_lines.join("\n")))
 }
 
 #[tauri::command]
@@ -308,8 +342,8 @@ fn flush_group(
 #[tauri::command]
 pub fn read_system_hosts() -> Result<Vec<GroupHosts>, String> {
   // 读取系统hosts文件
-  let hosts_content = std::fs::read_to_string(HOSTS_PATH)
-    .map_err(|e| format!("读取 hosts 文件失败: {}", e))?;
+  let hosts_content =
+    std::fs::read_to_string(HOSTS_PATH).map_err(|e| format!("读取 hosts 文件失败: {}", e))?;
 
   Ok(parse_hosts_groups(&hosts_content))
 }

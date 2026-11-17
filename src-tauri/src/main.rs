@@ -57,8 +57,9 @@ use crate::api::screenshot::{
   get_capture_hotkey, list_screenshots, read_image_data_url, screenshot_begin, screenshot_cancel,
   screenshot_copy_file, screenshot_delete, screenshot_finish, screenshot_frame_info,
   screenshot_import, screenshot_open_file, screenshot_pin_file, screenshot_pin_take,
-  screenshot_save_styled, screenshot_scroll_begin, screenshot_scroll_cancel, screenshot_scroll_capture,
-  screenshot_scroll_finish, screenshot_toolbar_info, set_capture_hotkey, ScreenshotState,
+  screenshot_save_styled, screenshot_scroll_begin, screenshot_scroll_cancel,
+  screenshot_scroll_capture, screenshot_scroll_finish, screenshot_toolbar_info, set_capture_hotkey,
+  ScreenshotState,
 };
 use crate::api::screenshot_ocr::{screenshot_copy_text, screenshot_ocr};
 use crate::api::screenshot_record::{
@@ -94,6 +95,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   if std::env::args().any(|a| a == "--mcp-server") {
     crate::mcp::server::run_stdio_server();
     return Ok(());
+  }
+
+  // hosts 一次性提权写入：写 hosts 被拒（os error 5）时，主进程用
+  // ShellExecuteExW(runas) 以管理员重启自身并携带 `--hosts-write <tmp>`；
+  // 子进程在这里、任何初始化（含 single-instance）之前完成写入即退出。
+  if let Some(code) = crate::api::hosts_elevate::handle_hosts_write_cli() {
+    std::process::exit(code);
   }
 
   let _logger_guard = logger::init();
@@ -420,7 +428,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       crate::api::screenshot_record::shutdown(_app_handle);
       crate::api::screenshot::teardown_all(_app_handle);
 
-      if let Err(e) = revert_hosts() {
+      // 退出收尾只做尽力而为的还原：不提权（不能每次退出都弹 UAC），失败仅记录
+      if let Err(e) = crate::api::hosts::revert_hosts_quiet() {
         eprintln!("failed to revert hosts on exit: {}", e);
       }
     }

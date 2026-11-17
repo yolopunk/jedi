@@ -254,10 +254,8 @@ async fn fetch_pay_info(channel_link: &str) -> Option<PayInfo> {
     .await
     .ok()?;
 
-  let re = Regex::new(
-    r#"(?s)<script id="__NEXT_DATA__" type="application/json">(.*?)</script>"#,
-  )
-  .ok()?;
+  let re =
+    Regex::new(r#"(?s)<script id="__NEXT_DATA__" type="application/json">(.*?)</script>"#).ok()?;
   let json: serde_json::Value = serde_json::from_str(re.captures(&html)?.get(1)?.as_str()).ok()?;
   let podcast = json.pointer("/props/pageProps/podcast")?;
 

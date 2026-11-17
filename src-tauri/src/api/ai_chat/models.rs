@@ -110,7 +110,6 @@ pub trait ModelProvider: Send + Sync {
 
   /// 发送聊天请求（非流式）
   async fn chat(&self, request: ChatRequest) -> Result<ChatResponse, String>;
-
 }
 
 // ========== OpenAI 提供商 ==========
@@ -536,7 +535,6 @@ pub async fn send_chat_message(
 
   provider_instance.chat(request).await
 }
-
 
 #[cfg(test)]
 mod tests {

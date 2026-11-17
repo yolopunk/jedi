@@ -239,7 +239,14 @@ mod tests {
       .iter()
       .map(|t| t["name"].as_str().unwrap())
       .collect();
-    for expected in ["memory_recall", "memory_list", "web_search", "web_fetch", "hosts_read", "skills_list"] {
+    for expected in [
+      "memory_recall",
+      "memory_list",
+      "web_search",
+      "web_fetch",
+      "hosts_read",
+      "skills_list",
+    ] {
       assert!(names.contains(&expected), "missing tool: {expected}");
     }
   }

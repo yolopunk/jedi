@@ -119,7 +119,9 @@ pub async fn agent_proc_spawn(
     .stderr(std::process::Stdio::piped())
     .kill_on_drop(true);
 
-  let mut child: Child = cmd.spawn().map_err(|e| format!("failed to spawn agent {} ({}): {e}", spec.exe, spec.kind))?;
+  let mut child: Child = cmd
+    .spawn()
+    .map_err(|e| format!("failed to spawn agent {} ({}): {e}", spec.exe, spec.kind))?;
   let stdin = child.stdin.take().ok_or("no stdin pipe")?;
   let stdout = child.stdout.take().ok_or("no stdout pipe")?;
   let stderr = child.stderr.take().ok_or("no stderr pipe")?;
@@ -168,7 +170,13 @@ pub async fn agent_proc_spawn(
     let _ = on_event.send(json!({ "type": "exit", "code": code }));
   });
 
-  procs.insert(id, ProcHandle { stdin: Mutex::new(stdin), supervisor });
+  procs.insert(
+    id,
+    ProcHandle {
+      stdin: Mutex::new(stdin),
+      supervisor,
+    },
+  );
   Ok(())
 }
 
@@ -179,7 +187,9 @@ pub async fn agent_proc_stdin(
   state: tauri::State<'_, ProcManState>,
 ) -> Result<(), String> {
   let procs = state.0.lock().await;
-  let handle = procs.get(&id).ok_or_else(|| format!("no such process: {id}"))?;
+  let handle = procs
+    .get(&id)
+    .ok_or_else(|| format!("no such process: {id}"))?;
   let mut stdin = handle.stdin.lock().await;
   let map = |e: std::io::Error| format!("failed to write to agent stdin: {e}");
   stdin.write_all(line.as_bytes()).await.map_err(map)?;
@@ -243,7 +253,11 @@ mod launcher_tests {
       .output()
       .await
       .unwrap();
-    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+      output.status.success(),
+      "{}",
+      String::from_utf8_lossy(&output.stderr)
+    );
     assert_eq!(
       String::from_utf8_lossy(&output.stdout).trim(),
       "hello world"

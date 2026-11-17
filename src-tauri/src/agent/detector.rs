@@ -27,22 +27,74 @@ pub struct AgentDef {
 
 /// Mainstream subset of Magpie's supported agents (docs §3.2).
 pub const AGENTS: &[AgentDef] = &[
-  AgentDef { id: "claude-code", display_name: "Claude Code", binaries: &["claude"] },
-  AgentDef { id: "codex", display_name: "Codex", binaries: &["codex"] },
-  AgentDef { id: "pi", display_name: "pi", binaries: &["pi"] },
-  AgentDef { id: "gemini-cli", display_name: "Gemini CLI", binaries: &["gemini"] },
-  AgentDef { id: "qwen-code", display_name: "Qwen Code", binaries: &["qwen"] },
-  AgentDef { id: "cursor-cli", display_name: "Cursor CLI", binaries: &["cursor-agent"] },
-  AgentDef { id: "opencode", display_name: "OpenCode", binaries: &["opencode"] },
-  AgentDef { id: "crush", display_name: "Crush", binaries: &["crush"] },
-  AgentDef { id: "goose", display_name: "Goose", binaries: &["goose"] },
-  AgentDef { id: "droid", display_name: "Droid", binaries: &["droid"] },
-  AgentDef { id: "kimi-code", display_name: "Kimi Code", binaries: &["kimi"] },
+  AgentDef {
+    id: "claude-code",
+    display_name: "Claude Code",
+    binaries: &["claude"],
+  },
+  AgentDef {
+    id: "codex",
+    display_name: "Codex",
+    binaries: &["codex"],
+  },
+  AgentDef {
+    id: "pi",
+    display_name: "pi",
+    binaries: &["pi"],
+  },
+  AgentDef {
+    id: "gemini-cli",
+    display_name: "Gemini CLI",
+    binaries: &["gemini"],
+  },
+  AgentDef {
+    id: "qwen-code",
+    display_name: "Qwen Code",
+    binaries: &["qwen"],
+  },
+  AgentDef {
+    id: "cursor-cli",
+    display_name: "Cursor CLI",
+    binaries: &["cursor-agent"],
+  },
+  AgentDef {
+    id: "opencode",
+    display_name: "OpenCode",
+    binaries: &["opencode"],
+  },
+  AgentDef {
+    id: "crush",
+    display_name: "Crush",
+    binaries: &["crush"],
+  },
+  AgentDef {
+    id: "goose",
+    display_name: "Goose",
+    binaries: &["goose"],
+  },
+  AgentDef {
+    id: "droid",
+    display_name: "Droid",
+    binaries: &["droid"],
+  },
+  AgentDef {
+    id: "kimi-code",
+    display_name: "Kimi Code",
+    binaries: &["kimi"],
+  },
   // Antigravity CLI's binary is `agy`. NOTE: an `antigravity` binary on PATH
   // is the Antigravity IDE launcher (VS Code fork: diff/merge/goto flags) —
   // probing that name yields a false positive, verified on a real machine.
-  AgentDef { id: "antigravity", display_name: "Antigravity CLI", binaries: &["agy"] },
-  AgentDef { id: "zcode", display_name: "ZCode", binaries: &["zcode"] },
+  AgentDef {
+    id: "antigravity",
+    display_name: "Antigravity CLI",
+    binaries: &["agy"],
+  },
+  AgentDef {
+    id: "zcode",
+    display_name: "ZCode",
+    binaries: &["zcode"],
+  },
 ];
 
 const CACHE_TTL: Duration = Duration::from_secs(24 * 3600);
@@ -102,7 +154,9 @@ pub struct DetectorState {
 
 impl DetectorState {
   pub fn new() -> Self {
-    Self { cache: Mutex::new(None) }
+    Self {
+      cache: Mutex::new(None),
+    }
   }
 }
 
@@ -131,15 +185,30 @@ struct ProbePlan {
 // A macro (not a fn) so `&[cf!(..)]` is promoted to a `'static` slice.
 macro_rules! cf {
   ($key:expr, $dir_env:expr, $dir:expr, $file:expr) => {
-    ConfFile { key: $key, dir_env: $dir_env, dir: $dir, file: $file }
+    ConfFile {
+      key: $key,
+      dir_env: $dir_env,
+      dir: $dir,
+      file: $file,
+    }
   };
 }
 
 fn probe_plan(agent: &str) -> Option<ProbePlan> {
   Some(match agent {
     "claude-code" => ProbePlan {
-      read: &[cf!("settings", Some("CLAUDE_CONFIG_DIR"), ".claude", "settings.json")],
-      sized: &[cf!("credentials", Some("CLAUDE_CONFIG_DIR"), ".claude", ".credentials.json")],
+      read: &[cf!(
+        "settings",
+        Some("CLAUDE_CONFIG_DIR"),
+        ".claude",
+        "settings.json"
+      )],
+      sized: &[cf!(
+        "credentials",
+        Some("CLAUDE_CONFIG_DIR"),
+        ".claude",
+        ".credentials.json"
+      )],
       auth_env: &[
         "ANTHROPIC_API_KEY",
         "ANTHROPIC_AUTH_TOKEN",
@@ -157,11 +226,26 @@ fn probe_plan(agent: &str) -> Option<ProbePlan> {
     },
     "pi" => ProbePlan {
       read: &[
-        cf!("settings", Some("PI_CODING_AGENT_DIR"), ".pi/agent", "settings.json"),
+        cf!(
+          "settings",
+          Some("PI_CODING_AGENT_DIR"),
+          ".pi/agent",
+          "settings.json"
+        ),
         // auth.json is parsed only to count its provider entries.
-        cf!("auth", Some("PI_CODING_AGENT_DIR"), ".pi/agent", "auth.json"),
+        cf!(
+          "auth",
+          Some("PI_CODING_AGENT_DIR"),
+          ".pi/agent",
+          "auth.json"
+        ),
       ],
-      sized: &[cf!("models", Some("PI_CODING_AGENT_DIR"), ".pi/agent", "models.json")],
+      sized: &[cf!(
+        "models",
+        Some("PI_CODING_AGENT_DIR"),
+        ".pi/agent",
+        "models.json"
+      )],
       auth_env: &[
         "ANTHROPIC_API_KEY",
         "OPENAI_API_KEY",
@@ -199,14 +283,29 @@ fn probe_plan(agent: &str) -> Option<ProbePlan> {
     },
     "opencode" => ProbePlan {
       read: &[
-        cf!("config", Some("XDG_CONFIG_HOME"), ".config", "opencode/opencode.json"),
-        cf!("configc", Some("XDG_CONFIG_HOME"), ".config", "opencode/opencode.jsonc"),
+        cf!(
+          "config",
+          Some("XDG_CONFIG_HOME"),
+          ".config",
+          "opencode/opencode.json"
+        ),
+        cf!(
+          "configc",
+          Some("XDG_CONFIG_HOME"),
+          ".config",
+          "opencode/opencode.jsonc"
+        ),
       ],
       sized: &[],
       auth_env: &[],
       model_env: &["OPENCODE_MODEL"],
     },
-    "antigravity" => ProbePlan { read: &[], sized: &[], auth_env: &[], model_env: &[] },
+    "antigravity" => ProbePlan {
+      read: &[],
+      sized: &[],
+      auth_env: &[],
+      model_env: &[],
+    },
     _ => return None,
   })
 }
@@ -223,11 +322,16 @@ struct Facts {
 
 impl Facts {
   fn any_env(&self, names: &[&str]) -> Option<String> {
-    names.iter().find(|n| self.env_set.iter().any(|s| s == *n)).map(|s| s.to_string())
+    names
+      .iter()
+      .find(|n| self.env_set.iter().any(|s| s == *n))
+      .map(|s| s.to_string())
   }
   fn json(&self, key: &str) -> Option<serde_json::Value> {
     let text = self.files.get(key)?;
-    serde_json::from_str(text).ok().or_else(|| serde_json::from_str(&strip_jsonc(text)).ok())
+    serde_json::from_str(text)
+      .ok()
+      .or_else(|| serde_json::from_str(&strip_jsonc(text)).ok())
   }
 }
 
@@ -255,7 +359,11 @@ fn strip_jsonc(text: &str) -> String {
 
 fn clean_model(name: Option<&str>) -> Option<String> {
   let name = name?.trim();
-  if name.is_empty() || name == "unknown" { None } else { Some(name.to_string()) }
+  if name.is_empty() || name == "unknown" {
+    None
+  } else {
+    Some(name.to_string())
+  }
 }
 
 /// Top-level TOML string value (before the first table header).
@@ -280,7 +388,10 @@ fn toml_kv(line: &str, key: &str) -> Option<String> {
 
 /// `[profiles.<name>]` (or `[profiles."<name>"]`) table value.
 fn toml_profile_string(content: &str, profile: &str, key: &str) -> Option<String> {
-  let headers = [format!("[profiles.{profile}]"), format!("[profiles.\"{profile}\"]")];
+  let headers = [
+    format!("[profiles.{profile}]"),
+    format!("[profiles.\"{profile}\"]"),
+  ];
   let mut inside = false;
   for line in content.lines() {
     let t = line.trim();
@@ -315,10 +426,18 @@ fn configured_model(agent: &str, content: &str) -> Option<String> {
     .and_then(|v| v.as_str())
     .or_else(|| json.get("model").and_then(|v| v.as_str()))
     .or_else(|| json.pointer("/model/name").and_then(|v| v.as_str()))
-    .or_else(|| json.pointer("/env/ANTHROPIC_MODEL").and_then(|v| v.as_str()))
+    .or_else(|| {
+      json
+        .pointer("/env/ANTHROPIC_MODEL")
+        .and_then(|v| v.as_str())
+    })
     .map(str::to_owned);
   // pi stores provider and model separately; show "provider/model".
-  let pick = match (agent, pick, json.get("defaultProvider").and_then(|v| v.as_str())) {
+  let pick = match (
+    agent,
+    pick,
+    json.get("defaultProvider").and_then(|v| v.as_str()),
+  ) {
     ("pi", Some(m), Some(p)) if !m.contains('/') && !p.is_empty() => Some(format!("{p}/{m}")),
     (_, m, _) => m,
   };
@@ -338,7 +457,13 @@ fn conf_file_label(plan: &ProbePlan, key: &str) -> String {
     .read
     .iter()
     .find(|f| f.key == key)
-    .map(|f| format!("{}/{}", f.dir.trim_start_matches('.').trim_start_matches('/'), f.file))
+    .map(|f| {
+      format!(
+        "{}/{}",
+        f.dir.trim_start_matches('.').trim_start_matches('/'),
+        f.file
+      )
+    })
     .map(|p| format!("~/.{p}"))
     .unwrap_or_else(|| key.to_string())
 }
@@ -360,7 +485,9 @@ fn assess(agent: &str, plan: &ProbePlan, facts: &Facts) -> Readiness {
       if f.key == "auth" {
         continue;
       }
-      let Some(text) = facts.files.get(f.key) else { continue };
+      let Some(text) = facts.files.get(f.key) else {
+        continue;
+      };
       if let Some(m) = configured_model(agent, text) {
         default_model = Some(m);
         model_source = match (agent, toml_top_string(text, "profile")) {
@@ -418,17 +545,30 @@ fn assess(agent: &str, plan: &ProbePlan, facts: &Facts) -> Readiness {
       let settings_env = settings
         .as_ref()
         .and_then(|s| s.get("env"))
-        .map(|e| ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"].iter().any(|k| e.get(*k).is_some()))
+        .map(|e| {
+          ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"]
+            .iter()
+            .any(|k| e.get(*k).is_some())
+        })
         .unwrap_or(false);
-      let helper = settings.as_ref().map(|s| s.get("apiKeyHelper").is_some()).unwrap_or(false);
+      let helper = settings
+        .as_ref()
+        .map(|s| s.get("apiKeyHelper").is_some())
+        .unwrap_or(false);
       if size("credentials") > 2 || settings_env || helper || facts.any_env(plan.auth_env).is_some()
       {
         ready(None)
       } else if cfg!(target_os = "macos") {
         // macOS keeps the OAuth token in the Keychain: not checkable here.
-        unknown("登录状态保存在系统钥匙串中，将在首次运行时确认", "如未登录，请在终端运行 claude 并执行 /login")
+        unknown(
+          "登录状态保存在系统钥匙串中，将在首次运行时确认",
+          "如未登录，请在终端运行 claude 并执行 /login",
+        )
       } else {
-        needs("未找到 Claude Code 登录凭据", "在终端运行 claude 并执行 /login，或设置 ANTHROPIC_API_KEY")
+        needs(
+          "未找到 Claude Code 登录凭据",
+          "在终端运行 claude 并执行 /login，或设置 ANTHROPIC_API_KEY",
+        )
       }
     }
     "codex" => {
@@ -441,7 +581,10 @@ fn assess(agent: &str, plan: &ProbePlan, facts: &Facts) -> Readiness {
       if size("auth") > 2 || custom_provider || facts.any_env(plan.auth_env).is_some() {
         ready(None)
       } else {
-        needs("未找到 Codex 登录凭据", "在终端运行 codex login，或设置 OPENAI_API_KEY")
+        needs(
+          "未找到 Codex 登录凭据",
+          "在终端运行 codex login，或设置 OPENAI_API_KEY",
+        )
       }
     }
     "pi" => {
@@ -488,7 +631,10 @@ fn assess(agent: &str, plan: &ProbePlan, facts: &Facts) -> Readiness {
       if facts.any_env(plan.auth_env).is_some() {
         ready(None)
       } else {
-        unknown("无法离线确认 Cursor CLI 登录状态", "如未登录，请在终端运行 cursor-agent login")
+        unknown(
+          "无法离线确认 Cursor CLI 登录状态",
+          "如未登录，请在终端运行 cursor-agent login",
+        )
       }
     }
     _ => unknown("该 Agent 暂未适配", "请选择其他 Agent"),
@@ -525,11 +671,16 @@ fn wsl_readiness_script(exe: &str, plan: &ProbePlan) -> String {
     s.push_str(&format!("[ -n \"${{{v}:-}}\" ] && echo 'E|{v}'\n"));
   }
   for v in plan.model_env {
-    s.push_str(&format!("[ -n \"${{{v}:-}}\" ] && printf 'V|{v}|%s\\n' \"${{{v}}}\"\n"));
+    s.push_str(&format!(
+      "[ -n \"${{{v}:-}}\" ] && printf 'V|{v}|%s\\n' \"${{{v}}}\"\n"
+    ));
   }
   for f in plan.sized {
     let p = bash_path(f);
-    s.push_str(&format!("[ -f {p} ] && printf 'S|{}|%s\\n' \"$(wc -c < {p})\"\n", f.key));
+    s.push_str(&format!(
+      "[ -f {p} ] && printf 'S|{}|%s\\n' \"$(wc -c < {p})\"\n",
+      f.key
+    ));
   }
   for f in plan.read {
     let p = bash_path(f);
@@ -554,11 +705,16 @@ fn parse_readiness_output(text: &str) -> Facts {
         facts.env_vals.insert(name.to_string(), v.to_string());
       }
       (Some("S"), Some(key), Some(n)) => {
-        facts.sizes.insert(key.to_string(), n.trim().parse().unwrap_or(0));
+        facts
+          .sizes
+          .insert(key.to_string(), n.trim().parse().unwrap_or(0));
       }
       (Some("R"), Some(key), Some(b64)) => {
         if let Ok(bytes) = base64::engine::general_purpose::STANDARD.decode(b64.trim()) {
-          facts.files.insert(key.to_string(), String::from_utf8_lossy(&bytes).into_owned());
+          facts.files.insert(
+            key.to_string(),
+            String::from_utf8_lossy(&bytes).into_owned(),
+          );
         }
       }
       _ => {}
@@ -569,14 +725,19 @@ fn parse_readiness_output(text: &str) -> Facts {
 
 async fn gather_facts(plan: &ProbePlan, spec: &SpawnSpec) -> Facts {
   if spec.kind == "wsl" {
-    let Some(distro) = spec.distro.as_deref() else { return Facts::default() };
+    let Some(distro) = spec.distro.as_deref() else {
+      return Facts::default();
+    };
     let mut cmd = Command::new("wsl.exe");
     cmd.args(["-d", distro, "--exec", "bash", "-lc"]);
     cmd.arg(wsl_readiness_script(&spec.exe, plan));
     return match run_capture(&mut cmd, HOST_PROBE_TIMEOUT).await {
       Ok(text) => parse_readiness_output(&text),
       // A probe failure is not proof the path is gone; keep it usable.
-      Err(_) => Facts { exe_exists: true, ..Facts::default() },
+      Err(_) => Facts {
+        exe_exists: true,
+        ..Facts::default()
+      },
     };
   }
   let mut facts = Facts {
@@ -628,8 +789,10 @@ async fn probe_readiness(agent: String, spec: SpawnSpec) -> Readiness {
 fn decode_console_output(bytes: &[u8]) -> String {
   let nul_count = bytes.iter().filter(|&&b| b == 0).count();
   if bytes.len() > 4 && nul_count > bytes.len() / 8 {
-    let units: Vec<u16> =
-      bytes.chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).collect();
+    let units: Vec<u16> = bytes
+      .chunks_exact(2)
+      .map(|c| u16::from_le_bytes([c[0], c[1]]))
+      .collect();
     String::from_utf16_lossy(&units)
   } else {
     String::from_utf8_lossy(bytes).into_owned()
@@ -653,7 +816,12 @@ async fn run_capture(cmd: &mut Command, t: Duration) -> Result<String, String> {
 }
 
 fn first_line(text: &str) -> String {
-  text.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or("").to_string()
+  text
+    .lines()
+    .map(str::trim)
+    .find(|l| !l.is_empty())
+    .unwrap_or("")
+    .to_string()
 }
 
 fn shquote(s: &str) -> String {
@@ -700,7 +868,11 @@ fn parse_probe_output(host: &str, text: &str) -> Vec<(String, String, SpawnSpec)
         }
       }
       let spec = SpawnSpec {
-        kind: if host.starts_with("wsl:") { "wsl".into() } else { "unix".into() },
+        kind: if host.starts_with("wsl:") {
+          "wsl".into()
+        } else {
+          "unix".into()
+        },
         distro: host.strip_prefix("wsl:").map(str::to_string),
         exe: path.to_string(),
       };
@@ -717,14 +889,18 @@ async fn probe_unix_host(host: &str) -> Vec<(String, String, SpawnSpec)> {
   let script = unix_probe_script();
   let mut cmd = Command::new(&shell);
   cmd.arg("-lc").arg(&script);
-  let text = run_capture(&mut cmd, HOST_PROBE_TIMEOUT).await.unwrap_or_default();
+  let text = run_capture(&mut cmd, HOST_PROBE_TIMEOUT)
+    .await
+    .unwrap_or_default();
   parse_probe_output(host, &text)
 }
 
 async fn list_wsl_distros() -> Vec<String> {
   let mut cmd = Command::new("wsl.exe");
   cmd.args(["-l", "-q"]);
-  let text = run_capture(&mut cmd, WSL_ENUM_TIMEOUT).await.unwrap_or_default();
+  let text = run_capture(&mut cmd, WSL_ENUM_TIMEOUT)
+    .await
+    .unwrap_or_default();
   text
     .lines()
     .map(|l| l.trim().trim_end_matches('\u{0}').trim())
@@ -746,7 +922,9 @@ async fn probe_wsl_distro(distro: &str) -> Vec<(String, String, SpawnSpec)> {
     .arg("bash")
     .arg("-lc")
     .arg(unix_probe_script());
-  let text = run_capture(&mut cmd, HOST_PROBE_TIMEOUT).await.unwrap_or_default();
+  let text = run_capture(&mut cmd, HOST_PROBE_TIMEOUT)
+    .await
+    .unwrap_or_default();
   parse_probe_output(&host, &text)
 }
 
@@ -913,8 +1091,7 @@ async fn probe_version(spec: SpawnSpec) -> Option<String> {
   let mut cmd = match spec.kind.as_str() {
     "wsl" => {
       let mut c = Command::new("wsl.exe");
-      c
-        .arg("-d")
+      c.arg("-d")
         .arg(spec.distro.as_deref().unwrap_or_default())
         .arg("--exec")
         .arg("bash")
@@ -935,7 +1112,11 @@ async fn probe_version(spec: SpawnSpec) -> Option<String> {
   };
   let text = run_capture(&mut cmd, VERSION_TIMEOUT).await.ok()?;
   let line = first_line(&text);
-  if line.is_empty() { None } else { Some(line.chars().take(120).collect()) }
+  if line.is_empty() {
+    None
+  } else {
+    Some(line.chars().take(120).collect())
+  }
 }
 
 /// Detect every mainstream agent across all hosts. Results are cached for
@@ -1006,7 +1187,10 @@ pub async fn detect_agents(
     readiness.push(handle.await.ok());
   }
   for ((agent_id, host, spec), ready) in raw.into_iter().zip(readiness) {
-    let version = versions.get(&(agent_id.clone(), spec.exe.clone())).cloned().flatten();
+    let version = versions
+      .get(&(agent_id.clone(), spec.exe.clone()))
+      .cloned()
+      .flatten();
     let ready = ready.unwrap_or(Readiness {
       status: "unknown",
       reason: None,
@@ -1030,8 +1214,10 @@ pub async fn detect_agents(
     }
   }
 
-  let result =
-    DetectionResult { reports, duration_ms: started.elapsed().as_millis() as u64 };
+  let result = DetectionResult {
+    reports,
+    duration_ms: started.elapsed().as_millis() as u64,
+  };
   *state.cache.lock().await = Some((Instant::now(), result.clone()));
   Ok(result)
 }
@@ -1047,13 +1233,19 @@ mod model_tests {
       Some("my-model".into())
     );
     assert_eq!(
-      configured_model("pi", r#"{"defaultProvider":"anthropic","defaultModel":"m"}"#),
+      configured_model(
+        "pi",
+        r#"{"defaultProvider":"anthropic","defaultModel":"m"}"#
+      ),
       Some("anthropic/m".into())
     );
     assert_eq!(
-      configured_model("codex", "model = \"gpt-test\"
+      configured_model(
+        "codex",
+        "model = \"gpt-test\"
 [profiles.other]
-model = \"other\""),
+model = \"other\""
+      ),
       Some("gpt-test".into())
     );
     assert_eq!(
@@ -1071,10 +1263,13 @@ model = \"gpt-fast\""
       Some("gemini-test".into())
     );
     assert_eq!(
-      configured_model("opencode", "{
+      configured_model(
+        "opencode",
+        "{
   // comment
   \"model\": \"anthropic/x\"
-}"),
+}"
+      ),
       Some("anthropic/x".into())
     );
     assert_eq!(configured_model("pi", "{}"), None);
@@ -1082,14 +1277,18 @@ model = \"gpt-fast\""
   }
 
   fn facts() -> Facts {
-    Facts { exe_exists: true, ..Facts::default() }
+    Facts {
+      exe_exists: true,
+      ..Facts::default()
+    }
   }
 
   #[test]
   fn env_model_beats_config() {
     let plan = probe_plan("claude-code").unwrap();
     let mut f = facts();
-    f.files.insert("settings".into(), r#"{"model":"opus"}"#.into());
+    f.files
+      .insert("settings".into(), r#"{"model":"opus"}"#.into());
     f.env_vals.insert("ANTHROPIC_MODEL".into(), "sonnet".into());
     let r = assess("claude-code", &plan, &f);
     assert_eq!(r.default_model.as_deref(), Some("sonnet"));
@@ -1149,11 +1348,13 @@ model = \"gpt-fast\""
     // Credential files are sized, never read.
     assert!(script.contains("wc -c < \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json\""));
     assert!(!script.contains("base64 -w0 \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json"));
-    let f = parse_readiness_output("X|1
+    let f = parse_readiness_output(
+      "X|1
 E|ANTHROPIC_API_KEY
 S|credentials|0
 R|settings|e30=
-");
+",
+    );
     assert!(f.exe_exists);
     assert_eq!(f.files.get("settings").map(String::as_str), Some("{}"));
   }

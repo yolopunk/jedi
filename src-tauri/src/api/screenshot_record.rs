@@ -5,8 +5,8 @@
 // stop + join 干净收尾并产出文件，不泄漏线程。
 
 use crate::api::screenshot::{
-  clamp_crop_rect, keep_selection_overlay, screenshots_dir, session_monitor_geometry,
-  show_toolbar, teardown_all, timestamped_filename, TOOLBAR_LABEL,
+  clamp_crop_rect, keep_selection_overlay, screenshots_dir, session_monitor_geometry, show_toolbar,
+  teardown_all, timestamped_filename, TOOLBAR_LABEL,
 };
 use serde::Serialize;
 use std::fs;

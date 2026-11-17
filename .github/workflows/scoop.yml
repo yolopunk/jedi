@@ -1,0 +1,96 @@
+name: Scoop Manifest
+
+# 每次正式发布后，把 bucket/jedi.json 的 version / url / hash 刷新并提交回主干，
+# 这样新用户 `scoop install jedi/jedi` 拿到的就是最新版本；
+# 已安装用户的 `scoop update jedi` 由清单里的 checkver + autoupdate 自己处理。
+#
+# 注意：release.yml 的矩阵任务会先把 release 建出来再逐个上传安装包，
+# 因此这里要等 Windows 安装包到位，不能假设 release published 时资产已经齐了。
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish, e.g. 0.9.2 (defaults to the latest release)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scoop-manifest
+  cancel-in-progress: false
+
+jobs:
+  update-manifest:
+    # 预发布（prerelease）不进 bucket
+    if: github.event_name != 'release' || github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      INPUT_VERSION: ${{ inputs.version }}
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          version="${INPUT_VERSION:-${RELEASE_TAG:-}}"
+          version="${version#v}"
+          if [ -z "$version" ]; then
+            version=$(gh api "repos/${{ github.repository }}/releases/latest" --jq .tag_name)
+            version="${version#v}"
+          fi
+          if [ -z "$version" ]; then
+            echo "Could not resolve the release version." >&2
+            exit 1
+          fi
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for the Windows installer asset
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          asset="Jedi_${VERSION}_x64-setup.exe"
+          for attempt in $(seq 1 40); do
+            if gh release view "v${VERSION}" --json assets --jq '.assets[].name' | grep -qx "$asset"; then
+              echo "Found $asset."
+              exit 0
+            fi
+            echo "Waiting for $asset to be uploaded (attempt ${attempt}/40)..."
+            sleep 30
+          done
+          echo "Timed out waiting for $asset." >&2
+          exit 1
+
+      - name: Refresh bucket manifest
+        run: node scripts/scoop-manifest.mjs --version "${{ steps.version.outputs.value }}"
+
+      - name: Commit manifest
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          if git diff --quiet -- bucket/jedi.json; then
+            echo "bucket/jedi.json is already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add bucket/jedi.json
+          git commit -m "chore(scoop): update manifest to v${VERSION}"
+          git push origin "HEAD:${{ github.event.repository.default_branch }}"

@@ -1,0 +1,56 @@
+{
+  "##": [
+    "Jedi 的 Scoop 清单。本仓库本身就是 bucket（清单放在 bucket/ 目录下）：",
+    "  scoop bucket add jedi https://github.com/yolopunk/jedi",
+    "  scoop install jedi/jedi",
+    "也可以不加 bucket，直接从 URL 装一次：",
+    "  scoop install https://raw.githubusercontent.com/yolopunk/jedi/main/bucket/jedi.json",
+    "发布新版本后执行 `pnpm scoop:manifest`（CI 里由 .github/workflows/scoop.yml 自动执行）刷新 version/url/hash。",
+    "安装方式：Scoop 不跑 NSIS 安装器，而是用 7-Zip 把安装器里打包的程序文件直接解到 $dir——",
+    "因此是便携版：不写注册表、不建卸载项、Post-install 才由 Scoop 生成 shim 和开始菜单快捷方式。"
+  ],
+  "version": "0.9.1",
+  "description": "Local-first developer toolbox: hosts manager, knowledge wallpapers, podcasts, screenshot tool and AI chat.",
+  "homepage": "https://github.com/yolopunk/jedi",
+  "license": "MIT",
+  "depends": "7zip",
+  "notes": [
+    "Jedi is installed as a portable copy: no NSIS installer, no registry entries.",
+    "7-Zip is pulled in as a dependency because the program files are unpacked from the official installer.",
+    "Run `jedi` in a terminal, or launch it from the Start Menu.",
+    "Upgrade with `scoop update jedi`, remove with `scoop uninstall jedi`.",
+    "The in-app updater targets the installer/MSI builds - with Scoop, prefer `scoop update jedi`."
+  ],
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/yolopunk/jedi/releases/download/v0.9.1/Jedi_0.9.1_x64-setup.exe",
+      "hash": "sha256:a81f89a0bbbe43c2923a614a4e6bc82a0ee21ef6ba10cedede90e837d942c61f"
+    }
+  },
+  "pre_install": [
+    "Expand-7zipArchive \"$dir\\$fname\" -DestinationPath \"$dir\" -Removal",
+    "Remove-Item -Path (Join-Path $dir '$PLUGINSDIR') -Recurse -Force -ErrorAction SilentlyContinue"
+  ],
+  "bin": [
+    [
+      "Jedi.exe",
+      "jedi"
+    ]
+  ],
+  "shortcuts": [
+    [
+      "Jedi.exe",
+      "Jedi"
+    ]
+  ],
+  "checkver": {
+    "github": "https://github.com/yolopunk/jedi"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/yolopunk/jedi/releases/download/v$version/Jedi_$version_x64-setup.exe"
+      }
+    }
+  }
+}

@@ -172,11 +172,33 @@ Hosts switching · AI chat · Skills · Knowledge wallpapers · Podcasts · Smar
 
 **[Download from GitHub Releases](https://github.com/yolopunk/jedi/releases/latest)**
 
-Windows `.msi` · macOS `.dmg` · Linux `.AppImage` / `.deb`
+Windows `.msi` / Scoop · macOS `.dmg` · Linux `.AppImage` / `.deb`
 
 Install and go — no extra configuration needed
 
 </div>
+
+### Windows: install with Scoop
+
+```powershell
+scoop bucket add jedi https://github.com/yolopunk/jedi
+scoop install jedi/jedi
+```
+
+Upgrade with `scoop update jedi`, remove with `scoop uninstall jedi`.
+
+> Scoop installs a portable copy: the program files packed inside the official installer are extracted
+> straight into the Scoop directory — no registry entries, no uninstall entry, no admin rights needed.
+> Upgrade with `scoop update jedi`; the in-app updater targets the installer builds and is best avoided
+> for Scoop installs.
+> Adding the bucket clones this whole repository (~90 MB with screenshots and docs); for a quick try,
+> install straight from the manifest URL below instead.
+
+One-off install without adding the bucket:
+
+```powershell
+scoop install https://raw.githubusercontent.com/yolopunk/jedi/main/bucket/jedi.json
+```
 
 ### Build from source
 

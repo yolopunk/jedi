@@ -172,11 +172,30 @@ Hosts 切换 · AI 对话 · 技能系统 · 知识壁纸 · 播客 · 智能截
 
 **[从 GitHub Releases 下载](https://github.com/yolopunk/jedi/releases/latest)**
 
-Windows `.msi` · macOS `.dmg` · Linux `.AppImage` / `.deb`
+Windows `.msi` / Scoop · macOS `.dmg` · Linux `.AppImage` / `.deb`
 
 下载安装后开箱即用，无需额外配置
 
 </div>
+
+### Windows：Scoop 安装
+
+```powershell
+scoop bucket add jedi https://github.com/yolopunk/jedi
+scoop install jedi/jedi
+```
+
+用 `scoop update jedi` 升级、`scoop uninstall jedi` 卸载。
+
+> Scoop 装的是便携版：直接把官方安装包里打包的程序文件解到 Scoop 目录，不写注册表、不建卸载项，也不需要管理员权限。
+> 升级请走 `scoop update jedi`；应用内更新面向安装版（`.msi` / 安装程序），Scoop 版里不建议使用。
+> 加 bucket 会完整克隆本仓库（含截图等，约 90 MB）；只想先试试可以直接用下面的 URL 方式。
+
+只想装一次、不想加 bucket 也可以：
+
+```powershell
+scoop install https://raw.githubusercontent.com/yolopunk/jedi/main/bucket/jedi.json
+```
 
 ### 从源码构建
 

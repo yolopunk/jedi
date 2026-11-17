@@ -174,6 +174,15 @@ pnpm release [major|minor|patch|x.y.z]  # 自动更新版本号并创建Git标�
 - src-tauri/Cargo.toml (version)
 - src-tauri/Cargo.lock (dependency sync)
 
+### Scoop 清单
+```bash
+pnpm scoop:manifest          # 按 tauri.conf.json 的版本刷新 bucket/jedi.json 的 version/url/hash
+pnpm scoop:manifest --check  # 只校验清单是否落后（CI 可用）
+```
+`bucket/jedi.json` 让本仓库同时充当 Scoop bucket（`scoop bucket add jedi https://github.com/yolopunk/jedi`）。
+清单不跑 NSIS 安装器：`pre_install` 用 7-Zip 把安装器里打包的文件解到 `$dir`，配合 `bin` / `shortcuts` 变成便携安装。
+发布新版本后 `.github/workflows/scoop.yml` 会自动刷新并提交该文件，手工补版本时用上面的命令。
+
 ### 代码质量
 ```bash
 cargo check          # 检查Rust代码
@@ -205,8 +214,9 @@ cargo test           # 运行Rust测试
 
 3. **发布产物**:
    - macOS: .dmg 安装包
-   - Windows: .msi 安装包
+   - Windows: .msi 安装包、NSIS 安装包（`Jedi_<version>_x64-setup.exe`）
    - Linux: .AppImage 和 .deb 包
+   - Scoop: `bucket/jedi.json` 清单（Windows 便携安装方式，release 发布后由 **scoop.yml** 自动刷新并提交）
 
 4. **签名**: 使用 Tauri 签名密钥（通过 GitHub Secrets 配置）
 

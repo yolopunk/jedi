@@ -76,9 +76,10 @@
           </div>
         </div>
 
-        <!-- 远程 URL 数据源 -->
+        <!-- 远程 URL 数据源（v-show 而非 v-if：v-if 新插入的元素会被
+             expand-transition 量到高度 0 而永久不可见，见 EpisodeShowNotes 的用法） -->
         <v-expand-transition>
-          <div v-if="sourceType === 'url'" class="form-group">
+          <div v-show="sourceType === 'url'" class="form-group">
             <label class="form-label">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2"/>
@@ -102,7 +103,7 @@
 
         <!-- 手动输入数据源 -->
         <v-expand-transition>
-          <div v-if="sourceType === 'manual'" class="form-group">
+          <div v-show="sourceType === 'manual'" class="form-group">
             <label class="form-label">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5"/>

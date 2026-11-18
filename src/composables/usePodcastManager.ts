@@ -1,8 +1,10 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   fetchEpisodes,
   getSubscriptions,
-  importOpml,
+  type OpmlImportFailure,
+  type OpmlImportResult,
   type PodcastEpisode,
   type PodcastSubscription,
   refreshSubscription,
@@ -13,6 +15,7 @@ import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import { useSnackbar } from '@/composables/useSnackbar'
 
 export function usePodcastManager() {
+  const { t } = useI18n()
   const subscriptions = ref<PodcastSubscription[]>([])
   const currentSub = ref<PodcastSubscription | null>(null)
   const episodes = ref<PodcastEpisode[]>([])
@@ -51,8 +54,12 @@ export function usePodcastManager() {
   const showShowNotesDialog = ref(false)
   const currentShowNotesEpisode = ref<PodcastEpisode | null>(null)
 
-  const opmlFile = ref<File | File[] | null>(null)
-  const opmlError = ref('')
+  // OPML 导入结果反馈
+  const showImportReport = ref(false)
+  const importFailures = ref<OpmlImportFailure[]>([])
+  const importAddedCount = ref(0)
+  // 手动补订：失败条目带回填 URL 重新打开添加对话框
+  const retryUrl = ref('')
 
   async function loadSubscriptions() {
     try {
@@ -191,47 +198,42 @@ export function usePodcastManager() {
   }
 
   function resetAddDialog() {
-    opmlFile.value = null
-    opmlError.value = ''
+    retryUrl.value = ''
   }
 
-  async function importOpmlFile() {
-    opmlError.value = ''
-    let file: File | null = null
-
-    if (Array.isArray(opmlFile.value)) {
-      if (opmlFile.value.length > 0) {
-        file = opmlFile.value[0]
-      }
-    } else {
-      file = opmlFile.value
-    }
-
-    if (!file) {
-      opmlError.value = 'Please select a file'
-      return
-    }
-
-    if (!file.name.endsWith('.opml') && !file.name.endsWith('.xml')) {
-      opmlError.value = 'Only .opml or .xml files are supported'
-      return
-    }
-
-    addLoading.value = true
+  /** 添加对话框确认了一个解析成功的订阅：入库并选中 */
+  async function confirmAddSubscription(sub: PodcastSubscription) {
     try {
-      const text = await file.text()
-      if (text.length === 0) {
-        throw new Error('File is empty')
-      }
-      subscriptions.value = await importOpml(text)
-      notify('Import successful', 'success')
-      closeAddDialog()
+      subscriptions.value = await saveSubscription(sub)
+      notify(t('podcast.subscribed', { title: sub.title }), 'success')
+      selectSubscription(sub)
     } catch (e: unknown) {
-      console.error('Import failed:', e)
-      notify(`Import failed: ${e instanceof Error ? e.message : e}`, 'error')
-    } finally {
-      addLoading.value = false
+      notify(`Failed to subscribe: ${e instanceof Error ? e.message : e}`, 'error')
     }
+  }
+
+  /** OPML 导入完成（AddSubscriptionDialog 的 imported 事件） */
+  function handleImportResult(result: OpmlImportResult) {
+    // 先算新增数，再覆盖列表
+    const before = new Set(subscriptions.value.map(s => s.rss_url))
+    importAddedCount.value = result.subscriptions.filter(s => !before.has(s.rss_url)).length
+    subscriptions.value = result.subscriptions
+    importFailures.value = result.failures
+
+    if (importFailures.value.length > 0) {
+      showImportReport.value = true
+    } else if (importAddedCount.value > 0) {
+      notify(t('podcast.importAdded', { n: importAddedCount.value }), 'success')
+    } else {
+      notify(t('podcast.importNothingNew'), 'info')
+    }
+  }
+
+  /** 失败条目「手动添加」：关报告、开添加框并回填链接 */
+  function retryFailure(failure: OpmlImportFailure) {
+    showImportReport.value = false
+    retryUrl.value = failure.xml_url
+    showAddDialog.value = true
   }
 
   async function unsubscribe(sub: PodcastSubscription) {
@@ -311,14 +313,16 @@ export function usePodcastManager() {
     libraryRefreshLoading,
     showShowNotesDialog,
     currentShowNotesEpisode,
-    opmlFile,
-    opmlError,
     snackbar,
     snackbarText,
     snackbarColor,
     // Audio
     currentPlaying,
     currentPlayingSubUrl,
+    showImportReport,
+    importFailures,
+    importAddedCount,
+    retryUrl,
     // Actions
     loadSubscriptions,
     selectSubscription,
@@ -332,7 +336,9 @@ export function usePodcastManager() {
     refreshLibrary,
     openAddDialog,
     closeAddDialog,
-    importOpmlFile,
+    confirmAddSubscription,
+    handleImportResult,
+    retryFailure,
     unsubscribe,
     formatMonth,
     formatDay,

@@ -48,7 +48,7 @@
             </button>
             <button type="button" class="header-primary-btn" @click="openAddDialog">
               <v-icon :icon="mdiPlus" size="16" aria-hidden="true" />
-              <span>{{ $t('podcast.addShow') }}</span>
+              <span>{{ $t('podcast.addSubscription') }}</span>
             </button>
           </div>
         </div>
@@ -91,40 +91,22 @@
       </div>
     </div>
 
-    <!-- Add Subscription Dialog -->
-    <v-dialog v-model="showAddDialog" max-width="500" persistent>
-      <v-card class="scifi-card">
-        <v-card-title class="console-title-bar">
-          <span class="dialog-title">{{ $t('podcast.importOpml') }}</span>
-        </v-card-title>
-        <v-card-text class="console-card-text">
-          <div class="dialog-instruction mb-3">{{ $t('podcast.selectOpml') }}</div>
-          <div class="input-wrapper">
-            <v-file-input
-              v-model="opmlFile"
-              class="console-file-input"
-              :label="$t('podcast.opmlFile')"
-              variant="plain"
-              density="compact"
-              accept=".opml,.xml"
-              :error-messages="opmlError"
-              hide-details
-            ></v-file-input>
-          </div>
-          <OpmlExportGuide />
-        </v-card-text>
-        <v-card-actions class="console-card-actions">
-          <v-spacer></v-spacer>
-          <button class="console-btn" @click="closeAddDialog" :disabled="addLoading">
-            <span class="btn-text">{{ $t('common.cancel') }}</span>
-          </button>
-          <button class="console-btn primary" @click="importOpmlFile" :disabled="addLoading">
-            <span class="btn-text" v-if="!addLoading">{{ $t('podcast.import') }}</span>
-            <span class="btn-text" v-else>{{ $t('podcast.importing') }}</span>
-          </button>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+    <!-- Add Subscription Dialog (paste link / OPML) -->
+    <AddSubscriptionDialog
+      v-model="showAddDialog"
+      :subscriptions="subscriptions"
+      :initial-url="retryUrl"
+      @resolved="confirmAddSubscription"
+      @imported="handleImportResult"
+    />
+
+    <!-- OPML Import Report Dialog -->
+    <ImportReportDialog
+      v-model="showImportReport"
+      :added-count="importAddedCount"
+      :failures="importFailures"
+      @retry="retryFailure"
+    />
 
     <!-- Show Notes Dialog -->
     <v-dialog
@@ -192,37 +174,19 @@
       </div>
     </v-dialog>
 
-    <v-snackbar
-      v-model="snackbar"
-      :color="snackbarColor"
-      :scrim="false"
-      timeout="3000"
-      location="top"
-      class="console-snackbar"
-    >
-      <div class="snackbar-content">
-        <span class="snackbar-text">{{ snackbarText }}</span>
-      </div>
-    </v-snackbar>
-
     <AppNotification />
   </div>
 </template>
 
 <script setup lang="ts">
 import { mdiArrowLeft, mdiMagnify, mdiPlus, mdiPodcast } from '@mdi/js'
-import { useI18n } from 'vue-i18n'
-import { importOpml } from '@/api/podcast'
 import AppNotification from '@/components/common/AppNotification.vue'
+import AddSubscriptionDialog from '@/components/podcast/AddSubscriptionDialog.vue'
 import EpisodeShowNotes from '@/components/podcast/EpisodeShowNotes.vue'
-import OpmlExportGuide from '@/components/podcast/OpmlExportGuide.vue'
-import { useAppNotification } from '@/composables/useAppNotification'
+import ImportReportDialog from '@/components/podcast/ImportReportDialog.vue'
 import { usePodcastManager } from '@/composables/usePodcastManager'
 import PodcastDetail from './PodcastDetail.vue'
 import PodcastLibrary from './PodcastLibrary.vue'
-
-const { t } = useI18n()
-const { notify } = useAppNotification()
 
 // biome-ignore lint/correctness/noUnusedVariables: false positive
 const {
@@ -236,16 +200,14 @@ const {
   episodesLoadMoreTrigger,
   currentView,
   showAddDialog,
-  addLoading,
   refreshLoading,
   libraryRefreshLoading,
   showShowNotesDialog,
   currentShowNotesEpisode,
-  opmlFile,
-  opmlError,
-  snackbar,
-  snackbarText,
-  snackbarColor,
+  showImportReport,
+  importFailures,
+  importAddedCount,
+  retryUrl,
   currentPlaying,
   currentPlayingSubUrl,
   selectSubscription,
@@ -258,55 +220,13 @@ const {
   refreshSub,
   refreshLibrary,
   openAddDialog,
-  closeAddDialog,
+  confirmAddSubscription,
+  handleImportResult,
+  retryFailure,
   unsubscribe,
   formatMonth,
   formatDay,
 } = usePodcastManager()
-
-async function importOpmlFile() {
-  opmlError.value = ''
-  let file: File | null = null
-
-  if (Array.isArray(opmlFile.value)) {
-    if (opmlFile.value.length > 0) {
-      file = opmlFile.value[0]
-    }
-  } else {
-    file = opmlFile.value
-  }
-
-  if (!file) {
-    opmlError.value = 'Please select a file'
-    return
-  }
-
-  if (!file.name.endsWith('.opml') && !file.name.endsWith('.xml')) {
-    opmlError.value = 'Only .opml or .xml files are supported'
-    return
-  }
-
-  addLoading.value = true
-  const countBefore = subscriptions.value.length
-  try {
-    const text = await file.text()
-    if (text.length === 0) {
-      throw new Error('File is empty')
-    }
-    subscriptions.value = await importOpml(text)
-    const added = Math.max(subscriptions.value.length - countBefore, 0)
-    notify(t('podcast.importAdded', { n: added }), 'success')
-    closeAddDialog()
-  } catch (e: unknown) {
-    console.error('Import failed:', e)
-    notify(
-      t('podcast.importFailed', { message: e instanceof Error ? e.message : String(e) }),
-      'error'
-    )
-  } finally {
-    addLoading.value = false
-  }
-}
 </script>
 
 <style scoped>
@@ -417,17 +337,5 @@ async function importOpmlFile() {
   border-color: var(--accent-hover);
 }
 
-/* Snackbar */
-.console-snackbar :deep(.v-snackbar__wrapper) {
-  background:rgb(var(--ink-rgb) / 0.9) !important;
-  border: 1px solid rgb(var(--accent-rgb) / 0.2);
-}
-
-.snackbar-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-}
+/* Dialogs */
 </style>

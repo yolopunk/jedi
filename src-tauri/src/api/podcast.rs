@@ -46,6 +46,21 @@ pub struct EpisodesPayload {
   pub paid_episode_count: u32,
 }
 
+/// 单条导入失败明细：标题 + OPML 里的 xmlUrl + 原因，供前端展示和重试
+#[derive(Debug, Serialize, Clone)]
+pub struct OpmlImportFailure {
+  pub title: String,
+  pub xml_url: String,
+  pub error: String,
+}
+
+/// import_opml 的返回体：完整订阅列表 + 失败明细（原来失败是静默跳过的）
+#[derive(Debug, Serialize)]
+pub struct OpmlImportResult {
+  pub subscriptions: Vec<PodcastSubscription>,
+  pub failures: Vec<OpmlImportFailure>,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PodcastSubscription {
   pub title: String,
@@ -204,11 +219,15 @@ fn parse_episodes_from_channel(channel: &Channel) -> Vec<PodcastEpisode> {
     .collect()
 }
 
+/// 抓 RSS 用的 UA：不少 CDN/播客平台会拦截非浏览器 UA（403），统一用浏览器 UA
+const BROWSER_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
+     (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
 async fn fetch_rss_content(url: &str) -> Result<Channel, String> {
-  let client = Client::new();
+  let client = Client::builder().timeout(Duration::from_secs(20)).build().map_err(|e| e.to_string())?;
   let res = client
     .get(url)
-    .header("User-Agent", "Jedi/1.0")
+    .header("User-Agent", BROWSER_UA)
     .send()
     .await
     .map_err(|e| e.to_string())?;
@@ -242,11 +261,7 @@ async fn fetch_pay_info(channel_link: &str) -> Option<PayInfo> {
 
   let html = client
     .get(format!("https://www.xiaoyuzhoufm.com/podcast/{pid}"))
-    .header(
-      "User-Agent",
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 \
-       (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    )
+    .header("User-Agent", BROWSER_UA)
     .send()
     .await
     .ok()?
@@ -417,14 +432,19 @@ pub async fn remove_subscription(
 pub async fn import_opml(
   app: AppHandle,
   opml_content: String,
-) -> Result<Vec<PodcastSubscription>, String> {
+) -> Result<OpmlImportResult, String> {
   println!("Importing OPML content length: {}", opml_content.len());
 
   let outline_re = Regex::new(r#"<outline[^>]+>"#).map_err(|e| e.to_string())?;
   let xml_url_re = Regex::new(r#"xmlUrl=(?:"([^"]*)"|'([^']*)')"#).unwrap();
+  let title_re = Regex::new(r#"(?:text|title)=(?:"([^"]*)"|'([^']*)')"#).unwrap();
 
   let mut current_subs = get_subscriptions(app.clone()).await?;
-  let mut pending_fetches = Vec::new();
+  let existing: HashSet<String> = current_subs.iter().map(|s| s.rss_url.clone()).collect();
+
+  // 先收集去重后的 (title, url)，避免并发闭包借用冲突
+  let mut pending: Vec<(String, String)> = Vec::new();
+  let mut seen: HashSet<String> = existing;
 
   for cap in outline_re.captures_iter(&opml_content) {
     let tag = &cap[0];
@@ -442,35 +462,63 @@ pub async fn import_opml(
       continue;
     }
 
-    if current_subs.iter().any(|s| s.rss_url == rss_url) {
+    if seen.contains(&rss_url) {
       continue;
     }
+    seen.insert(rss_url.clone());
 
-    let rss_url_clone = rss_url.clone();
-
-    pending_fetches.push(async move {
-      match fetch_rss_channel(rss_url_clone.clone()).await {
-        Ok(s) => Some(s),
-        Err(e) => {
-          println!("Failed to import {}: {}", rss_url_clone, e);
-          None
-        }
+    let mut title = String::new();
+    if let Some(title_cap) = title_re.captures(tag) {
+      if let Some(m) = title_cap.get(1).or(title_cap.get(2)) {
+        title = m.as_str().to_string();
       }
-    });
-  }
-
-  if !pending_fetches.is_empty() {
-    let new_subs = join_all(pending_fetches).await;
-    for sub in new_subs.into_iter().flatten() {
-      current_subs.push(sub);
     }
 
-    let path = get_subscriptions_path(&app)?;
-    let content = serde_json::to_string_pretty(&current_subs).map_err(|e| e.to_string())?;
-    fs::write(path, content).map_err(|e| e.to_string())?;
+    pending.push((title, rss_url));
   }
 
-  Ok(current_subs)
+  // 并发抓取，成功的入库，失败的进 failures 反馈给前端
+  let fetches = pending.into_iter().map(|(title, rss_url)| async move {
+    match fetch_rss_channel(rss_url.clone()).await {
+      Ok(s) => (Some(s), None),
+      Err(e) => (
+        None,
+        Some(OpmlImportFailure {
+          title,
+          xml_url: rss_url,
+          error: e,
+        }),
+      ),
+    }
+  });
+
+  let mut failures = Vec::new();
+  let mut new_subs = Vec::new();
+  for (sub, failure) in join_all(fetches).await {
+    if let Some(s) = sub {
+      new_subs.push(s);
+    }
+    if let Some(f) = failure {
+      failures.push(f);
+    }
+  }
+  let added = new_subs.len();
+  current_subs.extend(new_subs);
+
+  let path = get_subscriptions_path(&app)?;
+  let content = serde_json::to_string_pretty(&current_subs).map_err(|e| e.to_string())?;
+  fs::write(path, content).map_err(|e| e.to_string())?;
+
+  println!(
+    "OPML import done: {} added, {} failed",
+    added,
+    failures.len()
+  );
+
+  Ok(OpmlImportResult {
+    subscriptions: current_subs,
+    failures,
+  })
 }
 
 // ==================== Internal Utils ====================
@@ -492,7 +540,7 @@ async fn resolve_rss_url(url: &str) -> Result<String, String> {
   let client = Client::new();
   let res = client
     .get(url)
-    .header("User-Agent", "Jedi/1.0")
+    .header("User-Agent", BROWSER_UA)
     .send()
     .await
     .map_err(|e| e.to_string())?;
@@ -522,9 +570,7 @@ async fn resolve_rss_url(url: &str) -> Result<String, String> {
 
 async fn resolve_xiaoyuzhou_rss_url(url: &str) -> Result<String, String> {
   let client = Client::new();
-  let res = client.get(url)
-        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-        .send()
+  let res = client.get(url).header("User-Agent", BROWSER_UA).send()
         .await
         .map_err(|e| format!("Request failed: {}", e))?;
 

@@ -73,6 +73,23 @@ export async function fetchEpisodes(rssUrl: string): Promise<EpisodesPayload> {
   return await invoke<EpisodesPayload>('fetch_episodes', { rssUrl })
 }
 
-export async function importOpml(opmlContent: string): Promise<PodcastSubscription[]> {
-  return await invoke<PodcastSubscription[]>('import_opml', { opmlContent })
+export async function importOpml(opmlContent: string): Promise<OpmlImportResult> {
+  return await invoke<OpmlImportResult>('import_opml', { opmlContent })
+}
+
+/** OPML 导入返回体：完整订阅列表 + 失败明细 */
+export interface OpmlImportResult {
+  subscriptions: PodcastSubscription[]
+  failures: OpmlImportFailure[]
+}
+
+export interface OpmlImportFailure {
+  title: string
+  xml_url: string
+  error: string
+}
+
+/** 添加订阅：粘贴 RSS 直链或小宇宙节目页链接均可，后端自动解析校验 */
+export async function resolveSubscription(url: string): Promise<PodcastSubscription> {
+  return await invoke<PodcastSubscription>('fetch_rss_channel', { rssUrl: url })
 }

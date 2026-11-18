@@ -62,9 +62,13 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const appVersion = ref('')
-getAppVersion().then(version => { appVersion.value = version }).catch(error => {
-  console.error('Failed to read app version:', error)
-})
+getAppVersion()
+  .then(version => {
+    appVersion.value = version
+  })
+  .catch(error => {
+    console.error('Failed to read app version:', error)
+  })
 
 // 由实际渲染画布报告失败，避免预探测成功后第二次创建上下文仍然失败。
 const webglAvailable = ref(true)

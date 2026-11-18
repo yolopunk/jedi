@@ -1,8 +1,8 @@
 import { invoke } from '@tauri-apps/api/core'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { AgentRunError, agentError } from '@/agent/hub/agentError'
 import type { AgentErrorKind } from '@/agent/hub/agentError'
+import { AgentRunError, agentError } from '@/agent/hub/agentError'
 import { driverFor } from '@/agent/hub/registry'
 import type { DriverHandle } from '@/agent/hub/types'
 import {
@@ -73,13 +73,7 @@ export interface AgentTraceDetail {
 }
 
 /** Lifecycle of one turn; every run ends in done / failed / stopped. */
-export type AgentRunPhase =
-  | 'preparing'
-  | 'submitted'
-  | 'generating'
-  | 'done'
-  | 'failed'
-  | 'stopped'
+export type AgentRunPhase = 'preparing' | 'submitted' | 'generating' | 'done' | 'failed' | 'stopped'
 
 /** An external agent with no hook activity for this long is presumed stuck. */
 const AGENT_IDLE_TIMEOUT_MS = 5 * 60 * 1000
@@ -686,171 +680,169 @@ export const useAiChatStore = defineStore('aiChat', () => {
         lastActivityAt = Date.now()
       }
       const driverHooks = withStatsHooks({
-          onModel: model => {
-            if (assistantMessage.metadata?.run) assistantMessage.metadata.run.model = model
-          },
-          onToolStart: ({ toolId, toolName, toolDescription, args, startedAt }) => {
-            const relatedDecisionTrace = [...toolDecisionTraces.values()]
-              .reverse()
-              .find(trace => trace.toolName === toolName && trace.status === 'running')
-            const traceEntry = pushTrace({
-              id: `${toolId}-${startedAt}`,
-              type: 'tool',
-              status: 'running',
-              title: `Executing ${toolName}`,
-              content: `Executing ${toolName}. ${toolDescription}`,
-              input: args,
-              timestamp: startedAt,
-              toolName,
-              toolCallId: relatedDecisionTrace?.toolCallId,
+        onModel: model => {
+          if (assistantMessage.metadata?.run) assistantMessage.metadata.run.model = model
+        },
+        onToolStart: ({ toolId, toolName, toolDescription, args, startedAt }) => {
+          const relatedDecisionTrace = [...toolDecisionTraces.values()]
+            .reverse()
+            .find(trace => trace.toolName === toolName && trace.status === 'running')
+          const traceEntry = pushTrace({
+            id: `${toolId}-${startedAt}`,
+            type: 'tool',
+            status: 'running',
+            title: `Executing ${toolName}`,
+            content: `Executing ${toolName}. ${toolDescription}`,
+            input: args,
+            timestamp: startedAt,
+            toolName,
+            toolCallId: relatedDecisionTrace?.toolCallId,
+          })
+          if (relatedDecisionTrace?.toolCallId) {
+            const traces = toolExecutionTraces.get(relatedDecisionTrace.toolCallId) || []
+            traces.push(traceEntry)
+            toolExecutionTraces.set(relatedDecisionTrace.toolCallId, traces)
+          }
+          const step = agentStore.startStep(
+            'tool',
+            `Calling ${toolName}`,
+            summarizeValue(args, 600)
+          )
+          toolStepMap.set(`${toolId}-${startedAt}`, { traceEntry, step })
+          agentStore.setStatus('executing')
+          if (assistantMessage.metadata?.run) {
+            assistantMessage.metadata.run.toolCount += 1
+          }
+        },
+        onToolEnd: ({ toolId, startedAt, output, error: toolError }) => {
+          const rec = toolStepMap.get(`${toolId}-${startedAt}`)
+          if (!rec) return
+          if (toolError) {
+            failTrace(rec.traceEntry, toolError)
+            agentStore.failStep(rec.step, toolError)
+          } else {
+            completeTrace(rec.traceEntry, output)
+            agentStore.completeStep(rec.step, summarizeValue(output, 1000))
+          }
+        },
+        onStepFinish: ({
+          stepNumber,
+          finishReason,
+          usage,
+          stepKind,
+          stepText,
+          toolCalls,
+          toolResults,
+          text,
+        }) => {
+          stepCounter += 1
+          assistantMessage.metadata!.finishReason = finishReason
+          assistantMessage.metadata!.usage = usage
+          if (assistantMessage.metadata?.run) {
+            assistantMessage.metadata.run.finishReason = finishReason
+            assistantMessage.metadata.run.usage = usage
+          }
+          if (stepText) {
+            assistantMessage.content = stepText
+            if (!streamingHasText) {
+              streamingContent.value = stepText
+            }
+          }
+          pushTrace({
+            id: nextTraceId('step'),
+            type: 'step',
+            status: 'done',
+            title: `LLM step ${stepCounter}`,
+            content: `Step ${stepCounter} finished as ${stepKind} with ${finishReason}.`,
+            output: {
+              type: stepKind,
+              finishReason,
+              usage,
+              usageSummary: summarizeUsage(usage),
+              toolCalls,
+              toolResults,
+              text,
+            },
+            timestamp: Date.now(),
+            stepIndex: currentStreamStepIndex,
+          })
+          currentStreamStepIndex = stepNumber + 2
+        },
+        onTextDelta: ({ fullContent }) => {
+          setPhase('generating')
+          streamingHasText = true
+          streamingContent.value = fullContent
+          assistantMessage.content = fullContent
+          updateTrace(answerTrace!, {
+            content: fullContent
+              ? `Streaming ${fullContent.length} chars of assistant output.`
+              : 'Streaming assistant response...',
+          })
+        },
+        onReasoningDelta: ({ fullReasoning }) => {
+          assistantMessage.metadata!.reasoning = fullReasoning
+          const now = Date.now()
+          if (
+            now - lastReasoningTraceUpdateAt > 250 ||
+            fullReasoning.length < 240 ||
+            fullReasoning.length % 320 < 40
+          ) {
+            updateTrace(reasoningTrace!, {
+              content: summarizeValue(fullReasoning, 1400),
             })
-            if (relatedDecisionTrace?.toolCallId) {
-              const traces = toolExecutionTraces.get(relatedDecisionTrace.toolCallId) || []
-              traces.push(traceEntry)
-              toolExecutionTraces.set(relatedDecisionTrace.toolCallId, traces)
-            }
-            const step = agentStore.startStep(
-              'tool',
-              `Calling ${toolName}`,
-              summarizeValue(args, 600)
-            )
-            toolStepMap.set(`${toolId}-${startedAt}`, { traceEntry, step })
-            agentStore.setStatus('executing')
-            if (assistantMessage.metadata?.run) {
-              assistantMessage.metadata.run.toolCount += 1
-            }
-          },
-          onToolEnd: ({ toolId, startedAt, output, error: toolError }) => {
-            const rec = toolStepMap.get(`${toolId}-${startedAt}`)
-            if (!rec) return
-            if (toolError) {
-              failTrace(rec.traceEntry, toolError)
-              agentStore.failStep(rec.step, toolError)
-            } else {
-              completeTrace(rec.traceEntry, output)
-              agentStore.completeStep(rec.step, summarizeValue(output, 1000))
-            }
-          },
-          onStepFinish: ({
-            stepNumber,
-            finishReason,
-            usage,
-            stepKind,
-            stepText,
-            toolCalls,
-            toolResults,
-            text,
-          }) => {
-            stepCounter += 1
-            assistantMessage.metadata!.finishReason = finishReason
-            assistantMessage.metadata!.usage = usage
-            if (assistantMessage.metadata?.run) {
-              assistantMessage.metadata.run.finishReason = finishReason
-              assistantMessage.metadata.run.usage = usage
-            }
-            if (stepText) {
-              assistantMessage.content = stepText
-              if (!streamingHasText) {
-                streamingContent.value = stepText
-              }
-            }
-            pushTrace({
-              id: nextTraceId('step'),
-              type: 'step',
-              status: 'done',
-              title: `LLM step ${stepCounter}`,
-              content: `Step ${stepCounter} finished as ${stepKind} with ${finishReason}.`,
-              output: {
-                type: stepKind,
-                finishReason,
-                usage,
-                usageSummary: summarizeUsage(usage),
-                toolCalls,
-                toolResults,
-                text,
-              },
-              timestamp: Date.now(),
-              stepIndex: currentStreamStepIndex,
-            })
-            currentStreamStepIndex = stepNumber + 2
-          },
-          onTextDelta: ({ fullContent }) => {
-            setPhase('generating')
-            streamingHasText = true
-            streamingContent.value = fullContent
-            assistantMessage.content = fullContent
-            updateTrace(answerTrace!, {
-              content: fullContent
-                ? `Streaming ${fullContent.length} chars of assistant output.`
-                : 'Streaming assistant response...',
-            })
-          },
-          onReasoningDelta: ({ fullReasoning }) => {
-            assistantMessage.metadata!.reasoning = fullReasoning
-            const now = Date.now()
-            if (
-              now - lastReasoningTraceUpdateAt > 250 ||
-              fullReasoning.length < 240 ||
-              fullReasoning.length % 320 < 40
-            ) {
-              updateTrace(reasoningTrace!, {
-                content: summarizeValue(fullReasoning, 1400),
-              })
-              lastReasoningTraceUpdateAt = now
-            }
-            if (fullReasoning.trim()) {
-              ensurePlanCompleted(summarizeValue(fullReasoning, 800))
-            }
-          },
-          onToolCall: ({ toolName, toolCallId, input }) => {
-            const decisionTrace = pushTrace({
-              id: nextTraceId('tool-call'),
-              type: 'tool',
-              status: 'running',
-              title: `Tool requested: ${toolName}`,
-              content: `Model selected ${toolName} for verification.`,
-              input,
-              timestamp: Date.now(),
-              toolName,
-              toolCallId,
-            })
-            if (toolCallId) {
-              toolDecisionTraces.set(toolCallId, decisionTrace)
-            }
-            ensurePlanCompleted('Selected a tool for verification.')
-          },
-          onToolResult: ({ toolName, toolCallId, output }) => {
-            const decisionTrace = toolCallId ? toolDecisionTraces.get(toolCallId) : undefined
-            if (decisionTrace?.status === 'running') {
-              completeTrace(decisionTrace, output)
-            }
-            const executionTrace = toolCallId
-              ? (toolExecutionTraces.get(toolCallId) || []).find(
-                  trace => trace.status === 'running'
-                )
-              : undefined
-            if (executionTrace?.status === 'running') {
-              completeTrace(executionTrace, output)
-            }
-            pushTrace({
-              id: nextTraceId('tool-result'),
-              type: 'tool',
-              status: 'done',
-              title: `Tool result received: ${toolName}`,
-              content: `Model received ${toolName} output and can continue reasoning.`,
-              output,
-              timestamp: Date.now(),
-              toolName,
-              toolCallId,
-            })
-          },
-          onFinish: ({ finishReason }) => {
-            assistantMessage.metadata!.finishReason = finishReason
-            if (assistantMessage.metadata?.run) {
-              assistantMessage.metadata.run.finishReason = finishReason
-            }
-          },
-        })
+            lastReasoningTraceUpdateAt = now
+          }
+          if (fullReasoning.trim()) {
+            ensurePlanCompleted(summarizeValue(fullReasoning, 800))
+          }
+        },
+        onToolCall: ({ toolName, toolCallId, input }) => {
+          const decisionTrace = pushTrace({
+            id: nextTraceId('tool-call'),
+            type: 'tool',
+            status: 'running',
+            title: `Tool requested: ${toolName}`,
+            content: `Model selected ${toolName} for verification.`,
+            input,
+            timestamp: Date.now(),
+            toolName,
+            toolCallId,
+          })
+          if (toolCallId) {
+            toolDecisionTraces.set(toolCallId, decisionTrace)
+          }
+          ensurePlanCompleted('Selected a tool for verification.')
+        },
+        onToolResult: ({ toolName, toolCallId, output }) => {
+          const decisionTrace = toolCallId ? toolDecisionTraces.get(toolCallId) : undefined
+          if (decisionTrace?.status === 'running') {
+            completeTrace(decisionTrace, output)
+          }
+          const executionTrace = toolCallId
+            ? (toolExecutionTraces.get(toolCallId) || []).find(trace => trace.status === 'running')
+            : undefined
+          if (executionTrace?.status === 'running') {
+            completeTrace(executionTrace, output)
+          }
+          pushTrace({
+            id: nextTraceId('tool-result'),
+            type: 'tool',
+            status: 'done',
+            title: `Tool result received: ${toolName}`,
+            content: `Model received ${toolName} output and can continue reasoning.`,
+            output,
+            timestamp: Date.now(),
+            toolName,
+            toolCallId,
+          })
+        },
+        onFinish: ({ finishReason }) => {
+          assistantMessage.metadata!.finishReason = finishReason
+          if (assistantMessage.metadata?.run) {
+            assistantMessage.metadata.run.finishReason = finishReason
+          }
+        },
+      })
       for (const key of Object.keys(driverHooks) as Array<keyof typeof driverHooks>) {
         const hook = driverHooks[key] as ((...args: any[]) => unknown) | undefined
         if (typeof hook === 'function') {
@@ -873,7 +865,9 @@ export const useAiChatStore = defineStore('aiChat', () => {
               clearInterval(watchdog)
               driverHandle.abort?.()
               driverHandle.dispose?.()
-              reject(agentError('timeout', engine.name, `no events for ${AGENT_IDLE_TIMEOUT_MS / 1000}s`))
+              reject(
+                agentError('timeout', engine.name, `no events for ${AGENT_IDLE_TIMEOUT_MS / 1000}s`)
+              )
             }, 5000)
           })
         : null

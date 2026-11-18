@@ -1,5 +1,5 @@
-import { invoke } from '@tauri-apps/api/core'
 import { mdiThemeLightDark, mdiWeatherNight, mdiWeatherSunny } from '@mdi/js'
+import { invoke } from '@tauri-apps/api/core'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useStorage } from '@/composables/useStorage'
 import { vuetify } from '@/plugins/vuetify'

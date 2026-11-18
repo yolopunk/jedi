@@ -106,7 +106,12 @@ export function parseGeminiFamilyOutput(raw: string): GeminiFamilyResult {
       0
     )
     return {
-      text: typeof doc.response === 'string' ? doc.response : typeof doc.result === 'string' ? doc.result : '',
+      text:
+        typeof doc.response === 'string'
+          ? doc.response
+          : typeof doc.result === 'string'
+            ? doc.result
+            : '',
       sessionId: typeof doc.session_id === 'string' ? doc.session_id : undefined,
       usage: statsTotal > 0 ? { totalTokens: statsTotal } : undefined,
       finishReason: 'end_turn',

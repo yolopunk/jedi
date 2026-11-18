@@ -35,14 +35,40 @@ interface Rule {
 
 // Order matters: the first matching rule wins.
 const RULES: Rule[] = [
-  { kind: 'auth', early: true, test: /waiting for (authentication|auth)|open (this|the following) (url|link)|accounts\.google\.com\/o\/oauth|device[_ ]code/i },
-  { kind: 'auth', early: true, test: /no api key found|no auth type is selected|please set an auth method|please (log ?in|sign ?in|authenticate)|run `?\S+ (auth )?login`?/i },
-  { kind: 'auth', test: /\b401\b|unauthori[sz]ed|invalid[_ ]api[_ ]key|authentication (failed|required|error)|not (logged|signed) in|token (has )?expired|oauth token|credentials? (missing|invalid|expired)/i },
-  { kind: 'quota', test: /\b429\b|rate[_ ]limit|quota|insufficient[_ ]credit|usage limit|billing|too many requests|resource_exhausted/i },
-  { kind: 'model', test: /model[^\n]{0,40}(not found|not exist|unavailable|not supported|invalid)|unknown model|no model (configured|selected|specified)|model_not_found/i },
-  { kind: 'network', test: /ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|getaddrinfo|network (error|is unreachable)|socket hang up|fetch failed|connection (refused|reset|timed out)|proxy/i },
-  { kind: 'refused', test: /\b403\b|forbidden|permission denied|not allowed|refus|overloaded|\b5\d\d\b (internal|bad gateway|service unavailable)/i },
-  { kind: 'not_found', test: /command not found|no such file or directory|program not found|is not recognized as an internal|ENOENT|cannot find (module|the file)/i },
+  {
+    kind: 'auth',
+    early: true,
+    test: /waiting for (authentication|auth)|open (this|the following) (url|link)|accounts\.google\.com\/o\/oauth|device[_ ]code/i,
+  },
+  {
+    kind: 'auth',
+    early: true,
+    test: /no api key found|no auth type is selected|please set an auth method|please (log ?in|sign ?in|authenticate)|run `?\S+ (auth )?login`?/i,
+  },
+  {
+    kind: 'auth',
+    test: /\b401\b|unauthori[sz]ed|invalid[_ ]api[_ ]key|authentication (failed|required|error)|not (logged|signed) in|token (has )?expired|oauth token|credentials? (missing|invalid|expired)/i,
+  },
+  {
+    kind: 'quota',
+    test: /\b429\b|rate[_ ]limit|quota|insufficient[_ ]credit|usage limit|billing|too many requests|resource_exhausted/i,
+  },
+  {
+    kind: 'model',
+    test: /model[^\n]{0,40}(not found|not exist|unavailable|not supported|invalid)|unknown model|no model (configured|selected|specified)|model_not_found/i,
+  },
+  {
+    kind: 'network',
+    test: /ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EAI_AGAIN|getaddrinfo|network (error|is unreachable)|socket hang up|fetch failed|connection (refused|reset|timed out)|proxy/i,
+  },
+  {
+    kind: 'refused',
+    test: /\b403\b|forbidden|permission denied|not allowed|refus|overloaded|\b5\d\d\b (internal|bad gateway|service unavailable)/i,
+  },
+  {
+    kind: 'not_found',
+    test: /command not found|no such file or directory|program not found|is not recognized as an internal|ENOENT|cannot find (module|the file)/i,
+  },
 ]
 
 const COPY: Record<AgentErrorKind, { reason: string; hint: string }> = {
@@ -87,7 +113,12 @@ export function agentError(
   reasonOverride?: string
 ): AgentRunError {
   const copy = COPY[kind]
-  return new AgentRunError(kind, `${agentName}：${reasonOverride ?? copy.reason}`, copy.hint, detail)
+  return new AgentRunError(
+    kind,
+    `${agentName}：${reasonOverride ?? copy.reason}`,
+    copy.hint,
+    detail
+  )
 }
 
 function classifyText(text: string): Rule | undefined {
@@ -129,12 +160,21 @@ export function createAgentDiagnostics(agentName: string) {
       if (rule) return agentError(rule.kind, agentName, detail(header))
       // Shell "command not found" exit codes.
       if (code === 127 || code === 9009) return agentError('not_found', agentName, detail(header))
-      return agentError('crash', agentName, detail(protocolError ? `${header}\n${protocolError}` : header))
+      return agentError(
+        'crash',
+        agentName,
+        detail(protocolError ? `${header}\n${protocolError}` : header)
+      )
     },
     /** Error reported inside the agent's own protocol stream (e.g. result.is_error). */
     protocol(message: string): AgentRunError {
       const rule = classifyText(message)
-      return agentError(rule?.kind ?? 'refused', agentName, detail(message), rule ? undefined : message)
+      return agentError(
+        rule?.kind ?? 'refused',
+        agentName,
+        detail(message),
+        rule ? undefined : message
+      )
     },
     spawn(e: unknown): AgentRunError {
       const msg = String(e)

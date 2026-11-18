@@ -131,9 +131,7 @@ import { formatTime, parseTimestamps } from '@/utils/timestampParser'
 
 const { t } = useI18n()
 
-const emit = defineEmits<{
-  (e: 'drag-state', dragging: boolean): void
-}>()
+const emit = defineEmits<(e: 'drag-state', dragging: boolean) => void>()
 
 const {
   currentPlaying,

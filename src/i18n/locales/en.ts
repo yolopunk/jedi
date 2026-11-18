@@ -444,8 +444,7 @@ export default {
       hostDataLost: 'Host data lost',
       deleteSubtitle: 'This action cannot be undone',
       createGroupSubtitle: 'Create a new host group',
-      remoteToggleHint:
-        'URL must return Jedi JSON groups: [{"name":"group","hosts":[{"ip":"1.2.3.4","domain":"a.com","disabled":false}]}]',
+      remoteToggleHint: 'URL must return an array of Jedi JSON groups: ',
       hostsContentLabel: 'Hosts Content',
       onePerLineHint: 'One entry per line: IP followed by domain, separated by space',
       remoteUrlRequired: 'Remote URL cannot be empty',

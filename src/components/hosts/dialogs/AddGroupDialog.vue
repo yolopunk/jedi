@@ -76,9 +76,8 @@
           </div>
         </div>
 
-        <!-- 远程 URL 数据源。不要给这里套 v-expand-transition：
-             transition + v-if/v-show 的组合在 Tauri 生产包里会吞元素或卡在
-             height:0（0.9.1/0.9.2 两次翻车），其他对话框均为裸 v-if，保持一致 -->
+        <!-- 远程 URL 数据源（裸 v-if：与其他对话框一致；此前的 expand-transition
+             是无关变量，真正根因是下方 hint 的 i18n 花括号插值错误） -->
         <div v-if="sourceType === 'url'" class="form-group">
           <label class="form-label">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -97,7 +96,7 @@
               @keyup.enter="confirmAdd"
             />
           </div>
-          <div class="input-hint">{{ $t('hosts.dialog.remoteToggleHint') }}</div>
+          <div class="input-hint">{{ remoteFormatHint }}</div>
         </div>
 
         <!-- 手动输入数据源 -->
@@ -169,6 +168,15 @@ const sourceTypeOptions = computed(() => [
   { value: 'manual' as const, label: t('hosts.dialog.sourceManual') },
   { value: 'url' as const, label: t('hosts.dialog.sourceUrl') },
 ])
+
+// JSON 示例绝不能放进 i18n 消息：vue-i18n 会把 {"name":...} 当插值占位符编译，
+// 生产运行时抛 CompileError 中断渲染，整个弹窗内容被剥掉
+// （0.9.1/0.9.2 「选远程 URL 后弹窗消失」的真正根因，与 transition 无关）。
+const REMOTE_FORMAT_EXAMPLE =
+  '[{"name":"分组名","hosts":[{"ip":"1.2.3.4","domain":"a.com","disabled":false}]}]'
+const remoteFormatHint = computed(
+  () => `${t('hosts.dialog.remoteToggleHint')} ${REMOTE_FORMAT_EXAMPLE}`
+)
 
 function closeDialog() {
   emit('update:modelValue', false)

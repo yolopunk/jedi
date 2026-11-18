@@ -1,10 +1,10 @@
 <template>
   <!-- 空状态显示 -->
   <div class="d-flex flex-column align-center justify-center py-12 px-4 h-100">
-    <div class="mb-6">
+    <div class="empty-icon-badge mb-6">
       <v-icon
         :icon="mdiDomain"
-        size="80"
+        size="52"
         color="var(--text-subtle)"
         class="death-star jedi-hover-scale"
       ></v-icon>
@@ -15,7 +15,7 @@
     </p>
     <div class="d-flex justify-center gap-4">
       <v-btn
-        color="success"
+        color="primary"
         variant="flat"
         class="mr-4 px-6"
         size="large"
@@ -49,6 +49,18 @@ defineEmits<{
 </script>
 
 <style scoped>
+/* 图标底座：圆角描边卡片，弱化背景，避免大图标裸露 */
+.empty-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 24px;
+  border: 1px solid rgba(128, 138, 158, 0.22);
+  background: rgba(128, 138, 158, 0.08);
+}
+
 .death-star {
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
   transition: transform 0.3s ease;

@@ -431,8 +431,7 @@ export default {
       hostDataLost: '主机数据已丢失',
       deleteSubtitle: '此操作无法撤销',
       createGroupSubtitle: '创建新的主机分组',
-      remoteToggleHint:
-        'URL 需返回 JSON 分组格式：[{"name":"分组名","hosts":[{"ip":"1.2.3.4","domain":"a.com","disabled":false}]}]',
+      remoteToggleHint: 'URL 需返回 JSON 分组格式的数组：',
       hostsContentLabel: 'Hosts 内容',
       onePerLineHint: '每行一条：IP + 空格 + 域名',
       remoteUrlRequired: '远程 URL 不能为空',

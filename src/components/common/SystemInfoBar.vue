@@ -166,10 +166,15 @@ import { getOsInfo } from '@/api/hosts'
 import PlayerBar from '@/components/podcast/PlayerBar.vue'
 import { useAudioPlayer } from '@/composables/useAudioPlayer'
 import type { OsInfo } from '@/types/os'
+
 const appVersion = ref('')
-getAppVersion().then(version => { appVersion.value = version }).catch(error => {
-  console.error('Failed to read app version:', error)
-})
+getAppVersion()
+  .then(version => {
+    appVersion.value = version
+  })
+  .catch(error => {
+    console.error('Failed to read app version:', error)
+  })
 
 // Audio player
 const { currentPlaying } = useAudioPlayer()

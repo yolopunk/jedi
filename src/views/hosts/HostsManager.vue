@@ -179,7 +179,7 @@
 
 <script setup lang="ts">
 import { mdiDomain, mdiPlus, mdiPowerPlugOffOutline, mdiPowerPlugOutline } from '@mdi/js'
-import { nextTick, computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { getOsInfo } from '@/api/hosts'
 import AppNotification from '@/components/common/AppNotification.vue'

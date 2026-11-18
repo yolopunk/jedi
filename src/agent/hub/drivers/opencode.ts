@@ -9,9 +9,9 @@
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
+import { createAgentDiagnostics } from '../agentError'
 import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
-import { createAgentDiagnostics } from '../agentError'
 import { createOpencodeTranslator } from './opencodeProtocol'
 
 // opencode sessionID per Jedi chat session for `-s` resume continuity.
@@ -51,7 +51,9 @@ function exportedModel(spec: unknown, procId: string, sessionId: string): Promis
           const data = JSON.parse(raw.slice(raw.indexOf('{')))
           const messages: any[] = Array.isArray(data?.messages) ? data.messages : []
           const model = [...messages].reverse().find(m => m?.model?.id)?.model
-          end(model ? (model.providerID ? `${model.providerID}/${model.id}` : String(model.id)) : '')
+          end(
+            model ? (model.providerID ? `${model.providerID}/${model.id}` : String(model.id)) : ''
+          )
         } catch {
           end('')
         }

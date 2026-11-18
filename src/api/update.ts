@@ -17,7 +17,10 @@ export async function checkUpdate(): Promise<UpdateInfo | null> {
     currentUpdate = null
     // Build metadata does not affect version precedence.
     const normalizeVersion = (version: string) => version.replace(/^v/i, '').split('+')[0]
-    if (update?.available && normalizeVersion(update.version) !== normalizeVersion(update.currentVersion)) {
+    if (
+      update?.available &&
+      normalizeVersion(update.version) !== normalizeVersion(update.currentVersion)
+    ) {
       currentUpdate = update
       return {
         version: update.version,

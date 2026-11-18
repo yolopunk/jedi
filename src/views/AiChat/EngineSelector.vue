@@ -7,8 +7,8 @@
 import { mdiChevronDown, mdiRefresh } from '@mdi/js'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { EngineDescriptor } from '@/agent/hub/types'
 import { defaultModelLabel, engineBadge, engineSelectable } from '@/agent/hub/engineStatus'
+import type { EngineDescriptor } from '@/agent/hub/types'
 import { useAgentHubStore } from '@/stores/agentHub'
 import AgentLogo from './AgentLogo.vue'
 
@@ -36,7 +36,9 @@ const meta = computed(() => {
 const selectedBadge = computed(() => engineBadge(hub.selectedEngine, t))
 const stateTitle = computed(() => {
   const inst = hub.selectedEngine.installation
-  return [selectedBadge.value?.label, inst?.statusReason, inst?.statusHint].filter(Boolean).join(' — ')
+  return [selectedBadge.value?.label, inst?.statusReason, inst?.statusHint]
+    .filter(Boolean)
+    .join(' — ')
 })
 const selectedAgentId = computed(() => hub.selectedEngine.agentId || 'builtin')
 

@@ -12,10 +12,10 @@
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentResult } from '@/agent/runAgent'
+import { createAgentDiagnostics } from '../agentError'
 import { nativeModel } from '../model'
 import { isWslHost, toWslPath } from '../paths'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
-import { createAgentDiagnostics } from '../agentError'
 import {
   buildConversationPrompt,
   emitGeminiFamilyResult,

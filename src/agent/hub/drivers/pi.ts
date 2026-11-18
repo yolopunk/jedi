@@ -18,9 +18,9 @@
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
+import { createAgentDiagnostics } from '../agentError'
 import { nativeModel } from '../model'
 import type { AgentDriver, DriverHandle, DriverStartOpts, EngineDescriptor } from '../types'
-import { createAgentDiagnostics } from '../agentError'
 import { createPiTranslator, textOfContent } from './piProtocol'
 
 // pi sessionId per Jedi chat session, so consecutive turns resume the same

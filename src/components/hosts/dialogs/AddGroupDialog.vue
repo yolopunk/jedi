@@ -76,51 +76,48 @@
           </div>
         </div>
 
-        <!-- 远程 URL 数据源（v-show 而非 v-if：v-if 新插入的元素会被
-             expand-transition 量到高度 0 而永久不可见，见 EpisodeShowNotes 的用法） -->
-        <v-expand-transition>
-          <div v-show="sourceType === 'url'" class="form-group">
-            <label class="form-label">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2"/>
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2"/>
-              </svg>
-              {{ $t('hosts.dialog.remoteUrlLabel') }}
-            </label>
-            <div class="input-wrapper">
-              <span class="input-prefix">URL</span>
-              <input
-                v-model="remoteUrl"
-                type="text"
-                class="form-input with-prefix"
-                :placeholder="$t('hosts.dialog.remoteUrlPlaceholder')"
-                @keyup.enter="confirmAdd"
-              />
-            </div>
-            <div class="input-hint">{{ $t('hosts.dialog.remoteToggleHint') }}</div>
+        <!-- 远程 URL 数据源。不要给这里套 v-expand-transition：
+             transition + v-if/v-show 的组合在 Tauri 生产包里会吞元素或卡在
+             height:0（0.9.1/0.9.2 两次翻车），其他对话框均为裸 v-if，保持一致 -->
+        <div v-if="sourceType === 'url'" class="form-group">
+          <label class="form-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" stroke="currentColor" stroke-width="2"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            {{ $t('hosts.dialog.remoteUrlLabel') }}
+          </label>
+          <div class="input-wrapper">
+            <span class="input-prefix">URL</span>
+            <input
+              v-model="remoteUrl"
+              type="text"
+              class="form-input with-prefix"
+              :placeholder="$t('hosts.dialog.remoteUrlPlaceholder')"
+              @keyup.enter="confirmAdd"
+            />
           </div>
-        </v-expand-transition>
+          <div class="input-hint">{{ $t('hosts.dialog.remoteToggleHint') }}</div>
+        </div>
 
         <!-- 手动输入数据源 -->
-        <v-expand-transition>
-          <div v-show="sourceType === 'manual'" class="form-group">
-            <label class="form-label">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5"/>
-                <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.5"/>
-              </svg>
-              {{ $t('hosts.dialog.hostsContentLabel') }}
-            </label>
-            <textarea
-              v-model="hostsContent"
-              class="form-textarea"
-              rows="4"
-              :placeholder="$t('hosts.dialog.hostsListPlaceholder')"
-              :aria-label="$t('hosts.dialog.hostsContentLabel')"
-            ></textarea>
-            <div class="input-hint">{{ $t('hosts.dialog.onePerLineHint') }}</div>
-          </div>
-        </v-expand-transition>
+        <div v-if="sourceType === 'manual'" class="form-group">
+          <label class="form-label">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.5"/>
+              <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+            {{ $t('hosts.dialog.hostsContentLabel') }}
+          </label>
+          <textarea
+            v-model="hostsContent"
+            class="form-textarea"
+            rows="4"
+            :placeholder="$t('hosts.dialog.hostsListPlaceholder')"
+            :aria-label="$t('hosts.dialog.hostsContentLabel')"
+          ></textarea>
+          <div class="input-hint">{{ $t('hosts.dialog.onePerLineHint') }}</div>
+        </div>
       </div>
 
       <!-- Footer -->

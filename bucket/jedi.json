@@ -9,7 +9,7 @@
     "安装方式：Scoop 不跑 NSIS 安装器，而是用 7-Zip 把安装器里打包的程序文件直接解到 $dir——",
     "因此是便携版：不写注册表、不建卸载项、Post-install 才由 Scoop 生成 shim 和开始菜单快捷方式。"
   ],
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Local-first developer toolbox: hosts manager, knowledge wallpapers, podcasts, screenshot tool and AI chat.",
   "homepage": "https://github.com/yolopunk/jedi",
   "license": "MIT",
@@ -23,8 +23,8 @@
   ],
   "architecture": {
     "64bit": {
-      "url": "https://github.com/yolopunk/jedi/releases/download/v0.9.1/Jedi_0.9.1_x64-setup.exe",
-      "hash": "sha256:a81f89a0bbbe43c2923a614a4e6bc82a0ee21ef6ba10cedede90e837d942c61f"
+      "url": "https://github.com/yolopunk/jedi/releases/download/v0.9.2/Jedi_0.9.2_x64-setup.exe",
+      "hash": "sha256:1dd0dc9cca14e2aec4ab2692f12eee7da3f6655f119533bf6761ffca5f9f360d"
     }
   },
   "pre_install": [

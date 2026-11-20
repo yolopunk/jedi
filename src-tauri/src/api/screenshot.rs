@@ -4,9 +4,8 @@
 // 无边框置顶覆盖窗口（路由 /screenshot-overlay，显示器编号编码在窗口 label 中）。
 // 覆盖窗口回传物理像素选区后由 finish 统一裁剪、输出并拆除全部覆盖窗口。
 
-use crate::api::wallpapers;
 use image::RgbaImage;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
@@ -15,8 +14,11 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tauri::webview::WebviewWindowBuilder;
 use tauri::{
-  AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, State, WebviewUrl,
+  AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, WebviewUrl,
 };
+
+mod window_targets;
+use window_targets::WindowRect;
 
 pub const OVERLAY_LABEL_PREFIX: &str = "screenshot-overlay-";
 pub const TOOLBAR_LABEL: &str = "screenshot-toolbar";
@@ -29,8 +31,11 @@ pub const DEFAULT_CAPTURE_HOTKEY: &str = "F1";
 /// 一轮截图会话：所有显示器的冻结帧与对应覆盖窗口。
 pub struct CaptureSession {
   monitors: Vec<MonitorFrame>,
+  cursor: Option<(f64, f64)>,
+  focus_index: usize,
 }
 
+#[derive(Clone)]
 pub struct MonitorFrame {
   /// 显示器序号，与覆盖窗口 label 后缀一致
   index: usize,
@@ -38,13 +43,16 @@ pub struct MonitorFrame {
   label: String,
   /// 冻结帧 PNG 临时文件路径
   frame_path: PathBuf,
-  /// 显示器物理坐标与尺寸（xcap 输出）
-  x: i32,
-  y: i32,
+  /// 最后一个会话/输出引用释放时清理单个冻结帧，包含抓帧中途失败的路径。
+  _frame_file: Arc<tempfile::TempPath>,
+  /// xcap 的桌面坐标，macOS 为点，Windows 为物理像素。
+  bounds: WindowRect,
+  /// 实际冻结帧的像素尺寸（Retina 与桌面坐标尺寸不同）。
   width: u32,
   height: u32,
-  /// 显示器缩放比（逻辑→物理），贴图原位贴附时换算偏移用
+  /// 显示器缩放比，用于桌面上的贴图边距。
   scale: f32,
+  window_targets: Vec<WindowRect>,
 }
 
 #[derive(Serialize, Clone)]
@@ -56,6 +64,48 @@ pub struct MonitorFrameInfo {
   pub y: i32,
   pub width: u32,
   pub height: u32,
+  window_targets: Vec<WindowRect>,
+  cursor: Option<(f64, f64)>,
+  focused: bool,
+}
+
+impl MonitorFrame {
+  fn info(&self, cursor: Option<(f64, f64)>, focus_index: usize) -> MonitorFrameInfo {
+    let bounds = self.bounds;
+    let sx = f64::from(self.width) / f64::from(bounds.width);
+    let sy = f64::from(self.height) / f64::from(bounds.height);
+    MonitorFrameInfo {
+      index: self.index,
+      frame_path: self.frame_path.to_string_lossy().into_owned(),
+      x: bounds.x,
+      y: bounds.y,
+      width: self.width,
+      height: self.height,
+      window_targets: self
+        .window_targets
+        .iter()
+        .map(|target| {
+          let x = (f64::from(target.x) * sx).round() as i32;
+          let y = (f64::from(target.y) * sy).round() as i32;
+          let right = ((f64::from(target.x) + f64::from(target.width)) * sx).round() as i32;
+          let bottom = ((f64::from(target.y) + f64::from(target.height)) * sy).round() as i32;
+          WindowRect {
+            x,
+            y,
+            width: (right - x) as u32,
+            height: (bottom - y) as u32,
+          }
+        })
+        .collect(),
+      cursor: cursor.and_then(|(x, y)| {
+        let x = (x - f64::from(bounds.x)) * sx;
+        let y = (y - f64::from(bounds.y)) * sy;
+        ((0.0..f64::from(self.width)).contains(&x) && (0.0..f64::from(self.height)).contains(&y))
+          .then_some((x, y))
+      }),
+      focused: self.index == focus_index,
+    }
+  }
 }
 
 #[derive(Serialize, Clone)]
@@ -119,6 +169,10 @@ pub struct ScrollStatus {
 /// 全局会话状态；同一时刻只允许一轮截图。
 pub struct ScreenshotState {
   session: Mutex<Option<CaptureSession>>,
+  /// 防止全局快捷键在抓帧或保存对话框期间拆除当前会话。
+  pub(crate) capture_operation: tokio::sync::Mutex<()>,
+  /// 输出或实时模式初始化期间拒绝其它屏幕的取消；不阻止覆盖窗初始化失败时取消。
+  pub(crate) capture_output: tokio::sync::Mutex<()>,
   pub(crate) scroll: Mutex<Option<ScrollSession>>,
   /// 当前生效的截图全局快捷键（accelerator 字符串）
   pub(crate) hotkey: Mutex<String>,
@@ -130,6 +184,8 @@ impl Default for ScreenshotState {
   fn default() -> Self {
     Self {
       session: Mutex::new(None),
+      capture_operation: tokio::sync::Mutex::new(()),
+      capture_output: tokio::sync::Mutex::new(()),
       scroll: Mutex::new(None),
       // 空串 = 尚未注册任何快捷键；启动时会注册默认值。
       // 这里若填默认值，register_capture_hotkey 的「同值跳过」会让启动注册被跳过。
@@ -263,7 +319,7 @@ fn mean_abs_diff(a: &RgbaImage, b: &RgbaImage) -> f32 {
 pub(crate) async fn spawn_pin_window(
   app: &AppHandle,
   path: &str,
-  position: Option<(i32, i32)>,
+  position: Option<Position>,
 ) -> Result<(), String> {
   let (img_w, img_h) = tauri::async_runtime::spawn_blocking({
     let path = path.to_string();
@@ -325,8 +381,8 @@ pub(crate) async fn spawn_pin_window(
       .inner_size(w.max(120.0), h.max(80.0));
       let sent = match builder.build() {
         Ok(window) => {
-          if let Some((px, py)) = position {
-            let _ = window.set_position(Position::Physical(PhysicalPosition::new(px, py)));
+          if let Some(position) = position {
+            let _ = window.set_position(position);
           }
           Ok(())
         }
@@ -348,15 +404,32 @@ fn teardown(app: &AppHandle, session: CaptureSession) {
     if let Some(window) = app.get_webview_window(&monitor.label) {
       let _ = window.destroy();
     }
-    let _ = fs::remove_file(&monitor.frame_path);
   }
 }
 
 /// 捕获全部显示器并弹出覆盖窗口。命令、托盘与全局快捷键共用此入口。
 pub async fn begin_capture(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, String> {
   let state = app.state::<ScreenshotState>();
-
-  // 重复触发时先拆掉上一轮（含滚动/录屏残留），保证幂等且不会两套 UI 打架
+  let _operation = state
+    .capture_operation
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
+  // 保留已经打开的选区、长截图或录屏，防止重复按下快捷键丢失编辑。
+  if let Some(session) = state.session.lock().unwrap().as_ref() {
+    if session
+      .monitors
+      .iter()
+      .any(|frame| app.get_webview_window(&frame.label).is_some())
+    {
+      return Ok(
+        session
+          .monitors
+          .iter()
+          .map(|frame| frame.info(session.cursor, session.focus_index))
+          .collect(),
+      );
+    }
+  }
   teardown_all(&app);
 
   let cache_dir = frame_cache_dir(&app)?;
@@ -368,23 +441,44 @@ pub async fn begin_capture(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, Stri
       if monitors.is_empty() {
         return Err("未发现任何显示器".to_string());
       }
+      let window_targets = window_targets::visible_windows();
       let mut frames = Vec::with_capacity(monitors.len());
       for (index, monitor) in monitors.into_iter().enumerate() {
         // macOS 未授予屏幕录制权限时 capture_image 会失败或返回空帧
         let image = monitor
           .capture_image()
           .map_err(|e| format!("捕获显示器 {} 失败: {}", index, e))?;
-        let frame_path = cache_dir.join(format!("frame_{}.png", index));
+        let bounds = WindowRect {
+          x: monitor.x().map_err(|e| e.to_string())?,
+          y: monitor.y().map_err(|e| e.to_string())?,
+          width: monitor.width().map_err(|e| e.to_string())?,
+          height: monitor.height().map_err(|e| e.to_string())?,
+        };
+        let scale = monitor.scale_factor().map_err(|e| e.to_string())?.max(1.0);
+        if bounds.width == 0 || bounds.height == 0 || image.width() == 0 || image.height() == 0 {
+          return Err(format!("显示器 {} 的画面为空", index));
+        }
+        let frame_file = tempfile::Builder::new()
+          .prefix("frame_")
+          .suffix(".png")
+          .tempfile_in(&cache_dir)
+          .map_err(|e| format!("创建冻结帧失败: {}", e))?
+          .into_temp_path();
+        let frame_path = frame_file.to_path_buf();
         image.save(&frame_path).map_err(|e| e.to_string())?;
         frames.push(MonitorFrame {
           index,
           label: format!("{}{}", OVERLAY_LABEL_PREFIX, index),
           frame_path,
-          x: monitor.x().map_err(|e| e.to_string())?,
-          y: monitor.y().map_err(|e| e.to_string())?,
-          width: monitor.width().map_err(|e| e.to_string())?,
-          height: monitor.height().map_err(|e| e.to_string())?,
-          scale: monitor.scale_factor().map_err(|e| e.to_string())?.max(1.0),
+          _frame_file: Arc::new(frame_file),
+          bounds,
+          width: image.width(),
+          height: image.height(),
+          scale,
+          window_targets: window_targets
+            .iter()
+            .filter_map(|target| target.on_monitor(bounds))
+            .collect(),
         });
       }
       Ok(frames)
@@ -392,219 +486,203 @@ pub async fn begin_capture(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, Stri
     .await
     .map_err(|e| format!("捕获任务异常: {}", e))??;
 
-  let infos: Vec<MonitorFrameInfo> = frames
+  let cursor = desktop_cursor(&app);
+  let focus_index = frames
     .iter()
-    .map(|f| MonitorFrameInfo {
-      index: f.index,
-      frame_path: f.frame_path.to_string_lossy().into_owned(),
-      x: f.x,
-      y: f.y,
-      width: f.width,
-      height: f.height,
+    .position(|frame| {
+      cursor.is_some_and(|(x, y)| {
+        let bounds = frame.bounds;
+        (f64::from(bounds.x)..f64::from(bounds.x) + f64::from(bounds.width)).contains(&x)
+          && (f64::from(bounds.y)..f64::from(bounds.y) + f64::from(bounds.height)).contains(&y)
+      })
     })
+    .unwrap_or(0);
+  let infos = frames
+    .iter()
+    .map(|frame| frame.info(cursor, focus_index))
+    .collect();
+  let overlays: Vec<_> = frames
+    .iter()
+    .map(|frame| (frame.label.clone(), frame.bounds))
     .collect();
 
-  let primary_label = frames
-    .iter()
-    .find(|_| true)
-    .map(|f| f.label.clone())
-    .unwrap_or_default();
-
-  *state.session.lock().unwrap() = Some(CaptureSession { monitors: frames });
+  *state.session.lock().unwrap() = Some(CaptureSession {
+    monitors: frames,
+    cursor,
+    focus_index,
+  });
 
   // macOS 要求在主线程创建窗口；其余平台同样安全
   let app_for_windows = app.clone();
-  let labels = infos.clone();
-  app
-    .run_on_main_thread(move || {
-      for info in &labels {
-        let label = format!("{}{}", OVERLAY_LABEL_PREFIX, info.index);
-        // 上一轮若残留同名窗口，先销毁再建，避免 label 冲突导致建窗失败
-        if let Some(stale) = app_for_windows.get_webview_window(&label) {
-          let _ = stale.destroy();
-        }
-        let builder = WebviewWindowBuilder::new(
-          &app_for_windows,
-          &label,
-          WebviewUrl::App("screenshot-overlay".into()),
-        )
-        .title("Jedi Screenshot")
-        .visible(false)
-        .decorations(false)
-        .resizable(false)
-        .minimizable(false)
-        .maximizable(false)
-        .skip_taskbar(true)
-        .always_on_top(true)
-        .shadow(false)
-        // 录制模式下覆盖窗口切换为透明+点击穿透，需要建窗时开启透明
-        .transparent(true)
-        // 只有主显示器的窗口接管键盘焦点，其余显示器仅展示冻结帧
-        .focused(label == primary_label);
-        match builder.build() {
-          Ok(window) => {
-            let _ = window.set_position(Position::Physical(PhysicalPosition::new(info.x, info.y)));
-            let _ = window.set_size(Size::Physical(PhysicalSize::new(info.width, info.height)));
-          }
-          Err(e) => eprintln!("failed to create overlay window {}: {}", label, e),
-        }
+  let (tx, rx) = tokio::sync::oneshot::channel();
+  let scheduled = app.run_on_main_thread(move || {
+    let mut built = 0;
+    for (index, (label, bounds)) in overlays.into_iter().enumerate() {
+      if app_for_windows
+        .state::<ScreenshotState>()
+        .session
+        .lock()
+        .unwrap()
+        .is_none()
+      {
+        break; // 某个覆盖窗加载失败并取消后，不再创建其余屏幕的窗口。
       }
-    })
-    .map_err(|e| format!("创建覆盖窗口失败: {}", e))?;
+      // 上一轮若残留同名窗口，先销毁再建，避免 label 冲突导致建窗失败
+      if let Some(stale) = app_for_windows.get_webview_window(&label) {
+        let _ = stale.destroy();
+      }
+      let builder = WebviewWindowBuilder::new(
+        &app_for_windows,
+        &label,
+        WebviewUrl::App("screenshot-overlay".into()),
+      )
+      .title("Jedi Screenshot")
+      .visible(false)
+      .decorations(false)
+      .resizable(false)
+      .minimizable(false)
+      .maximizable(false)
+      .skip_taskbar(true)
+      .always_on_top(true)
+      .shadow(false)
+      // 录制模式下覆盖窗口切换为透明+点击穿透，需要建窗时开启透明
+      .transparent(true)
+      .focused(index == focus_index);
+      match builder.build() {
+        Ok(window) => {
+          if app_for_windows
+            .state::<ScreenshotState>()
+            .session
+            .lock()
+            .unwrap()
+            .is_none()
+          {
+            let _ = window.destroy();
+            break;
+          }
+          #[cfg(target_os = "macos")]
+          let (position, size) = (
+            Position::Logical(tauri::LogicalPosition::new(
+              f64::from(bounds.x),
+              f64::from(bounds.y),
+            )),
+            Size::Logical(tauri::LogicalSize::new(
+              f64::from(bounds.width),
+              f64::from(bounds.height),
+            )),
+          );
+          #[cfg(not(target_os = "macos"))]
+          let (position, size) = (
+            Position::Physical(PhysicalPosition::new(bounds.x, bounds.y)),
+            Size::Physical(PhysicalSize::new(bounds.width, bounds.height)),
+          );
+          let _ = window.set_position(position);
+          let _ = window.set_size(size);
+          built += 1;
+        }
+        Err(e) => eprintln!("failed to create overlay window {}: {}", label, e),
+      }
+    }
+    let _ = tx.send(built);
+  });
+  if scheduled.is_err() || rx.await.unwrap_or_default() == 0 {
+    cancel_capture(&app);
+    return Err("无法创建截图窗口".into());
+  }
 
   Ok(infos)
 }
 
-/// 完成截图：按物理像素选区裁剪冻结帧并执行输出动作，随后拆除会话。
-async fn finish_capture(
-  app: AppHandle,
+fn desktop_cursor(app: &AppHandle) -> Option<(f64, f64)> {
+  let cursor = app.cursor_position().ok()?;
+  #[cfg(target_os = "macos")]
+  let scale = app.primary_monitor().ok().flatten()?.scale_factor();
+  #[cfg(not(target_os = "macos"))]
+  let scale = 1.0;
+  Some((cursor.x / scale, cursor.y / scale))
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CaptureOutput {
   monitor_index: usize,
   x: i32,
   y: i32,
   width: u32,
   height: u32,
   action: String,
-) -> Result<ScreenshotOutcome, String> {
-  let state = app.state::<ScreenshotState>();
-  let session = state
-    .session
-    .lock()
-    .unwrap()
-    .take()
-    .ok_or_else(|| "没有正在进行的截图会话".to_string())?;
+  annotated_png: Option<String>,
+  save_title: Option<String>,
+}
 
-  let result = (|| async {
-    let frame = session
-      .monitors
-      .iter()
-      .find(|m| m.index == monitor_index)
-      .ok_or_else(|| format!("选区显示器 {} 不在本轮捕获中", monitor_index))?;
+/// 解码时限制分配与尺寸，确保标注结果仍是同一个选区大小。
+fn decode_annotated_png(data_url: &str, width: u32, height: u32) -> Result<RgbaImage, String> {
+  use base64::Engine;
+  if data_url.len() > 64 * 1024 * 1024 {
+    return Err("图片过大".into());
+  }
+  let encoded = data_url
+    .strip_prefix("data:image/png;base64,")
+    .ok_or("仅支持 PNG 图片")?;
+  let bytes = base64::engine::general_purpose::STANDARD
+    .decode(encoded)
+    .map_err(|e| e.to_string())?;
+  let mut reader =
+    image::ImageReader::with_format(std::io::Cursor::new(bytes), image::ImageFormat::Png);
+  let mut limits = image::Limits::default();
+  limits.max_image_width = Some(width);
+  limits.max_image_height = Some(height);
+  reader.limits(limits);
+  let image = reader
+    .decode()
+    .map_err(|e| format!("无效的标注图片: {}", e))?;
+  if (image.width(), image.height()) != (width, height) {
+    return Err("标注图片尺寸与选区不符".into());
+  }
+  Ok(image.to_rgba8())
+}
 
-    let frame_path = frame.frame_path.clone();
-    let (cx, cy, cw, ch) = clamp_crop_rect(frame.width, frame.height, x, y, width, height);
-
-    // 裁剪 + PNG 编码在阻塞线程完成，产出剪贴板所需的 RGBA 原始字节与 PNG 字节
-    let (rgba_raw, png_bytes, out_w, out_h) = tauri::async_runtime::spawn_blocking(
-      move || -> Result<(Vec<u8>, Vec<u8>, u32, u32), String> {
-        let img = image::open(&frame_path).map_err(|e| format!("读取冻结帧失败: {}", e))?;
-        let cropped = img.crop_imm(cx, cy, cw, ch).to_rgba8();
-        let (w, h) = (cropped.width(), cropped.height());
-        let mut png = Vec::new();
-        cropped
-          .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
-          .map_err(|e| format!("PNG 编码失败: {}", e))?;
-        let raw = cropped.into_raw();
-        Ok((raw, png, w, h))
-      },
-    )
-    .await
-    .map_err(|e| format!("裁剪任务异常: {}", e))??;
-
-    if !matches!(action.as_str(), "copy" | "save" | "chat" | "ocr" | "pin") {
-      return Err(format!("未知输出动作: {}", action));
-    }
-    let path = screenshots_dir(&app)?.join(timestamped_filename("png"));
-    fs::write(&path, &png_bytes).map_err(|e| format!("保存截图失败: {}", e))?;
-    let path_str = path.to_string_lossy().into_owned();
-    let _ = app.emit_to("main", "screenshot-saved", &path_str);
-
-    match action.as_str() {
-      "copy" => {
-        use tauri_plugin_clipboard_manager::ClipboardExt;
-        let image = tauri::image::Image::new(&rgba_raw, out_w, out_h);
-        app
-          .clipboard()
-          .write_image(&image)
-          .map_err(|e| format!("写入剪贴板失败: {}", e))?;
-        Ok(ScreenshotOutcome {
-          action: "copy".into(),
-          saved_path: Some(path_str),
-          warnings: Vec::new(),
-        })
-      }
-      "save" => {
-        wallpapers::show_in_folder(path_str.clone()).await?;
-        Ok(ScreenshotOutcome {
-          action: "save".into(),
-          saved_path: Some(path_str),
-          warnings: Vec::new(),
-        })
-      }
-      "chat" => {
-        app
-          .emit_to("main", "screenshot-captured", &path_str)
-          .map_err(|e| format!("通知主窗口失败: {}", e))?;
-        Ok(ScreenshotOutcome {
-          action: "chat".into(),
-          saved_path: Some(path_str),
-          warnings: Vec::new(),
-        })
-      }
-      "ocr" => {
-        app
-          .emit_to("main", "screenshot-ocr", &path_str)
-          .map_err(|e| format!("通知主窗口失败: {}", e))?;
-        Ok(ScreenshotOutcome {
-          action: "ocr".into(),
-          saved_path: Some(path_str),
-          warnings: Vec::new(),
-        })
-      }
-      "pin" => {
-        // 贴图：截图照常入库，同时弹出置顶贴图窗口，贴在截取位置（PixPin 行为）。
-        // PinWindow 顶部 44px 悬浮区 + 7px 内边距不承载图片，坐标上移等量逻辑像素。
-        const PIN_TOP_ZONE: f32 = 44.0;
-        const PIN_PAD: f32 = 7.0;
-        let scale = frame.scale;
-        let px = frame.x + (cx as f32 * scale) as i32 - (PIN_PAD * scale) as i32;
-        let py = frame.y + (cy as f32 * scale) as i32 - ((PIN_TOP_ZONE + PIN_PAD) * scale) as i32;
-        // 粗略钳回屏幕内：右/下至少留 200/120 物理像素可见
-        let max_px = frame.x + frame.width.saturating_sub(200) as i32;
-        let max_py = frame.y + frame.height.saturating_sub(120) as i32;
-        let px = px.clamp(frame.x, max_px.max(frame.x));
-        let py = py.clamp(frame.y, max_py.max(frame.y));
-        spawn_pin_window(&app, &path_str, Some((px, py))).await?;
-        Ok(ScreenshotOutcome {
-          action: "pin".into(),
-          saved_path: Some(path_str),
-          warnings: Vec::new(),
-        })
-      }
-      other => Err(format!("未知输出动作: {}", other)),
-    }
-  })()
-  .await;
-
-  teardown(&app, session);
-  result
+fn pin_position(frame: &MonitorFrame, x: u32, y: u32) -> Position {
+  let bounds = frame.bounds;
+  #[cfg(target_os = "macos")]
+  let scale = 1.0;
+  #[cfg(not(target_os = "macos"))]
+  let scale = f64::from(frame.scale);
+  // 贴图上方 44 点控制条和周围 7 点边距不承载图片。
+  let px = f64::from(x) * f64::from(bounds.width) / f64::from(frame.width) - 7.0 * scale;
+  let py = f64::from(y) * f64::from(bounds.height) / f64::from(frame.height) - 51.0 * scale;
+  let px = f64::from(bounds.x) + px.clamp(0.0, f64::from(bounds.width.saturating_sub(200)));
+  let py = f64::from(bounds.y) + py.clamp(0.0, f64::from(bounds.height.saturating_sub(120)));
+  #[cfg(target_os = "macos")]
+  return Position::Logical(tauri::LogicalPosition::new(px, py));
+  #[cfg(not(target_os = "macos"))]
+  Position::Physical(PhysicalPosition::new(px.round() as i32, py.round() as i32))
 }
 
 /// 取消截图：直接拆除会话，不产出任何文件。
-fn cancel_capture(app: AppHandle) -> Result<(), String> {
+fn cancel_capture(app: &AppHandle) {
   let state = app.state::<ScreenshotState>();
   let taken = state.session.lock().unwrap().take();
   if let Some(session) = taken {
-    teardown(&app, session);
+    teardown(app, session);
   }
-  Ok(())
 }
 
 // ---- 滚动截长图 / 录屏共用基础设施 ----
 
-/// 读取会话内指定显示器的物理几何（monitor_x, monitor_y, w, h）。
+/// 读取显示器的桌面原点和冻结帧像素尺寸；macOS 的桌面坐标使用点。
 pub(crate) fn session_monitor_geometry(
   state: &ScreenshotState,
   monitor_index: usize,
 ) -> Result<(i32, i32, u32, u32), String> {
   let guard = state.session.lock().unwrap();
   let monitor = session_monitor(&guard, monitor_index)?;
-  Ok((monitor.x, monitor.y, monitor.width, monitor.height))
-}
-
-/// 读取会话内指定显示器的冻结帧临时文件路径。
-fn session_frame_path(state: &ScreenshotState, monitor_index: usize) -> Result<PathBuf, String> {
-  let guard = state.session.lock().unwrap();
-  Ok(session_monitor(&guard, monitor_index)?.frame_path.clone())
+  Ok((
+    monitor.bounds.x,
+    monitor.bounds.y,
+    monitor.width,
+    monitor.height,
+  ))
 }
 
 fn session_monitor(
@@ -712,24 +790,67 @@ pub(crate) fn show_toolbar(
   monitor: (i32, i32, u32, u32),
   region: (u32, u32, u32, u32),
 ) {
-  let (mx, my, mw, mh) = monitor;
-  let (_rx, ry, rw, rh) = region;
-  const TOOLBAR_H: i32 = 64;
-  const MARGIN: i32 = 12;
-  let region_bottom = my + ry as i32 + rh as i32;
-  let below_y = region_bottom + MARGIN;
-  let py = if below_y + TOOLBAR_H <= my + mh as i32 {
+  let state = app.state::<ScreenshotState>();
+  let frame = {
+    let guard = state.session.lock().unwrap();
+    let Some(frame) = guard.as_ref().and_then(|session| {
+      session
+        .monitors
+        .iter()
+        .find(|frame| (frame.bounds.x, frame.bounds.y, frame.width, frame.height) == monitor)
+    }) else {
+      return; // 取消后延迟任务不能重新弹出悬浮条。
+    };
+    frame.clone()
+  };
+  let bounds = frame.bounds;
+  let (mx, my) = (f64::from(bounds.x), f64::from(bounds.y));
+  let (mw, mh) = (f64::from(bounds.width), f64::from(bounds.height));
+  let (rx, ry, rw, rh) = region;
+  let sx = mw / f64::from(frame.width);
+  let sy = mh / f64::from(frame.height);
+  #[cfg(target_os = "macos")]
+  let scale = 1.0;
+  #[cfg(not(target_os = "macos"))]
+  let scale = f64::from(frame.scale);
+  let toolbar_w = 480.0 * scale;
+  let toolbar_h = 64.0 * scale;
+  let margin = 12.0 * scale;
+  let region_top = my + f64::from(ry) * sy;
+  let region_bottom = region_top + f64::from(rh) * sy;
+  let below_y = region_bottom + margin;
+  let py = if below_y + toolbar_h <= my + mh {
     below_y
   } else {
-    (my + ry as i32 - MARGIN - TOOLBAR_H).max(my)
+    (region_top - margin - toolbar_h).max(my)
   };
-  let px = (mx + (rw as i32 / 2) - 240).clamp(mx, mx + mw as i32 - 480);
+  let px = (mx + (f64::from(rx) + f64::from(rw) / 2.0) * sx - toolbar_w / 2.0)
+    .clamp(mx, (mx + mw - toolbar_w).max(mx));
+  #[cfg(target_os = "macos")]
+  let position = Position::Logical(tauri::LogicalPosition::new(px, py));
+  #[cfg(not(target_os = "macos"))]
+  let position = Position::Physical(PhysicalPosition::new(px.round() as i32, py.round() as i32));
 
   let app_for_window = app.clone();
   let _ = app.run_on_main_thread(move || {
+    let state = app_for_window.state::<ScreenshotState>();
+    let current = state
+      .session
+      .lock()
+      .unwrap()
+      .as_ref()
+      .is_some_and(|session| {
+        session
+          .monitors
+          .iter()
+          .any(|current| Arc::ptr_eq(&current._frame_file, &frame._frame_file))
+      });
+    if !current {
+      return;
+    }
     // 上一轮残留的悬浮条：复用窗口，通知其按新会话重新初始化并复位
     if let Some(existing) = app_for_window.get_webview_window(TOOLBAR_LABEL) {
-      let _ = existing.set_position(Position::Physical(PhysicalPosition::new(px.max(mx), py)));
+      let _ = existing.set_position(position);
       exclude_from_capture(&existing);
       let _ = existing.show();
       let _ = existing.set_focus();
@@ -754,7 +875,7 @@ pub(crate) fn show_toolbar(
     .focused(true)
     .inner_size(480.0, 64.0);
     if let Ok(window) = builder.build() {
-      let _ = window.set_position(Position::Physical(PhysicalPosition::new(px.max(mx), py)));
+      let _ = window.set_position(position);
       exclude_from_capture(&window);
     }
   });
@@ -1176,44 +1297,161 @@ pub async fn screenshot_begin(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, S
 /// 双方互等，进程挂死（0.9.0 实测点「截长图」即 AppHang）。
 #[tauri::command]
 pub async fn screenshot_frame_info(
-  state: State<'_, ScreenshotState>,
+  app: AppHandle,
   monitor_index: usize,
 ) -> Result<MonitorFrameInfo, String> {
+  let state = app.state::<ScreenshotState>();
   let guard = state.session.lock().unwrap();
-  let session = guard
-    .as_ref()
-    .ok_or_else(|| "没有正在进行的截图会话".to_string())?;
-  let frame = session
-    .monitors
-    .iter()
-    .find(|m| m.index == monitor_index)
-    .ok_or_else(|| format!("显示器 {} 不在本轮捕获中", monitor_index))?;
-  Ok(MonitorFrameInfo {
-    index: frame.index,
-    frame_path: frame.frame_path.to_string_lossy().into_owned(),
-    x: frame.x,
-    y: frame.y,
-    width: frame.width,
-    height: frame.height,
-  })
+  let frame = session_monitor(&guard, monitor_index)?;
+  let session = guard.as_ref().unwrap();
+  Ok(frame.info(session.cursor, session.focus_index))
 }
 
+/// 只有完成输出才结束会话；取消文件对话框或写入失败可继续使用同一选区。
 #[tauri::command]
 pub async fn screenshot_finish(
   app: AppHandle,
-  monitor_index: usize,
-  x: i32,
-  y: i32,
-  width: u32,
-  height: u32,
-  action: String,
-) -> Result<ScreenshotOutcome, String> {
-  finish_capture(app, monitor_index, x, y, width, height, action).await
+  window: tauri::WebviewWindow,
+  output: CaptureOutput,
+) -> Result<Option<ScreenshotOutcome>, String> {
+  let CaptureOutput {
+    monitor_index,
+    x,
+    y,
+    width,
+    height,
+    action,
+    annotated_png,
+    save_title,
+  } = output;
+  if !matches!(action.as_str(), "copy" | "save" | "chat" | "ocr" | "pin") {
+    return Err(format!("未知输出动作: {}", action));
+  }
+  let state = app.state::<ScreenshotState>();
+  let _operation = state
+    .capture_operation
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
+  let _output = state
+    .capture_output
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
+  let frame = session_monitor(&state.session.lock().unwrap(), monitor_index)?.clone();
+  if frame.label != window.label() || width == 0 || height == 0 {
+    return Err("无效的截图选区".into());
+  }
+
+  let (cx, cy, cw, ch) = clamp_crop_rect(frame.width, frame.height, x, y, width, height);
+  let frame_path = frame.frame_path.clone();
+  let (cropped, png_bytes) = tauri::async_runtime::spawn_blocking(move || {
+    let cropped = if let Some(data_url) = annotated_png {
+      decode_annotated_png(&data_url, cw, ch)?
+    } else {
+      let image = image::open(&frame_path).map_err(|e| format!("读取冻结帧失败: {}", e))?;
+      image.crop_imm(cx, cy, cw, ch).into_rgba8()
+    };
+    let mut png = Vec::new();
+    cropped
+      .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+      .map_err(|e| format!("PNG 编码失败: {}", e))?;
+    Ok::<_, String>((cropped, png))
+  })
+  .await
+  .map_err(|e| format!("裁剪任务异常: {}", e))??;
+
+  let filename = timestamped_filename("png");
+  let export_path = if action == "save" {
+    use tauri_plugin_dialog::DialogExt;
+    let dialog = app
+      .dialog()
+      .file()
+      .set_parent(&window)
+      .add_filter("PNG", &["png"])
+      .set_title(save_title.unwrap_or_else(|| "Save screenshot".into()))
+      .set_file_name(&filename);
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    dialog.save_file(move |path| {
+      let _ = tx.send(path);
+    });
+    let Some(path) = rx.await.map_err(|_| "无法打开保存对话框")? else {
+      return Ok(None);
+    };
+    Some(path.into_path().map_err(|e| e.to_string())?)
+  } else {
+    None
+  };
+
+  let gallery_app = app.clone();
+  let (gallery_path, saved_path) = tauri::async_runtime::spawn_blocking(move || {
+    let gallery_dir = screenshots_dir(&gallery_app);
+    if let Some(path) = export_path {
+      fs::write(&path, &png_bytes).map_err(|e| format!("保存截图失败: {}", e))?;
+      // 另存到外部时仍保留一份归档；归档失败不影响已成功写入的文件。
+      let library = gallery_dir.ok().and_then(|dir| {
+        if path.parent().and_then(|parent| parent.canonicalize().ok()) == dir.canonicalize().ok() {
+          return Some(path.clone());
+        }
+        let archived = dir.join(filename);
+        fs::write(&archived, &png_bytes).ok().map(|()| archived)
+      });
+      Ok((library, path))
+    } else {
+      let path = gallery_dir?.join(filename);
+      fs::write(&path, &png_bytes).map_err(|e| format!("保存截图失败: {}", e))?;
+      Ok::<_, String>((Some(path.clone()), path))
+    }
+  })
+  .await
+  .map_err(|e| format!("保存任务异常: {}", e))??;
+
+  let path = saved_path.to_string_lossy().into_owned();
+  if let Some(gallery_path) = gallery_path {
+    let _ = app.emit_to("main", "screenshot-saved", gallery_path.to_string_lossy());
+  }
+
+  match action.as_str() {
+    "copy" => {
+      use tauri_plugin_clipboard_manager::ClipboardExt;
+      let image = tauri::image::Image::new(cropped.as_raw(), cw, ch);
+      app
+        .clipboard()
+        .write_image(&image)
+        .map_err(|e| format!("写入剪贴板失败: {}", e))?;
+    }
+    "chat" | "ocr" => {
+      let event = if action == "chat" {
+        "screenshot-captured"
+      } else {
+        "screenshot-ocr"
+      };
+      app
+        .emit_to("main", event, &path)
+        .map_err(|e| format!("通知主窗口失败: {}", e))?;
+    }
+    "pin" => spawn_pin_window(&app, &path, Some(pin_position(&frame, cx, cy))).await?,
+    _ => {}
+  }
+  teardown_all(&app);
+  Ok(Some(ScreenshotOutcome {
+    action,
+    saved_path: Some(path),
+    warnings: Vec::new(),
+  }))
 }
 
 #[tauri::command]
 pub fn screenshot_cancel(app: AppHandle) -> Result<(), String> {
-  cancel_capture(app)
+  let state = app.state::<ScreenshotState>();
+  let _output = state
+    .capture_output
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
+  if crate::api::screenshot_record::recording_snapshot(&app).is_some() {
+    return Err("请使用录屏控制条结束录制".into());
+  }
+  // 前端在黑屏或解码失败时也需要取消，即使窗口刚创建完成。
+  teardown_all(&app);
+  Ok(())
 }
 
 // ---- 滚动截长图命令 ----
@@ -1230,6 +1468,14 @@ pub async fn screenshot_scroll_begin(
   height: u32,
 ) -> Result<ScrollStatus, String> {
   let state = app.state::<ScreenshotState>();
+  let _operation = state
+    .capture_operation
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
+  let _output = state
+    .capture_output
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
   let geometry = session_monitor_geometry(&state, monitor_index)?;
   let (mx, my, frame_w, frame_h) = geometry;
   let (rx, ry, rw, rh) = clamp_crop_rect(frame_w, frame_h, x, y, width, height);
@@ -1240,9 +1486,10 @@ pub async fn screenshot_scroll_begin(
 
   // 第一屏直接取自冻结帧：用户框选时看到的内容，且不会把覆盖窗自身的
   // 边框/控件捕获进画面（此刻覆盖窗尚未隐藏）。
-  let frame_path = session_frame_path(&state, monitor_index)?;
+  let frozen = session_monitor(&state.session.lock().unwrap(), monitor_index)?.clone();
   let frame = tauri::async_runtime::spawn_blocking(move || -> Result<image::RgbaImage, String> {
-    let img = image::open(&frame_path).map_err(|e| format!("读取冻结帧失败: {}", e))?;
+    let img = image::open(&frozen.frame_path).map_err(|e| format!("读取冻结帧失败: {}", e))?;
+    drop(frozen); // 阻塞读图完成前保留临时文件所有权，包括调用任务被取消的情况。
     Ok(image::imageops::crop_imm(&img, rx, ry, rw, rh).to_image())
   })
   .await
@@ -1276,6 +1523,9 @@ pub async fn screenshot_scroll_begin(
   let region = (rx, ry, rw, rh);
   std::thread::spawn(move || {
     std::thread::sleep(Duration::from_millis(350));
+    if stop.load(Ordering::Acquire) {
+      return;
+    }
     show_toolbar(&deferred_app, geometry, region);
     std::thread::sleep(Duration::from_millis(350));
     scroll_watcher(deferred_app, stop);
@@ -1441,8 +1691,16 @@ pub async fn screenshot_scroll_capture(app: AppHandle) -> Result<ScrollStatus, S
 /// 完成滚动截取：停看守线程，提交未匹配帧（直连+警告），长图入库。
 #[tauri::command]
 pub async fn screenshot_scroll_finish(app: AppHandle) -> Result<ScreenshotOutcome, String> {
-  stop_scroll_watcher(&app);
   let state = app.state::<ScreenshotState>();
+  let _operation = state
+    .capture_operation
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
+  let _output = state
+    .capture_output
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
+  stop_scroll_watcher(&app);
   let mut session = state
     .scroll
     .lock()
@@ -1492,6 +1750,11 @@ pub async fn screenshot_scroll_finish(app: AppHandle) -> Result<ScreenshotOutcom
 /// 取消滚动截取：丢弃已拼内容，不产出文件。
 #[tauri::command]
 pub fn screenshot_scroll_cancel(app: AppHandle) -> Result<(), String> {
+  let state = app.state::<ScreenshotState>();
+  let _output = state
+    .capture_output
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
   teardown_all(&app);
   Ok(())
 }
@@ -1734,10 +1997,73 @@ pub fn read_image_data_url(path: String) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
   use super::{
-    clamp_crop_rect, find_append_point, stitch_frames, MonitorFrameInfo, ScreenshotItem,
-    ScreenshotOutcome,
+    clamp_crop_rect, decode_annotated_png, find_append_point, stitch_frames, MonitorFrame,
+    MonitorFrameInfo, ScreenshotItem, ScreenshotOutcome, WindowRect,
   };
   use image::{Rgba, RgbaImage};
+  use std::sync::Arc;
+
+  #[test]
+  fn annotated_png_must_match_selection_dimensions() {
+    use base64::Engine;
+    let image = RgbaImage::from_pixel(4, 3, Rgba([255, 50, 0, 255]));
+    let mut png = Vec::new();
+    image
+      .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+      .unwrap();
+    let url = format!(
+      "data:image/png;base64,{}",
+      base64::engine::general_purpose::STANDARD.encode(png)
+    );
+    assert_eq!(decode_annotated_png(&url, 4, 3).unwrap(), image);
+    assert!(decode_annotated_png(&url, 5, 3).is_err());
+    assert!(decode_annotated_png(&url, 3, 3).is_err());
+    assert!(decode_annotated_png("data:image/jpeg;base64,AAAA", 4, 3).is_err());
+    assert!(decode_annotated_png("data:image/png;base64,broken", 4, 3).is_err());
+  }
+
+  #[test]
+  fn frozen_frame_lives_until_last_operation_reference_is_dropped() {
+    let file = tempfile::NamedTempFile::new().unwrap().into_temp_path();
+    let path = file.to_path_buf();
+    let frame = MonitorFrame {
+      index: 0,
+      label: "screenshot-overlay-0".into(),
+      frame_path: path.clone(),
+      _frame_file: Arc::new(file),
+      bounds: WindowRect {
+        x: -1440,
+        y: 0,
+        width: 1440,
+        height: 900,
+      },
+      width: 2880,
+      height: 1800,
+      scale: 2.0,
+      window_targets: vec![WindowRect {
+        x: 10,
+        y: 20,
+        width: 100,
+        height: 80,
+      }],
+    };
+    let output_frame = frame.clone();
+    let info = frame.info(Some((-1425.0, 25.0)), 0);
+    assert_eq!(
+      info.window_targets,
+      vec![WindowRect {
+        x: 20,
+        y: 40,
+        width: 200,
+        height: 160
+      }]
+    );
+    assert_eq!(info.cursor, Some((30.0, 50.0)));
+    drop(frame);
+    assert!(path.exists());
+    drop(output_frame);
+    assert!(!path.exists());
+  }
 
   /// 行列共同决定颜色的合成帧：像素 RGB = (x/8 + y + offset)。
   /// 列方向必须有差异——整行纯色的行会被锚点选择拒绝。
@@ -1771,6 +2097,9 @@ mod tests {
       y: 0,
       width: 1920,
       height: 1080,
+      window_targets: Vec::new(),
+      cursor: None,
+      focused: true,
     };
     let json = serde_json::to_value(&frame).unwrap();
     assert!(

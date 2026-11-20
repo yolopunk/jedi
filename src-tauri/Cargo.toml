@@ -12,9 +12,6 @@ edition = "2021"
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
-[dev-dependencies]
-tempfile = "3.8"
-
 [dependencies]
 tauri = { version = "2", features = ["tray-icon", "image-png", "image-ico", "tracing", "devtools", "protocol-asset"] }
 tauri-plugin-fs = "2.2.1"
@@ -45,6 +42,7 @@ tauri-plugin-http = "2"
 tauri-plugin-single-instance = "2"
 gray_matter = "0.3.2"
 # 截图裁剪依赖
+tempfile = "3.8"
 xcap = "0.9"
 image = { version = "0.25", default-features = false, features = ["png"] }
 # 截长图/选区录屏：openh264 自带 Cisco 源码编译，无系统依赖；mp4 纯 Rust 封装 MP4
@@ -82,6 +80,7 @@ cocoa = "0.26"
 # hosts 写入被拒（os error 5）时用 ShellExecuteExW(runas) 一次性提权
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.59", features = [
+  "Win32_Graphics_Dwm",
   "Win32_UI_WindowsAndMessaging",
   "Win32_UI_Shell",
   # 0.59 里 SHELLEXECUTEINFOW 本体被门在这个 feature 后面

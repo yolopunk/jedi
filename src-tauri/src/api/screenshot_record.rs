@@ -444,9 +444,16 @@ pub async fn start_region_record(
   fps: Option<u32>,
 ) -> Result<RecordStartInfo, String> {
   let shot_state = app.state::<crate::api::screenshot::ScreenshotState>();
+  let _operation = shot_state
+    .capture_operation
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
+  let _output = shot_state
+    .capture_output
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
   let geometry = session_monitor_geometry(&shot_state, monitor_index)?;
   let (mx, my, mw, mh) = geometry;
-  drop(shot_state);
   let (rx, ry, rw, rh) = clamp_crop_rect(mw, mh, x, y, width, height);
   let w = evenize(rw);
   let h = evenize(rh);
@@ -533,6 +540,15 @@ pub async fn stop_region_record(
   app: AppHandle,
   state: State<'_, RecordState>,
 ) -> Result<RecordOutcome, String> {
+  let shot_state = app.state::<crate::api::screenshot::ScreenshotState>();
+  let _operation = shot_state
+    .capture_operation
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
+  let _output = shot_state
+    .capture_output
+    .try_lock()
+    .map_err(|_| "截图操作进行中")?;
   let record = state
     .active
     .lock()

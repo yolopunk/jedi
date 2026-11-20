@@ -1,59 +1,73 @@
 <template>
   <div
+    ref="rootRef"
     class="overlay-root"
+    tabindex="-1"
     :class="{
-      'is-selecting': drag && drag.mode === 'new',
-      'has-selection': !!selection && mode === 'select',
       'is-recording': mode === 'record',
       'is-scrolling': mode === 'scroll',
     }"
-    @mousedown="onMouseDown"
-    @mousemove="onMouseMove"
-    @mouseup="onMouseUp"
-    @dblclick="confirmCopy"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
+    @pointerup="onPointerUp"
+    @pointercancel="cancelDrag"
+    @lostpointercapture="cancelDrag"
+    @pointerleave="leaveSurface"
+    @dblclick="confirmDoubleClick"
+    @contextmenu.prevent="onContextMenu"
   >
-    <!-- 冻结帧：窗口物理尺寸 = 显示器物理尺寸，CSS 视口按 scaleFactor 缩放后 1:1 铺满 -->
-    <img v-if="frameSrc && mode !== 'record' && mode !== 'scroll'" ref="frameEl" class="frozen-frame" :src="frameSrc" @load="revealOverlay" @error="cancel" draggable="false" alt="" />
+    <img
+      v-if="frameSrc && mode === 'select'"
+      ref="frameEl"
+      class="frozen-frame"
+      crossorigin="anonymous"
+      :src="frameSrc"
+      @load="revealOverlay"
+      @error="cancel"
+      draggable="false"
+      alt=""
+    />
 
-    <!-- 未开始框选时的十字引导线 -->
-    <template v-if="!selection && !drag">
-      <div v-if="cursor" class="guide guide-v" :style="{ left: `${cursor.x}px` }"></div>
-      <div v-if="cursor" class="guide guide-h" :style="{ top: `${cursor.y}px` }"></div>
-    </template>
-
-    <!-- 取景状态徽标：左上角常驻 -->
-    <div v-if="mode === 'select'" class="viewfinder-pill">
-      <span class="vp-dot" aria-hidden="true"></span>
-      {{ t('screenshot.viewfinder.label', { display: monitorIndex + 1 }) }}
-    </div>
+    <div v-if="windowTargetStyle" class="window-target" :style="windowTargetStyle" aria-hidden="true"></div>
+    <div v-else-if="mode === 'select' && !selection" class="capture-scrim" aria-hidden="true"></div>
 
     <!-- 选区：白描边 + 蓝色外圈，选区外压暗 -->
     <div
       v-if="selection && mode === 'select'"
       class="selection"
       :style="selectionStyle"
-      @mousedown.stop="onSelectionMouseDown"
-      @dblclick.stop="confirmCopy"
+      @pointerdown.stop="startDrag($event, 'move')"
     >
-      <div class="selection-inner" aria-hidden="true"></div>
+      <CaptureAnnotations
+        v-if="drag?.mode !== 'new'"
+        ref="editor"
+        :crop="selection"
+        :frame="frameEl"
+        :tool="annotationTool"
+        :color="annotationColor"
+        :width="annotationWidth"
+        :text-size="annotationTextSize"
+        :disabled="busy || !!drag"
+        @activate="focusOverlay"
+      />
       <div
         v-for="handle in HANDLES"
         :key="handle.id"
         class="handle"
         :class="[`handle-${handle.id}`]"
         :style="handleStyle(handle)"
-        @mousedown.stop="onHandleMouseDown(handle.id, $event)"
+        @pointerdown.stop="startDrag($event, 'resize', handle.id)"
       ></div>
       <div class="size-badge" :class="{ flipped: badgeFlipped }">
         {{ sizeLabel }}
-        <span class="badge-scale">· {{ scaleLabel }}</span>
       </div>
+    </div>
 
-      <!-- 像素放大镜：挂在选区右下角外侧 -->
-      <div v-if="loupeVisible" class="loupe" :class="loupeFlip" :style="loupeStyle" aria-hidden="true">
-        <canvas ref="loupeCanvas" class="loupe-canvas" width="4" height="4"></canvas>
-        <div class="loupe-meta"><span>8×</span><span>{{ loupeHex }}</span></div>
+    <div v-if="loupeStyle" class="loupe" :style="loupeStyle" aria-hidden="true">
+      <div class="loupe-grid">
+        <canvas ref="loupeCanvas" class="loupe-canvas" :width="LOUPE_PIXELS" :height="LOUPE_PIXELS"></canvas>
       </div>
+      <div class="loupe-meta"><span>{{ loupeCoords }}</span><span>{{ loupeHex }}</span></div>
     </div>
 
     <!-- 录制模式：保留选区边框 + REC 徽标与已录时长（窗口已点击穿透且排除出捕获） -->
@@ -92,67 +106,86 @@
     <!-- 长截图操作指引 -->
     <div v-if="mode === 'scroll'" class="film-instruction">{{ t('screenshot.scrolling.instruction') }}</div>
 
-    <!-- 操作条：阻止 mousedown 冒泡到根节点，否则按下按钮会先清空选区 -->
+    <!-- 整组定位，设置栏展开时一起避开屏幕边缘。 -->
     <div
-      v-if="selection && !busy && mode === 'select'"
+      v-if="selection && mode === 'select'"
+      v-show="!drag && !busy"
       ref="toolbarRef"
-      class="toolbar"
-      role="toolbar"
-      :aria-label="t('screenshot.title')"
+      class="capture-controls"
       :style="toolbarStyle"
-      @mousedown.stop
+      @pointerdown.stop
+      @pointermove.stop
+      @dblclick.stop
+      @mousedown="onToolbarMouseDown"
     >
-      <button class="tb-btn" type="button" @click.stop="finish('copy')">
-        <v-icon :icon="mdiContentCopy" size="15" aria-hidden="true" />
-        {{ t('screenshot.copy') }}
-      </button>
-      <button class="tb-btn" type="button" @click.stop="finish('save')">
-        <v-icon :icon="mdiContentSaveOutline" size="15" aria-hidden="true" />
-        {{ t('screenshot.save') }}
-      </button>
-
-      <span class="tb-divider" aria-hidden="true"></span>
-
-      <button class="tb-btn" type="button" :title="t('screenshot.ocr.shortcut')" @click.stop="finish('ocr')">
-        <v-icon :icon="mdiTextRecognition" size="16" aria-hidden="true" />
-        {{ t('screenshot.ocr.title') }}
-        <kbd>⇧C</kbd>
-      </button>
-      <button class="tb-btn" type="button" :title="t('screenshot.pin.shortcut')" @click.stop="finish('pin')">
-        <v-icon :icon="mdiPinOutline" size="15" aria-hidden="true" />
-        {{ t('screenshot.pin.action') }}
-      </button>
-      <button class="tb-btn tb-highlight" type="button" @click.stop="startScrolling">
-        <v-icon :icon="mdiArrowCollapseDown" size="16" aria-hidden="true" />
-        {{ t('screenshot.scrolling.action') }}
-      </button>
-      <button class="tb-btn" type="button" @click.stop="startRecording">
-        <v-icon :icon="mdiVideoOutline" size="16" aria-hidden="true" />
-        {{ t('screenshot.record.action') }}
-      </button>
-
-      <span class="tb-divider" aria-hidden="true"></span>
-
-      <button class="tb-btn tb-primary" type="button" @click.stop="finish('chat')">
-        <v-icon :icon="mdiRobotOutline" size="14" aria-hidden="true" />
-        {{ t('screenshot.sendToChat') }}
-      </button>
-      <button class="tb-btn tb-icon" type="button" :aria-label="t('screenshot.cancel')" @click.stop="cancel">
-        <v-icon :icon="mdiClose" size="16" aria-hidden="true" />
-      </button>
-    </div>
-
-    <!-- 快捷键提示：紧跟在操作条下方 -->
-    <div v-if="selection && !busy && mode === 'select'" ref="hintRef" class="toolbar-hints" :style="hintStyle">
-      <span><b>Enter</b> {{ t('screenshot.copy') }}</span>
-      <span><b>Esc</b> {{ t('screenshot.cancel') }}</span>
-      <span><b>⇧C</b> {{ t('screenshot.ocr.title') }}</span>
-      <span><b>P</b> {{ t('screenshot.pin.action') }}</span>
-      <span><b>{{ t('screenshot.viewfinder.doubleClick') }}</b> {{ t('screenshot.viewfinder.copyClose') }}</span>
+      <div class="toolbar" role="group" :aria-label="t('screenshot.title')">
+        <div class="tb-group" role="group" :aria-label="t('screenshot.annotation')">
+          <button
+            v-for="item in ANNOTATION_TOOLS"
+            :key="item.tool"
+            class="tb-btn"
+            type="button"
+            :aria-pressed="annotationTool === item.tool"
+            :aria-label="t(`screenshot.${item.label}`)"
+            :title="t(`screenshot.${item.label}`)"
+            @click="toggleAnnotation(item.tool)"
+          ><v-icon :icon="item.icon" size="18" aria-hidden="true" /></button>
+          <button class="tb-btn" type="button" :disabled="!editor?.canUndo" :title="t('screenshot.annoUndo')" :aria-label="t('screenshot.annoUndo')" @click="editor?.undo()">
+            <v-icon :icon="mdiUndo" size="18" aria-hidden="true" />
+          </button>
+          <button class="tb-btn" type="button" :disabled="!editor?.canRedo" :title="t('screenshot.annoRedo')" :aria-label="t('screenshot.annoRedo')" @click="editor?.redo()">
+            <v-icon :icon="mdiRedo" size="18" aria-hidden="true" />
+          </button>
+        </div>
+        <div class="tb-group tb-outputs">
+          <button
+            v-for="item in extraActions"
+            :key="item.label"
+            class="tb-btn"
+            type="button"
+            :disabled="item.live && !!editor?.hasEdits"
+            :title="t(item.live && editor?.hasEdits ? 'screenshot.liveNeedsUnmarked' : item.label)"
+            :aria-label="t(item.label)"
+            @click="item.run()"
+          ><v-icon :icon="item.icon" size="18" aria-hidden="true" /></button>
+          <button class="tb-btn" type="button" :title="t('screenshot.saveShortcut')" :aria-label="t('screenshot.save')" @click="finish('save')">
+            <v-icon :icon="mdiContentSaveOutline" size="18" aria-hidden="true" />
+          </button>
+          <button class="tb-btn" type="button" :title="t('screenshot.cancelShortcut')" :aria-label="t('screenshot.cancel')" @click="cancel">
+            <v-icon :icon="mdiClose" size="18" aria-hidden="true" />
+          </button>
+          <button class="tb-btn tb-primary" type="button" :title="t('screenshot.finishShortcut')" @click="finish('copy')">
+            <v-icon :icon="mdiCheck" size="18" aria-hidden="true" />
+            {{ t('screenshot.finishCapture') }}
+          </button>
+        </div>
+      </div>
+      <div v-if="annotationTool" class="annotation-options" role="group" :aria-label="t('screenshot.annotation')">
+        <div v-if="annotationTool !== 'mosaic'" class="tb-group" role="group" :aria-label="t('screenshot.annoColor')">
+          <button
+            v-for="color in ANNOTATION_COLORS"
+            :key="color"
+            class="color-choice"
+            type="button"
+            :aria-pressed="annotationColor === color"
+            :aria-label="t('screenshot.captureColor', { color })"
+            :title="t('screenshot.captureColor', { color })"
+            @click="annotationColor = color"
+          ><span :style="{ backgroundColor: color }" aria-hidden="true"></span></button>
+        </div>
+        <label v-if="annotationTool === 'text'" class="annotation-size">
+          {{ t('screenshot.annoFontSize') }}
+          <input v-model.number="annotationTextSize" type="range" min="14" max="54" step="2" />
+        </label>
+        <label v-else class="annotation-size">
+          {{ t(annotationTool === 'mosaic' ? 'screenshot.brushSize' : 'screenshot.annoWidth') }}
+          <input v-model.number="annotationWidth" type="range" min="2" max="12" />
+        </label>
+      </div>
     </div>
 
     <!-- 底部提示（无选区时） -->
-    <div v-if="!selection && !drag" class="hint">{{ t('screenshot.overlayHint') }}</div>
+    <div v-if="mode === 'select' && !selection && !drag" class="hint">{{ t('screenshot.overlayHint') }}</div>
 
     <!-- 快门闪白反馈 -->
     <div v-if="flashing" class="flash-overlay" aria-hidden="true"></div>
@@ -164,42 +197,50 @@
 <script setup lang="ts">
 import {
   mdiArrowCollapseDown,
+  mdiArrowTopRight,
+  mdiCheck,
+  mdiCheckerboard,
   mdiClose,
-  mdiContentCopy,
   mdiContentSaveOutline,
+  mdiEllipseOutline,
+  mdiFormatText,
+  mdiPencilOutline,
   mdiPinOutline,
+  mdiRectangleOutline,
+  mdiRedo,
   mdiRobotOutline,
   mdiTextRecognition,
+  mdiUndo,
+  mdiVectorLine,
   mdiVideoOutline,
 } from '@mdi/js'
 import { convertFileSrc } from '@tauri-apps/api/core'
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { getCurrentWindow } from '@tauri-apps/api/window'
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
+  copyScreenshotText,
+  type MonitorFrameInfo,
+  type PhysicalRect,
   screenshotCancel,
   screenshotFinish,
   screenshotFrameInfo,
   screenshotScrollBegin,
   startRegionRecord,
 } from '@/api/screenshot'
+// biome-ignore lint/style/useImportType: The Vue template renders this component at runtime.
+import CaptureAnnotations from './CaptureAnnotations.vue'
+import type { AnnotationTool, Point } from './capture-annotations'
 
 const { t } = useI18n()
 
-interface Rect {
-  x: number
-  y: number
-  w: number
-  h: number
-}
-
 interface DragState {
   mode: 'new' | 'move' | 'resize'
-  anchorX: number
-  anchorY: number
-  origin: Rect
-  handle: string | null
+  pointerId: number
+  anchor: Point
+  origin: PhysicalRect | null
+  handle?: Handle
 }
 
 const HANDLES = [
@@ -212,15 +253,40 @@ const HANDLES = [
   { id: 'sw', x: 0, y: 1 },
   { id: 'w', x: 0, y: 0.5 },
 ] as const
+type Handle = (typeof HANDLES)[number]['id']
 
-const TOOLBAR_HEIGHT = 46
-const TOOLBAR_HINT_GAP = 10
-const TOOLBAR_MARGIN = 8
+const ANNOTATION_TOOLS: { tool: AnnotationTool; icon: string; label: string }[] = [
+  { tool: 'rect', icon: mdiRectangleOutline, label: 'toolRect' },
+  { tool: 'ellipse', icon: mdiEllipseOutline, label: 'toolEllipse' },
+  { tool: 'arrow', icon: mdiArrowTopRight, label: 'toolArrow' },
+  { tool: 'line', icon: mdiVectorLine, label: 'toolLine' },
+  { tool: 'pen', icon: mdiPencilOutline, label: 'toolPen' },
+  { tool: 'mosaic', icon: mdiCheckerboard, label: 'toolMosaic' },
+  { tool: 'text', icon: mdiFormatText, label: 'toolText' },
+]
+const extraActions = [
+  { label: 'screenshot.ocr.shortcut', icon: mdiTextRecognition, run: () => finish('ocr') },
+  { label: 'screenshot.pin.shortcut', icon: mdiPinOutline, run: () => finish('pin') },
+  {
+    label: 'screenshot.scrolling.action',
+    icon: mdiArrowCollapseDown,
+    live: true,
+    run: startScrolling,
+  },
+  { label: 'screenshot.record.action', icon: mdiVideoOutline, live: true, run: startRecording },
+  { label: 'screenshot.sendToChat', icon: mdiRobotOutline, run: () => finish('chat') },
+]
+const ANNOTATION_COLORS = ['#ff4d4f', '#ffba27', '#34d399', '#38bdf8', '#17191f', '#ffffff']
+const annotationTool = ref<AnnotationTool | null>(null)
+const annotationColor = ref(ANNOTATION_COLORS[0])
+const annotationWidth = ref(4)
+const annotationTextSize = ref(24)
+const editor = ref<InstanceType<typeof CaptureAnnotations> | null>(null)
+const rootRef = ref<HTMLElement | null>(null)
 const toolbarRef = ref<HTMLElement | null>(null)
-const hintRef = ref<HTMLElement | null>(null)
-const toolbarWidth = ref(360)
-let toolbarObserver: ResizeObserver | null = null
-const MIN_SELECTION = 3
+const toolbarSize = ref({ width: 600, height: 48 })
+const viewport = ref({ width: 1, height: 1 })
+let toolbarObserver: ResizeObserver | undefined
 
 const window_ = getCurrentWindow()
 // 显示器编号编码在窗口 label 后缀（screenshot-overlay-<n>）
@@ -228,10 +294,11 @@ const monitorIndex = Number.parseInt(window_.label.split('-').pop() ?? '0', 10) 
 
 const frameSrc = ref('')
 const frameEl = ref<HTMLImageElement | null>(null)
-const scaleFactor = ref(1)
-const selection = ref<Rect | null>(null)
-const drag = ref<DragState | null>(null)
-const cursor = ref<{ x: number; y: number } | null>(null)
+const frameInfo = shallowRef<MonitorFrameInfo | null>(null)
+const frameReady = ref(false)
+const selection = shallowRef<PhysicalRect | null>(null)
+const drag = shallowRef<DragState | null>(null)
+const cursor = shallowRef<Point | null>(null)
 const busy = ref(false)
 const flashing = ref(false)
 const errorText = ref('')
@@ -254,117 +321,140 @@ const recordElapsedLabel = computed(() => {
   return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 })
 
-const selectionStyle = computed(() =>
-  selection.value
-    ? {
-        left: `${selection.value.x}px`,
-        top: `${selection.value.y}px`,
-        width: `${selection.value.w}px`,
-        height: `${selection.value.h}px`,
-      }
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), Math.max(min, max))
+}
+
+// 选区始终使用冻结帧像素，CSS 视口只负责显示，避免混合 DPI 下重复取整。
+const cssScale = computed(() => ({
+  x: viewport.value.width / (frameInfo.value?.width ?? 1),
+  y: viewport.value.height / (frameInfo.value?.height ?? 1),
+}))
+
+function cssRect(rect: PhysicalRect) {
+  const { x, y } = cssScale.value
+  return { x: rect.x * x, y: rect.y * y, width: rect.width * x, height: rect.height * y }
+}
+
+function rectStyle(rect: PhysicalRect | null) {
+  if (!rect) return undefined
+  const { x, y, width, height } = cssRect(rect)
+  return { left: `${x}px`, top: `${y}px`, width: `${width}px`, height: `${height}px` }
+}
+
+const selectionStyle = computed(() => rectStyle(selection.value))
+const sizeLabel = computed(() =>
+  selection.value ? `${selection.value.width} × ${selection.value.height}` : ''
+)
+const badgeFlipped = computed(() => (selection.value?.y ?? 0) * cssScale.value.y < 28)
+
+function targetAt(point: Point | null) {
+  const info = frameInfo.value
+  if (!point || !info) return null
+  return (
+    info.windowTargets.find(
+      rect =>
+        point.x >= rect.x &&
+        point.x < rect.x + rect.width &&
+        point.y >= rect.y &&
+        point.y < rect.y + rect.height
+    ) ?? { x: 0, y: 0, width: info.width, height: info.height }
+  )
+}
+
+const windowTargetStyle = computed(() =>
+  mode.value === 'select' && !selection.value && !drag.value
+    ? rectStyle(targetAt(cursor.value))
     : undefined
 )
 
-const sizeLabel = computed(() => {
-  if (!selection.value || !scaleFactor.value) return ''
-  const { w, h } = selection.value
-  return `${Math.round(w * scaleFactor.value)} × ${Math.round(h * scaleFactor.value)}`
-})
-
-const scaleLabel = computed(() => {
-  const s = scaleFactor.value
-  return `${Number.isInteger(s) ? s : s.toFixed(1)}×`
-})
-
-// 尺寸角标默认悬在选区上方居中，贴近屏幕顶时翻到选区内
-const badgeFlipped = computed(() => (selection.value?.y ?? 0) < 28)
-
 const toolbarStyle = computed(() => {
   if (!selection.value) return undefined
-  const { x, y, w, h } = selection.value
-  const vw = window.innerWidth
-  const vh = window.innerHeight
-  const maxLeft = Math.max(8, vw - toolbarWidth.value - 8)
-  const left = Math.min(Math.max(x + w / 2 - toolbarWidth.value / 2, 8), maxLeft)
-  const below = y + h + TOOLBAR_MARGIN + TOOLBAR_HEIGHT
-  const top =
-    below <= vh ? y + h + TOOLBAR_MARGIN : Math.max(y - TOOLBAR_MARGIN - TOOLBAR_HEIGHT, 8)
-  return { left: `${left}px`, top: `${top}px` }
-})
-
-const hintStyle = computed(() => {
-  if (!selection.value) return undefined
-  const { x, y, w, h } = selection.value
-  const vw = window.innerWidth
-  const vh = window.innerHeight
-  const hintWidth = hintRef.value?.offsetWidth ?? 420
-  const maxLeft = Math.max(8, vw - hintWidth - 8)
-  const left = Math.min(Math.max(x + w / 2 - hintWidth / 2, 8), maxLeft)
-  const below = y + h + TOOLBAR_MARGIN + TOOLBAR_HEIGHT + TOOLBAR_HINT_GAP
-  const top =
-    below <= vh ? below : Math.max(y - TOOLBAR_MARGIN - TOOLBAR_HEIGHT - TOOLBAR_HINT_GAP, 8)
-  return { left: `${left}px`, top: `${top}px` }
+  const rect = cssRect(selection.value)
+  const { width, height } = toolbarSize.value
+  const vw = viewport.value.width
+  const vh = viewport.value.height
+  const below = rect.y + rect.height + 8
+  const above = rect.y - 8 - height
+  const top = below + height + 8 <= vh ? below : above >= 8 ? above : vh - height - 8
+  return {
+    left: `${clamp(rect.x + rect.width - width, 8, vw - width - 8)}px`,
+    top: `${clamp(top, 8, vh - height - 8)}px`,
+  }
 })
 
 // ---- 像素放大镜 ----
 const loupeCanvas = ref<HTMLCanvasElement | null>(null)
-const loupeHex = ref('#FFFFFF')
-const LOUPE_SIZE = 96
-
-const loupeVisible = computed(
-  () => !!selection.value && mode.value === 'select' && !drag.value && !busy.value
+const loupeHex = ref('')
+const LOUPE_PIXELS = 11
+const LOUPE_CENTER = Math.floor(LOUPE_PIXELS / 2)
+const loupeCoords = computed(() =>
+  cursor.value ? `${Math.floor(cursor.value.x)}, ${Math.floor(cursor.value.y)}` : ''
 )
-
-/** 放大镜挂在选区右下角外侧，越界时翻进屏幕 */
-const loupeFlip = computed(() => {
-  if (!selection.value) return ''
-  const { x, y, w, h } = selection.value
-  const vw = window.innerWidth
-  const vh = window.innerHeight
-  const classes: string[] = []
-  if (x + w + LOUPE_SIZE > vw) classes.push('flip-x')
-  if (y + h + LOUPE_SIZE > vh) classes.push('flip-y')
-  return classes.join(' ')
+const loupeStyle = computed(() => {
+  if (
+    !cursor.value ||
+    !frameReady.value ||
+    busy.value ||
+    mode.value !== 'select' ||
+    (selection.value && !drag.value) ||
+    drag.value?.mode === 'move'
+  )
+    return undefined
+  const x = cursor.value.x * cssScale.value.x
+  const y = cursor.value.y * cssScale.value.y
+  const { width, height } = viewport.value
+  const left = x + 16 + 126 <= width ? x + 16 : x - 16 - 126
+  const top = y + 16 + 124 <= height ? y + 16 : y - 16 - 124
+  return {
+    left: `${clamp(left, 4, width - 130)}px`,
+    top: `${clamp(top, 4, height - 128)}px`,
+  }
 })
-
-const loupeStyle = computed(() => undefined)
 
 /** NEG 预览条挂在取景框右侧，贴近屏幕右缘时翻到左侧 */
 const negFlipped = computed(() => {
   if (!selection.value) return false
-  return selection.value.x + selection.value.w + 110 > window.innerWidth
+  const rect = cssRect(selection.value)
+  return rect.x + rect.width + 110 > viewport.value.width
 })
 
 let unlistenScrollFrame: UnlistenFn | undefined
 let unlistenRecordFinished: UnlistenFn | undefined
+let unlistenSelection: UnlistenFn | undefined
+let loupeAnimation = 0
 
 function sampleLoupe() {
   const canvas = loupeCanvas.value
   const frame = frameEl.value
-  if (!canvas || !frame || !cursor.value || !scaleFactor.value) return
+  if (!canvas || !frame || !cursor.value || !frameReady.value) return
   const ctx = canvas.getContext('2d', { willReadFrequently: true })
   if (!ctx) return
-  const px = Math.max(0, Math.round(cursor.value.x * scaleFactor.value) - 2)
-  const py = Math.max(0, Math.round(cursor.value.y * scaleFactor.value) - 2)
-  const sx = Math.min(px, Math.max(0, frame.naturalWidth - 4))
-  const sy = Math.min(py, Math.max(0, frame.naturalHeight - 4))
+  const px = clamp(Math.floor(cursor.value.x), 0, frame.naturalWidth - 1) - LOUPE_CENTER
+  const py = clamp(Math.floor(cursor.value.y), 0, frame.naturalHeight - 1) - LOUPE_CENTER
   try {
-    ctx.drawImage(frame, sx, sy, 4, 4, 0, 0, 4, 4)
-    const data = ctx.getImageData(2, 2, 1, 1).data
+    ctx.clearRect(0, 0, LOUPE_PIXELS, LOUPE_PIXELS)
+    ctx.drawImage(frame, px, py, LOUPE_PIXELS, LOUPE_PIXELS, 0, 0, LOUPE_PIXELS, LOUPE_PIXELS)
+    const data = ctx.getImageData(LOUPE_CENTER, LOUPE_CENTER, 1, 1).data
     loupeHex.value = `#${[data[0], data[1], data[2]]
       .map(v => v.toString(16).padStart(2, '0').toUpperCase())
       .join('')}`
   } catch {
-    /* 采样失败时保留上一次颜色 */
+    loupeHex.value = ''
   }
 }
 
-watch(loupeCanvas, canvas => {
-  if (!canvas) return
-  const ctx = canvas.getContext('2d', { willReadFrequently: true })
-  ctx?.clearRect(0, 0, canvas.width, canvas.height)
-  sampleLoupe()
-})
+watch(
+  [loupeCanvas, cursor],
+  () => {
+    if (!loupeCanvas.value || loupeAnimation) return
+    loupeAnimation = requestAnimationFrame(() => {
+      loupeAnimation = 0
+      sampleLoupe()
+    })
+  },
+  { flush: 'post' }
+)
 
 function showError(message: string) {
   errorText.value = message
@@ -374,124 +464,140 @@ function showError(message: string) {
   }, 3000)
 }
 
-function clampRect(rect: Rect): Rect {
-  const vw = window.innerWidth
-  const vh = window.innerHeight
-  const w = Math.min(Math.max(rect.w, 0), vw)
-  const h = Math.min(Math.max(rect.h, 0), vh)
-  const x = Math.min(Math.max(rect.x, 0), vw - w)
-  const y = Math.min(Math.max(rect.y, 0), vh - h)
-  return { x, y, w, h }
+function framePoint(e: PointerEvent): Point {
+  const { x, y } = cssScale.value
+  return { x: e.clientX / x, y: e.clientY / y }
 }
 
-function onMouseDown(e: MouseEvent) {
-  if (e.button !== 0 || busy.value) return
-  selection.value = null
-  drag.value = {
-    mode: 'new',
-    anchorX: e.clientX,
-    anchorY: e.clientY,
-    origin: { x: e.clientX, y: e.clientY, w: 0, h: 0 },
-    handle: null,
-  }
+function focusOverlay() {
+  rootRef.value?.focus({ preventScroll: true })
 }
 
-function onSelectionMouseDown(e: MouseEvent) {
-  if (e.button !== 0 || busy.value || !selection.value) return
-  const rect = selection.value
-  drag.value = {
-    mode: 'move',
-    anchorX: e.clientX,
-    anchorY: e.clientY,
-    origin: { ...rect },
-    handle: null,
-  }
+function onPointerDown(e: PointerEvent) {
+  // 选区外直接重画没有标注的选区。已有标注时先用右键或取消按钮撤回选区。
+  if (editor.value?.hasEdits) return
+  startDrag(e, 'new')
 }
 
-function onHandleMouseDown(handleId: string, e: MouseEvent) {
-  if (e.button !== 0 || busy.value || !selection.value) return
-  drag.value = {
-    mode: 'resize',
-    anchorX: e.clientX,
-    anchorY: e.clientY,
-    origin: { ...selection.value },
-    handle: handleId,
-  }
-}
-
-function onMouseMove(e: MouseEvent) {
-  cursor.value = { x: e.clientX, y: e.clientY }
-  if (loupeVisible.value) sampleLoupe()
-  const state = drag.value
-  if (!state) return
-  const dx = e.clientX - state.anchorX
-  const dy = e.clientY - state.anchorY
-
-  if (state.mode === 'new') {
-    selection.value = clampRect({
-      x: Math.min(state.anchorX, e.clientX),
-      y: Math.min(state.anchorY, e.clientY),
-      w: Math.abs(dx),
-      h: Math.abs(dy),
-    })
+function startDrag(e: PointerEvent, mode_: DragState['mode'], handle?: Handle) {
+  if (!frameReady.value || mode.value !== 'select' || e.button !== 0 || busy.value || drag.value)
     return
-  }
-  if (!selection.value) return
-
-  if (state.mode === 'move') {
-    selection.value = clampRect({
-      x: state.origin.x + dx,
-      y: state.origin.y + dy,
-      w: state.origin.w,
-      h: state.origin.h,
-    })
-    return
-  }
-
-  // resize：按手柄方向单侧/双侧跟随，允许跨过对边（等价于换边拖拽）
-  const handle = state.handle ?? ''
-  let { x, y, w, h } = state.origin
-  if (handle.includes('w')) {
-    x = state.origin.x + dx
-    w = state.origin.w - dx
-  }
-  if (handle.includes('e')) {
-    w = state.origin.w + dx
-  }
-  if (handle.includes('n')) {
-    y = state.origin.y + dy
-    h = state.origin.h - dy
-  }
-  if (handle.includes('s')) {
-    h = state.origin.h + dy
-  }
-  selection.value = clampRect({
-    x: Math.min(x, x + w),
-    y: Math.min(y, y + h),
-    w: Math.abs(w),
-    h: Math.abs(h),
-  })
-}
-
-function onMouseUp() {
-  const state = drag.value
-  drag.value = null
-  if (!state || state.mode !== 'new') return
-  const rect = selection.value
-  if (!rect || rect.w < MIN_SELECTION || rect.h < MIN_SELECTION) {
+  e.preventDefault()
+  focusOverlay()
+  rootRef.value?.setPointerCapture(e.pointerId)
+  const anchor = framePoint(e)
+  drag.value = { mode: mode_, pointerId: e.pointerId, anchor, origin: selection.value, handle }
+  if (mode_ === 'new') {
+    annotationTool.value = null
     selection.value = null
   }
+  cursor.value = anchor
 }
 
-function physicalRect() {
-  const { x, y, w, h } = selection.value!
-  const scale = scaleFactor.value
+function moveSelection(rect: PhysicalRect, dx: number, dy: number): PhysicalRect {
+  const info = frameInfo.value!
   return {
-    x: Math.round(x * scale),
-    y: Math.round(y * scale),
-    width: Math.round(w * scale),
-    height: Math.round(h * scale),
+    ...rect,
+    x: clamp(rect.x + dx, 0, info.width - rect.width),
+    y: clamp(rect.y + dy, 0, info.height - rect.height),
   }
+}
+
+function rectFromEdges(left: number, top: number, right: number, bottom: number): PhysicalRect {
+  const info = frameInfo.value!
+  const x = clamp(Math.round(Math.min(left, right)), 0, info.width - 1)
+  const y = clamp(Math.round(Math.min(top, bottom)), 0, info.height - 1)
+  return {
+    x,
+    y,
+    width: clamp(Math.round(Math.max(left, right)) - x, 1, info.width - x),
+    height: clamp(Math.round(Math.max(top, bottom)) - y, 1, info.height - y),
+  }
+}
+
+function updateDrag(state: DragState, point: Point) {
+  const { anchor, origin } = state
+  const dx = Math.round(point.x - anchor.x)
+  const dy = Math.round(point.y - anchor.y)
+  if (state.mode === 'new') {
+    const { x, y } = cssScale.value
+    if (Math.hypot(dx * x, dy * y) >= 4 || selection.value) {
+      selection.value = rectFromEdges(anchor.x, anchor.y, point.x, point.y)
+    }
+  } else if (origin && state.mode === 'move') {
+    selection.value = moveSelection(origin, dx, dy)
+  } else if (origin && state.handle) {
+    const { x, y, width, height } = origin
+    const handle = state.handle
+    selection.value = rectFromEdges(
+      x + (handle.includes('w') ? dx : 0),
+      y + (handle.includes('n') ? dy : 0),
+      x + width + (handle.includes('e') ? dx : 0),
+      y + height + (handle.includes('s') ? dy : 0)
+    )
+  }
+}
+
+function onPointerMove(e: PointerEvent) {
+  if (!frameReady.value || mode.value !== 'select') return
+  const point = framePoint(e)
+  const info = frameInfo.value!
+  cursor.value = { x: clamp(point.x, 0, info.width - 1), y: clamp(point.y, 0, info.height - 1) }
+  const state = drag.value
+  if (state?.pointerId === e.pointerId) updateDrag(state, point)
+}
+
+function onPointerUp(e: PointerEvent) {
+  const state = drag.value
+  if (state?.pointerId !== e.pointerId) return
+  const point = framePoint(e)
+  updateDrag(state, point)
+  drag.value = null
+  if (state.mode === 'new') {
+    selection.value ??= targetAt(point)
+    if (selection.value) announceSelection()
+  }
+}
+
+function cancelDrag(e?: PointerEvent) {
+  const state = drag.value
+  if (!state || (e && state.pointerId !== e.pointerId)) return
+  selection.value = state.origin
+  drag.value = null
+  const root = rootRef.value
+  if (root?.hasPointerCapture(state.pointerId)) root.releasePointerCapture(state.pointerId)
+}
+
+function leaveSurface() {
+  if (!drag.value) cursor.value = null
+}
+
+function announceSelection() {
+  void emit('capture-selection', window_.label).catch(() => {})
+}
+
+function resetSelection() {
+  drag.value = null
+  selection.value = null
+  annotationTool.value = null
+  focusOverlay()
+}
+
+function onContextMenu() {
+  if (busy.value || mode.value !== 'select') return
+  if (selection.value) resetSelection()
+  else void cancel()
+}
+
+function toggleAnnotation(tool: AnnotationTool) {
+  annotationTool.value = annotationTool.value === tool ? null : tool
+}
+
+function onToolbarMouseDown(e: MouseEvent) {
+  if (e.button !== 0 || !(e.target instanceof Element) || !e.target.closest('button')) return
+  // 鼠标点工具后仍由 Enter 完成截图；Tab 聚焦按钮时保留原生键盘行为。
+  e.preventDefault()
+  focusOverlay()
 }
 
 /** 快门闪白：120ms 淡出，告诉用户「拍到了」 */
@@ -504,18 +610,27 @@ function shutterFlash() {
 }
 
 async function finish(action: 'copy' | 'save' | 'chat' | 'ocr' | 'pin') {
-  if (!selection.value || busy.value) return
+  const rect = selection.value
+  if (!rect || busy.value || drag.value || editor.value?.isDrawing || mode.value !== 'select')
+    return
   busy.value = true
-  shutterFlash()
+  errorText.value = ''
   try {
-    await screenshotFinish(monitorIndex, physicalRect(), action)
-    // 成功后 Rust 会关闭所有覆盖窗口；窗口若仍在（异常路径）则兜底取消
-    window.setTimeout(() => {
-      busy.value = false
-    }, 2000)
+    const annotatedPng = await editor.value?.exportPng()
+    if (action === 'copy') shutterFlash()
+    const result = await screenshotFinish(
+      monitorIndex,
+      rect,
+      action,
+      annotatedPng,
+      action === 'save' ? t('screenshot.saveCapture') : undefined
+    )
+    // 保存对话框取消时，覆盖窗保留当前选区与标注。
+    if (!result) focusOverlay()
   } catch (err) {
-    busy.value = false
     showError(t('screenshot.captureFailed', { message: String(err) }))
+  } finally {
+    busy.value = false
   }
 }
 
@@ -524,31 +639,27 @@ async function finish(action: 'copy' | 'save' | 'chat' | 'ocr' | 'pin') {
  * 画面实时可见，用户可以直接在框内滚动页面。
  */
 async function startScrolling() {
-  if (!selection.value || busy.value) return
+  if (!selection.value || busy.value || editor.value?.hasEdits) return
   busy.value = true
   try {
-    const status = await screenshotScrollBegin(monitorIndex, physicalRect())
+    const status = await screenshotScrollBegin(monitorIndex, selection.value)
     scrollFrameCount.value = status.frameCount
     scrollStitchedHeight.value = status.stitchedHeight
     scrollThumb.value = status.stitchedThumb
     scrollMatchOk.value = status.matchOk
     mode.value = 'scroll'
-    // 后端已接管窗口；失败兜底恢复交互
-    window.setTimeout(() => {
-      busy.value = false
-    }, 2000)
   } catch (err) {
-    mode.value = 'select'
-    busy.value = false
     showError(t('screenshot.scrolling.failed', { message: String(err) }))
+  } finally {
+    busy.value = false
   }
 }
 
 /** 进入选区录屏：本窗口切为透明穿透（后端设置），仅渲染边框与 REC 徽标 */
 async function startRecording() {
-  if (!selection.value || busy.value) return
+  if (!selection.value || busy.value || editor.value?.hasEdits) return
   busy.value = true
-  const rect = physicalRect()
+  const rect = selection.value
   mode.value = 'record'
   recordStartAt = Date.now()
   recordElapsedMs.value = 0
@@ -574,8 +685,8 @@ function stopRecordUi() {
   busy.value = false
 }
 
-function confirmCopy() {
-  finish('copy')
+function confirmDoubleClick(e: MouseEvent) {
+  if (!annotationTool.value && !(e.target instanceof HTMLTextAreaElement)) void finish('copy')
 }
 
 async function cancel() {
@@ -590,32 +701,83 @@ async function cancel() {
 }
 
 function onKeyDown(e: KeyboardEvent) {
-  // 录制模式由悬浮控制条接管键盘，覆盖窗此时也不持有焦点
-  if (mode.value === 'record') {
-    if (e.key === 'Escape' || e.key === 'Enter' || e.code === 'Space') e.preventDefault()
+  if (
+    mode.value !== 'select' ||
+    !frameReady.value ||
+    busy.value ||
+    e.defaultPrevented ||
+    e.isComposing ||
+    e.keyCode === 229
+  )
     return
-  }
+  if (e.target instanceof HTMLTextAreaElement) return
+
   if (e.key === 'Escape') {
     e.preventDefault()
-    cancel()
+    if (drag.value) cancelDrag()
+    else if (!editor.value?.abortStroke()) void cancel()
     return
   }
-  if (e.key === 'Enter') {
+
+  const key = e.key.toLowerCase()
+  const shortcut = (e.ctrlKey || e.metaKey) && !e.altKey
+  const rect = selection.value
+  if (editor.value?.isDrawing) {
     e.preventDefault()
-    if (selection.value) confirmCopy()
     return
   }
-  if (selection.value && e.shiftKey && e.key.toLowerCase() === 'c') {
+  if (shortcut && key === 'a' && !rect && frameInfo.value && !drag.value) {
     e.preventDefault()
-    finish('ocr')
+    selection.value = { x: 0, y: 0, width: frameInfo.value.width, height: frameInfo.value.height }
+    announceSelection()
     return
   }
-  if (selection.value && !e.shiftKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === 'p') {
+  if (!rect) {
+    if (shortcut && key === 'c' && loupeStyle.value && loupeHex.value && !drag.value) {
+      e.preventDefault()
+      void copyScreenshotText(loupeHex.value).catch(err =>
+        showError(t('screenshot.captureFailed', { message: String(err) }))
+      )
+    } else if (e.key === 'Enter' && !drag.value) {
+      selection.value = targetAt(cursor.value)
+      if (selection.value) announceSelection()
+    }
+    return
+  }
+  if (drag.value) return
+
+  if (shortcut && (key === 'z' || key === 'y')) {
     e.preventDefault()
-    finish('pin')
+    if (key === 'y' || e.shiftKey) editor.value?.redo()
+    else editor.value?.undo()
     return
   }
-  if (!selection.value) return
+  if (shortcut && key === 's') {
+    e.preventDefault()
+    void finish('save')
+    return
+  }
+  if (
+    (shortcut && key === 'c') ||
+    (e.key === 'Enter' &&
+      !(e.target instanceof HTMLButtonElement) &&
+      !(e.target instanceof HTMLInputElement))
+  ) {
+    e.preventDefault()
+    void finish('copy')
+    return
+  }
+  if (!shortcut && !e.altKey && e.shiftKey && key === 'c') {
+    e.preventDefault()
+    void finish('ocr')
+    return
+  }
+  if (!shortcut && !e.altKey && !e.shiftKey && key === 'p') {
+    e.preventDefault()
+    void finish('pin')
+    return
+  }
+  if (e.target instanceof HTMLInputElement || shortcut) return
   const step = e.shiftKey ? 10 : 1
   let dx = 0
   let dy = 0
@@ -625,23 +787,41 @@ function onKeyDown(e: KeyboardEvent) {
   else if (e.key === 'ArrowDown') dy = step
   else return
   e.preventDefault()
-  const rect = selection.value
-  selection.value = clampRect({ ...rect, x: rect.x + dx, y: rect.y + dy })
+  if (e.altKey) {
+    selection.value = rectFromEdges(
+      rect.x,
+      rect.y,
+      rect.x + Math.max(1, rect.width + dx),
+      rect.y + Math.max(1, rect.height + dy)
+    )
+  } else {
+    selection.value = moveSelection(rect, dx, dy)
+  }
 }
 
 function handleStyle(handle: (typeof HANDLES)[number]) {
   return {
-    left: `calc(${handle.x * 100}% - ${handle.x === 0.5 ? 4.5 : 4.5}px)`,
-    top: `calc(${handle.y * 100}% - ${handle.y === 0.5 ? 4.5 : 4.5}px)`,
+    left: `${handle.x * 100}%`,
+    top: `${handle.y * 100}%`,
   }
+}
+
+function syncViewport() {
+  viewport.value = { width: window.innerWidth, height: window.innerHeight }
 }
 
 async function revealOverlay(event: Event) {
   try {
     await (event.target as HTMLImageElement).decode()
+    if (frameReady.value) return
+    syncViewport()
+    frameReady.value = true
     await nextTick()
     await window_.show()
-    if (monitorIndex === 0) await window_.setFocus()
+    if (frameInfo.value?.focused) {
+      await window_.setFocus()
+      if (!selection.value) focusOverlay()
+    }
   } catch (err) {
     console.error(err)
     await cancel()
@@ -649,7 +829,25 @@ async function revealOverlay(event: Event) {
 }
 
 onMounted(async () => {
+  syncViewport()
+  window.addEventListener('resize', syncViewport)
   window.addEventListener('keydown', onKeyDown)
+  try {
+    unlistenSelection = await listen<string>('capture-selection', event => {
+      if (
+        event.payload !== window_.label &&
+        mode.value === 'select' &&
+        !busy.value &&
+        !drag.value
+      ) {
+        selection.value = null
+        annotationTool.value = null
+        cursor.value = null
+      }
+    })
+  } catch {
+    /* 可继续在单个屏幕选取 */
+  }
   try {
     // 滚动模式：累积长图实时预览跟随增长（事件在滚动会话期间才发出）
     unlistenScrollFrame = await listen<{
@@ -680,11 +878,9 @@ onMounted(async () => {
     /* 事件监听失败不影响框选 */
   }
   try {
-    const [info, scale] = await Promise.all([
-      screenshotFrameInfo(monitorIndex),
-      window_.scaleFactor(),
-    ])
-    scaleFactor.value = scale
+    const info = await screenshotFrameInfo(monitorIndex)
+    frameInfo.value = info
+    if (info.cursor) cursor.value = { x: info.cursor[0], y: info.cursor[1] }
     frameSrc.value = convertFileSrc(info.framePath)
   } catch (err) {
     console.error(err)
@@ -694,11 +890,10 @@ onMounted(async () => {
 
 watch(toolbarRef, element => {
   toolbarObserver?.disconnect()
-  toolbarObserver = null
   if (!element) return
-  toolbarObserver = new ResizeObserver(entries => {
-    const width = entries[0]?.borderBoxSize?.[0]?.inlineSize ?? element.offsetWidth
-    if (width > 0) toolbarWidth.value = width
+  toolbarObserver = new ResizeObserver(() => {
+    const { offsetWidth: width, offsetHeight: height } = element
+    if (width && height) toolbarSize.value = { width, height }
   })
   toolbarObserver.observe(element)
 })
@@ -707,7 +902,10 @@ onUnmounted(() => {
   toolbarObserver?.disconnect()
   unlistenScrollFrame?.()
   unlistenRecordFinished?.()
+  unlistenSelection?.()
+  window.removeEventListener('resize', syncViewport)
   window.removeEventListener('keydown', onKeyDown)
+  cancelAnimationFrame(loupeAnimation)
   if (errorTimer) window.clearTimeout(errorTimer)
   if (flashTimer) window.clearTimeout(flashTimer)
   if (recordTimer) window.clearInterval(recordTimer)
@@ -720,8 +918,10 @@ onUnmounted(() => {
   inset: 0;
   overflow: hidden;
   user-select: none;
+  touch-action: none;
   cursor: crosshair;
   background: #05070a;
+  outline: none;
 }
 
 /* 录制模式：窗口透明化（后端同时开启点击穿透与捕获排除），只留边框与徽标 */
@@ -734,33 +934,6 @@ onUnmounted(() => {
 .overlay-root.is-scrolling {
   cursor: default;
   background: transparent;
-}
-
-/* 取景状态徽标：左上角 */
-.viewfinder-pill {
-  position: absolute;
-  top: 28px;
-  left: 34px;
-  z-index: 4;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  background: rgba(15, 18, 24, 0.72);
-  font: 500 9.5px/1 var(--jedi-font-mono, monospace);
-  letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.72);
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.vp-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: #3574f0;
 }
 
 /* 快门闪白 */
@@ -1003,54 +1176,45 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-.guide {
+.capture-scrim {
   position: absolute;
-  background: rgba(91, 174, 255, 0.48);
-  box-shadow: 0 0 8px rgba(62, 158, 255, 0.22);
+  inset: 0;
+  background: rgba(15, 18, 24, 0.56);
   pointer-events: none;
-  z-index: 1;
 }
 
-.guide-v {
-  top: 0;
-  bottom: 0;
-  width: 1px;
-}
-
-.guide-h {
-  left: 0;
-  right: 0;
-  height: 1px;
-}
-
-.selection {
+.selection,
+.window-target {
   position: absolute;
-  border: 1px solid rgba(255, 255, 255, 0.92);
-  /* 蓝色外圈 + 选区外整体压暗 */
+  /* 描边不占布局空间，标注画布可直接使用选区的完整尺寸。 */
   box-shadow:
-    0 0 0 1px rgba(53, 116, 240, 0.9),
-    0 24px 60px rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px #fff,
+    0 0 0 1px var(--accent),
     0 0 0 100000px rgba(15, 18, 24, 0.56);
-  cursor: move;
   z-index: 2;
 }
 
-/* 选区内侧蓝线 */
-.selection-inner {
-  position: absolute;
-  inset: 0;
-  border: 1px solid rgba(53, 116, 240, 0.55);
+.window-target {
   pointer-events: none;
 }
 
+.selection { cursor: move; }
+
 .handle {
   position: absolute;
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
   background: #fff;
-  border: 1.5px solid #3574f0;
+  border: 1.5px solid var(--accent);
   border-radius: 2px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+}
+
+.handle::before {
+  position: absolute;
+  inset: -3px;
+  content: '';
 }
 
 .handle-nw,
@@ -1075,9 +1239,8 @@ onUnmounted(() => {
 
 .size-badge {
   position: absolute;
-  top: -13px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: calc(100% + 6px);
+  left: 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1095,42 +1258,39 @@ onUnmounted(() => {
 
 .size-badge.flipped {
   top: 7px;
+  bottom: auto;
 }
 
-.badge-scale {
-  color: rgba(255, 255, 255, 0.42);
-  font-weight: 400;
-}
-
-/* 像素放大镜：挂在选区右下角外侧，越界翻入屏幕 */
 .loupe {
   position: absolute;
-  right: -96px;
-  bottom: -96px;
-  width: 84px;
-  padding: 5px;
+  width: 126px;
+  padding: 6px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 9px;
+  border-radius: 10px;
   background: #0f1218;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
   pointer-events: none;
   z-index: 3;
 }
 
-.loupe.flip-x {
-  right: auto;
-  left: -96px;
+.loupe-grid {
+  position: relative;
+  display: grid;
+  place-items: center;
 }
 
-.loupe.flip-y {
-  bottom: auto;
-  top: -96px;
+.loupe-grid::after {
+  content: '';
+  position: absolute;
+  inset: calc(50% - 4px);
+  outline: 1px solid #fff;
+  box-shadow: 0 0 0 2px #101216;
 }
 
 .loupe-canvas {
   display: block;
-  width: 74px;
-  height: 74px;
+  width: 99px;
+  height: 99px;
   border-radius: 5px;
   image-rendering: pixelated;
 }
@@ -1138,121 +1298,138 @@ onUnmounted(() => {
 .loupe-meta {
   display: flex;
   justify-content: space-between;
-  margin-top: 4px;
-  font: 400 8px var(--jedi-font-mono, monospace);
-  color: rgba(255, 255, 255, 0.5);
+  gap: 4px;
+  margin-top: 5px;
+  font: 500 10px/1.2 var(--jedi-font-mono, monospace);
+  color: #f0f2f6;
 }
 
-.toolbar {
+.capture-controls {
   position: absolute;
   display: flex;
-  align-items: center;
-  gap: 6px;
-  height: 46px;
-  padding: 0 8px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 13px;
-  background: rgba(15, 18, 24, 0.94);
-  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.045);
-  backdrop-filter: blur(22px) saturate(145%);
-  z-index: 3;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
   max-width: calc(100vw - 16px);
-  overflow-x: auto;
-  white-space: nowrap;
-  animation: toolbar-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  cursor: default;
+  z-index: 4;
+  animation: toolbar-enter 140ms ease-out;
+}
+
+.toolbar,
+.annotation-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px 6px;
+  max-width: 100%;
+  padding: 5px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 11px;
+  background: rgba(15, 18, 24, 0.97);
+  box-shadow: 0 20px 46px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  color: #f3f5f9;
+}
+
+.tb-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tb-outputs {
+  border-inline-start: 1px solid rgba(255, 255, 255, 0.16);
+  padding-inline-start: 6px;
 }
 
 .tb-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 30px;
-  padding: 0 11px;
+  justify-content: center;
+  gap: 5px;
+  min-width: 32px;
+  height: 34px;
   border: none;
-  border-radius: 8px;
+  border-radius: 7px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.82);
+  color: inherit;
   font-size: 12px;
   font-weight: 500;
-  line-height: 1.5;
   cursor: pointer;
-  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease;
+  transition: background var(--motion-fast) ease;
 }
 
-.tb-icon {
-  justify-content: center;
-  width: 30px;
-  padding-inline: 0;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.tb-btn kbd {
-  padding: 0 4px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.42);
-  font: 400 9px/1.5 var(--jedi-font-mono, monospace);
-}
-
-.tb-btn:hover {
+.tb-btn:enabled:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
 }
 
-.tb-btn:focus-visible {
+.tb-btn:focus-visible,
+.color-choice:focus-visible,
+.annotation-size input:focus-visible {
   outline: 2px solid #69b8ff;
   outline-offset: 1px;
 }
 
-/* 截长图：取景条中的高亮项 */
-.tb-highlight {
-  background: rgba(53, 116, 240, 0.18);
-  border: 1px solid rgba(53, 116, 240, 0.5);
-  color: #9cc2ff;
-  font-weight: 600;
+.tb-btn[aria-pressed='true'] {
+  background: rgba(83, 155, 245, 0.22);
+  color: #b8d8ff;
+  box-shadow: inset 0 0 0 1px rgba(83, 155, 245, 0.6);
 }
 
-.tb-highlight:hover {
-  background: rgba(53, 116, 240, 0.28);
-  color: #b8d2ff;
+.tb-btn:disabled {
+  opacity: 0.42;
+  cursor: default;
 }
 
 .tb-primary {
-  background: #3574f0;
-  color: #fff;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(53, 116, 240, 0.4);
-}
-
-.tb-primary:hover {
+  padding: 0 10px;
   background: #2f68e0;
   color: #fff;
-}
-
-.tb-divider {
-  width: 1px;
-  height: 20px;
-  margin: 0 3px;
-  background: rgba(255, 255, 255, 0.16);
-}
-
-/* 快捷键提示行 */
-.toolbar-hints {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  font: 400 10px var(--jedi-font-mono, monospace);
-  color: rgba(255, 255, 255, 0.5);
-  white-space: nowrap;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.toolbar-hints b {
-  color: rgba(255, 255, 255, 0.82);
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.tb-primary:enabled:hover {
+  background: #2456bf;
+}
+
+.color-choice {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.color-choice span {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.color-choice:hover { background: rgba(255, 255, 255, 0.1); }
+.color-choice[aria-pressed='true'] span { outline: 2px solid #fff; outline-offset: 2px; }
+
+.annotation-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 0 4px;
+  color: #e1e6ee;
+  font-size: 11px;
+}
+
+.annotation-size input {
+  width: 84px;
+  accent-color: #69b8ff;
+  cursor: pointer;
 }
 
 .hint {
@@ -1270,7 +1447,7 @@ onUnmounted(() => {
   backdrop-filter: blur(16px);
   white-space: nowrap;
   pointer-events: none;
-  z-index: 1;
+  z-index: 3;
 }
 
 .error-toast {
@@ -1284,16 +1461,16 @@ onUnmounted(() => {
   background: rgba(127, 29, 29, 0.93);
   color: #fff;
   font-size: 13px;
-  z-index: 4;
+  z-index: 5;
 }
 
 @keyframes toolbar-enter {
-  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .toolbar { animation: none; }
+  .capture-controls, .rec-dot { animation: none; }
   .tb-btn { transition: none; }
 }
 </style>

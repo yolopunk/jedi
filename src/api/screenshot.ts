@@ -4,6 +4,8 @@
  */
 import { invoke } from '@tauri-apps/api/core'
 
+export type PhysicalRect = { x: number; y: number; width: number; height: number }
+
 export interface MonitorFrameInfo {
   index: number
   framePath: string
@@ -11,6 +13,9 @@ export interface MonitorFrameInfo {
   y: number
   width: number
   height: number
+  windowTargets: PhysicalRect[]
+  cursor: [number, number] | null
+  focused: boolean
 }
 
 export interface ScreenshotOutcome {
@@ -62,8 +67,6 @@ export interface RecordOutcome {
   path: string
 }
 
-type PhysicalRect = { x: number; y: number; width: number; height: number }
-
 /** 触发一轮截图：后端捕获显示器并弹出覆盖窗口 */
 export function screenshotBegin(): Promise<MonitorFrameInfo[]> {
   return invoke('screenshot_begin')
@@ -77,10 +80,14 @@ export function screenshotFrameInfo(monitorIndex: number): Promise<MonitorFrameI
 /** 确认选区并执行输出动作（copy / save / chat / ocr / pin），坐标为物理像素 */
 export function screenshotFinish(
   monitorIndex: number,
-  rect: { x: number; y: number; width: number; height: number },
-  action: 'copy' | 'save' | 'chat' | 'ocr' | 'pin'
-): Promise<ScreenshotOutcome> {
-  return invoke('screenshot_finish', { monitorIndex, ...rect, action })
+  rect: PhysicalRect,
+  action: 'copy' | 'save' | 'chat' | 'ocr' | 'pin',
+  annotatedPng?: string,
+  saveTitle?: string
+): Promise<ScreenshotOutcome | null> {
+  return invoke('screenshot_finish', {
+    output: { monitorIndex, ...rect, action, annotatedPng, saveTitle },
+  })
 }
 
 /** 取消本轮截图 */

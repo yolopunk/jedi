@@ -267,12 +267,8 @@ onMounted(async () => {
   unlisteners.push(
     await listen<{ ok: boolean; path?: string; message?: string }>('record-finished', event => {
       if (!event.payload.ok) {
-        // 录制线程失败：先让用户看到错误，再自动 stop 收尾（join 已死线程很快，
-        // 同时清理状态，保证下一次还能开始录制）
+        // 后端会在显示错误后清理会话，即使控制条尚未挂载。
         showError(t('screenshot.record.failed', { message: event.payload.message ?? '' }), true)
-        window.setTimeout(() => {
-          void stop()
-        }, 2500)
       }
     })
   )

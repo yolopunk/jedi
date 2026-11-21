@@ -1,12 +1,16 @@
 // 选区录屏：后台线程按 fps 捕获选区帧 → openh264 编码 H.264 → 纯 Rust mp4 封装
 //
-// 录制期间选区所在覆盖窗保持可见（点击穿透 + Windows 下排除出系统捕获），
+// 录制期间保留点击穿透的选区边框（Windows 使用排除出系统捕获的原生边框），
 // 悬浮控制条提供「停止」；达到最长时长自动停止；窗口关闭/应用退出时通过
 // stop + join 干净收尾并产出文件，不泄漏线程。
 
+#[cfg(not(target_os = "windows"))]
+use crate::api::screenshot::keep_selection_overlay;
+#[cfg(target_os = "windows")]
+use crate::api::screenshot::show_recording_frame;
 use crate::api::screenshot::{
-  clamp_crop_rect, keep_selection_overlay, screenshots_dir, session_monitor_geometry, show_toolbar,
-  teardown_all, timestamped_filename, TOOLBAR_LABEL,
+  clamp_crop_rect, screenshots_dir, session_monitor_geometry, show_toolbar, teardown_all,
+  timestamped_filename, TOOLBAR_LABEL,
 };
 use serde::Serialize;
 use std::fs;
@@ -19,6 +23,8 @@ use tauri::{AppHandle, Emitter, Manager, State};
 /// 录屏最长时长：线程内兜底停录（正常由悬浮条到点调 stop 命令收尾）
 const MAX_DURATION: Duration = Duration::from_secs(600);
 const DEFAULT_FPS: u32 = 24;
+/// OpenH264 不支持小于 16 像素的宽或高。
+const MIN_RECORD_SIZE: u32 = 16;
 
 pub struct RecordState {
   active: Mutex<Option<ActiveRecord>>,
@@ -283,8 +289,7 @@ fn write_mp4(
 }
 
 /// 录制线程主体：捕获 → 编码 → 封装，结果写回共享槽位。
-/// 只发事件、绝不拆除窗口/会话——所有收尾统一走 stop_region_record/shutdown，
-/// 否则错误路径会把 UI 拆光且 RecordState 残留，之后再也无法开始录制。
+/// 无人调用停止命令时，把收尾交给异步任务，避免录制线程等待自己退出。
 fn record_thread(
   app: AppHandle,
   monitor_index: usize,
@@ -333,8 +338,6 @@ fn record_thread(
     let mut total_pause = Duration::ZERO;
     let mut pause_started: Option<Instant> = None;
     let mut frame_times: Vec<Duration> = Vec::new();
-    let mut out_w = width;
-    let mut out_h = height;
 
     loop {
       if stop.load(Ordering::Acquire) {
@@ -358,22 +361,10 @@ fn record_thread(
       let frame = monitor
         .capture_image()
         .map_err(|e| format!("捕获画面失败: {}", e))?;
-      let (cx, cy, cw, ch) = clamp_crop_rect(
-        frame.width(),
-        frame.height(),
-        x as i32,
-        y as i32,
-        width,
-        height,
-      );
-      let region = image::imageops::crop_imm(&frame, cx, cy, cw, ch).to_image();
-      out_w = evenize(region.width());
-      out_h = evenize(region.height());
-      let region = if out_w != region.width() || out_h != region.height() {
-        image::imageops::crop_imm(&region, 0, 0, out_w, out_h).to_image()
-      } else {
-        region
-      };
+      if x + width > frame.width() || y + height > frame.height() {
+        return Err("显示器尺寸变化，已无法捕获录屏选区".into());
+      }
+      let region = image::imageops::crop_imm(&frame, x, y, width, height).to_image();
       let yuv =
         openh264::formats::YUVBuffer::from_rgb8_source(openh264::formats::RgbaSliceU8::new(
           region.as_raw(),
@@ -398,7 +389,7 @@ fn record_thread(
 
     let dir = screenshots_dir(&app)?;
     let path = dir.join(format!("Record_{}", timestamped_filename("mp4")));
-    write_mp4(&path, out_w, out_h, &collector, &frame_times)?;
+    write_mp4(&path, width, height, &collector, &frame_times)?;
     Ok(path.to_string_lossy().into_owned())
   })();
 
@@ -423,10 +414,36 @@ fn record_thread(
       );
     }
   }
+  let failed = outcome.is_err();
   *result.lock().unwrap() = Some(outcome);
   // 收尾信号最后发出：emit_to 在 tauri tracing 下会阻塞等主线程执行脚本，
   // ExitRequested（主线程）的 shutdown 依赖本信号限时等待，绝不 join。
   let _ = done.send(());
+  if !stop.load(Ordering::Acquire) {
+    tauri::async_runtime::spawn(async move {
+      if failed {
+        // 给已加载的悬浮条留出显示错误的时间；未加载时仍由这里收尾。
+        tokio::time::sleep(Duration::from_millis(2500)).await;
+      }
+      let shot_state = app.state::<crate::api::screenshot::ScreenshotState>();
+      let _operation = shot_state.capture_operation.lock().await;
+      let _output = shot_state.capture_output.lock().await;
+      let record = {
+        let state = app.state::<RecordState>();
+        let mut active = state.active.lock().unwrap();
+        if !active
+          .as_ref()
+          .is_some_and(|record| Arc::ptr_eq(&record.stop, &stop))
+        {
+          return; // 用户已停止这次录制，不能清理新的会话。
+        }
+        active.take()
+      };
+      if let Some(record) = record {
+        let _ = finish_record(&app, record).await;
+      }
+    });
+  }
 }
 
 // ---- Tauri commands ----
@@ -457,30 +474,25 @@ pub async fn start_region_record(
   let (rx, ry, rw, rh) = clamp_crop_rect(mw, mh, x, y, width, height);
   let w = evenize(rw);
   let h = evenize(rh);
+  if w < MIN_RECORD_SIZE || h < MIN_RECORD_SIZE {
+    return Err("录屏选区宽高至少需要 16 像素".into());
+  }
   let fps = clamp_fps(fps);
+
+  if state.active.lock().unwrap().is_some() {
+    return Err("已有录制进行中".into());
+  }
+
+  let region = (rx, ry, w, h);
+  #[cfg(target_os = "windows")]
+  show_recording_frame(&app, monitor_index, geometry, region).await?;
+  #[cfg(not(target_os = "windows"))]
+  keep_selection_overlay(&app, monitor_index);
+
   let started_at_ms = std::time::SystemTime::now()
     .duration_since(std::time::UNIX_EPOCH)
     .map(|d| d.as_millis() as u64)
     .unwrap_or_default();
-
-  let mut active = state.active.lock().unwrap();
-  if let Some(existing) = active.as_ref() {
-    if existing.result.lock().unwrap().is_some() {
-      // 僵尸会话：线程已结束但无人调用 stop 收尾，清理后允许重开
-      let done = active.take();
-      if let Some(rec) = done {
-        if let Some(handle) = rec.handle {
-          let _ = handle.join();
-        }
-      }
-    } else {
-      return Err("已有录制进行中".to_string());
-    }
-  }
-
-  keep_selection_overlay(&app, monitor_index);
-  show_toolbar(&app, (mx, my, mw, mh), (rx, ry, w, h));
-
   let stop = Arc::new(AtomicBool::new(false));
   let paused = Arc::new(AtomicBool::new(false));
   let result: Arc<Mutex<Option<Result<String, String>>>> = Arc::new(Mutex::new(None));
@@ -505,13 +517,21 @@ pub async fn start_region_record(
       done_tx,
     )
   });
-  *active = Some(ActiveRecord {
-    stop,
+  *state.active.lock().unwrap() = Some(ActiveRecord {
+    stop: stop.clone(),
     paused,
     started_at_ms,
     handle: Some(handle),
     result,
     done: Some(done_rx),
+  });
+  // 与长截图一样，先返回命令结果，避免 WebView2 同步建窗卡住响应。
+  let toolbar_app = app.clone();
+  tauri::async_runtime::spawn(async move {
+    tokio::time::sleep(Duration::from_millis(350)).await;
+    if !stop.load(Ordering::Acquire) {
+      show_toolbar(&toolbar_app, geometry, region);
+    }
   });
   Ok(RecordStartInfo {
     width: w,
@@ -555,9 +575,14 @@ pub async fn stop_region_record(
     .unwrap()
     .take()
     .ok_or_else(|| "没有正在进行的录制".to_string())?;
+  finish_record(&app, record).await
+}
+
+/// 手动停止和录制线程自行结束共用收尾，调用方持有截图操作锁。
+async fn finish_record(app: &AppHandle, record: ActiveRecord) -> Result<RecordOutcome, String> {
+  record.stop.store(true, Ordering::Release);
   let app_for_close = app.clone();
   tauri::async_runtime::spawn_blocking(move || -> Result<RecordOutcome, String> {
-    record.stop.store(true, Ordering::Release);
     if let Some(handle) = record.handle {
       let _ = handle.join();
     }

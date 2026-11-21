@@ -260,6 +260,7 @@ export default {
     checkUpdate: '检查更新',
     updateChecking: '检查中...',
     updateAvailable: '发现新版本 {version}',
+    scoopUpdateHint: '此版本由 Scoop 管理，请运行 scoop update jedi。',
     updateLatest: '已是最新版本',
     lastCheckTime: '上次检查: {time}',
     never: '从未',
@@ -599,6 +600,8 @@ export default {
       updatingShort: '更新中',
       failed: '更新失败，可以重试。',
       install: '下载并安装',
+      scoopTitle: '请使用 Scoop 更新',
+      scoopInstructions: '此安装由 Scoop 管理。为避免产生重复安装，请退出 Jedi 后在终端运行：',
     },
   },
   wallpapers: {

@@ -139,8 +139,11 @@
       <div class="setting-icon"><v-icon :icon="mdiRefresh" size="18" /></div>
       <div class="setting-info">
         <div class="setting-label">{{ $t('settings.checkUpdate') }}</div>
-        <div class="setting-subtitle" v-if="hasUpdate">
+        <div class="setting-subtitle" v-if="hasUpdate && !isScoopInstall">
           {{ $t('settings.updateAvailable', { version: updateInfo?.version }) }}
+        </div>
+        <div class="setting-subtitle" v-else-if="hasUpdate && isScoopInstall">
+          {{ $t('settings.scoopUpdateHint') }}
         </div>
         <div class="setting-subtitle" v-else-if="updateLoading">
           {{ $t('settings.updateChecking') }}
@@ -164,6 +167,7 @@
     v-model="showUpdateDialog"
     :update-info="updateInfo"
     :is-installing="isInstalling"
+    :is-scoop-install="isScoopInstall"
     :progress="installProgress"
     :error="installError"
     @install="handleInstallUpdate"
@@ -185,7 +189,12 @@ import {
 } from '@mdi/js'
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { disableAutostart, enableAutostart, isAutostartEnabled } from '@/api/app'
+import {
+  isScoopInstall as detectScoopInstall,
+  disableAutostart,
+  enableAutostart,
+  isAutostartEnabled,
+} from '@/api/app'
 import { acceleratorFromEvent, useScreenshotHotkey } from '@/composables/useScreenshotHotkey'
 import { useStorage } from '@/composables/useStorage'
 import { useTheme } from '@/composables/useTheme'
@@ -272,6 +281,11 @@ const {
 } = useUpdate()
 
 const showUpdateDialog = ref(false)
+const isScoopInstall = ref(false)
+
+onMounted(async () => {
+  isScoopInstall.value = await detectScoopInstall().catch(() => false)
+})
 
 const handleAutoUpdateChange = (value: boolean | null) => {
   if (value !== null) {

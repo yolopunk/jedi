@@ -19,7 +19,7 @@
     "7-Zip is pulled in as a dependency because the program files are unpacked from the official installer.",
     "Run `jedi` in a terminal, or launch it from the Start Menu.",
     "Upgrade with `scoop update jedi`, remove with `scoop uninstall jedi`.",
-    "The in-app updater targets the installer/MSI builds - with Scoop, prefer `scoop update jedi`."
+    "With Scoop, update Jedi with `scoop update jedi` to keep the managed copy in sync."
   ],
   "architecture": {
     "64bit": {
@@ -29,6 +29,7 @@
   },
   "pre_install": [
     "Expand-7zipArchive \"$dir\\$fname\" -DestinationPath \"$dir\" -Removal",
+    "Set-Content -Path (Join-Path $dir '.scoop-install') -Value 'Scoop managed installation' -NoNewline",
     "Remove-Item -Path (Join-Path $dir '$PLUGINSDIR') -Recurse -Force -ErrorAction SilentlyContinue"
   ],
   "bin": [

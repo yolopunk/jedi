@@ -41,7 +41,7 @@ use crate::api::ai_chat::{
 };
 use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
-  set_icon_theme,
+  is_scoop_install, set_icon_theme,
 };
 use crate::api::hosts::{
   fetch_remote_config, get_hosts_path, get_hosts_sources, read_system_hosts, remove_hosts_source,
@@ -277,6 +277,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       enable_autostart,
       disable_autostart,
       is_autostart_enabled,
+      is_scoop_install,
       ensure_jedi_dir,
       get_wallpapers,
       set_desktop_wallpaper,

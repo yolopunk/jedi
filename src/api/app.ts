@@ -19,6 +19,10 @@ export async function getAppInfo(): Promise<AppInfo> {
   return invoke<AppInfo>('get_app_info')
 }
 
+export async function isScoopInstall(): Promise<boolean> {
+  return invoke<boolean>('is_scoop_install')
+}
+
 /**
  * 启用开机自启动
  * @returns 操作结果

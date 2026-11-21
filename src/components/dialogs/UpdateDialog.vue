@@ -17,7 +17,8 @@
           </div>
           <div class="brand-text">
             <h2>{{ $t('dialogs.update.title') }}</h2>
-            <p v-if="!isInstalling">{{ $t('dialogs.update.ready') }}</p>
+            <p v-if="isScoopInstall && !isInstalling">{{ $t('dialogs.update.scoopTitle') }}</p>
+            <p v-else-if="!isInstalling">{{ $t('dialogs.update.ready') }}</p>
             <p v-else>{{ $t('dialogs.update.inProgress') }}</p>
           </div>
         </div>
@@ -75,6 +76,11 @@
           <v-progress-linear :model-value="progress ?? 0" :indeterminate="progress == null || progress >= 100" :aria-label="$t('dialogs.update.inProgress')" color="primary" rounded />
           <span class="progress-text">{{ progress != null && progress < 100 ? `${$t('dialogs.update.downloading')} ${progress}%` : $t('dialogs.update.inProgress') }}</span>
         </div>
+        <div v-else-if="isScoopInstall" class="update-error scoop-update-hint" role="status">
+          <strong>{{ $t('dialogs.update.scoopTitle') }}</strong>
+          <p>{{ $t('dialogs.update.scoopInstructions') }}</p>
+          <code>scoop update jedi</code>
+        </div>
       </div>
 
       <!-- Footer -->
@@ -84,6 +90,7 @@
           <span class="btn-text">{{ $t(isInstalling ? 'common.close' : 'common.cancel') }}</span>
         </button>
         <button
+          v-if="!isScoopInstall"
           type="button"
           class="console-btn primary"
           :aria-label="$t(error ? 'common.retry' : 'dialogs.update.install')"
@@ -112,6 +119,7 @@ const props = defineProps<{
   modelValue: boolean
   updateInfo: UpdateInfo
   isInstalling: boolean
+  isScoopInstall?: boolean
   progress?: number | null
   error?: string
 }>()
@@ -136,6 +144,9 @@ const formattedReleaseNotes = computed(() => {
 <style scoped>
 .update-error { margin-top: 16px; padding: 12px; color: var(--danger); background: rgb(var(--danger-rgb) / .08); border-radius: 8px; overflow-wrap: anywhere; }
 .update-error summary { cursor: pointer; margin-top: 8px; }
+.scoop-update-hint { color: var(--text); background: rgb(var(--accent-rgb) / .08); }
+.scoop-update-hint p { margin: 8px 0; }
+.scoop-update-hint code { display: inline-block; padding: 5px 8px; border-radius: 5px; background: rgb(var(--accent-rgb) / .12); font-family: 'JetBrains Mono', monospace; font-size: 12px; user-select: all; }
 .close-btn:disabled { opacity: .4; cursor: default; }
 .model-settings-card {
   background: var(--bg-terminal) !important;

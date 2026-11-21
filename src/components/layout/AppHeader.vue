@@ -142,6 +142,7 @@
       v-if="updateInfo"
       v-model="showUpdateDialog"
       :update-info="updateInfo"
+      :is-scoop-install="isScoopInstall"
       :is-installing="isInstalling"
       :progress="installProgress"
       :error="installError"
@@ -167,6 +168,7 @@ import {
 import { getCurrentWindow, type Window as TauriWindow } from '@tauri-apps/api/window'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { isScoopInstall as detectScoopInstall } from '@/api/app'
 import UpdateDialog from '@/components/dialogs/UpdateDialog.vue'
 import { useThemeToggle } from '@/composables/useTheme'
 import { useUpdate } from '@/composables/useUpdate'
@@ -183,6 +185,11 @@ let appWindow: TauriWindow | null = null
 
 const isMaximized = ref(false)
 const showUpdateDialog = ref(false)
+const isScoopInstall = ref(false)
+
+onMounted(async () => {
+  isScoopInstall.value = await detectScoopInstall().catch(() => false)
+})
 const { t } = useI18n()
 const { themeIcon, themeTooltip, toggleTheme } = useThemeToggle()
 const {

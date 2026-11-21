@@ -891,7 +891,8 @@ export default {
     start: 'Start Capture',
     shortcutHint:
       'Customizable in Settings · Screenshot shortcut (default F1); also available from the tray menu',
-    overlayHint: 'Click a window · Drag to select · Ctrl/⌘+A for full screen · Esc to exit',
+    overlayHint:
+      'Hover to preview a window · Click to select it · Drag to select · Ctrl/⌘+A for full screen · Esc to exit',
     copy: 'Copy',
     save: 'Save',
     saveCapture: 'Save screenshot',

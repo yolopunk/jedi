@@ -1,11 +1,6 @@
 <template>
   <div class="pin-root" @pointerdown="onDragStart" @wheel.prevent="onWheel" @pointerenter="hovering = true" @pointerleave="hovering = false">
-    <!-- 顶部悬浮区：已贴住徽标 + 悬停工具条 -->
-    <span class="pin-badge">
-      <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 1.4 7.3 4l2.9.4-2.1 2 .5 2.9L6 8l-2.6 1.3L3.9 6.4l-2.1-2L4.7 4Z" stroke="#fff" stroke-width="1.1" stroke-linejoin="round"/></svg>
-      {{ t('screenshot.pin.pinned') }}
-    </span>
-
+    <!-- 工具条悬停显示，覆盖图片而不占用截图区域 -->
     <div class="pin-toolbar" :class="{ show: hovering }" @pointerdown.stop>
       <button class="pt-btn" type="button" :aria-label="t('screenshot.pin.zoomOut')" @click="stepZoom(-0.25)">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 8h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -49,7 +44,6 @@
           @error="failed = true"
         />
       </div>
-      <span class="pin-corner" aria-hidden="true"></span>
     </div>
 
     <span class="pin-hint" :class="{ hide: hintHidden }">{{ t('screenshot.pin.hint') }}</span>
@@ -63,9 +57,6 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { copyScreenshotFile, takePinPath } from '@/api/screenshot'
 
-const TOP_ZONE = 44
-const CARD_PAD = 7
-
 const { t } = useI18n()
 const window_ = getCurrentWindow()
 const src = ref('')
@@ -77,34 +68,42 @@ const zoom = ref(1)
 const alwaysOnTop = ref(true)
 const imgEl = ref<HTMLImageElement | null>(null)
 const natural = ref<{ w: number; h: number } | null>(null)
+const displayScale = ref(1)
 const hintHidden = ref(false)
 
 const zoomLabel = computed(() => `${Math.round(zoom.value * 100)}%`)
 const imgStyle = computed(() =>
   natural.value
-    ? { width: `${Math.round(natural.value.w * zoom.value)}px`, height: 'auto' }
+    ? {
+        width: `${Math.max(1, Math.round((natural.value.w * zoom.value) / displayScale.value))}px`,
+        height: 'auto',
+      }
     : undefined
 )
 
 async function applySize() {
   if (!natural.value) return
-  const w = Math.round(natural.value.w * zoom.value) + CARD_PAD * 2
-  const h = Math.round(natural.value.h * zoom.value) + CARD_PAD * 2 + TOP_ZONE
+  const w = Math.max(1, Math.round((natural.value.w * zoom.value) / displayScale.value))
+  const h = Math.max(1, Math.round((natural.value.h * zoom.value) / displayScale.value))
   try {
-    await window_.setSize(new LogicalSize(Math.max(w, 120), Math.max(h, 100)))
+    await window_.setSize(new LogicalSize(w, h))
   } catch {
     /* 权限缺失时保持窗口原尺寸，仅缩放图片 */
   }
 }
 
-function onLoaded() {
+async function onLoaded() {
   const img = imgEl.value
   if (!img) return
   natural.value = { w: img.naturalWidth, h: img.naturalHeight }
-  // 初始缩放 = Rust 设定的窗口内容宽 / 图片原始宽
-  const fitW = (window.innerWidth - CARD_PAD * 2) / img.naturalWidth
-  const fitH = (window.innerHeight - CARD_PAD * 2 - TOP_ZONE) / img.naturalHeight
-  zoom.value = Math.max(0.05, Math.min(fitW, fitH, 1))
+  try {
+    displayScale.value = await window_.scaleFactor()
+  } catch {
+    displayScale.value = 1
+  }
+  // CSS 逻辑像素尺寸乘以显示器缩放比后，与截图的原始像素尺寸一致。
+  zoom.value = 1
+  await applySize()
 }
 
 function stepZoom(delta: number) {
@@ -207,7 +206,7 @@ onUnmounted(() => {
   position: fixed;
   inset: 0;
   box-sizing: border-box;
-  padding-top: 44px;
+  padding: 0;
   background: transparent;
   user-select: none;
   overflow: visible;
@@ -218,18 +217,12 @@ onUnmounted(() => {
   position: relative;
   height: 100%;
   box-sizing: border-box;
-  border: 1.5px solid var(--accent);
-  border-radius: 9px;
-  background: #fff;
-  padding: 6px;
-  box-shadow: 0 26px 64px rgba(39, 40, 46, 0.28), 0 2px 8px rgb(var(--accent-rgb) / 0.18);
+  background: transparent;
 }
 
 .pin-stage {
   height: 100%;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: #fff;
+  background: transparent;
   overflow: hidden;
   display: grid;
   place-items: center;
@@ -248,37 +241,6 @@ onUnmounted(() => {
   gap: 10px;
   color: var(--text-muted);
   font-size: 12px;
-}
-
-.pin-badge {
-  position: absolute;
-  top: 2px;
-  left: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 24px;
-  padding: 0 9px;
-  border-radius: 6px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 10.5px;
-  font-weight: 600;
-  box-shadow: 0 6px 16px rgb(var(--accent-rgb) / 0.35);
-  z-index: 2;
-}
-
-.pin-corner {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  width: 12px;
-  height: 12px;
-  border-right: 2px solid var(--accent);
-  border-bottom: 2px solid var(--accent);
-  border-radius: 0 0 2px 0;
-  opacity: 0.7;
-  pointer-events: none;
 }
 
 .pin-toolbar {

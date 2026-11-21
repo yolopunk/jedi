@@ -880,7 +880,7 @@ export default {
     description: '冻结屏幕后框选区域，确认后可复制、保存或发送给 AI 对话。',
     start: '开始截图',
     shortcutHint: '可在「设置 · 截图快捷键」中自定义（默认 F1），也可从托盘菜单触发',
-    overlayHint: '单击选窗口 · 拖动框选 · Ctrl/⌘+A 选全屏 · Esc 退出',
+    overlayHint: '悬停预览窗口 · 单击选窗口 · 拖动框选 · Ctrl/⌘+A 选全屏 · Esc 退出',
     copy: '复制',
     save: '保存',
     saveCapture: '保存截图',

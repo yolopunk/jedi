@@ -358,7 +358,7 @@ function targetAt(point: Point | null) {
         point.x < rect.x + rect.width &&
         point.y >= rect.y &&
         point.y < rect.y + rect.height
-    ) ?? { x: 0, y: 0, width: info.width, height: info.height }
+    ) ?? null
   )
 }
 

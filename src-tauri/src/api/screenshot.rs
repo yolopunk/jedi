@@ -335,12 +335,9 @@ pub(crate) async fn spawn_pin_window(
   .await
   .map_err(|e| format!("读取任务异常: {}", e))??;
 
-  // 初始窗口尺寸（逻辑像素）：默认 1:1，过大时按比例缩到 760×520 以内
-  let mut w = img_w as f64;
-  let mut h = img_h as f64;
-  let fit = (760.0 / w).min(520.0 / h).min(1.0);
-  w *= fit;
-  h *= fit;
+  // 初始窗口按截图原始像素显示，不额外缩小或添加状态栏空间。
+  let w = img_w as f64;
+  let h = img_h as f64;
 
   let label = format!(
     "{}{}",
@@ -378,7 +375,7 @@ pub(crate) async fn spawn_pin_window(
       .shadow(false)
       .transparent(true)
       .focused(true)
-      .inner_size(w.max(120.0), h.max(80.0));
+      .inner_size(w, h);
       let sent = match builder.build() {
         Ok(window) => {
           if let Some(position) = position {
@@ -644,15 +641,11 @@ fn decode_annotated_png(data_url: &str, width: u32, height: u32) -> Result<RgbaI
 
 fn pin_position(frame: &MonitorFrame, x: u32, y: u32) -> Position {
   let bounds = frame.bounds;
-  #[cfg(target_os = "macos")]
-  let scale = 1.0;
-  #[cfg(not(target_os = "macos"))]
-  let scale = f64::from(frame.scale);
-  // 贴图上方 44 点控制条和周围 7 点边距不承载图片。
-  let px = f64::from(x) * f64::from(bounds.width) / f64::from(frame.width) - 7.0 * scale;
-  let py = f64::from(y) * f64::from(bounds.height) / f64::from(frame.height) - 51.0 * scale;
-  let px = f64::from(bounds.x) + px.clamp(0.0, f64::from(bounds.width.saturating_sub(200)));
-  let py = f64::from(bounds.y) + py.clamp(0.0, f64::from(bounds.height.saturating_sub(120)));
+  // 让截图窗口左上角与截图选区位置对齐，不预留状态栏空间。
+  let px = f64::from(x) * f64::from(bounds.width) / f64::from(frame.width);
+  let py = f64::from(y) * f64::from(bounds.height) / f64::from(frame.height);
+  let px = f64::from(bounds.x) + px;
+  let py = f64::from(bounds.y) + py;
   #[cfg(target_os = "macos")]
   return Position::Logical(tauri::LogicalPosition::new(px, py));
   #[cfg(not(target_os = "macos"))]

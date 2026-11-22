@@ -1,0 +1,55 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-21T09:00:00Z"
+  },
+  "title": "Jedi 本地 Agent 群聊设计",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1280,
+      "title": "01 · 群聊工作区",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "CreateGroup.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1120,
+      "h": 1360,
+      "title": "02 · 创建群组与连接 Agent",
+      "expand": "fill",
+      "is_interactive": true
+    }
+  },
+  "order": ["Main.dc.html", "CreateGroup.dc.html"],
+  "notes": {
+    "direction": {
+      "x": 0,
+      "y": -270,
+      "text": "一起讨论，在本机执行。",
+      "kind": "title1",
+      "maxW": 2640
+    },
+    "scope": {
+      "x": 0,
+      "y": 1480,
+      "w": 580,
+      "text": "原型边界\n可操作：切换群组、群发 / @ 定向、发送演示消息、暂停成员、单次审批、创建群组表单。\n未接入：进程发现、真实模型回复、文件修改与持久化。所有会话内容与状态均为演示。",
+      "fill": "gray"
+    },
+    "local": {
+      "x": 660,
+      "y": 1480,
+      "w": 580,
+      "text": "本地的含义\n成员是已安装的 CLI Agent，身份使用 agentId@host，房间绑定项目目录。模型与登录由 CLI 自己管理；本机执行不等于离线推理。Jedi 内置 Agent 与后台 worker 不混入这个成员列表。",
+      "fill": "blue"
+    }
+  },
+  "designSystems": []
+}

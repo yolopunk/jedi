@@ -1,0 +1,84 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-18T13:40:00Z"
+  },
+  "title": "Jedi 播客 RSS 订阅入口设计",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 920,
+      "h": 720,
+      "title": "方案 A · 双入口添加对话框"
+    },
+    "State-Paste.dc.html": {
+      "x": 1040,
+      "y": 0,
+      "w": 920,
+      "h": 720,
+      "title": "方案 A · 粘贴链接校验中"
+    },
+    "Library-Entry.dc.html": {
+      "x": 0,
+      "y": 860,
+      "w": 920,
+      "h": 720,
+      "title": "入口改动 · 播客页头部"
+    },
+    "Import-Report.dc.html": {
+      "x": 1040,
+      "y": 860,
+      "w": 920,
+      "h": 720,
+      "title": "OPML 导入失败反馈"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "State-Paste.dc.html",
+    "Library-Entry.dc.html",
+    "Import-Report.dc.html"
+  ],
+  "notes": {
+    "note-concept": {
+      "x": 0,
+      "y": -320,
+      "text": "Jedi 播客 · 支持 RSS 直接订阅（双入口：粘贴链接 / OPML 文件）\n视觉完全沿用 Jedi 暗色主题 token：zinc 底 + #539bf5 蓝 + JetBrains Mono 控制台字",
+      "kind": "title1",
+      "maxW": 1960
+    },
+    "note-main": {
+      "x": 40,
+      "y": 120,
+      "w": 240,
+      "text": "对话框用 segmented control 切换「粘贴链接 / OPML 文件」两种方式，默认粘贴链接。粘贴框自动识别 RSS 直链与小宇宙链接，校验成功后下方出现播客预览卡（封面/标题/host/最近更新），确认即订阅。",
+      "fill": "blue"
+    },
+    "note-state": {
+      "x": 1080,
+      "y": 120,
+      "w": 240,
+      "text": "校验中状态：输入框显示已解析出的 RSS，预览卡为 skeleton（封面 + 两行文字），底部按钮进入 loading。失败态文案示例：「该链接没有暴露 RSS，试试搜索节目官方 feed」。",
+      "fill": "blue"
+    },
+    "note-entry": {
+      "x": 40,
+      "y": 980,
+      "w": 240,
+      "text": "入口不变位置不换图标，只改语义：原来是「导入 OPML」，改为「添加订阅」；下拉或长按可快速选 OPML 文件。对话框内仍有「如何导出 OPML」帮助链接。",
+      "fill": "teal"
+    },
+    "note-report": {
+      "x": 1080,
+      "y": 980,
+      "w": 240,
+      "text": "解决「OPML 有些无法导入却没提示」：导入完成后弹结果面板，成功 N 条 + 失败列表（标题 + 失败原因 + 「手动添加」按钮跳转粘贴入口，带回填的 RSS）。后端 import_opml 需返回失败明细。",
+      "fill": "orange"
+    }
+  },
+  "designSystems": []
+}

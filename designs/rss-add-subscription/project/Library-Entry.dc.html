@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>播客页头部 · 添加订阅入口</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+body{margin:0}
+a{color:#539bf5}a:hover{color:#6eb1ff}
+</style>
+</helmet>
+<div style="width: 920px; height: 720px; box-sizing: border-box; background: #14151b; font-family: 'Noto Sans SC', sans-serif; color: #f4f4f5; padding: 48px; display: flex; flex-direction: column; gap: 24px;">
+
+  <!-- 页头 -->
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 60px; padding: 12px 24px; background: #111113; border: 1px solid #27272a; border-radius: 14px 14px 0 0; border-bottom: none;">
+    <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+      <button aria-label="返回" style="display: grid; place-items: center; width: 32px; height: 32px; color: #a1a1aa; background: transparent; border: none; border-radius: 8px; cursor: pointer;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
+      </button>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#539bf5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="22"></line></svg>
+      <span style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">小宇宙播客</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <!-- 搜索框（现状保留） -->
+      <div style="display: flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 12px; background: rgba(244,244,245,0.04); border: 1px solid #27272a; border-radius: 8px; color: #92929e; min-width: 200px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <span style="font-size: 12px;">搜索订阅…</span>
+      </div>
+      <!-- 新的主按钮：添加订阅（带下拉箭头） -->
+      <button style="display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 14px; font-family: inherit; font-size: 13px; font-weight: 500; color: #09090b; background: #539bf5; border: 1px solid #539bf5; border-radius: 8px; cursor: pointer;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#09090b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        添加订阅
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#09090b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-left: 2px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 下拉菜单（点开箭头出现） -->
+  <div style="display: flex; justify-content: flex-end;">
+    <div style="width: 260px; background: #18181b; border: 1px solid #27272a; border-radius: 10px; box-shadow: 0 16px 48px rgba(0,0,0,0.38); overflow: hidden;">
+      <div style="padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; color: #92929e; border-bottom: 1px solid #27272a;">添加方式</div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 12px; background: rgba(83,155,245,0.08); cursor: pointer;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#539bf5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 13px; font-weight: 500;">粘贴链接</span>
+          <span style="font-size: 11px; color: #92929e;">RSS 或小宇宙节目页</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 12px; cursor: pointer;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 13px; font-weight: 500;">导入 OPML 文件</span>
+          <span style="font-size: 11px; color: #92929e;">从小宇宙等 App 批量搬家</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 订阅列表区（简化示意） -->
+  <div style="flex: 1; min-height: 0; background: #111113; border: 1px solid #27272a; border-radius: 0 0 14px 14px; padding: 20px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-content: start;">
+    <div style="display: flex; gap: 12px; padding: 12px; background: #18181b; border: 1px solid #27272a; border-radius: 12px; align-items: center;">
+      <img src="/_blob/af4afe2d6fcfba4f84850dfb175687b0" alt="大内密谈封面" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; flex-shrink: 0;">
+      <div style="min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">大内密谈</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #92929e;">rss.lizhi.fm</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 12px; padding: 12px; background: #18181b; border: 1px solid #27272a; border-radius: 12px; align-items: center;">
+      <div style="width: 48px; height: 48px; border-radius: 8px; background: #27272a; flex-shrink: 0;"></div>
+      <div style="min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 13px; font-weight: 600; color: #a1a1aa;">播客 B</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #92929e;">feed.xyzfm.space</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 12px; padding: 12px; background: #18181b; border: 1px solid #27272a; border-radius: 12px; align-items: center;">
+      <div style="width: 48px; height: 48px; border-radius: 8px; background: #27272a; flex-shrink: 0;"></div>
+      <div style="min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+        <span style="font-size: 13px; font-weight: 600; color: #a1a1aa;">播客 C</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #92929e;">fireside.fm</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部说明条 -->
+  <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: #92929e;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+    <span>实现成本：仅前端。后端 <span style="font-family: 'JetBrains Mono', monospace; color: #a1a1aa;">fetch_rss_channel</span> / <span style="font-family: 'JetBrains Mono', monospace; color: #a1a1aa;">resolve_xiaoyuzhou_podcast</span> 已支持任意 RSS 与小宇宙链接，注册过的命令直接调用即可。</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":920,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

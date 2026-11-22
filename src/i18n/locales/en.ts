@@ -1,4 +1,7 @@
+import agents from './agents-en'
+
 export default {
+  agents,
   chatWorkspace: {
     defaultModelUnknown: 'Default model unavailable',
     defaultModelByAgent: 'No default set (agent decides)',
@@ -178,6 +181,7 @@ export default {
     wallpapers: 'Knowledge Wall',
     podcast: 'Xiaoyuzhou',
     chat: 'Chat',
+    agents: 'Agents',
     skills: 'Skills',
     screenshot: 'Screenshot',
     expand: 'Expand sidebar',
@@ -264,6 +268,7 @@ export default {
     checkUpdate: 'Check Now',
     updateChecking: 'Checking...',
     updateAvailable: 'New version {version} available',
+    scoopUpdateHint: 'This install is managed by Scoop. Run scoop update jedi to update it.',
     updateLatest: 'Already up to date',
     lastCheckTime: 'Last check: {time}',
     never: 'Never',
@@ -612,6 +617,9 @@ export default {
       updatingShort: 'Updating',
       failed: 'Update failed. You can retry.',
       install: 'Download & Install',
+      scoopTitle: 'Update with Scoop',
+      scoopInstructions:
+        'This install is managed by Scoop. To avoid creating a separate copy, quit Jedi and run:',
     },
   },
   wallpapers: {

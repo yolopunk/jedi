@@ -3,6 +3,7 @@
  * 提供与后端交互的所有API函数
  */
 
+export * from './agents'
 // 导出AI Chat API
 export * from './ai-chat'
 // 导出应用信息API

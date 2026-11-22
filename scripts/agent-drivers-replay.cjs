@@ -1,11 +1,12 @@
 const fs=require('fs'),vm=require('vm'),ts=require('typescript'),assert=require('node:assert/strict');
-function load(file,mocks={}) {const exports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports,require:n=>mocks[n],console,setTimeout,clearTimeout});return exports}
+function load(file,mocks={}) {const exports={};vm.runInNewContext(ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports,require:n=>mocks[n],console,setTimeout,clearTimeout,crypto:require('node:crypto').webcrypto});return exports}
 const model=load('src/agent/hub/model.ts');
 const diagnostics=load('src/agent/hub/agentError.ts');
+const groupPolicy=load('src/agent/hub/drivers/groupPolicy.ts');
 async function testHostResume() {
  let channel,spawnArgs;
  const {ClaudeCodeDriver}=load('src/agent/hub/drivers/claudeCode.ts',{
-  '../model':model,'../agentError':diagnostics,
+  '../model':model,'../agentError':diagnostics,'./groupPolicy':groupPolicy,
   './claudeCodeProtocol':load('src/agent/hub/drivers/claudeCodeProtocol.ts'),
   '@tauri-apps/api/core':{Channel:class{},invoke:async(cmd,args)=>{
    if(cmd==='agent_proc_spawn'){channel=args.onEvent;spawnArgs=args.args;}
@@ -23,7 +24,7 @@ async function testHostResume() {
 }
 async function test(name,klass,agent,records,error,rpcError=false) {
  let channel;let observedModel;
- const base='src/agent/hub/drivers/';const mocks={'../agentError':diagnostics,'../model':model,'../paths':{isWslHost:()=>false},'./geminiCliProtocol':load(base+'geminiCliProtocol.ts')};
+ const base='src/agent/hub/drivers/';const mocks={'../agentError':diagnostics,'../model':model,'./groupPolicy':groupPolicy,'../paths':{isWslHost:()=>false},'./geminiCliProtocol':load(base+'geminiCliProtocol.ts')};
  for(const p of ['claudeCode','codex','opencode','antigravity','pi'])mocks['./'+p+'Protocol']=load(base+p+'Protocol.ts');
  mocks['@tauri-apps/api/core']={Channel:class{},invoke:async(cmd,args)=>{
   if(cmd==='agent_proc_spawn')channel=args.onEvent;

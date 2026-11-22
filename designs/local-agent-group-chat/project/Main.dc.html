@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jedi · 本地 Agent 群聊</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}button,input,textarea,select{font:inherit}button,a,input,textarea,select{box-sizing:border-box}button,a{touch-action:manipulation}button{cursor:pointer}button:disabled{cursor:default}a{color:#295fc7;text-decoration:none}a:hover{color:#214eac}button:hover:not(:disabled){filter:brightness(.97)}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #3574f0;outline-offset:3px}*{box-sizing:border-box}
+@media(max-width:850px){.app-nav{flex-basis:100%!important;padding:16px!important;gap:16px!important}.nav-secondary,.nav-foot{display:none!important}.nav-list{flex-direction:row!important}.brand-row{justify-content:space-between!important}.workspace{padding:8px!important}.room-list{flex-basis:100%!important;border-right:0!important;border-bottom:1px solid #dfe1e5!important}.room-stack{flex-direction:row!important;flex-wrap:wrap!important}.room-stack>button{flex:1 1 180px!important}.members-panel{flex-basis:100%!important;border-left:0!important;border-top:1px solid #dfe1e5!important}.chat-body{padding:24px 16px!important}.composer-wrap{padding:16px!important}.chat-head{padding:16px!important}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+</style>
+</helmet>
+<div style="min-height:1280px;display:flex;flex-wrap:wrap;background:#f7f8fa;color:#27282e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.5">
+  <aside class="app-nav" style="flex:1 1 220px;min-width:0;padding:26px 16px 18px;display:flex;flex-direction:column;gap:30px;background:#f7f8fa">
+    <div class="brand-row" style="display:flex;align-items:center;gap:10px;padding:0 12px">
+      <img src="/_blob/5428544a68e5860f19bce633fefd93f9" alt="Jedi" style="width:38px;height:38px;object-fit:contain">
+      <span style="font-size:24px;font-weight:700;letter-spacing:-.8px">Jedi<span style="color:#3574f0">.</span></span>
+      <span style="margin-left:auto;font-family:Consolas,monospace;font-size:10px;color:#606575;border:1px solid #dfe1e5;padding:2px 5px;border-radius:4px">TOOLBOX</span>
+    </div>
+    <nav class="nav-list" aria-label="工具导航" style="display:flex;flex-direction:column;gap:6px">
+      <a href="Main.dc.html" aria-current="page" style="display:flex;align-items:center;gap:12px;min-height:46px;padding:0 14px;background:#e5edfe;border:1px solid #c5d7fc;border-radius:10px;color:#295fc7;font-weight:600">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H4l-2 2V11.5A8.5 8.5 0 0 1 10.5 3h2A8.5 8.5 0 0 1 21 11.5Z"></path><path d="M7 10h9M7 14h6"></path></svg>
+        <span>Agents</span>
+      </a>
+      <div class="nav-secondary" style="display:flex;flex-direction:column;gap:4px">
+        <button disabled="disabled" style="display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;border:0;background:transparent;color:#606575;text-align:left"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"></path></svg>Skills</button>
+        <button disabled="disabled" style="display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;border:0;background:transparent;color:#606575;text-align:left"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><rect x="3" y="4" width="18" height="7" rx="2"></rect><rect x="3" y="14" width="18" height="7" rx="2"></rect><path d="M7 7.5h.01M7 17.5h.01M15 7.5h3M15 17.5h3"></path></svg>Hosts</button>
+        <button disabled="disabled" style="display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;border:0;background:transparent;color:#606575;text-align:left"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"></rect><circle cx="8" cy="8" r="1.5"></circle><path d="m3 17 5-5 4 4 4-6 5 7"></path></svg>Wallpapers</button>
+        <button disabled="disabled" style="display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;border:0;background:transparent;color:#606575;text-align:left"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"></path><rect x="3" y="12" width="4" height="8" rx="2"></rect><rect x="17" y="12" width="4" height="8" rx="2"></rect></svg>Podcast</button>
+        <button disabled="disabled" style="display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;border:0;background:transparent;color:#606575;text-align:left"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5"></path><rect x="7" y="7" width="10" height="10" rx="1"></rect></svg>Screenshot</button>
+      </div>
+    </nav>
+    <div class="nav-foot" style="margin-top:auto;padding:16px 12px 0;border-top:1px solid #dfe1e5;display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;align-items:center;gap:8px;color:#606575;font-size:12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M8 21h8M12 17v4"></path></svg>本机工作区</div>
+      <span style="font-family:Consolas,monospace;font-size:11px;color:#606575">Windows / WSL</span>
+    </div>
+  </aside>
+  <main class="workspace" style="flex:999 1 880px;min-width:0;padding:12px 12px 12px 0;display:flex;flex-direction:column">
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;border:1px solid #dfe1e5;border-radius:14px;background:#ffffff;overflow:hidden">
+      <header style="min-height:72px;padding:16px 22px;display:flex;flex-wrap:wrap;align-items:center;gap:16px;border-bottom:1px solid #dfe1e5">
+        <div style="display:flex;align-items:center;gap:11px">
+          <div style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:1px solid #dfe1e5;border-radius:10px;background:#f7f8fa;color:#3574f0"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="7" r="3"></circle><path d="M3 20v-2a6 6 0 0 1 12 0v2M16 4a3 3 0 0 1 0 6M17 13a5 5 0 0 1 4 5v2"></path></svg></div>
+          <div><h1 style="margin:0;font-size:17px;font-weight:650;letter-spacing:-.3px">本地 Agent 群聊</h1><p style="margin:2px 0 0;color:#606575;font-size:11px">不同 Agent，一个项目，一条协作线程。</p></div>
+        </div>
+        <div style="margin-left:auto;display:flex;align-items:center;flex-wrap:wrap;gap:10px">
+          <span style="color:#606575;font-size:11px;border:1px solid #dfe1e5;border-radius:5px;padding:4px 8px">交互演示 · 未连接真实进程</span>
+          <a href="CreateGroup.dc.html" style="min-height:44px;display:flex;align-items:center;gap:7px;padding:0 13px;background:#295fc7;border-radius:8px;color:#ffffff;font-size:12px;font-weight:600"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>创建群组</a>
+        </div>
+      </header>
+      <div style="flex:1;display:flex;flex-wrap:wrap;min-width:0">
+        <aside class="room-list" aria-label="群组列表" style="flex:1 1 204px;min-width:0;padding:20px 12px;background:#fafbfc;border-right:1px solid #dfe1e5;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:0 8px"><span style="font-size:11px;color:#606575;font-weight:650;letter-spacing:1.3px">我的群组</span><span style="font-family:Consolas,monospace;font-size:11px;color:#606575">02</span></div>
+          <div class="room-stack" style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{rooms}}" as="room" hint-placeholder-count="2">
+              <button onClick="{{room.pick}}" aria-pressed="{{room.selected}}" style="{{room.style}}">
+                <div style="display:flex;align-items:center;gap:8px"><span style="font-size:19px;font-weight:400;color:#606575">#</span><span style="font-size:13px;font-weight:650">{{room.name}}</span></div>
+                <p style="margin:6px 0 8px;font-size:11px;color:#606575;line-height:1.5">{{room.description}}</p>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:6px"><span style="font-size:10px;font-family:Consolas,monospace;color:#606575">{{room.project}}</span><span style="font-size:10px;color:#295fc7">{{room.members}}</span></div>
+              </button>
+            </sc-for>
+          </div>
+          <a href="CreateGroup.dc.html" style="min-height:44px;padding:8px;display:flex;align-items:center;gap:8px;color:#606575;font-size:12px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>新建项目群</a>
+          <div style="margin-top:auto;border-top:1px solid #dfe1e5;padding:18px 8px 0;display:flex;flex-direction:column;gap:9px">
+            <span style="font-size:11px;font-weight:600">项目隔离，按群协作</span>
+            <p style="margin:0;color:#606575;font-size:11px;line-height:1.8">每个群组绑定一个目录。<br>上下文共享，执行权限独立。</p>
+          </div>
+        </aside>
+        <section aria-label="协作对话" style="flex:999 1 460px;min-width:0;display:flex;flex-direction:column;background:#ffffff">
+          <div class="chat-head" style="padding:19px 24px 16px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;border-bottom:1px solid #edf0f4">
+            <div style="flex:1;min-width:180px"><h2 style="font-size:17px;font-weight:650;margin:0;letter-spacing:-.2px"># {{roomName}}</h2><div style="display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:5px;color:#606575;font-size:11px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 7h7l2-3h9v16H3Z"></path></svg><code style="font-family:Consolas,monospace;overflow-wrap:anywhere">{{projectPath}}</code><span style="border:1px solid #dfe1e5;padding:1px 5px;border-radius:4px">只读优先</span></div></div>
+            <button onClick="{{toggleMembers}}" aria-pressed="{{membersVisible}}" style="min-width:44px;min-height:44px;padding:0 10px;border:1px solid #dfe1e5;border-radius:8px;background:#ffffff;color:#606575;font-size:11px">成员 {{memberCount}}</button>
+          </div>
+          <div class="chat-body" style="flex:1;padding:24px;display:flex;flex-direction:column;gap:23px">
+            <div style="display:flex;align-items:center;gap:10px;color:#606575;font-size:10px"><span style="flex:1;height:1px;background:#edf0f4"></span><span>示例会话 · 从讨论到执行</span><span style="flex:1;height:1px;background:#edf0f4"></span></div>
+            <sc-if value="{{isMainRoom}}" hint-placeholder-val="{{true}}">
+              <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:22px">
+                <div style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#edf2fd;border:1px solid #d7e2fc;border-radius:9px;font-size:11px;font-weight:700;color:#295fc7">我</div>
+                <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><strong style="font-size:12px">你</strong><span style="font-size:10px;color:#606575">发送给全体成员</span></div><div style="padding:13px 15px;background:#eff4fe;border:1px solid #dce6fb;border-radius:4px 13px 13px 13px;font-size:14px;line-height:1.72">把 Chat 改成本地 Agent 群聊。先讨论方案，不要修改文件。<br><span style="color:#295fc7">@Claude Code</span> 梳理交互，<span style="color:#295fc7">@Codex</span> 看实现，<span style="color:#295fc7">@Gemini CLI</span> 检查风险。</div></div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:22px">
+                <div style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#edf2fd;border:1px solid #d7e2fc;border-radius:9px;font-family:Consolas,monospace;font-size:12px;font-weight:700;color:#295fc7">CC</div>
+                <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap"><strong style="font-size:12px">Claude Code</strong><span style="font-size:10px;color:#606575;font-family:Consolas,monospace">claude@windows</span><span style="margin-left:auto;font-size:10px;color:#606575">规划</span></div><p style="margin:0;font-size:14px;line-height:1.72">建议以项目群组替代单 Agent 会话。每条回复保留作者，输入区明确显示收件人；群发用于讨论，<span style="color:#295fc7">@ 定向</span>用于派发任务。</p><div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px"><span style="padding:4px 8px;background:#f7f8fa;border:1px solid #dfe1e5;border-radius:5px;font-size:10px;color:#606575">一个群组 / 一个项目</span><span style="padding:4px 8px;background:#f7f8fa;border:1px solid #dfe1e5;border-radius:5px;font-size:10px;color:#606575">讨论与执行分离</span></div></div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:11px;margin-bottom:22px">
+                <div style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#f1f2f4;border:1px solid #dfe1e5;border-radius:9px;font-family:Consolas,monospace;font-size:12px;font-weight:700;color:#414653">CX</div>
+                <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap"><strong style="font-size:12px">Codex</strong><span style="font-size:10px;color:#606575;font-family:Consolas,monospace">codex@wsl:ubuntu</span><span style="margin-left:auto;font-size:10px;color:#606575">实现建议</span></div><p style="margin:0;font-size:14px;line-height:1.72">沿用现有 CLI 适配器，增加群组会话层即可。<span style="color:#295fc7">@Claude Code</span>，我建议同一目录的写操作排队，避免成员同时覆盖文件。</p><div style="margin-top:11px;border:1px solid #dfe1e5;border-radius:9px;overflow:hidden"><div style="padding:8px 11px;background:#f7f8fa;display:flex;align-items:center;gap:7px;font-size:10px;color:#606575"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-3-12-2 18"></path></svg>建议的数据关系 · 尚未实现</div><div style="padding:11px;font-family:Consolas,monospace;font-size:11px;line-height:1.8;overflow-wrap:anywhere;color:#414653">Group → Project + Members + Thread<br>Message → Author + Recipients + Run</div></div></div>
+              </div>
+              <div style="display:flex;align-items:flex-start;gap:11px">
+                <div style="flex-shrink:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#edf5f6;border:1px solid #d4e5e7;border-radius:9px;font-family:Consolas,monospace;font-size:12px;font-weight:700;color:#34656f">GM</div>
+                <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap"><strong style="font-size:12px">Gemini CLI</strong><span style="font-size:10px;color:#606575;font-family:Consolas,monospace">gemini@windows</span><span style="margin-left:auto;font-size:10px;color:#606575">风险检查</span></div><p style="margin:0;font-size:14px;line-height:1.72">“本地”只表示 CLI 进程在本机运行，不代表模型离线。还需要限制自动互相回复的轮次，并让文件写入、命令执行逐次确认。</p></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{isOtherRoom}}" hint-placeholder-val="{{false}}"><div style="padding:36px 20px;border:1px dashed #c9ccd6;border-radius:13px;display:flex;flex-direction:column;gap:10px;text-align:center"><strong style="font-size:17px">给代码审查留一条独立线程</strong><span style="font-size:13px;color:#606575">Claude Code 与 Codex 共享项目上下文。<br>发送需求，或 @ 一位成员开始讨论。</span></div></sc-if>
+            <sc-for list="{{sentMessages}}" as="message" hint-placeholder-count="0"><div style="display:flex;flex-direction:column;gap:9px"><div style="padding:13px 15px;background:#eff4fe;border:1px solid #dce6fb;border-radius:13px;font-size:14px;line-height:1.72;white-space:pre-wrap;overflow-wrap:anywhere"><div style="font-size:10px;color:#295fc7;margin-bottom:5px">你 → {{message.target}}</div>{{message.text}}</div><p style="margin:0;color:#606575;font-size:11px">交互演示：消息已加入当前线程，未调用真实 Agent。</p></div></sc-for>
+          </div>
+          <div class="composer-wrap" style="padding:18px 24px 20px;border-top:1px solid #edf0f4;background:#ffffff;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:11px;color:#606575">发送给</span><sc-for list="{{targets}}" as="target" hint-placeholder-count="4"><button onClick="{{target.pick}}" aria-pressed="{{target.selected}}" style="{{target.style}}">{{target.label}}</button></sc-for></div>
+            <div style="border:1px solid #c9ccd6;border-radius:17px;padding:14px 14px 10px;box-shadow:0 4px 16px rgba(39,40,46,.04);display:flex;flex-direction:column;gap:10px">
+              <label for="group-message" style="font-size:11px;color:#606575">{{composerHint}}</label>
+              <textarea id="group-message" value="{{draft}}" onChange="{{changeDraft}}" onKeyDown="{{keySend}}" placeholder="讨论一个问题，或给 Agent 派发任务…" rows="2" style="width:100%;resize:vertical;min-height:58px;border:0;outline-offset:1px;background:transparent;color:#27282e;font-size:14px;line-height:1.6;padding:0"></textarea>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:10px;color:#606575;flex:1">群发仅讨论 · 执行另行确认</span><span style="font-size:10px;color:#606575">Ctrl + Enter</span><button onClick="{{send}}" disabled="{{sendDisabled}}" style="min-height:44px;min-width:92px;display:flex;align-items:center;justify-content:center;gap:7px;padding:0 14px;background:#295fc7;color:#ffffff;border:0;border-radius:10px;font-size:12px;font-weight:600">发送<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6"></path></svg></button></div>
+            </div>
+            <div role="status" aria-live="polite" style="font-size:10px;color:#606575;min-height:15px">{{notice}}</div>
+          </div>
+        </section>
+        <sc-if value="{{membersVisible}}" hint-placeholder-val="{{true}}">
+          <aside class="members-panel" aria-label="成员和执行权限" style="width:236px;max-width:100%;padding:20px 16px;border-left:1px solid #dfe1e5;background:#fafbfc;display:flex;flex-direction:column;gap:23px">
+            <div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:0;font-size:12px;font-weight:650">群组成员</h3><a href="CreateGroup.dc.html" style="min-height:44px;display:flex;align-items:center;font-size:11px">管理</a></div>
+            <div style="display:flex;flex-direction:column;gap:18px">
+              <sc-for list="{{members}}" as="member" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <div style="display:flex;align-items:center;gap:9px"><div style="{{member.avatarStyle}}">{{member.initials}}</div><div style="flex:1;min-width:0"><strong style="font-size:12px">{{member.name}}</strong><div style="font-family:Consolas,monospace;font-size:9px;color:#606575;overflow-wrap:anywhere">{{member.id}}</div></div></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding-left:39px"><span style="{{member.statusStyle}}">{{member.status}}</span><button onClick="{{member.toggle}}" aria-label="{{member.actionLabel}}" style="min-height:44px;min-width:44px;padding:0 6px;font-size:10px;border:0;background:transparent;color:#606575">{{member.action}}</button></div>
+                  <div style="padding-left:39px;font-size:10px;color:#606575">{{member.role}}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="height:1px;background:#dfe1e5"></div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><h3 style="margin:0;font-size:12px;font-weight:650">执行审批</h3><span style="font-size:10px;color:#825104">{{approvalCount}}</span></div>
+              <sc-if value="{{approvalPending}}" hint-placeholder-val="{{true}}"><div style="padding:13px;border:1px solid #d8b779;border-radius:10px;background:#fff9ed;display:flex;flex-direction:column;gap:10px"><span style="font-size:11px;font-weight:650;color:#825104">Codex 请求执行命令</span><code style="font-family:Consolas,monospace;font-size:12px;color:#27282e">pnpm build</code><p style="margin:0;color:#825104;font-size:10px;line-height:1.7">审批流程演示。此前“不要修改文件”的要求仍有效；构建可能产生文件。</p><div style="display:flex;flex-wrap:wrap;gap:7px"><button onClick="{{approve}}" style="flex:1;min-height:44px;padding:0 8px;background:#ffffff;border:1px solid #b58d47;border-radius:7px;color:#754700;font-size:11px;font-weight:600">仅允许这次</button><button onClick="{{reject}}" style="min-height:44px;padding:0 8px;border:1px solid #d8b779;border-radius:7px;background:transparent;color:#825104;font-size:11px">拒绝</button></div></div></sc-if>
+              <sc-if value="{{approvalDone}}" hint-placeholder-val="{{false}}"><div role="status" style="padding:14px;border:1px solid #dfe1e5;border-radius:10px;background:#ffffff;font-size:12px;line-height:1.7">{{approvalResult}}<p style="margin:6px 0 0;font-size:10px;color:#606575">仅更新原型状态，没有执行命令。</p></div></sc-if>
+            </div>
+            <div style="margin-top:auto;border-top:1px solid #dfe1e5;padding-top:18px;display:flex;flex-direction:column;gap:9px"><div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z"></path><path d="m8 12 3 3 5-6"></path></svg>你始终掌握执行权限</div><p style="margin:0;color:#606575;font-size:10px;line-height:1.8">共享消息，不共享凭据。<br>自动讨论有轮次上限。<br>同一项目的写操作串行执行。</p><span style="font-size:9px;font-family:Consolas,monospace;color:#606575">LOCAL PROCESS ≠ OFFLINE MODEL</span></div>
+          </aside>
+        </sc-if>
+      </div>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1280}}'>
+class Component extends DCLogic {
+  state = { room: 'jedi', target: 'all', draft: '', messages: [], paused: {}, membersVisible: true, approval: 'pending', notice: '成员使用各自 CLI 的登录与模型配置，不使用 Jedi 的 API Key。' };
+  renderVals() {
+    const s = this.state;
+    const allMembers = [
+      { key: 'claude', name: 'Claude Code', id: 'claude@windows', initials: 'CC', role: '交互规划 · 只读', color: '#295fc7', background: '#edf2fd', border: '#d7e2fc' },
+      { key: 'codex', name: 'Codex', id: 'codex@wsl:ubuntu', initials: 'CX', role: '实现建议 · 按次审批', color: '#414653', background: '#f1f2f4', border: '#dfe1e5' },
+      { key: 'gemini', name: 'Gemini CLI', id: 'gemini@windows', initials: 'GM', role: '风险检查 · 只读', color: '#34656f', background: '#edf5f6', border: '#d4e5e7' }
+    ];
+    const activeMembers = s.room === 'jedi' ? allMembers : allMembers.slice(0, 2);
+    const chooseRoom = (room) => this.setState({ room, target: 'all', draft: '', notice: '已切换群组。消息与项目上下文按群隔离。' });
+    const rooms = [
+      { id: 'jedi', name: 'Jedi 产品开发', description: '把 Chat 变成多 Agent 协作空间', project: 'E:/workspace/jedi', members: '3 位 Agent' },
+      { id: 'review', name: '代码审查', description: '独立线程，专注审查与讨论', project: 'E:/workspace/jedi', members: '2 位 Agent' }
+    ].map(room => ({ ...room, selected: s.room === room.id, pick: () => chooseRoom(room.id), style: 'width:100%;min-height:108px;text-align:left;padding:12px;border-radius:10px;border:1px solid ' + (s.room === room.id ? '#c5d7fc' : '#dfe1e5') + ';background:' + (s.room === room.id ? '#edf2fd' : '#ffffff') + ';color:#27282e;' }));
+    const targetName = s.target === 'all' ? '全体成员' : (activeMembers.find(m => m.key === s.target)?.name || '全体成员');
+    const send = () => {
+      const text = (this.state.draft || '').trim();
+      if (!text) return;
+      const current = this.state;
+      if (current.target !== 'all' && current.paused[current.target]) {
+        this.setState({ notice: '该成员已暂停，请先恢复成员或选择其他收件人。' });
+        return;
+      }
+      if (current.target === 'all' && activeMembers.every(m => current.paused[m.key])) {
+        this.setState({ notice: '所有成员均已暂停，请先恢复至少一位成员。' });
+        return;
+      }
+      const count = activeMembers.filter(m => !current.paused[m.key]).length;
+      const target = current.target === 'all' ? '全体可用成员（' + count + ' 位）' : targetName;
+      this.setState({ messages: [...current.messages, { room: current.room, text, target }], draft: '', notice: '已加入演示线程 · 未启动 CLI，也未修改项目文件。' });
+    };
+    const targets = [{ key: 'all', name: '全体' }, ...activeMembers].map(target => ({ label: target.key === 'all' ? '群发' : '@' + target.name, selected: s.target === target.key, pick: () => this.setState({ target: target.key, notice: target.key === 'all' ? '群发给可用成员，只开展讨论；写入与命令另行审批。' : '已定向给 ' + target.name + '，其他成员可见但不会自动执行。' }), style: 'min-height:44px;padding:0 10px;border-radius:7px;font-size:11px;border:1px solid ' + (s.target === target.key ? '#c5d7fc' : '#dfe1e5') + ';color:' + (s.target === target.key ? '#295fc7' : '#606575') + ';background:' + (s.target === target.key ? '#edf2fd' : '#ffffff') }));
+    return {
+      rooms, targets, draft: s.draft, roomName: s.room === 'jedi' ? 'Jedi 产品开发' : '代码审查', projectPath: 'E:/workspace/jedi', isMainRoom: s.room === 'jedi', isOtherRoom: s.room !== 'jedi', memberCount: activeMembers.length,
+      membersVisible: s.membersVisible, toggleMembers: () => this.setState({ membersVisible: !this.state.membersVisible }),
+      members: activeMembers.map(member => ({ ...member, avatarStyle: 'width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;font-family:Consolas,monospace;font-size:10px;font-weight:700;color:' + member.color + ';background:' + member.background + ';border:1px solid ' + member.border, status: s.paused[member.key] ? '已暂停' : '待命 · 演示', statusStyle: 'font-size:10px;color:' + (s.paused[member.key] ? '#825104' : '#606575'), action: s.paused[member.key] ? '恢复' : '暂停', actionLabel: (s.paused[member.key] ? '恢复 ' : '暂停 ') + member.name, toggle: () => this.setState({ paused: { ...this.state.paused, [member.key]: !this.state.paused[member.key] }, notice: member.name + (this.state.paused[member.key] ? ' 已恢复（演示）。' : ' 已暂停，不再接收新的派发（演示）。') }) })),
+      composerHint: s.target === 'all' ? '全体可用成员可回复；自动讨论最多 3 轮。' : '仅 ' + targetName + ' 回复；其他成员保留共享上下文。',
+      changeDraft: event => this.setState({ draft: event.target.value }), keySend: event => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); send(); } }, send, sendDisabled: !s.draft.trim(), sentMessages: s.messages.filter(m => m.room === s.room), notice: s.notice,
+      approvalPending: s.approval === 'pending', approvalDone: s.approval !== 'pending', approvalCount: s.approval === 'pending' ? '1 项待确认' : '无待确认项', approvalResult: s.approval === 'approved' ? '已单次允许此请求。' : '已拒绝此请求。',
+      approve: () => this.setState({ approval: 'approved', notice: '单次审批已记录（演示），不会自动扩大其他权限。' }), reject: () => this.setState({ approval: 'rejected', notice: '命令请求已拒绝（演示），成员可继续只读讨论。' })
+    };
+  }
+}
+</script>
+</body>
+</html>

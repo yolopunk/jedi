@@ -1,4 +1,5 @@
 pub(crate) mod agent_fs;
+pub(crate) mod agents;
 pub(crate) mod ai_chat;
 pub(crate) mod app;
 pub(crate) mod hosts;

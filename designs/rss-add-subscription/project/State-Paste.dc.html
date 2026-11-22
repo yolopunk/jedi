@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>添加订阅 · 校验中</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+body{margin:0}
+a{color:#539bf5}a:hover{color:#6eb1ff}
+@keyframes skeleton-pulse{0%,100%{opacity:.45}50%{opacity:.9}}
+.skel{animation:skeleton-pulse 1.4s ease-in-out infinite}
+</style>
+</helmet>
+<div style="width: 920px; height: 720px; box-sizing: border-box; background: #14151b; font-family: 'Noto Sans SC', sans-serif; color: #f4f4f5; display: flex; align-items: center; justify-content: center; gap: 40px; padding: 48px;">
+  <!-- 左：说明栏（失败态示例） -->
+  <div style="width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: #92929e;">STATE // LOADING</div>
+    <div style="font-size: 18px; font-weight: 700; line-height: 1.5;">校验中：<br>先把链接换成真 feed</div>
+    <div style="font-size: 12px; line-height: 1.9; color: #a1a1aa;">输入小宇宙链接后，Jedi 抓页面解析 rssUrl，解析出的真实 RSS 回填输入框，预览卡走 skeleton，主按钮进入 loading，禁止重复提交。</div>
+    <!-- 失败态示例卡 -->
+    <div style="margin-top: 10px; padding: 12px; background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.3); border-radius: 10px; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span style="font-size: 12px; font-weight: 600; color: #f85149;">失败态文案</span>
+      </div>
+      <div style="font-size: 12px; line-height: 1.8; color: #a1a1aa;">「该节目页没有暴露 RSS（可能是平台独家内容）。去节目官网或目录站找官方 feed，粘贴进来即可。」</div>
+    </div>
+  </div>
+
+  <!-- 右：对话框本体（校验中） -->
+  <div style="width: 520px; flex-shrink: 0; background: #111113; border: 1px solid #27272a; border-radius: 20px; box-shadow: 0 28px 80px rgba(0,0,0,0.55); overflow: hidden; position: relative;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #539bf5, transparent); opacity: 0.6;"></div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #27272a;">
+      <span style="font-size: 12px; font-weight: 600; letter-spacing: 1px;">添加订阅</span>
+      <button aria-label="关闭" style="background: none; border: none; color: rgba(244,244,245,0.5); cursor: pointer; font-size: 14px; padding: 4px 8px;">✕</button>
+    </div>
+
+    <div style="display: flex; gap: 6px; padding: 16px 20px 0;">
+      <button style="flex: 1; min-height: 44px; box-sizing: border-box; font-family: inherit; font-size: 13px; font-weight: 500; color: #09090b; background: #539bf5; border: 1px solid #539bf5; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#09090b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+        粘贴链接
+      </button>
+      <button style="flex: 1; min-height: 44px; box-sizing: border-box; font-family: inherit; font-size: 13px; font-weight: 500; color: #a1a1aa; background: #18181b; border: 1px solid #27272a; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        OPML 文件
+      </button>
+    </div>
+
+    <div style="padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 14px;">
+      <div>
+        <label for="feed-url-2" style="display: flex; align-items: center; color: rgba(244,244,245,0.7); font-size: 12px; letter-spacing: 1px; margin-bottom: 8px;">RSS 链接或小宇宙节目链接</label>
+        <div style="position: relative; display: flex; align-items: center; background: rgba(244,244,245,0.04); border: 1px solid #27272a; border-radius: 8px; padding: 0 12px; min-height: 44px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(244,244,245,0.5); padding: 0 12px 0 0; border-right: 1px solid #27272a; background: rgba(83,155,245,0.05); align-self: stretch; display: flex; align-items: center;">RSS</span>
+          <input id="feed-url-2" readonly value="https://rss.lizhi.fm/rss/14275.xml" style="flex: 1; background: transparent; border: none; outline: none; color: #f4f4f5; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 12px; min-width: 0;" />
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#539bf5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.22-8.56"></path></svg>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #539bf5;">解析成功 · 正在拉取频道信息…</span>
+        </div>
+      </div>
+
+      <!-- 预览卡 skeleton -->
+      <div style="display: flex; gap: 14px; padding: 14px; background: #18181b; border: 1px solid #27272a; border-radius: 14px; align-items: center;">
+        <div class="skel" style="width: 88px; height: 88px; border-radius: 10px; background: #27272a; flex-shrink: 0;"></div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px;">
+          <div class="skel" style="height: 16px; width: 55%; background: #27272a; border-radius: 4px;"></div>
+          <div class="skel" style="height: 12px; width: 75%; background: #27272a; border-radius: 4px;"></div>
+          <div class="skel" style="height: 11px; width: 90%; background: #27272a; border-radius: 4px;"></div>
+        </div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; color: #92929e; border: 1px solid #27272a; background: rgba(244,244,245,0.04); border-radius: 4px; padding: 4px 8px; flex-shrink: 0;">···</span>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <a href="#" style="font-size: 12px; text-decoration: none;">如何找到节目的 RSS？</a>
+        <a href="#" style="font-size: 12px; text-decoration: none;">从 OPML 导入全部订阅 →</a>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button style="min-height: 36px; padding: 0 16px; font-family: inherit; font-size: 13px; font-weight: 500; color: #a1a1aa; background: #18181b; border: 1px solid #27272a; border-radius: 8px; cursor: pointer;">取消</button>
+        <button disabled style="min-height: 36px; padding: 0 20px; font-family: inherit; font-size: 13px; font-weight: 500; color: #09090b; background: #6eb1ff; border: 1px solid #6eb1ff; border-radius: 8px; cursor: wait; display: inline-flex; align-items: center; gap: 8px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#09090b" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.22-8.56"></path></svg>
+          校验中…
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":920,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -40,6 +40,9 @@
                     v-for="item in navItems"
                     :key="item.to"
                     :to="item.to"
+                    :aria-label="$t(item.tooltipKey)"
+                    :active="item.to === '/agents' ? route.path.startsWith('/agents') : undefined"
+                    :data-testid="item.to === '/agents' ? 'sidebar-agents' : undefined"
                     rounded="lg"
                     class="mb-2 sidebar-item"
                     color="primary"
@@ -105,6 +108,7 @@
 <script setup lang="ts">
 import { mdiCrop, mdiDns, mdiPodcast, mdiRobot, mdiToolboxOutline, mdiWallpaper } from '@mdi/js'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useTheme } from '@/composables/useTheme'
 
 const props = defineProps<{
@@ -118,6 +122,7 @@ const emit = defineEmits<{
 
 // Use the transparent brand mark so the logo belongs to the sidebar surface.
 const { isDark } = useTheme()
+const route = useRoute()
 
 const logoSrc = computed(() =>
   isDark.value
@@ -126,7 +131,7 @@ const logoSrc = computed(() =>
 )
 
 const navItems = [
-  { to: '/chat', icon: mdiRobot, tooltipKey: 'sidebar.chat' },
+  { to: '/agents', icon: mdiRobot, tooltipKey: 'sidebar.agents' },
   { to: '/skills', icon: mdiToolboxOutline, tooltipKey: 'sidebar.skills' },
   { to: '/hosts', icon: mdiDns, tooltipKey: 'sidebar.hostsManager' },
   { to: '/wallpapers', icon: mdiWallpaper, tooltipKey: 'sidebar.wallpapers' },

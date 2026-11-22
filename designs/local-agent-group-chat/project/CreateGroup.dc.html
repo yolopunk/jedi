@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jedi · 创建本地 Agent 群组</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}*{box-sizing:border-box}button,input,select{font:inherit}button,a{touch-action:manipulation}button{cursor:pointer}button:disabled{cursor:default}a{color:#295fc7;text-decoration:none}a:hover{color:#214eac}button:hover:not(:disabled){filter:brightness(.97)}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #3574f0;outline-offset:3px}input[type=checkbox]{accent-color:#3574f0;width:18px;height:18px;margin:0}input,select{min-width:0}
+@media(max-width:700px){.setup-main{padding:24px 16px!important}.setup-summary{flex-basis:100%!important}.setup-header{padding:16px!important}.agent-fields{flex-basis:100%!important;margin-left:45px!important}.agent-card{align-items:flex-start!important}}
+</style>
+</helmet>
+<div style="min-height:1360px;background:#f7f8fa;color:#27282e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;font-size:14px;line-height:1.5;display:flex;flex-direction:column">
+  <header class="setup-header" style="padding:18px 32px;min-height:80px;display:flex;flex-wrap:wrap;align-items:center;gap:16px;border-bottom:1px solid #dfe1e5;background:#ffffff">
+    <a href="Main.dc.html" style="min-width:44px;min-height:44px;padding:0 10px;display:flex;align-items:center;gap:8px;border:1px solid #dfe1e5;border-radius:8px;color:#606575;font-size:12px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"></path></svg>返回群聊</a>
+    <div style="display:flex;align-items:center;gap:9px"><img src="/_blob/5428544a68e5860f19bce633fefd93f9" alt="Jedi" style="width:29px;height:29px;object-fit:contain"><span style="font-size:16px;font-weight:650">Jedi<span style="color:#3574f0">.</span></span><span style="margin-left:5px;padding-left:14px;border-left:1px solid #dfe1e5;color:#606575;font-size:12px">本地 Agent 群聊</span></div>
+    <span style="margin-left:auto;font-size:11px;color:#606575;padding:4px 9px;border:1px solid #dfe1e5;border-radius:5px">配置原型 · 不启动真实进程</span>
+  </header>
+  <main class="setup-main" style="width:100%;max-width:1120px;margin:0 auto;padding:32px;display:flex;flex-direction:column;gap:26px">
+    <div style="display:flex;flex-direction:column;gap:8px"><span style="font-family:Consolas,monospace;font-size:10px;letter-spacing:1.8px;color:#606575">NEW GROUP / LOCAL AGENTS</span><h1 style="margin:0;font-size:29px;line-height:1.25;font-weight:650;letter-spacing:-.8px">为项目组建一个 Agent 小队</h1><p style="margin:0;font-size:13px;color:#606575">选择已安装的 CLI，让它们在同一条线程里讨论，各自保留身份和执行边界。</p></div>
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:24px">
+      <section aria-label="创建群组配置" style="flex:999 1 580px;min-width:0;display:flex;flex-direction:column;gap:18px">
+        <div style="padding:22px;background:#ffffff;border:1px solid #dfe1e5;border-radius:14px;display:flex;flex-direction:column;gap:17px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="width:25px;height:25px;display:flex;align-items:center;justify-content:center;border:1px solid #c5d7fc;border-radius:7px;background:#edf2fd;color:#295fc7;font-family:Consolas,monospace;font-size:11px">01</span><h2 style="margin:0;font-size:14px;font-weight:650">给群组一个项目上下文</h2></div>
+          <div style="display:flex;flex-direction:column;gap:7px"><label for="group-name" style="font-size:12px;font-weight:600">群组名称 <span style="color:#606575;font-weight:400">· 必填</span></label><input id="group-name" value="{{name}}" onChange="{{changeName}}" maxlength="40" placeholder="例如：Jedi 产品开发" aria-describedby="name-help" style="min-height:44px;width:100%;padding:0 12px;border:1px solid #c9ccd6;border-radius:8px;background:#ffffff;color:#27282e;font-size:13px"><span id="name-help" style="font-size:10px;color:#606575">可以按项目、任务或协作目标命名。</span></div>
+          <div style="display:flex;flex-direction:column;gap:7px"><label for="project-path" style="font-size:12px;font-weight:600">项目目录 <span style="color:#606575;font-weight:400">· 必填</span></label><input id="project-path" value="{{path}}" onChange="{{changePath}}" aria-describedby="path-help" placeholder="E:/workspace/your-project" style="min-height:44px;width:100%;padding:0 12px;border:1px solid #c9ccd6;border-radius:8px;background:#ffffff;color:#27282e;font-family:Consolas,monospace;font-size:12px"><span id="path-help" style="font-size:10px;color:#606575">示例路径可编辑。正式版需校验目录，并映射 Windows / WSL 路径。</span></div>
+        </div>
+        <div style="padding:22px;background:#ffffff;border:1px solid #dfe1e5;border-radius:14px;display:flex;flex-direction:column;gap:17px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="width:25px;height:25px;display:flex;align-items:center;justify-content:center;border:1px solid #c5d7fc;border-radius:7px;background:#edf2fd;color:#295fc7;font-family:Consolas,monospace;font-size:11px">02</span><h2 style="margin:0;font-size:14px;font-weight:650">选择本地 Agent</h2><span style="margin-left:auto;font-size:10px;color:#606575">示例安装列表</span></div>
+          <p style="margin:0;color:#606575;font-size:11px;line-height:1.7">同名 Agent 按主机区分。登录与模型由各自 CLI 管理，无需在 Jedi 重填凭据。</p>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{agents}}" as="agent" hint-placeholder-count="4">
+              <div class="agent-card" style="{{agent.cardStyle}}">
+                <label for="{{agent.inputId}}" style="display:flex;align-items:center;gap:10px;min-height:44px;flex:999 1 245px;min-width:0;cursor:pointer">
+                  <input id="{{agent.inputId}}" type="checkbox" checked="{{agent.selected}}" disabled="{{agent.unavailable}}" onChange="{{agent.toggle}}">
+                  <span style="{{agent.avatarStyle}}">{{agent.initials}}</span>
+                  <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><strong style="font-size:12px">{{agent.name}}</strong><span style="font-family:Consolas,monospace;font-size:10px;color:#606575;overflow-wrap:anywhere">{{agent.installation}}</span></span>
+                </label>
+                <div class="agent-fields" style="flex:1 1 135px;min-width:0;display:flex;flex-direction:column;gap:5px">
+                  <sc-if value="{{agent.available}}" hint-placeholder-val="{{true}}"><label for="{{agent.roleId}}" style="font-size:10px;color:#606575">群内职责</label><select id="{{agent.roleId}}" value="{{agent.role}}" onChange="{{agent.changeRole}}" disabled="{{agent.unselected}}" style="width:100%;min-height:44px;padding:0 8px;border:1px solid #c9ccd6;background:#ffffff;border-radius:7px;font-size:11px;color:#414653"><option value="交互规划">交互规划</option><option value="实现建议">实现建议</option><option value="风险检查">风险检查</option><option value="通用协作">通用协作</option></select></sc-if>
+                  <sc-if value="{{agent.unavailable}}" hint-placeholder-val="{{false}}"><span style="font-size:10px;color:#825104">需在 CLI 完成登录</span><span style="font-size:10px;color:#606575">此原型不可选择</span></sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding:22px;background:#ffffff;border:1px solid #dfe1e5;border-radius:14px;display:flex;flex-direction:column;gap:17px">
+          <div style="display:flex;align-items:center;gap:10px"><span style="width:25px;height:25px;display:flex;align-items:center;justify-content:center;border:1px solid #c5d7fc;border-radius:7px;background:#edf2fd;color:#295fc7;font-family:Consolas,monospace;font-size:11px">03</span><h2 style="margin:0;font-size:14px;font-weight:650">约定协作边界</h2></div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px"><div style="flex:1"><label for="discussion-rounds" style="font-size:12px;font-weight:600">自动讨论上限</label><p style="margin:4px 0 0;font-size:10px;color:#606575">达到上限后等待你继续，避免循环互相回复。</p></div><select id="discussion-rounds" value="{{rounds}}" onChange="{{changeRounds}}" style="min-height:44px;padding:0 12px;background:#ffffff;border:1px solid #c9ccd6;border-radius:8px;font-size:12px;color:#27282e"><option value="1">1 轮</option><option value="3">3 轮</option><option value="5">5 轮</option></select></div>
+          <label for="readonly" style="display:flex;align-items:center;gap:11px;min-height:44px"><input id="readonly" type="checkbox" checked="{{readOnly}}" onChange="{{changeReadOnly}}"><span style="display:flex;flex-direction:column;gap:3px"><strong style="font-size:12px;font-weight:600">默认只读讨论</strong><span style="font-size:10px;color:#606575">关闭后可提交执行请求，但仍需逐次审批。</span></span></label>
+          <div style="padding:11px 12px;border:1px solid #dfe1e5;background:#f7f8fa;border-radius:8px;display:flex;align-items:flex-start;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;color:#606575;margin-top:1px"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z"></path><path d="m8 12 3 3 5-6"></path></svg><p style="margin:0;color:#606575;font-size:10px;line-height:1.8">文件写入与系统命令必须确认；同一目录不并行写入。<br>群组不会继承成员的“始终允许”权限。</p></div>
+        </div>
+      </section>
+      <aside class="setup-summary" aria-label="群组配置摘要" style="flex:1 1 278px;min-width:0;display:flex;flex-direction:column;gap:18px">
+        <div style="background:#ffffff;border:1px solid #c9ccd6;border-radius:14px;overflow:hidden">
+          <div style="padding:23px 22px;border-bottom:1px solid #dfe1e5;background:#fafbfc;display:flex;flex-direction:column;gap:13px"><div style="width:42px;height:42px;border:1px solid #c5d7fc;border-radius:11px;background:#edf2fd;display:flex;align-items:center;justify-content:center;color:#295fc7;font-size:25px">#</div><span style="font-size:10px;color:#606575;letter-spacing:1px">群组预览</span><h2 style="margin:0;font-size:20px;font-weight:650;letter-spacing:-.4px;overflow-wrap:anywhere">{{previewName}}</h2><code style="font-family:Consolas,monospace;font-size:10px;color:#606575;overflow-wrap:anywhere">{{previewPath}}</code></div>
+          <div style="padding:22px;display:flex;flex-direction:column;gap:17px">
+            <div style="display:flex;align-items:center;justify-content:space-between"><strong style="font-size:12px">加入的成员</strong><span style="font-size:10px;font-family:Consolas,monospace;color:#606575">{{memberCount}} AGENTS</span></div>
+            <sc-for list="{{selectedAgents}}" as="agent" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:9px"><div style="{{agent.avatarStyle}}">{{agent.initials}}</div><div style="display:flex;flex:1;flex-direction:column;gap:3px"><strong style="font-size:11px">{{agent.name}}</strong><span style="font-size:10px;color:#606575">{{agent.role}}</span></div><span style="color:#606575;font-size:9px">本机 CLI</span></div></sc-for>
+            <sc-if value="{{noAgents}}" hint-placeholder-val="{{false}}"><p style="margin:0;font-size:11px;color:#825104">尚未选择成员。请选择至少 2 位 Agent 组成群聊。</p></sc-if>
+            <div style="height:1px;background:#dfe1e5"></div>
+            <div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;justify-content:space-between;font-size:11px"><span style="color:#606575">协作方式</span><span>群发 / @ 定向</span></div><div style="display:flex;align-items:center;justify-content:space-between;font-size:11px"><span style="color:#606575">自动讨论</span><span>最多 {{rounds}} 轮</span></div><div style="display:flex;align-items:center;justify-content:space-between;font-size:11px"><span style="color:#606575">默认权限</span><span>{{permissionLabel}}</span></div></div>
+            <button onClick="{{createGroup}}" disabled="{{createDisabled}}" style="{{createStyle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>创建演示群组</button>
+            <p role="status" aria-live="polite" style="margin:0;color:#606575;font-size:10px;line-height:1.7">{{validationHint}}</p>
+          </div>
+        </div>
+        <sc-if value="{{created}}" hint-placeholder-val="{{false}}"><div role="status" style="padding:18px;background:#edf2fd;border:1px solid #c5d7fc;border-radius:12px;display:flex;flex-direction:column;gap:10px"><strong style="color:#295fc7;font-size:13px">演示配置已完成</strong><p style="margin:0;color:#414653;font-size:11px;line-height:1.8">{{createdDescription}}</p><a href="Main.dc.html" style="min-height:44px;display:flex;align-items:center;justify-content:center;padding:0 12px;background:#ffffff;border:1px solid #c5d7fc;border-radius:8px;font-size:11px;font-weight:600">查看群聊工作区示例</a><span style="font-size:10px;color:#606575">配置仅在此画板内保留；下一张是独立工作区示例。</span></div></sc-if>
+        <div style="padding:0 5px;display:flex;flex-direction:column;gap:9px"><div style="display:flex;align-items:center;gap:7px;color:#606575"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7h.01"></path></svg><strong style="font-size:11px">本地执行，不承诺离线推理</strong></div><p style="margin:0;font-size:11px;line-height:1.8;color:#606575">CLI 在本机或 WSL 中运行，仍可能连接各自的模型服务。成员的凭据不会共享到群组。</p><p style="margin:0;font-size:10px;line-height:1.8;color:#606575">这个设计稿不会检查安装、校验目录、读取凭据或启动 CLI。</p></div>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1120,"height":1360}}'>
+class Component extends DCLogic {
+  state = { name: 'Jedi 产品开发', path: 'E:/workspace/jedi', selected: ['claude', 'codex'], roles: { claude: '交互规划', codex: '实现建议', gemini: '风险检查', qwen: '通用协作' }, rounds: '3', readOnly: true, created: false, createdDescription: '' };
+  renderVals() {
+    const s = this.state;
+    const list = [
+      { key: 'claude', name: 'Claude Code', installation: 'claude@windows', initials: 'CC', color: '#295fc7', background: '#edf2fd', border: '#d7e2fc' },
+      { key: 'codex', name: 'Codex', installation: 'codex@wsl:ubuntu', initials: 'CX', color: '#414653', background: '#f1f2f4', border: '#dfe1e5' },
+      { key: 'gemini', name: 'Gemini CLI', installation: 'gemini@windows', initials: 'GM', color: '#34656f', background: '#edf5f6', border: '#d4e5e7' },
+      { key: 'qwen', name: 'Qwen Code', installation: 'qwen@windows', initials: 'QW', color: '#606575', background: '#f7f8fa', border: '#dfe1e5', unavailable: true }
+    ];
+    const agents = list.map(agent => {
+      const selected = s.selected.includes(agent.key);
+      return { ...agent, available: !agent.unavailable, unavailable: !!agent.unavailable, selected, unselected: !selected, inputId: 'agent-' + agent.key, roleId: 'role-' + agent.key, role: s.roles[agent.key],
+        cardStyle: 'padding:12px;display:flex;flex-wrap:wrap;align-items:center;gap:12px;min-height:83px;border-radius:10px;border:1px solid ' + (selected ? '#c5d7fc' : '#dfe1e5') + ';background:' + (selected ? '#f4f7ff' : '#ffffff'),
+        avatarStyle: 'width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:7px;font-family:Consolas,monospace;font-size:10px;font-weight:700;color:' + agent.color + ';background:' + agent.background + ';border:1px solid ' + agent.border,
+        toggle: event => { if (agent.unavailable) return; this.setState({ selected: event.target.checked ? [...this.state.selected, agent.key] : this.state.selected.filter(key => key !== agent.key), created: false }); },
+        changeRole: event => this.setState({ roles: { ...this.state.roles, [agent.key]: event.target.value }, created: false })
+      };
+    });
+    const selectedAgents = agents.filter(agent => agent.selected && !agent.unavailable);
+    const valid = !!s.name.trim() && !!s.path.trim() && selectedAgents.length >= 2;
+    const update = patch => this.setState({ ...patch, created: false });
+    return { agents, selectedAgents, name: s.name, path: s.path, rounds: s.rounds, readOnly: s.readOnly, previewName: s.name.trim() || '未命名群组', previewPath: s.path.trim() || '请选择项目目录', memberCount: selectedAgents.length, noAgents: selectedAgents.length === 0, permissionLabel: s.readOnly ? '只读讨论' : '按次审批',
+      changeName: event => update({ name: event.target.value }), changePath: event => update({ path: event.target.value }), changeRounds: event => update({ rounds: event.target.value }), changeReadOnly: event => update({ readOnly: event.target.checked }),
+      createDisabled: !valid, createStyle: 'width:100%;min-height:46px;display:flex;align-items:center;justify-content:center;gap:7px;border:0;border-radius:9px;font-size:12px;font-weight:600;background:' + (valid ? '#295fc7' : '#ebecf0') + ';color:' + (valid ? '#ffffff' : '#606575'),
+      validationHint: !s.name.trim() ? '请填写群组名称。' : !s.path.trim() ? '请填写项目目录。' : selectedAgents.length < 2 ? '请选择至少 2 位可用 Agent。' : '仅预览配置，不会启动进程或保存到应用。',
+      created: s.created, createdDescription: s.createdDescription, createGroup: () => { if (!valid) return; this.setState({ created: true, createdDescription: '“' + s.name.trim() + '”已选择 ' + selectedAgents.length + ' 位 Agent，自动讨论最多 ' + s.rounds + ' 轮，默认' + (s.readOnly ? '只读讨论' : '按次审批') + '。没有创建真实会话。' }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

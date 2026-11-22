@@ -1,17 +1,6 @@
-// ClaudeCodeDriver: drives Claude Code as a per-turn child process via its
-// stream-json protocol (docs §3.2 Tier A).
-//
-// Invocation verified on 2.1.299 (docs §10, M3 session):
-//   claude -p --input-format stream-json --output-format stream-json \
-//     --verbose --include-partial-messages --permission-mode default \
-//     [--resume <session_id>] [--model <id>]
-//  - each turn: one user-message JSONL line on stdin; the turn ends with a
-//    `result` record (terminal for -p), carrying session_id for --resume.
-//  - auth: Claude Code's own login state (~/.claude); no key injection.
-//  - permissions: 2.1.299 auto-approves tools in -p mode and does NOT emit
-//    control_request; the translator + confirmTool wiring below activates
-//    automatically when a version starts emitting them (shapes implemented
-//    per the Agent SDK control protocol).
+// ClaudeCodeDriver: per-turn stream-json process using Claude's own auth.
+// Legacy calls retain their defaults; explicit discussion is restricted by
+// the CLI tool allowlist and permission mode, not a Jedi/OS sandbox.
 
 import { Channel, invoke } from '@tauri-apps/api/core'
 import type { RunAgentHooks, RunAgentResult } from '@/agent/runAgent'
@@ -23,9 +12,15 @@ import {
   controlResponseFor,
   createClaudeTranslator,
 } from './claudeCodeProtocol'
+import {
+  activeRunHooks,
+  claudeGroupChatModes,
+  claudeStartArgs,
+  driverResumeId,
+  driverSessionKey,
+  validateDriverStart,
+} from './groupPolicy'
 
-// claude session id per Jedi chat session for --resume continuity. In-memory
-// for M3 (persisting in message metadata is a documented follow-up).
 const claudeSessionByJediSession = new Map<string, string>()
 
 function lastUserText(messages: DriverStartOpts['messages']): string {
@@ -78,7 +73,8 @@ export class ClaudeCodeDriver implements AgentDriver {
     resume: true,
     models: true,
     approval: 'native',
-    usesJediKey: false, // own login state (~/.claude)
+    usesJediKey: false,
+    groupChatModes: claudeGroupChatModes,
   } as const
 
   supports(engine: EngineDescriptor): boolean {
@@ -86,29 +82,32 @@ export class ClaudeCodeDriver implements AgentDriver {
   }
 
   async start(opts: DriverStartOpts, hooks: RunAgentHooks): Promise<DriverHandle> {
+    // Register cancellation before awaiting spawn: the caller has no handle
+    // yet and can only stop a starting run through its signal.
+    if (opts.signal?.aborted) throw new Error('aborted')
     const engine = opts.engine
     if (!engine?.installation) {
       throw new Error('ClaudeCodeDriver: engine installation missing')
     }
-    const sessionKey = JSON.stringify([engine.id, opts.sessionId])
+    const cwd = validateDriverStart(opts, this.capabilities.groupChatModes)
+    const lastUser = [...opts.messages].reverse().find(m => m.role === 'user')
+    if (!lastUserText(opts.messages).trim() && !hasImageParts(lastUser?.content)) {
+      throw new Error('ClaudeCodeDriver: no user message to send')
+    }
+    const sessionKey = driverSessionKey(engine, opts)
+    const resumed = driverResumeId(opts, claudeSessionByJediSession.get(sessionKey))
+    const args = claudeStartArgs(opts.executionMode)
+    if (resumed) args.push('--resume', resumed)
 
-    const args: string[] = [
-      '-p',
-      '--input-format',
-      'stream-json',
-      '--output-format',
-      'stream-json',
-      '--verbose',
-      '--include-partial-messages',
-      '--permission-mode',
-      'default',
-    ]
-    const resumedSession = opts.nativeSessionId ?? claudeSessionByJediSession.get(sessionKey)
-    if (resumedSession) args.push('--resume', resumedSession)
-
-    const procId = `claude-${opts.sessionId}-${Date.now()}`
+    const procId = opts.processId ?? `claude-${crypto.randomUUID()}`
     const diag = createAgentDiagnostics(engine.name)
     let settled = false
+    let spawned = false
+    let stopRequested = false
+    let killStarted = false
+    let nativeSessionId: string | undefined
+    const liveHooks = activeRunHooks(hooks, () => !settled)
+    const approvalRequests = new Set<string>()
 
     let resolveDone: (r: RunAgentResult) => void = () => {}
     let rejectDone: (e: Error) => void = () => {}
@@ -116,138 +115,185 @@ export class ClaudeCodeDriver implements AgentDriver {
       resolveDone = resolve
       rejectDone = reject
     })
+    // A process can fail before start returns. The caller still receives the
+    // original rejecting promise, without an unhandled-rejection window.
+    void done.catch(() => {})
 
-    const send = (payload: Record<string, unknown>): Promise<void> =>
-      invoke('agent_proc_stdin', { id: procId, line: JSON.stringify(payload) })
-
-    const handleApproval = (req: ClaudeApprovalRequest) => {
-      const decide = async () => {
-        let allow = false
-        if (opts.confirmTool) {
-          allow = await opts.confirmTool({
-            toolId: `claude-code:${req.toolName}`,
-            toolName: req.toolName,
-            risk: 'write',
-            args: req.toolInput,
-          })
-        }
-        await send(controlResponseFor(req.requestId, allow))
-      }
-      decide().catch(e => console.warn('[claude-code] approval response failed:', e))
+    const stopProcess = () => {
+      stopRequested = true
+      if (!spawned || killStarted) return
+      killStarted = true
+      void invoke('agent_proc_kill', { id: procId }).catch(() => {})
+    }
+    const send = (payload: Record<string, unknown>): Promise<void> => {
+      if (settled || opts.signal?.aborted) return Promise.reject(new Error('claude run ended'))
+      return invoke('agent_proc_stdin', { id: procId, line: JSON.stringify(payload) })
+    }
+    const saveNativeSessionId = (id: unknown) => {
+      if (settled || typeof id !== 'string' || !id || id === nativeSessionId) return
+      nativeSessionId = id
+      claudeSessionByJediSession.set(sessionKey, id)
+      liveHooks.onNativeSessionId?.(id)
     }
 
-    const translator = createClaudeTranslator({ hooks, onApprovalRequest: handleApproval })
+    const handleApproval = (req: ClaudeApprovalRequest) => {
+      if (settled || !req.requestId || approvalRequests.has(req.requestId)) return
+      approvalRequests.add(req.requestId)
+      const decide = async () => {
+        let allow = false
+        // Discussion never asks or grants even if a newer CLI emits requests.
+        if (opts.executionMode === undefined && opts.confirmTool && !opts.signal?.aborted) {
+          try {
+            allow =
+              (await opts.confirmTool({
+                toolId: `claude-code:${req.requestId}`,
+                toolName: req.toolName,
+                risk: 'write',
+                args: req.toolInput,
+              })) === true
+          } catch {
+            allow = false
+          }
+        }
+        if (!settled && !opts.signal?.aborted) {
+          await send(controlResponseFor(req.requestId, allow))
+        }
+      }
+      void decide().catch(error => {
+        if (!settled) finish(error instanceof Error ? error : new Error(String(error)))
+      })
+    }
+    const translator = createClaudeTranslator({
+      hooks: liveHooks,
+      onApprovalRequest: handleApproval,
+    })
 
-    const finish = (failure?: Error) => {
+    const finish = (failure?: Error, aborted = false) => {
       if (settled) return
+      const snap = translator.snapshot()
       settled = true
       opts.signal?.removeEventListener('abort', onAbort)
-      void invoke('agent_proc_kill', { id: procId }).catch(() => {})
-      const snap = translator.snapshot()
+      stopProcess()
       if (failure || snap.lastError) {
         rejectDone(failure ?? diag.protocol(snap.lastError!))
         return
       }
-      if (snap.nativeSessionId) claudeSessionByJediSession.set(sessionKey, snap.nativeSessionId)
-      hooks.onFinish?.({ finishReason: snap.finishReason, usage: snap.usage })
-      resolveDone({
-        text: snap.fullText,
-        reasoning: snap.reasoning,
-        finishReason: snap.finishReason,
-        usage: snap.usage,
-        toolCount: snap.toolCount,
-        enabledToolNames: [],
-        nativeSessionId: snap.nativeSessionId,
-      })
+      const finishReason = aborted ? 'aborted' : snap.finishReason
+      try {
+        hooks.onFinish?.({ finishReason, usage: snap.usage })
+        resolveDone({
+          text: snap.fullText,
+          reasoning: snap.reasoning,
+          finishReason,
+          usage: snap.usage,
+          toolCount: snap.toolCount,
+          enabledToolNames: [],
+          nativeSessionId: nativeSessionId ?? resumed,
+        })
+      } catch (error) {
+        rejectDone(error instanceof Error ? error : new Error(String(error)))
+      }
     }
-
     function onAbort() {
-      // No abort command on this protocol; terminating the process keeps the
-      // partial output that already streamed through the hooks.
-      finish()
+      finish(undefined, true)
+    }
+    const handle: DriverHandle = {
+      engineId: `claude-code@${engine.host}`,
+      capabilities: { ...this.capabilities },
+      done,
+      steer: text =>
+        send({
+          type: 'user',
+          message: { role: 'user', content: [{ type: 'text', text }] },
+        }),
+      abort: onAbort,
+      dispose: onAbort,
     }
 
     const channel = new Channel<any>()
     channel.onmessage = (msg: any) => {
-      if (!msg || typeof msg !== 'object') return
+      if (settled || !msg || typeof msg !== 'object') return
       if (msg.type === 'line') {
         const line = String(msg.line ?? '').trim()
         if (!line) return
+        let record: any
         try {
-          const record = JSON.parse(line)
-          const model = nativeModel(record)
-          if (model) hooks.onModel?.(model)
-          translator.handleRecord(record)
+          record = JSON.parse(line)
         } catch {
           const early = diag.line(line)
           if (early) finish(early)
+          return
         }
-        if (translator.snapshot().turnComplete) finish()
+        try {
+          if (record?.type === 'system' && record.subtype === 'init') {
+            // The tool list is an additional runtime tripwire. CLI flags are
+            // still the enforcement; no write is ever executed by this driver.
+            if (
+              opts.executionMode === 'discussion' &&
+              (record.permissionMode !== 'dontAsk' ||
+                !Array.isArray(record.tools) ||
+                record.tools.some(
+                  (tool: unknown) =>
+                    typeof tool !== 'string' || !['Read', 'Glob', 'Grep'].includes(tool)
+                ))
+            ) {
+              finish(new Error('Claude Code did not confirm discussion tool restrictions'))
+              return
+            }
+          }
+          saveNativeSessionId(record?.session_id)
+          if (settled) return
+          const model = nativeModel(record)
+          if (model) liveHooks.onModel?.(model)
+          if (settled) return
+          translator.handleRecord(record)
+          if (!settled && translator.snapshot().turnComplete) finish()
+        } catch (error) {
+          finish(error instanceof Error ? error : new Error(String(error)))
+        }
       } else if (msg.type === 'exit') {
         const snap = translator.snapshot()
-        if (!settled && !snap.turnComplete) {
-          finish(diag.exit(msg.code, snap.lastError))
-        }
+        finish(snap.turnComplete ? undefined : diag.exit(msg.code, snap.lastError))
       } else if (msg.type === 'stderr') {
         const early = diag.line(String(msg.line ?? ''))
         if (early) finish(early)
       }
     }
 
+    opts.signal?.addEventListener('abort', onAbort, { once: true })
+    if (opts.signal?.aborted) onAbort()
+    if (settled) return handle
     try {
-      await invoke('agent_proc_spawn', {
+      await invoke<string | null | void>('agent_proc_spawn', {
         id: procId,
         spec: engine.installation.spawn,
         args,
-        cwd: null,
+        cwd: cwd ?? null,
         env: null,
         onEvent: channel,
       })
-    } catch (e) {
-      throw diag.spawn(e)
-    }
-
-    if (opts.signal?.aborted) {
-      finish(new Error('aborted'))
-      return {
-        engineId: `claude-code@${engine.host}`,
-        capabilities: { ...this.capabilities },
-        done,
+      spawned = true
+      // Cancellation or an early result may arrive while invoke is pending.
+      if (stopRequested || settled || opts.signal?.aborted) {
+        if (!settled) onAbort()
+        stopProcess()
+        return handle
       }
-    }
-    opts.signal?.addEventListener('abort', onAbort)
-
-    const lastUser = [...opts.messages].reverse().find(m => m.role === 'user')
-    const promptText = lastUserText(opts.messages)
-    if (!promptText.trim() && !hasImageParts(lastUser?.content)) {
-      finish(new Error('ClaudeCodeDriver: no user message to send'))
-    } else {
-      // The last user message is the turn prompt; earlier history lives in
-      // the resumed claude session (--resume) or starts a fresh conversation.
-      // Image parts (data URLs built by the chat store) become Anthropic
-      // base64 content blocks — no filesystem path needed, WSL included.
       await send({
         type: 'user',
         message: { role: 'user', content: buildUserContentBlocks(lastUser?.content) },
       })
+    } catch (error) {
+      if (!settled) {
+        const failure = spawned
+          ? error instanceof Error
+            ? error
+            : new Error(String(error))
+          : diag.spawn(error)
+        finish(failure)
+        throw failure
+      }
     }
-
-    return {
-      engineId: `claude-code@${engine.host}`,
-      capabilities: { ...this.capabilities },
-      done,
-      // Bidirectional stream-json: an extra user message mid-turn steers the
-      // agent (it is delivered after the current tool batch finishes).
-      steer: (text: string) =>
-        send({
-          type: 'user',
-          message: { role: 'user', content: [{ type: 'text', text }] },
-        }),
-      abort: onAbort,
-      dispose: () => {
-        opts.signal?.removeEventListener('abort', onAbort)
-        void invoke('agent_proc_kill', { id: procId }).catch(() => {})
-      },
-    }
+    return handle
   }
 }

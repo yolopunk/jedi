@@ -109,6 +109,24 @@ const TURN = '01a16efa-19dc-7683-a766-086ce525f812'
   check('S4 rpc error → terminal', s.turnComplete === true && s.lastError === 'threadId required' && s.finishReason === 'error')
 }
 
+// Terminal failures may omit error.message. Never report them as successful replies.
+for (const status of ['failed', 'unexpected']) {
+  const t = createCodexTranslator({})
+  t.handleRecord({ method: 'turn/completed', params: { turn: { status, error: null } } })
+  check(`${status} terminal has error`, t.snapshot().finishReason === 'error' && !!t.snapshot().lastError)
+}
+for (const status of ['aborted', 'interrupted']) {
+  const t = createCodexTranslator({})
+  t.handleRecord({ method: 'turn/completed', params: { turn: { status, error: null } } })
+  check(`${status} terminal is aborted`, t.snapshot().finishReason === 'aborted')
+}
+for (const type of ['fileChange', 'mcpToolCall']) {
+  const ends: any[] = []
+  const t = createCodexTranslator({ onToolEnd: event => ends.push(event) })
+  t.handleRecord({ method: 'item/completed', params: { item: { type, id: type, status: 'failed', error: { message: 'Permission denied' } } } })
+  check(`${type} failure has tool error`, ends[0]?.error === 'Permission denied')
+}
+
 console.log(failures === 0 ? '\nALL REPLAY CHECKS PASSED' : `\n${failures} CHECKS FAILED`)
 if (failures > 0) {
   throw new Error(`${failures} replay checks failed`)

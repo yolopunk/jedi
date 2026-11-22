@@ -57,6 +57,8 @@ export interface EngineDescriptor {
   tier: 'builtin' | 'A' | 'B'
 }
 
+export type GroupChatMode = 'discussion' | 'approval'
+
 export interface DriverCapabilities {
   steering: boolean
   compaction: boolean
@@ -69,12 +71,23 @@ export interface DriverCapabilities {
    * their own model and authentication configuration.
    */
   usesJediKey: boolean
+  /** Explicitly supported restricted group modes; absent means unsupported. */
+  groupChatModes?: readonly GroupChatMode[]
 }
 
 /** Options for starting a run on an engine. */
 export interface DriverStartOpts extends RunAgentSpec {
   /** The engine this run targets; external drivers need its installation. */
   engine?: EngineDescriptor
+  /** Working directory in the host filesystem (Windows paths may target WSL). */
+  cwd?: string
+  /**
+   * Opt-in group restrictions. Omitting this retains legacy single-chat
+   * permissions and resume behavior. Explicit modes require an absolute cwd.
+   */
+  executionMode?: GroupChatMode
+  /** Stable per-run process ID for renderer recovery. Generated when omitted. */
+  processId?: string
   /**
    * Last known native session id for this Jedi chat session (recovered from
    * persisted message metadata) so external engines resume across app

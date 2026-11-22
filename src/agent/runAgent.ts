@@ -114,6 +114,8 @@ export interface RunAgentHooks {
   onToolCall?: (e: { toolName: string; toolCallId?: string; input: unknown }) => void
   onToolResult?: (e: { toolName: string; toolCallId?: string; output: unknown }) => void
   onFinish?: (e: { finishReason?: string; usage?: unknown }) => void
+  /** Persist external native-session recovery identifiers as soon as they arrive. */
+  onNativeSessionId?: (id: string) => void
 }
 
 export interface RunAgentResult {

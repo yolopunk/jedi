@@ -267,7 +267,7 @@ onMounted(async () => {
       const win = getCurrentWindow()
       await win.show()
       await win.setFocus()
-      await router.push('/chat')
+      await router.push('/agents/chat')
       const { useAiChatStore } = await import('@/stores/aiChat')
       useAiChatStore().addPendingAttachment(path)
     })

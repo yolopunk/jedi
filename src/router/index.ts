@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import Agents from '@/views/Agents/index.vue'
 import AiChat from '@/views/AiChat/index.vue'
 import HostsManager from '@/views/hosts/HostsManager.vue'
 import PodcastManager from '@/views/podcast/PodcastManager.vue'
@@ -12,7 +13,7 @@ import WallpaperManager from '@/views/wallpapers/WallpaperManager.vue'
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    redirect: '/chat',
+    redirect: '/agents',
   },
   {
     path: '/skills',
@@ -85,12 +86,24 @@ const routes: Array<RouteRecordRaw> = [
     },
   },
   {
-    path: '/chat',
+    path: '/agents',
+    name: 'Agents',
+    component: Agents,
+    meta: {
+      title: 'Agents',
+    },
+  },
+  {
+    path: '/agents/chat',
     name: 'AiChat',
     component: AiChat,
     meta: {
       title: 'Chat',
     },
+  },
+  {
+    path: '/chat',
+    redirect: '/agents/chat',
   },
 ]
 

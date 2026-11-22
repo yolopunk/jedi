@@ -100,9 +100,13 @@ defineEmits<(e: 'update:modelValue', value: boolean) => void>()
 const { t } = useI18n()
 const route = useRoute()
 
-type HelpPageKey = 'chat' | 'skills' | 'hosts' | 'wallpapers' | 'podcast' | 'screenshot'
+type HelpPageKey = 'agents' | 'chat' | 'skills' | 'hosts' | 'wallpapers' | 'podcast' | 'screenshot'
 
 const pageConfig: Record<HelpPageKey, { nameKey: string; tipKeys: string[] }> = {
+  agents: {
+    nameKey: 'sidebar.agents',
+    tipKeys: ['agents.help.tip1', 'agents.help.tip2', 'agents.help.tip3', 'agents.help.tip4'],
+  },
   chat: {
     nameKey: 'sidebar.chat',
     tipKeys: ['dialogs.help.chatTip1', 'dialogs.help.chatTip2', 'dialogs.help.chatTip3'],
@@ -136,7 +140,8 @@ const pageConfig: Record<HelpPageKey, { nameKey: string; tipKeys: string[] }> = 
 
 const currentPage = computed<HelpPageKey>(() => {
   const path = route.path
-  if (path.startsWith('/chat')) return 'chat'
+  if (path.startsWith('/agents/chat') || path.startsWith('/chat')) return 'chat'
+  if (path.startsWith('/agents')) return 'agents'
   if (path.startsWith('/skills')) return 'skills'
   if (path.startsWith('/hosts')) return 'hosts'
   if (path.startsWith('/wallpapers')) return 'wallpapers'
@@ -153,9 +158,14 @@ const pageTitle = computed(
 
 const pageItems = computed(() => currentConfig.value.tipKeys.map(key => t(key)))
 
-const globalItems = computed(() => [t('dialogs.help.paletteTip'), t('dialogs.help.settingsTip')])
+const globalItems = computed(() =>
+  currentPage.value === 'agents'
+    ? [t('dialogs.help.settingsTip')]
+    : [t('dialogs.help.paletteTip'), t('dialogs.help.settingsTip')]
+)
 
 const catalogRows = computed(() => [
+  { name: t('sidebar.agents'), desc: t('agents.help.catalog') },
   { name: t('sidebar.chat'), desc: t('dialogs.help.catalogChat') },
   { name: t('sidebar.skills'), desc: t('dialogs.help.catalogSkills') },
   { name: t('sidebar.hostsManager'), desc: t('dialogs.help.catalogHosts') },

@@ -4,6 +4,9 @@
 use crate::agent::detector::{detect_agents, DetectorState};
 use crate::agent::procman::{agent_proc_kill, agent_proc_spawn, agent_proc_stdin, ProcManState};
 use crate::api::agent_fs::{file_exists, read_file, write_file};
+use crate::api::agents::{
+  delete_agent_group, list_agent_groups, save_agent_group, AgentGroupManagerState,
+};
 use crate::api::ai_chat::{
   append_message,
   create_session,
@@ -41,7 +44,7 @@ use crate::api::ai_chat::{
 };
 use crate::api::app::{
   disable_autostart, enable_autostart, ensure_jedi_dir, get_app_info, is_autostart_enabled,
-  set_icon_theme,
+  is_scoop_install, set_icon_theme,
 };
 use crate::api::hosts::{
   fetch_remote_config, get_hosts_path, get_hosts_sources, read_system_hosts, remove_hosts_source,
@@ -121,6 +124,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let chat_session_manager = ChatSessionManager::new(audit_logger_for_sessions);
   let chat_session_manager_state = ChatSessionManagerState::new(chat_session_manager);
 
+  // Local Agent group snapshots live in Jedi's own application data directory.
+  let agent_group_manager_state = AgentGroupManagerState::new()?;
+
   // Phase 2: 初始化模型提供商管理器状态
   let model_provider_manager_state =
     ModelProviderManagerState::new(keyring_manager_state.get_manager().clone());
@@ -181,7 +187,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .manage(model_provider_manager_state)
     // Phase 3: 管理 models.dev 状态
     .manage(models_dev_manager_state)
-    // Agent pool state
+    // Agent pool state and durable group snapshots
+    .manage(agent_group_manager_state)
     .manage(DetectorState::new())
     .manage(ProcManState(std::sync::Arc::new(tokio::sync::Mutex::new(
       std::collections::HashMap::new(),
@@ -277,6 +284,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       enable_autostart,
       disable_autostart,
       is_autostart_enabled,
+      is_scoop_install,
       ensure_jedi_dir,
       get_wallpapers,
       set_desktop_wallpaper,
@@ -327,6 +335,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       agent_proc_spawn,
       agent_proc_stdin,
       agent_proc_kill,
+      // Local Agent group persistence (complete camelCase JSON snapshots)
+      list_agent_groups,
+      save_agent_group,
+      delete_agent_group,
       // Web access tools (AI agent)
       web_fetch,
       web_search,

@@ -11,6 +11,7 @@
     "tauri": "tauri",
     "release": "node scripts/release.js",
     "scoop:manifest": "node scripts/scoop-manifest.mjs",
+    "test:agents": "node scripts/agents-group-replay.cjs && node scripts/codex-protocol-replay.ts && node scripts/agent-drivers-replay.cjs",
     "lint": "biome check src/ --diagnostic-level=error",
     "lint:fix": "biome check --write src/",
     "format": "biome format --write src/",

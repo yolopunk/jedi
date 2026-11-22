@@ -169,6 +169,14 @@ export function createCodexTranslator(hooks: RunAgentHooks) {
             item.type === 'commandExecution'
               ? (item.aggregatedOutput ?? item.output)
               : (item.extra ?? item)
+          const error =
+            item.error?.message ||
+            (typeof item.error === 'string' ? item.error : '') ||
+            (item.exitCode != null && Number(item.exitCode) !== 0
+              ? `exit code ${item.exitCode}`
+              : ['failed', 'declined', 'interrupted', 'aborted'].includes(item.status)
+                ? `tool ${item.status}`
+                : undefined)
           hooks.onToolResult?.({ toolName, toolCallId: itemId, output })
           hooks.onToolEnd?.({
             toolId: itemId,
@@ -176,9 +184,7 @@ export function createCodexTranslator(hooks: RunAgentHooks) {
             args: undefined,
             startedAt: Date.now(),
             output,
-            ...(item.exitCode !== undefined && item.exitCode !== null && Number(item.exitCode) !== 0
-              ? { error: `exit code ${item.exitCode}` }
-              : {}),
+            ...(error ? { error: String(error) } : {}),
           })
         }
         return
@@ -211,8 +217,14 @@ export function createCodexTranslator(hooks: RunAgentHooks) {
       const turn = record.params?.turn ?? {}
       const status = String(turn.status ?? 'completed')
       if (turn.error?.message) lastError = String(turn.error.message)
-      finishReason =
-        status === 'failed' ? 'error' : status === 'aborted' ? 'aborted' : (finishReason ?? 'stop')
+      if (status === 'completed') {
+        finishReason = lastError ? 'error' : 'stop'
+      } else if (status === 'aborted' || status === 'interrupted') {
+        finishReason = 'aborted'
+      } else {
+        finishReason = 'error'
+        lastError ||= `Codex turn ended with status: ${status}`
+      }
       if (turn.tokenCount) usage = turn.tokenCount
       hooks.onStepFinish?.({
         stepNumber: stepCount,

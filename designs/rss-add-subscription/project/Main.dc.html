@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>添加订阅 · 粘贴链接</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+body{margin:0}
+a{color:#539bf5}a:hover{color:#6eb1ff}
+</style>
+</helmet>
+<div style="width: 920px; height: 720px; box-sizing: border-box; background: #14151b; font-family: 'Noto Sans SC', sans-serif; color: #f4f4f5; display: flex; align-items: center; justify-content: center; gap: 40px; padding: 48px;">
+  <!-- 左：说明栏 -->
+  <div style="width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px;">
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 2px; color: #92929e;">PODCAST // ADD</div>
+    <div style="font-size: 18px; font-weight: 700; line-height: 1.5; color: #f4f4f5;">粘贴一条链接，<br>RSS 或小宇宙节目页都行</div>
+    <div style="font-size: 12px; line-height: 1.9; color: #a1a1aa;">Jedi 自动识别并解析出真实 feed，校验后即可订阅。小宇宙托管的节目若不暴露 RSS，会明确告诉你，不再静默失败。</div>
+    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #3fb950; flex-shrink: 0;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #a1a1aa;">https://rss.lizhi.fm/rss/14275.xml</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #3fb950; flex-shrink: 0;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #a1a1aa;">xiaoyuzhoufm.com/podcast/…</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #539bf5; flex-shrink: 0;"></span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #a1a1aa;">feeds.fireside.fm/…/rss</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右：对话框本体 -->
+  <div style="width: 520px; flex-shrink: 0; background: #111113; border: 1px solid #27272a; border-radius: 20px; box-shadow: 0 28px 80px rgba(0,0,0,0.55); overflow: hidden; position: relative;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, #539bf5, transparent); opacity: 0.6;"></div>
+
+    <!-- 标题栏 -->
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #27272a;">
+      <span style="font-size: 12px; font-weight: 600; letter-spacing: 1px; color: #f4f4f5;">添加订阅</span>
+      <button aria-label="关闭" style="background: none; border: none; color: rgba(244,244,245,0.5); cursor: pointer; font-size: 14px; padding: 4px 8px;">✕</button>
+    </div>
+
+    <!-- 分段控件 -->
+    <div style="display: flex; gap: 6px; padding: 16px 20px 0;">
+      <button style="flex: 1; min-height: 44px; box-sizing: border-box; font-family: inherit; font-size: 13px; font-weight: 500; color: #09090b; background: #539bf5; border: 1px solid #539bf5; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#09090b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+        粘贴链接
+      </button>
+      <button style="flex: 1; min-height: 44px; box-sizing: border-box; font-family: inherit; font-size: 13px; font-weight: 500; color: #a1a1aa; background: #18181b; border: 1px solid #27272a; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+        OPML 文件
+      </button>
+    </div>
+
+    <div style="padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 14px;">
+      <!-- 输入区 -->
+      <div>
+        <label for="feed-url" style="display: flex; align-items: center; color: rgba(244,244,245,0.7); font-size: 12px; letter-spacing: 1px; margin-bottom: 8px;">RSS 链接或小宇宙节目链接</label>
+        <div style="position: relative; display: flex; align-items: center; background: rgba(244,244,245,0.04); border: 1px solid #539bf5; border-radius: 8px; padding: 0 12px; min-height: 44px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(244,244,245,0.5); padding: 0 12px 0 0; border-right: 1px solid rgba(83,155,245,0.2); background: rgba(83,155,245,0.05); align-self: stretch; display: flex; align-items: center;">URL</span>
+          <input id="feed-url" readonly value="https://www.xiaoyuzhoufm.com/podcast/5e3bdf08418a84a046fb556c" style="flex: 1; background: transparent; border: none; outline: none; color: #f4f4f5; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 12px; min-width: 0;" />
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 8px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #3fb950;">已识别 · 小宇宙链接 → 解析 RSS 中…</span>
+        </div>
+      </div>
+
+      <!-- 预览卡 -->
+      <div style="display: flex; gap: 14px; padding: 14px; background: #18181b; border: 1px solid rgba(83,155,245,0.25); border-radius: 14px; align-items: center;">
+        <img src="/_blob/af4afe2d6fcfba4f84850dfb175687b0" alt="大内密谈封面" style="width: 88px; height: 88px; border-radius: 10px; object-fit: cover; flex-shrink: 0; border: 1px solid #27272a;">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px;">
+          <div style="font-size: 15px; font-weight: 600; color: #f4f4f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">大内密谈</div>
+          <div style="font-size: 12px; color: #a1a1aa; display: flex; align-items: center; gap: 8px;">
+            <span>深夜谈谈</span>
+            <span style="width: 3px; height: 3px; border-radius: 50%; background: #52525b; flex-shrink: 0;"></span>
+            <span>283,424 订阅</span>
+          </div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #92929e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">rss.lizhi.fm/rss/14275.xml · 3 天前更新</div>
+        </div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1px; color: #3fb950; border: 1px solid rgba(63,185,80,0.35); background: rgba(63,185,80,0.1); border-radius: 4px; padding: 4px 8px; flex-shrink: 0;">FREE</span>
+      </div>
+
+      <!-- 帮助链接 -->
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <a href="#" style="font-size: 12px; text-decoration: none;">如何找到节目的 RSS？</a>
+        <a href="#" style="font-size: 12px; text-decoration: none;">从 OPML 导入全部订阅 →</a>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button style="min-height: 36px; padding: 0 16px; font-family: inherit; font-size: 13px; font-weight: 500; color: #a1a1aa; background: #18181b; border: 1px solid #27272a; border-radius: 8px; cursor: pointer;">取消</button>
+        <button style="min-height: 36px; padding: 0 20px; font-family: inherit; font-size: 13px; font-weight: 500; color: #09090b; background: #539bf5; border: 1px solid #539bf5; border-radius: 8px; cursor: pointer;">订阅</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#539bf5","options":["#539bf5","#3fb950","#d29922","#f85149"]},"$preview":{"width":920,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#539bf5' };
+  }
+}
+</script>
+</body>
+</html>

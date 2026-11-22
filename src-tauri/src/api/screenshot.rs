@@ -17,6 +17,8 @@ use tauri::{
   AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, Position, Size, WebviewUrl,
 };
 
+#[cfg(target_os = "windows")]
+mod record_frame;
 mod window_targets;
 use window_targets::WindowRect;
 
@@ -542,7 +544,7 @@ pub async fn begin_capture(app: AppHandle) -> Result<Vec<MonitorFrameInfo>, Stri
       .skip_taskbar(true)
       .always_on_top(true)
       .shadow(false)
-      // 录制模式下覆盖窗口切换为透明+点击穿透，需要建窗时开启透明
+      // 长截图及非 Windows 录屏需要在切换为点击穿透后显示实时桌面。
       .transparent(true)
       .focused(index == focus_index);
       match builder.build() {
@@ -856,7 +858,7 @@ pub(crate) fn show_toolbar(
       WebviewUrl::App("screenshot-toolbar".into()),
     )
     .title("Jedi Capture")
-    .visible(true)
+    .visible(false)
     .decorations(false)
     .resizable(false)
     .minimizable(false)
@@ -870,6 +872,8 @@ pub(crate) fn show_toolbar(
     if let Ok(window) = builder.build() {
       let _ = window.set_position(position);
       exclude_from_capture(&window);
+      let _ = window.show();
+      let _ = window.set_focus();
     }
   });
 }
@@ -966,6 +970,38 @@ pub(crate) fn keep_selection_overlay(app: &AppHandle, monitor_index: usize) {
     }
   }
   set_pins_excluded(app, true);
+}
+
+/// Windows 录屏用原生取景框，避免 WebView2 在切换鼠标穿透时丢失透明合成。
+#[cfg(target_os = "windows")]
+pub(crate) async fn show_recording_frame(
+  app: &AppHandle,
+  monitor_index: usize,
+  monitor: (i32, i32, u32, u32),
+  region: (u32, u32, u32, u32),
+) -> Result<(), String> {
+  let app_for_frame = app.clone();
+  let (tx, rx) = tokio::sync::oneshot::channel();
+  app
+    .run_on_main_thread(move || {
+      let result = (|| {
+        let windows = app_for_frame.webview_windows();
+        let label = format!("{}{}", OVERLAY_LABEL_PREFIX, monitor_index);
+        let owner = windows.get(&label).ok_or("截图覆盖窗口已关闭")?;
+        record_frame::show(owner, monitor, region)?;
+        // 保留隐藏的所有者，teardown 销毁它时 Windows 会一并销毁取景框。
+        for window in windows.values() {
+          if window.label().starts_with(OVERLAY_LABEL_PREFIX) {
+            let _ = window.hide();
+          }
+        }
+        set_pins_excluded(&app_for_frame, true);
+        Ok(())
+      })();
+      let _ = tx.send(result);
+    })
+    .map_err(|e| format!("调度录屏边框失败: {}", e))?;
+  rx.await.map_err(|e| format!("等待录屏边框失败: {}", e))?
 }
 
 /// 停止滚动自动捕获看守线程（幂等：无会话时直接返回）。

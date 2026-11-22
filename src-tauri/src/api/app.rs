@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::path::Path;
 use tauri::AppHandle;
 use tauri_plugin_autostart::ManagerExt;
 
@@ -15,6 +16,86 @@ pub fn get_app_info() -> Result<AppInfo, String> {
     version: env!("CARGO_PKG_VERSION").to_string(),
     name: env!("CARGO_PKG_NAME").to_string(),
   })
+}
+
+fn is_scoop_install_path(executable: &Path) -> bool {
+  executable.parent().is_some_and(|install_dir| {
+    if install_dir.join(".scoop-install").is_file() {
+      return true;
+    }
+
+    fs::read_to_string(install_dir.join("scoop-install.json"))
+      .ok()
+      .and_then(|metadata| serde_json::from_str::<serde_json::Value>(&metadata).ok())
+      .and_then(|metadata| metadata.get("bucket")?.as_str().map(str::to_owned))
+      .is_some_and(|bucket| bucket.eq_ignore_ascii_case("jedi"))
+  })
+}
+
+#[tauri::command]
+pub fn is_scoop_install() -> bool {
+  std::env::current_exe()
+    .map(|executable| is_scoop_install_path(&executable))
+    .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::is_scoop_install_path;
+  use std::{fs, path::Path};
+
+  #[test]
+  fn detects_scoop_install_marker_next_to_executable() {
+    let install_dir = tempfile::tempdir().unwrap();
+    fs::write(install_dir.path().join(".scoop-install"), "").unwrap();
+
+    assert!(is_scoop_install_path(&install_dir.path().join("Jedi.exe")));
+  }
+
+  #[test]
+  fn detects_existing_scoop_metadata_without_marker() {
+    let install_dir = tempfile::tempdir().unwrap();
+    fs::write(
+      install_dir.path().join("scoop-install.json"),
+      r#"{"bucket":"jedi","architecture":"64bit"}"#,
+    )
+    .unwrap();
+
+    assert!(is_scoop_install_path(&install_dir.path().join("Jedi.exe")));
+  }
+
+  #[test]
+  fn does_not_detect_metadata_for_another_bucket() {
+    let install_dir = tempfile::tempdir().unwrap();
+    fs::write(
+      install_dir.path().join("scoop-install.json"),
+      r#"{"bucket":"other","architecture":"64bit"}"#,
+    )
+    .unwrap();
+
+    assert!(!is_scoop_install_path(&install_dir.path().join("Jedi.exe")));
+  }
+
+  #[test]
+  fn does_not_detect_normal_install_without_marker() {
+    assert!(!is_scoop_install_path(Path::new(
+      "C:/Users/user/AppData/Local/Jedi/Jedi.exe"
+    )));
+  }
+
+  #[test]
+  fn does_not_detect_other_scoop_apps() {
+    assert!(!is_scoop_install_path(Path::new(
+      "C:/Users/user/scoop/apps/other/current/Other.exe"
+    )));
+  }
+
+  #[test]
+  fn does_not_detect_unmarked_executable_in_scoop_named_path() {
+    assert!(!is_scoop_install_path(Path::new(
+      "C:/Users/user/scoop/apps/jedi/current/Jedi.exe"
+    )));
+  }
 }
 
 /// 按应用主题切换窗口/任务栏与托盘图标（dark=true 使用深底白标，浅色主题用白底黑标）

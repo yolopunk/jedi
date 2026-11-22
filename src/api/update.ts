@@ -1,5 +1,6 @@
 import { relaunch } from '@tauri-apps/plugin-process'
 import { check, type Update } from '@tauri-apps/plugin-updater'
+import { isScoopInstall } from '@/api/app'
 
 export interface UpdateInfo {
   version: string
@@ -40,6 +41,10 @@ export async function checkUpdate(): Promise<UpdateInfo | null> {
 export async function downloadUpdate(
   onProgress: (total: number, current: number) => void
 ): Promise<void> {
+  if (await isScoopInstall()) {
+    throw new Error('This Scoop-managed install must be updated with `scoop update jedi`.')
+  }
+
   if (!currentUpdate) {
     throw new Error('No update available. Call checkUpdate first.')
   }
@@ -74,6 +79,9 @@ export async function installUpdate(): Promise<void> {
   }
 
   try {
+    if (await isScoopInstall()) {
+      throw new Error('This Scoop-managed install must be updated with `scoop update jedi`.')
+    }
     await currentUpdate.install()
     await relaunch()
   } catch (error) {
@@ -86,6 +94,10 @@ export async function installUpdate(): Promise<void> {
 export async function downloadAndInstallUpdate(
   onProgress: (total: number, current: number) => void
 ): Promise<void> {
+  if (await isScoopInstall()) {
+    throw new Error('This Scoop-managed install must be updated with `scoop update jedi`.')
+  }
+
   if (!currentUpdate) {
     // Try to check again if currentUpdate is missing
     const info = await checkUpdate()

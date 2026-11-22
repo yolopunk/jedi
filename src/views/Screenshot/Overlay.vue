@@ -70,7 +70,7 @@
       <div class="loupe-meta"><span>{{ loupeCoords }}</span><span>{{ loupeHex }}</span></div>
     </div>
 
-    <!-- 录制模式：保留选区边框 + REC 徽标与已录时长（窗口已点击穿透且排除出捕获） -->
+    <!-- Windows 录屏改用独立的原生边框，其他平台继续在这里绘制。 -->
     <div v-if="mode === 'record' && selection" class="record-frame" :style="selectionStyle">
       <div class="rec-badge" :class="{ flipped: badgeFlipped }">
         <span class="rec-dot"></span>REC {{ recordElapsedLabel }}
@@ -655,7 +655,7 @@ async function startScrolling() {
   }
 }
 
-/** 进入选区录屏：本窗口切为透明穿透（后端设置），仅渲染边框与 REC 徽标 */
+/** 进入选区录屏：释放冻结画面，由后端切换到可穿透的选区边框。 */
 async function startRecording() {
   if (!selection.value || busy.value || editor.value?.hasEdits) return
   busy.value = true
@@ -668,7 +668,9 @@ async function startRecording() {
     recordElapsedMs.value = Date.now() - recordStartAt
   }, 250)
   try {
-    await startRegionRecord(monitorIndex, rect)
+    const info = await startRegionRecord(monitorIndex, rect)
+    selection.value = { ...rect, width: info.width, height: info.height }
+    recordStartAt = info.startedAtMs
     busy.value = false
   } catch (err) {
     stopRecordUi()
@@ -924,7 +926,12 @@ onUnmounted(() => {
   outline: none;
 }
 
-/* 录制模式：窗口透明化（后端同时开启点击穿透与捕获排除），只留边框与徽标 */
+/* 覆盖窗和文档底色都透明，才能透出实时桌面。 */
+:global(html:has(.overlay-root.is-recording)),
+:global(body:has(.overlay-root.is-recording)) {
+  background: transparent;
+}
+
 .overlay-root.is-recording {
   cursor: default;
   background: transparent;
